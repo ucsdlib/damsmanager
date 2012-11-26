@@ -1,0 +1,354 @@
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
+<%@ page errorPage="/jsp/errorPage.jsp"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+
+<c:set var="tsNameLen"> ${fn:length(model.triplestore)}</c:set>  
+<c:set var="tsNameFl">${fn:substring(model.triplestore, 0, 1)}</c:set> 
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+
+<body onLoad="load('controlPanel')" style="background-color:#fff;">
+<jsp:include flush="true" page="/jsp/libhtmlheader.jsp" />
+<jsp:include flush="true" page="/jsp/libanner.jsp" />
+<script language="javaScript">
+	var activeButtonId = "<c:out value="${model.activeButton}" />";
+	function setTriplestore(){
+		document.getElementById("dsSpan").style.display = "none";
+		document.getElementById("dsSelectSpan").style.display = "inline";
+	}
+	
+	function resetTriplestore(){
+		document.getElementById("dsSpan").style.display = "inline";
+		document.getElementById("dsSelectSpan").style.display = "none";
+	}
+	
+	function reloadPage(){
+		var dsIdx = document.mainForm.ds.selectedIndex;
+		if(dsIdx > 0){
+			var ds = document.mainForm.ds.options[dsIdx].value;
+			document.location.href="/damsmanager/controlPanel.do?ds=" + ds;
+		}else{
+			alert("Please choose a triplestore.");
+			return false;
+		}
+	}
+</script>
+<table align="center" cellspacing="0px" cellpadding="0px" class="bodytable">
+<tr><td>
+<div id="tdr_crumbs">
+	<span class="location" style="float:right;"><a href="logout.do?">Log out</a></span><span style="float:right;"><jsp:include flush="true" page="/jsp/menus.jsp" /></span>
+	<div id="tdr_crumbs_content">
+		<ul>
+			<li><a href="http://libraries.ucsd.edu">Home</a></li>
+			<li><a href="/curator">Digital Library Collections</a></li>
+			<li><a href="/damsmanager/">XDRE Manager</a></li>
+			<li>Process Manager</li>
+		</ul>
+	</div><!-- /tdr_crumbs_content -->
+	<!-- This div is for temporarily writing breadcrumbs to for processing purposes -->
+		<div id="temporaryBreadcrumb" style="display: none">
+	</div>
+</div><!-- /tdr_crumbs -->
+</td>
+</tr>
+<tr>
+<td align="center" colspan="2">
+<div id="main" class="gallery" align="center">
+	<form id="mainForm" name="mainForm" method="post" action="/damsmanager/collectionManagement">
+	<div id="controlpanel">
+		<div class="paneltitle">XDRE Control Panel</div>
+		<div id="collectionDiv" align="left">
+			<span id="dsSpan" class="menuText" Title="Double click to choose a triplestore for the operation." ondblclick="setTriplestore();" onMouseOver="this.style.cursor='pointer'">${fn:toUpperCase(tsNameFl)}${fn:substring(model.triplestore, 1, tsNameLen)} </span>
+			<span id="dsSelectSpan" ondblclick="resetTriplestore();" style="display:none" >
+				<select name="ds" id="ds" onChange="reloadPage();"><option value=""> -- Triplestore -- </option>
+						<c:forEach var="entry" items="${model.triplestores}">
+							<option value="${entry}" <c:if test="${model.triplestore == entry}">selected</c:if>>
+                       			<c:out value="${entry}" />
+                        	</option>
+						</c:forEach>
+				</select>&nbsp;
+			</span>
+			<span class="menuText">Collection Chooser:&nbsp; </span>
+			
+			<span><select id="collection" name="collection" class="inputText" onChange="requestStats(this);">
+						<option value=""> -- collections -- </option>
+						<c:forEach var="entry" items="${model.collections}">
+							<option value="${entry.value}" <c:if test="${model.reporter.collectionId == entry.value}">selected</c:if>>
+                       			<c:out value="${entry.key}" />
+                        	</option>
+						</c:forEach>
+					</select>
+			</span>
+		</div>
+		<div class="panelbar">
+			<span id="validateButton" class="<c:if test="${model.activeButton == 'validateButton'}">a</c:if>panelbutton" onClick="displayPanel(this);" onMouseOver="activateClass(this);" onMouseOut="resetClass(this);">Objects </span><span class="<c:if test="${model.activeButton == 'imagesButton'}">a</c:if>panelbutton" id="imagesButton" onClick="displayPanel(this);"  onMouseOver="activateClass(this);" onMouseOut="resetClass(this);"> Derivatives </span><span class="<c:if test="${model.activeButton == 'metadataButton'}">a</c:if>panelbutton" id="metadataButton" onClick="displayPanel(this);"  onMouseOver="activateClass(this);" onMouseOut="resetClass(this);"> Metadata </span><span class="<c:if test="${model.activeButton == 'sipButton'}">a</c:if>panelbutton" id="sipButton" onClick="displayPanel(this);"  onMouseOver="activateClass(this);" onMouseOut="resetClass(this);"> Import </span><span class="<c:if test="${model.activeButton == 'cdlButton'}">a</c:if>panelbutton" id="cdlButton" onClick="displayPanel(this);"  onMouseOver="activateClass(this);" onMouseOut="resetClass(this);"> Export </span><span class="<c:if test="${model.activeButton == 'preferenceButton'}">a</c:if>panelbutton" id="preferenceButton" onClick="displayPanel(this);"  onMouseOver="activateClass(this);" onMouseOut="resetClass(this);"> Preference</span>
+		</div>
+		<div class="panelbody">
+		    <div id="processesDiv">             
+				<div id="validateButtonDiv" <c:if test="${model.activeButton != 'validateButton'}">style="display:none;"</c:if>>
+				    <div id="fileCountDiv" class="processlayout">
+						<span title="Validate master files for duplicate files, mixed file format, and file count" class="menuText"><input class="pcheckbox" type="checkbox" name="validateFileCount" id="validateFileCount" onClick="checkSelections(this);">
+									<span class="text-special">File Count Validation</span></span><c:if test="${model.reporter.filesCount > 0}"> &nbsp;<span class="percentageText">( <c:out value="${model.reporter.filesCount}" /> objects )</span> </c:if><br />  
+						<!-- span class="submenuText">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Total # of Master Files: <input type="text" name="numOfFiles" size="10" class="inputText"></span -->
+					</div>
+				    <div id="fileCountDiv" class="processlayout">
+						<span title="Generate Jhove Report" class="menuText">
+							<input class="pcheckbox" type="checkbox" name="jhoveReport" id="jhoveReport" onClick="checkSelections(this);">
+							<span class="text-special">Jhove Report</span>
+						</span><br />
+						<div title="Check this checkbox to generate Jhove report for the BYTESTREAM files only." class="specialmenuText">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" id="bsJhoveReport" name="bsJhoveReport" class="pmcheckbox" onClick="confirmSelection(this, 'Jhove report for BYTESTREAM files only', 'jhoveReport');">
+							<span class="text-special">Jhove report for BYTESTREAM files only.</span>
+						</div>
+						<div title="Check this checkbox to update the format when it's validated by Jhove." class="specialmenuText">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" id="bsJhoveUpdate" name="bsJhoveUpdate" class="pmcheckbox" onClick="confirmSelection(this, 'Correct format metadata', 'jhoveUpdate');">
+							<span class="text-special">Correct format metadata if validated by Jhove.</span>
+						</div>	
+					</div>
+					<div id="checksumDiv" class="processlayout">
+						<span title="Validate checksum or revalidate if checksum date before the date entered." class="menuText">
+				              <input class="pcheckbox" type="checkbox" id="validateChecksums" name="validateChecksums" onClick="checkSelections(this);">
+									<span class="text-special">Checksum Validation</span></span><c:if test="${model.reporter.percentChecksumsValidated != null}"> &nbsp;<span class="percentageText">(<c:out value="${model.reporter.percentChecksumsValidated}" />%)</span> </c:if><br/>								   
+						<span class="submenuText" style="padding-left:26px;">Revalidate if validated before:&nbsp;<input type="text" name="checksumDate" size="12" class="inputText">&nbsp;(mm/dd/yyyy)</span>
+					
+					</div>
+					<div id="manifestDiv" class="processlayout">
+						<span title="Manifest validation and writing." class="menuText">
+				            <input class="pcheckbox" type="checkbox" id="validateManifest" name="validateManifest" onClick="checkSelections(this);" disabled>
+				            <span class="text-special">Manifest Validation</span></span><br/>
+				            <div style="padding-left:20px;">								   
+								<span class="submenuText"><input type="radio" name="manifestOptions" value="verify" checked><span class="text-special">Verify the manifest only.</span></span><br>
+								<span class="submenuText"><input type="radio" name="manifestOptions" value="write"><span class="text-special">Write the manifest only.</span></span>
+							</div>
+					</div>
+				</div>
+				<div id="imagesButtonDiv" <c:if test="${model.activeButton != 'imagesButton'}">style="display:none;"</c:if>>
+					<div id="derivativeDiv" class="processlayout">
+						<div title="Create thumbnails and medium resource images." class="menuText">
+								    <span><input class="pcheckbox" type="checkbox" id="createDerivatives" name="createDerivatives" onClick="checkSelections(this, 'derivativeReplace');">
+								   <span class="text-special">Derivatives Creation</span></span><c:if test="${model.reporter.percentImagesWithDerivatives != null}"> &nbsp;<span class="percentageText">(<c:out value="${model.reporter.percentImagesWithDerivatives}" />%)</span> </c:if><br/>								   
+						</div>
+						<div>
+								   <fieldset class="groupbox_der"><legend class="slegandText">Image Type</legend>
+									   <span class="submenuText"><input type="radio" name="derivativeType" value="both" checked> Thumbnails (65px&amp;150px) &amp; Medium Resolution (450px&amp;768px)</span><br />
+									   <span class="submenuText"><input type="radio" name="derivativeType" value="thumbnail2a" > Thumbnail (65px) Only</span><br />
+									   <span class="submenuText"><input type="radio" name="derivativeType" value="thumbnail" > Thumbnail (150px) Only</span><br />
+									   <span class="submenuText"><input type="radio" name="derivativeType" value="mediumResource3a" > Medium Resolution (450px) Only</span><br />
+									   <span class="submenuText"><input type="radio" name="derivativeType" value="mediumResource" > Medium Resolution (768px) Only</span><br />
+									</fieldset>
+						</div>
+						<div title="Check this checkbox to replace the derivatives if exist." class="specialmenuText">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" id="derivativeReplace" name="derivativeReplace" class="pmcheckbox" onClick="confirmSelection(this, 'replace the selected derivative type above', 'createDerivatives');">
+									 <span class="text-special">Replace the derivatives for the selected type(s)</span>
+						</div>
+					</div>
+					<div id="cachingDiv" class="processlayout">
+						<div title="Cache thumbnails for Tomcat fast access" class="menuText">
+						            <span><input class="pcheckbox" type="checkbox" id="cacheThumbnails" name="cacheThumbnails" onClick="checkSelections(this, 'cacheReplace');">
+							          <span class="text-special">Thumbnails Caching</span></span><c:if test="${model.reporter.percentThumbnailsCached != null}"> &nbsp;<span class="percentageText">(<c:out value="${model.reporter.percentThumbnailsCached}" />%)</span> </c:if>
+						</div>
+						<div>
+									<fieldset class="groupbox_der"><legend class="slegandText">Image Type</legend>
+		   						        <span class="submenuText"><input type="radio" name="cacheDerivativeType" value="both" checked> Thumbnails (65px&amp;150px) &amp; Medium Resolution (450px&amp;768px)</span><br />
+								        <span class="submenuText"><input type="radio" name="cacheDerivativeType" value="thumbnail2a" > Thumbnail (65px) Only</span><br />
+								        <span class="submenuText"><input type="radio" name="cacheDerivativeType" value="thumbnail" > Thumbnail (150px) Only</span><br />
+								        <span class="submenuText"><input type="radio" name="cacheDerivativeType" value="mediumResource3a" > Medium Resolution (450px) Only</span><br />
+								        <span class="submenuText"><input type="radio" name="cacheDerivativeType" value="mediumResource" > Medium Resolution (768px) Only</span><br />								   
+								   </fieldset>
+						 </div>
+						 <div title="Check this checkbox to replace the existed cached thumbnails if exist [optional]." class="specialmenuText">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" id="cacheReplace" name="cacheReplace" class="pmcheckbox" onClick="confirmSelection(this, 'replace the existing cached thumbnails', 'cacheThumbnails');">
+										 <span class="text-special">Replace the cached derivatives for the selected type(s)</span>
+						  </div>
+					</div>
+				</div>
+				<div id="sipButtonDiv" <c:if test="${model.activeButton != 'sipButton'}">style="display:none;"</c:if>>
+					<div id="populationDiv" class="processlayout">
+						<div title="Populate the triple store with RDF." class="menuText"><input class="pcheckbox" type="checkbox" id="rdfImport" name="rdfImport" onClick="checkSelections(this);">
+									  <span class="text-special">TripleStore Population</span>
+									<c:if test="${model.reporter.percentTripleStorePopulated != null}" > &nbsp;<span class="percentageText">(<c:out value="${model.reporter.percentTripleStorePopulated}" />%)</span> </c:if>
+						</div>
+						<div>
+							<fieldset class="groupbox_ts"><legend class="slegandText">File</legend>
+									<div id="fileFormat">
+											<span class="submenuText"><strong>Choose File Format: </strong></span><br/>
+											<span class="submenuText"><input type="radio" name="fileType" value="rdf" checked><a title="View sample format" href="/damsmanager/files/sampleRdf.xml" target="_blank"><span class="text-special">RDF</span></a></span>
+											<span class="submenuText"><input type="radio" name="fileType" value="msclXml" disabled><a title="View sample format" href="/damsmanager/files/sampleMscl.xml" target="_blank"><span class="text-special">MSCL XML</span></a></span>
+											<span class="submenuText"><input type="radio" name="fileType" value="mets" disabled><span class="text-special">METS</span></span>
+											<span class="submenuText"><input type="radio" name="fileType" value="json" disabled><span class="text-special">JSON</span></span><br>
+									</div>
+									<div id="fileLocation" style="padding-top:5px;">	
+											<span class="submenuText"><strong>Choose File Location: </strong></span><br />	
+											<span class="submenuText"><input type="radio" name="fileToIngest" value="rdfFile" checked><span class="text-special">Local data file</span></span><br>
+											<span class="submenuText"><input type="radio" name="fileToIngest" value="rdfUrl"><span class="text-special">Data from a URL: </span><input type="text" name="saemUrl" size="35"></span><br/>
+									</div>
+							</fieldset>
+						 </div>
+						 <div>
+						 <fieldset class="groupbox_ingestOpts"><legend class="slegandText">Special Options</legend>
+						 <div title="Check this checkbox to start a new round of TripleStore population." class="specialmenuText">
+									<input type="checkbox" id="tsRenew" name="tsRenew" class="pmcheckbox" onClick="specialSelections(this, 'start a new round of triplestore population', 'rdfImport');">
+									 <span class="text-special">Start the process to add metadata</span>
+						 </div>
+						 <div title="Check this checkbox to repopulate the metadata (JHOVE data excluded) for all the subjects included in the submitted RDF." class="specialmenuText">
+									<input type="checkbox" id="tsRepopulateOnly" name="tsRepopulateOnly" class="pmcheckbox" onClick="specialSelections(this, 'repopulate the metadata (JHOVE data excluded) in the submitted RDF', 'rdfImport');">
+									 <span class="text-special">Repopulate metadata (keep JHOVE extracted metadata)</span>
+						  </div>
+						 <div title="Check this checkbox to replace the subject with the subjects included in the submitted RDF." class="specialmenuText">
+									<input type="checkbox" id="tsRepopulation" name="tsRepopulation" class="pmcheckbox" onClick="specialSelections(this, 'replace the subjects in the submitted RDF', 'rdfImport');">
+									 <span class="text-special">Replace subject with the metadata submitted</span>
+						  </div>
+						  <div title="Check this checkbox for the same predicates replacement with the triples included in the submitted RDF." class="specialmenuText">
+									<input type="checkbox" id="samePredicatesReplacement" name="samePredicatesReplacement" class="pmcheckbox" onClick="specialSelections(this, 'replace the same predicates in the submitted RDF', 'rdfImport');">
+									 <span class="text-special">Same predicates replacement with the metadata submitted</span>
+						  </div>
+						  </fieldset>
+						  </div>
+					</div>					
+					<div id="jsonDiffUpdateDiv" class="processlayout">
+						<div title="Update subject with JSON by DIFF" class="menuText"><input class="pcheckbox" type="checkbox" id="jsonDiffUpdate" name="jsonDiffUpdate" onClick="checkSelections(this);">
+									  <span class="text-special">Single Item JSON DIFF Update</span>
+						</div>
+						<div>
+							<fieldset class="groupbox_tss"><legend class="slegandText">File</legend>
+									<div id="fileLocation" style="padding-top:5px;">	
+											<span class="submenuText"><strong>Choose File Location: </strong></span><br />	
+											<span class="submenuText"><input type="radio" name="fileToUpdate" value="jsonFile" checked><span class="text-special">Local data file</span></span><br>
+											<span class="submenuText"><input type="radio" name="fileToUpdate" value="jsonUrl"><span class="text-special">Data from a URL: </span><input type="text" name="jsonUrl" size="35"></span><br/>
+									</div>
+							</fieldset>
+						 </div>
+					</div>					
+					<div title="Custom metadata population through Metadata Converter." class="title" align="left">
+						<a href="/damsmanager/dataConverter.do"><b>Custom Metadata Converting and Exchanging</b></a>
+					</div>
+				</div>
+				<div id="metadataButtonDiv" <c:if test="${model.activeButton != 'metadataButton'}">style="display:none;"</c:if>>
+					<div id="solrIndexDiv" class="processlayout">
+						 <div><span title="SOLR index" class="menuText">
+					            <input class="pcheckbox" type="checkbox" id="luceneIndex" name="luceneIndex" onClick="checkSelections(this, 'indexReplace');">
+						          <span class="text-special">SOLR Indexing</span></span>
+						          <c:if test="${model.reporter.percentLuceneIndexed != null}"> &nbsp;<span class="percentageText">(<c:out value="${model.reporter.percentLuceneIndexed}" />%)</span> </c:if><br />
+						  </div>
+						  <div title="Check this checkbox to replace the existed SOLR Indexes if exist [optional]." class="specialmenuText">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" id="indexReplace" name="indexReplace" class="pmcheckbox" onClick="confirmSelection(this, 'replace the existing SOLR Index', 'luceneIndex');">
+									 <span class="text-special">Replace the SOLR indexes for the collection selected</span>
+						  </div>
+					</div>
+					<div id="rdfUploadDiv" class="processlayout">
+						 <div><span title="Create and upload the RDF files." class="menuText"><input class="pcheckbox" type="checkbox" id="uploadRDF" name="uploadRDF" onClick="checkSelections(this, 'rdfXmlReplace');">
+									<span class="text-special">RDF Creation &amp; uploading</span></span>
+									<c:if test="${model.reporter.percentRdfXmlFilesCreated != null}" > &nbsp;<span class="percentageText">(<c:out value="${model.reporter.percentRdfXmlFilesCreated}" />%)</span> </c:if><br />
+						 </div>	
+						 <div>
+							<fieldset class="groupbox_rdf"><legend class="slegandText">Meta Data</legend>
+   						        <span class="submenuText"><input type="radio" name="rdfXmlDataType" value="all" checked>All</span><br />
+						        <span class="submenuText"><input type="radio" name="rdfXmlDataType" value="jhove" >JHOVE extracted metadata only</span><br />
+						   </fieldset>
+						 </div>	
+						 <div title="Check this checkbox to replace the RDF XML files if exist." class="specialmenuText">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" id="rdfXmlReplace" name="rdfXmlReplace" class="pmcheckbox" onClick="confirmSelection(this, 'replace the RDF XML files', 'uploadRDF');">
+									 <span class="text-special">Replace the RDF XML files</span>
+						  </div>
+					</div>
+					<div id="metsUploadDiv" class="processlayout">
+						<div><span class="menuText">
+								   <input class="pcheckbox" type="checkbox" id="createMETSFiles" name="createMETSFiles" onClick="checkSelections(this, 'metsReplace');">
+									 <span class="text-special">METS Creation &amp; uploading</span></span>
+									<c:if test="${model.reporter.percentMetsFilesCreated != null}"> &nbsp;<span class="percentageText">(<c:out value="${model.reporter.percentMetsFilesCreated}" />%)</span> </c:if><br />
+						</div>
+						<div title="Check this checkbox to replace the METS files if exist [optional]." class="specialmenuText">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" id="metsReplace" name="metsReplace" class="pmcheckbox" onClick="confirmSelection(this, 'replace the METS', 'createMETSFiles');">
+									 <span class="text-special">Replace the METS files</span>
+						</div>
+					</div>
+					<div id="jsonUploadDiv" class="processlayout">
+						<div><span class="menuText">
+								   <input class="pcheckbox" type="checkbox" id="createJson" name="createJson" onClick="checkSelections(this, 'jsonReplace');">
+									<span class="text-special">JSON Creation &amp; uploading</span></span>
+									<c:if test="${model.reporter.percentJsonCreated != null}"> &nbsp;<span class="percentageText">(<c:out value="${model.reporter.percentJsonCreated}" />%)</span> </c:if><br />
+						</div>
+						<div title="Check this checkbox to replace the JSON if exist [optional]." class="specialmenuText">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" id="jsonReplace" name="jsonReplace" class="pmcheckbox" onClick="confirmSelection(this, 'replace the JSON', 'createJson');">
+									 <span class="text-special">Replace JSON</span>
+						</div>
+					</div>
+				</div>
+				<div id="cdlButtonDiv" <c:if test="${model.activeButton != 'cdlButton'}">style="display:none;"</c:if>>
+					<div id="metadataExportDiv" class="processlayout">
+						<div class="menuText"><input class="pcheckbox" type="checkbox" id="exportRdf" name="exportRdf" onClick="checkSelections(this);"><span class="text-special"><strong>Metadata Export: </strong></span><br />
+						    <div style="padding-left:18px;">
+						    	<div title="Export metadata with namespaces limitation." class="specialmenuText">
+								    <span class="text-special">&nbsp;Export triples in namespace(s): <input type="text" name="nsInput" size="30" class="inputText" />&nbsp; (<span style="color:red;font-size:12px;">*</span>delimited by comma)</span> 
+								</div>
+								<div class="specialmenuText"><input type="radio" name="exportFormat" value="rdf" checked><span class="text-special">RDF XML Export</span></div>
+								<div title="Check this checkbox to export RDF with literal namespaces translation.">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" id="translated" name="translated" class="pmcheckbox" onClick="confirmSelection(this, 'Export with literal namespaces translation', 'exportRdf');">
+									<span class="specialmenuText">With literal namespaces translation.</span>
+								</div>
+								<div class="specialmenuText"><input type="radio" name="exportFormat" value="csv"><span class="text-special">CSV Export</span></div>
+								<div class="specialmenuText"><input type="radio" name="exportFormat" value="ntriples"><span class="text-special">NTriples Export</span></div>
+							</div>
+						</div>
+					</div>
+					<div id="cdlIngestDiv" class="processlayout">
+						<div title="Send objects to CDL" class="menuText">
+						    <input class="pcheckbox" type="checkbox" id="sendToCDL" name="sendToCDL" onClick="checkSelections(this);">
+							<span class="text-special">CDL</span> 
+							<c:if test="${model.reporter.percentSentToCDL != null}"> &nbsp;<span class="percentageText">(<c:out value="${model.reporter.percentSentToCDL}" />%)</span> </c:if>
+						</div>
+						<div>
+							<fieldset class="groupbox_cdl"><legend class="slegandText">METS Feeder</legend>
+							   <span class="submenuText"><input type="radio" name="feeder" value="dpr" checked> DPR </span><br />
+							   <span class="submenuText"><input type="radio" name="feeder" value="merritt" checked> Merritt </span><br />
+								<div style="margin-left:28px;">
+									<span class="submenuInputText">Account #:&nbsp;<input type="text" name="account" size="12" class="inputText" />&nbsp;</span><br /><span class="submenuInputText">Auth code:&nbsp;<input type="password" name="password" size="12" class="inputText" /></span>						
+								</div>
+							</fieldset>
+							<fieldset class="groupbox_cdlOptions"><legend class="slegandText">Special Options</legend>
+							<span class="submenuText" title="Check this checkbox to include the embargo objects to send to CDL." class="specialmenuText">
+								<input type="checkbox" id="includeEmbargoed" name="includeEmbargoed" class="pmcheckbox"></span><span class="text-special">Include embargoed objects</span><br />
+							<span class="submenuText" title="Check this checkbox to resend objects to CDL." class="specialmenuText">
+								<input type="checkbox" id="cdlResend" name="cdlResend" class="pmcheckbox" onClick="specialSelections(this, 'resend objects already sent to CDL', 'sendToCDL');"></span><span class="text-special">Resend objects already sent</span><br />
+							<span class="submenuText" title="Check this checkbox to resend the METS file to CDL only.">
+								<input type="checkbox" id="cdlResendMets" name="cdlResendMets" class="pmcheckbox" onClick="specialSelections(this, 'resend METS files to CDL only', 'sendToCDL');" disabled></span><span class="text-special">Resend METS files only</span>
+							</fieldset>
+						</div>
+					</div>
+				</div>
+				<div id="preferenceButtonDiv" <c:if test="${model.activeButton != 'preferenceButton'}">style="display:none;"</c:if>>
+					<div class="processlayout">
+						<span title="FileStore selector" class="menuText">
+							<span class="text-special">&nbsp;FileStore to use:&nbsp;</span>
+							<select id="fileStore" name="fileStore" class="inputText">
+								<option value=""> -- FileStore -- </option>							
+								<c:forEach var="entry" items="${model.filestores}">
+									<option value="${entry}" <c:if test="${model.filestore == entry}">selected</c:if>>
+		                       			<c:out value="${entry}" /><c:if test="${model.filestoreDefault == entry}"> (default)</c:if>
+		                        	</option>
+								</c:forEach>
+							</select>
+						</span>
+					</div>
+					<div id="disabledTaggingDiv" class="processlayout">
+						<div title="Disable status tagging for incremental development." class="menuText">
+						    <input class="pcheckbox" type="checkbox" id="disableTagging" name="disableTagging" <c:if test="${model.statusTagging == false}">checked</c:if>>
+							<span class="text-special">Disable status tagging for incremental development.</span> 
+						</div>
+					</div>
+				</div><!-- End preferenceButtonDiv -->
+			</div>
+		</div>
+		<div class="buttonDiv">
+			<input type="hidden" id="fileUrl" name="fileUrl" value=""/>
+			<input type="hidden" id="activeButton" name="activeButton" value="${model.activeButton}"/>
+			<input type="button" name="submitButton" value=" Perform Operation " onClick="submitForm();"/>
+		</div>
+	</div>
+	</form>
+	</div>
+	<jsp:include flush="true" page="/jsp/fileUpload.jsp" />
+	<jsp:include flush="true" page="/jsp/status.jsp" />
+	<div id="messageDiv">
+		<div id="message" align="left" class="errorBody">${model.message}</div>
+	</div>
+</td>
+</tr>
+</table>
+<jsp:include flush="true" page="/jsp/libfooter.jsp" />
+</body>
+<jsp:include flush="true" page="/jsp/popmenus.jsp" />
+</html>

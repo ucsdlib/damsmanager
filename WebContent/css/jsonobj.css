@@ -1,0 +1,44 @@
+.dbg-obj, 
+.dbg-arr {
+  border-width:0px;
+  margin:0px;
+}
+.dbg-label,
+.dbg-value {
+  padding:3px;
+  font-size:12px;
+  color:#333;
+}
+.dbg-label {
+  font-weight:bold;
+  background-color:#DDDDDD;
+}
+
+.dbg-label-name {
+	font-size: 10px;
+	font-weight:normal;
+    background-color:#DDDDDD;
+}
+
+.dbg-obj td,
+.dbg-arr td {
+}
+.dbg-value .dbg-toggle {
+  display : list-item;
+  margin-left : 10px;
+  cursor : pointer;
+}
+.dbg-value .dbg-toggle-open .dbg-toggle {
+  list-style-image : url("../images/minus.gif");
+}
+.dbg-value .dbg-toggle-closed .dbg-toggle {
+  list-style-image : url("../images/plus.gif");
+}
+
+.ident {
+	width:15px;
+}
+.dbg-title{
+	font-weight:bold;
+	vertical-align:top;
+}
