@@ -52,20 +52,20 @@ public class DownloadLogController implements Controller {
 		if(fileName == null){
 			String logType = request.getParameter("log");
 			String sessionId = request.getParameter("sessionId");
-			String collection = request.getParameter("collection");
+			String collection = request.getParameter("category");
 			downloadName = (collection==null?sessionId:collection);
 			if(logType != null && logType.equalsIgnoreCase("srb")){
-				response.setHeader("Content-Disposition", "attachment; filename=srblog.log");
-				fileName = Constants.TMP_FILE_DIR + "srblog-" + collection + ".log";
+				response.setHeader("Content-Disposition", "attachment; filename=ingest.log");
+				fileName = Constants.TMP_FILE_DIR + "/ingest-" + collection + ".log";
 				downloadName = "fileStoreLog-" + downloadName  + ".log";
 			}else{
 				response.setHeader("Content-Disposition", "attachment; filename=damslog.txt");
-				fileName = Constants.TMP_FILE_DIR + "damslog-" + sessionId + ".txt";
+				fileName = Constants.TMP_FILE_DIR + "/damslog-" + sessionId + ".txt";
 				downloadName = "damslog-" + downloadName  + ".txt";
 			}
 		}else{
 			downloadName = fileName;
-			fileName = Constants.TMP_FILE_DIR + fileName;
+			fileName = Constants.TMP_FILE_DIR + "/" + fileName;
 		}
 		
 		File outFile = new File(fileName);

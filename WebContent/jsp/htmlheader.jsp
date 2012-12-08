@@ -3,7 +3,6 @@
 	<title>XDRE Manager</title>
 	<meta http-equiv=Content-Type content="text/html; charset=iso-8859-1"/>
 	<link href="/damsmanager/css/damsmanager.css" rel="stylesheet"/>
-	<link href="/damsmanager/css/collection.css" rel="stylesheet"/>
 	<link href="/damsmanager/css/jsonobj.css" rel="stylesheet"/>
 	<link href="/damsmanager/css/ui.datepicker.css" rel="stylesheet"/>
 	<script type="text/javascript" src="/damsmanager/javascripts/collection.js"></script>

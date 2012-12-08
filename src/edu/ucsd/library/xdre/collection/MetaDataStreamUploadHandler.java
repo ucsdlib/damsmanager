@@ -13,7 +13,7 @@ import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 
 /**
- * Class MetaDataFileUploadHandler handles the uplaoding of metadata file to FileStore
+ * Class MetaDataStreamUploadHandler handles the uplaoding of metadata file to FileStore
  * 
  * @author lsitu@ucsd.edu
  */
@@ -22,7 +22,7 @@ public class MetaDataStreamUploadHandler extends CollectionHandler{
 	private static Logger log = Logger.getLogger(MetaDataStreamUploadHandler.class);
 	private boolean replaceOrNot = false;
 	private String fileType = null;
-	private String fileExt = null;
+	private String fileName = null;
 	private boolean jhoveUpload = false;
 	
     private StringBuilder message = new StringBuilder();
@@ -46,12 +46,12 @@ public class MetaDataStreamUploadHandler extends CollectionHandler{
 	private void initHandler() throws Exception{
 		if("RDF".equalsIgnoreCase(fileType)){
 			if(jhoveUpload)
-				fileExt = "-jhove.xml";
+				fileName = "jhove.xml";
 			else
-				fileExt = "-rdf.xml";
+				fileName = "rdf.xml";
 
 		}else if("METS".equalsIgnoreCase(fileType)){
-			fileExt = "-mets.xml";
+			fileName = "mets.xml";
 		}else
 			throw new Exception("Unknown file type for File Store backup: " + fileType);
 	}
@@ -59,10 +59,7 @@ public class MetaDataStreamUploadHandler extends CollectionHandler{
 	/**
 	 * Implements the collection handler's execute method for
 	 * RDF Xml file creation and LocalStore upload
-	 * @throws Exception 
-	 * @throws Exception 
-	 * @throws Exception 
-	 * @throws Exception 
+	 * @throws Exception  
 	 * @throws FileExistedException 
 	 * @throws IOException 
 	 * @throws URISyntaxException 
@@ -77,11 +74,11 @@ public class MetaDataStreamUploadHandler extends CollectionHandler{
 	    	throw new Exception("Unknown file type for File Store upload: " + fileType);
     	
 	   		for (int i = 0; i < itemsCount && !interrupted; i++) {   				
-	   			subjectId = collectionId + "-1-" + (i+1);
+	   			subjectId = items.get(i);
 	   			uploadFile(subjectId, i);
 		   			
 	   	        try{
-	   				Thread.sleep(20);
+	   				Thread.sleep(10);
 	   	        } catch (InterruptedException e) {
 	   				setExeResult(false);
 	   				interrupted = true;
@@ -150,17 +147,14 @@ public class MetaDataStreamUploadHandler extends CollectionHandler{
 		  	}while(!successTry && numTry++<maxTry && !interrupted);
 			
 			if(data != null && data.length() > 0){
-    			String arkFileName = Constants.ARK_ORG + "-" + subjectId + fileExt;
-    			String[] parts = toFileParts(arkFileName);
-    			boolean exists = damsClient.exists(parts[1], parts[2]);
+    			//String arkFileName = Constants.ARK_ORG + "-" + subjectId + fileExt;
+    			//String[] parts = toFileParts(arkFileName);
+    			boolean exists = damsClient.exists(subjectId, null, fileName);
     			if(replaceOrNot || !exists){
     				InputStream in = null;
     				try{
     					in = new ByteArrayInputStream(data.getBytes("UTF-8"));
-		    			if(exists)
-		    				successful = damsClient.updateFile(parts[1], parts[2], in, data.length());
-		    			else
-		    				successful = damsClient.createFile(parts[1], parts[2], in, data.length());
+    					successful = damsClient.uploadFile(subjectId, null, fileName, in, data.length());
     				}finally{
     					if(in != null){
     						in.close();
@@ -173,7 +167,7 @@ public class MetaDataStreamUploadHandler extends CollectionHandler{
 	    			}else{
 	    				failedsCount++;
 		   	        	setExeResult(false);
-		   	        	eMessage = itemLink + ". Error: file " + arkFileName + " doesn't exist.\n";
+		   	        	eMessage = itemLink + ". Error: file " + damsClient.toUrlPath(subjectId, null, fileName) + " doesn't exist.\n";
 		   	        	message.append(eMessagePrefix + eMessage + "\n");
 		   				setStatus(eMessagePrefix + eMessage);
 		   				System.out.println(eMessagePrefix + eMessage + "\n");

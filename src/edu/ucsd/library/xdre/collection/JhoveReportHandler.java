@@ -108,18 +108,21 @@ public class JhoveReportHandler extends CollectionHandler{
 	 */
 	public boolean execute() throws Exception{
     	String subjectId = null;
-    	String arkFilePrefix = null;
+    	String compId = null;
+    	String fileId = null;
     	String itemLink = null;
     	if(updateFormat)
     		log("log", "Format metadata for the following files are corrected in DAMS from the original bytestream format: ");
     	log("log", "ARK_ID\tFormat&Version\tReporting_Module\tSize(bytes)\tCheckSum_CRC32\tDate_Modified\tStatus\tSource_File");
     	for (int i = 0; i < itemsCount && !interrupted; i++) {
-   			arkFilePrefix = Constants.ARK_ORG + "-";
-			subjectId = collectionId + "-1-" + (i+1);
-			arkFilePrefix += subjectId;
-			totalFiles += 1;
-   			if(!handleObject(subjectId, arkFilePrefix, i))
-   				setExeResult(false);
+			subjectId = items.get(i);
+			int complexObjectCount = queryComplexObject(subjectId);
+			if(complexObjectCount > 0)
+				if(!handleComplexObject(subjectId, complexObjectCount,i))
+					setExeResult(false);
+			else
+	   			if(!handleObject(subjectId, compId, fileId, i))
+	   				setExeResult(false);
    	        setProgressPercentage( ((i+1) * 100) / itemsCount);
    		}
 		return exeResult;
@@ -145,20 +148,20 @@ public class JhoveReportHandler extends CollectionHandler{
 		return report;
 	}
 	
-	private boolean handleComplexObject(String complexObjectId, int complexObjectCount, int itemIndex) throws Exception{
+	private boolean handleComplexObject(String subjectId, int complexObjectCount, int itemIndex) throws Exception{
 		boolean successful = true;
+		int compId = 0;
+		String fileId = "1";
 		for(int i=0; i<complexObjectCount && !interrupted; i++){
-			String arkFilePrefix = Constants.ARK_ORG + "-";
-   			String subjectId = complexObjectId + "-1-" + (i+1);
-   			arkFilePrefix += subjectId;
-			if(!handleObject(subjectId, arkFilePrefix, itemIndex))
+			compId = i + 1;
+			if(!handleObject(subjectId, ""+compId, fileId, itemIndex))
 				successful = false;
    			totalFiles += 1;
 		}
 		return successful;
 	}
 	
-	private boolean handleObject(String subjectId, String arkFilePrefix, int itemCount) throws Exception {
+	private boolean handleObject(String subjectId, String compId, String fileId, int itemCount) throws Exception {
         //Item reference from DDOM Viewer
 	    String itemLink = getDDOMReference(subjectId);
 	    setStatus("Processing Jhove report for " + itemLink + " (" + (itemCount+1) + " of " + itemsCount + ")");
@@ -199,7 +202,7 @@ public class JhoveReportHandler extends CollectionHandler{
 		int numTry = 0;
 		boolean reTry = true;
 		while(reTry && numTry++ < maxTry && !interrupted){
-				fExt = getFileExtension(subjectId);
+				fExt = getFileExtension(subjectId, compId, fileId);
 				reTry = false;
 		}
         if(fExt == null){	        	
@@ -224,12 +227,12 @@ public class JhoveReportHandler extends CollectionHandler{
         	}
         }
         
-        arkFileName = arkFilePrefix + fExt;
-        String[] parts = toFileParts(arkFileName);
+       // arkFileName = arkFilePrefix + fExt;
+       // String[] parts = toFileParts(arkFileName);
 		numTry = 1;
 		do{
    			try{
-				if (!damsClient.exists(parts[1], parts[2])){
+				if (!damsClient.exists(subjectId, compId, fileId)){
 					successful = false;
 		        	setExeResult(false);
 		        	failedCount++;

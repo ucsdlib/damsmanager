@@ -74,11 +74,7 @@ public class SolrIndexHandler extends CollectionHandler
 			boolean successTry = false;
 			do{
 				try{
-					if(replaceOrNot){
-						successTry = damsClient.solrUpdate(subjectId, false);
-					}else{
-						successTry = damsClient.solrIndex(subjectId, false);
-					}
+					successTry = damsClient.solrUpdate(subjectId);
 				}catch(Exception e){
 					//Log error.
 					if(numTry == maxTry){

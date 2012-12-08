@@ -1,0 +1,120 @@
+package edu.ucsd.library.xdre.web;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.servlet.mvc.Controller;
+
+import edu.ucsd.library.jetl.organizer.UploadTaskOrganizer;
+import edu.ucsd.library.xdre.utils.Constants;
+import edu.ucsd.library.xdre.utils.DAMSClient;
+
+
+ /**
+ * Class IngestController, the model for the Ingest view
+ * home page
+ *
+ * @author lsitu@ucsd.edu
+ */
+public class IngestController implements Controller {
+
+	
+	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		
+		String filePath = null;
+		String filePrefix = null;
+		String fileFilter = null;
+		String arkSetting = null;
+		String preferedOrder = null;
+		
+		String ds = request.getParameter("ts");
+		String category =  request.getParameter("category");
+		String reset = request.getParameter("reset");
+		String message = request.getParameter("message");
+		String fileStore = request.getParameter("fs");
+
+		HttpSession session = request.getSession();	
+		DAMSClient damsClient = null;
+		try{
+			if(ds == null)
+				ds = Constants.DEFAULT_TRIPLESTORE;
+
+			
+			damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
+			damsClient.setTripleStore(ds);
+			if(category == null){
+				if(reset != null){
+					filePath = "";
+					//Retrieve default value in the triplestore, then convert it to application value
+					String defaultArkSetting = "";
+					if(defaultArkSetting != null)
+						arkSetting = String.valueOf(convertArkSetting(defaultArkSetting));
+					fileStore = "";
+					session.removeAttribute("filePath");
+					session.removeAttribute("filePrefix");
+					session.removeAttribute("fileFilter");
+					session.removeAttribute("category");
+					session.removeAttribute("arkSetting");
+					session.removeAttribute("preferedOrder");
+					session.removeAttribute("fileStore");
+				}else{
+					filePath = (String) session.getAttribute("filePath");
+					filePrefix = (String) session.getAttribute("filePrefix");
+					fileFilter = (String) session.getAttribute("fileFilter");
+					category = (String) session.getAttribute("category");
+					arkSetting = (String) session.getAttribute("arkSetting");
+					preferedOrder = (String) session.getAttribute("preferedOrder");
+					fileStore = (String) session.getAttribute("fileStore");
+				}
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			message += e.getMessage();
+		}
+
+		Map<String, String> collectionMap = damsClient.listCollections();
+		List<String> tsSrcs = damsClient.listTripleStores();
+		List<String> fsSrcs = damsClient.listFileStores();
+		String fsDefault = damsClient.defaultFilestore();
+		if(fileStore == null || fileStore.length() == 0)
+			fileStore = fsDefault;
+		Map dataMap = new HashMap();
+		dataMap.put("categories", collectionMap);
+		dataMap.put("category", category);
+		dataMap.put("stagingArea", Constants.DAMS_STAGING);
+		dataMap.put("filePath", filePath);
+		dataMap.put("fileFilter", fileFilter);
+		dataMap.put("arkSetting", arkSetting);
+		dataMap.put("message", message);
+		dataMap.put("triplestore", ds);
+		dataMap.put("triplestores", tsSrcs);
+		dataMap.put("filestores", fsSrcs);
+		dataMap.put("filestore", fileStore);
+		dataMap.put("filestoreDefault", fsDefault);
+		dataMap.put("preferedOrder", preferedOrder);
+		return new ModelAndView("ingest", "model", dataMap);
+	}
+	
+	private static int convertArkSetting(String arkSetting){
+		int settingIndex = UploadTaskOrganizer.SIMPLE_LOADING;
+		if(arkSetting.equals("one2many"))
+			settingIndex = UploadTaskOrganizer.COMPLEXOBJECT_LOADING;
+		else if(arkSetting.equals("one2two"))
+			settingIndex = UploadTaskOrganizer.PAIR_LOADING;
+		else if(arkSetting.equals("mix"))
+			settingIndex = UploadTaskOrganizer.MIX_LOADING;
+		else if(arkSetting.equals("share"))
+			settingIndex = UploadTaskOrganizer.SHARE_ARK_LOADING;
+		else if(arkSetting.equals("mixshare"))
+			settingIndex = UploadTaskOrganizer.MIX_CO_SHARE_ARK_LOADING;
+		
+		return settingIndex;
+	}
+ }

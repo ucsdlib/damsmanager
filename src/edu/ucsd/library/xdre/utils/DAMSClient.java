@@ -1,5 +1,6 @@
 package edu.ucsd.library.xdre.utils;
 
+import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -9,9 +10,9 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -21,14 +22,19 @@ import java.util.Properties;
 import java.util.TreeMap;
 
 import javax.activation.FileDataSource;
+import javax.activation.MimetypesFileTypeMap;
 import javax.security.auth.login.LoginException;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.http.Header;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
+import org.apache.http.ParseException;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
@@ -53,10 +59,11 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
-import com.hp.hpl.jena.graph.Triple;
+import com.hp.hpl.jena.rdf.model.Statement;
+
 
 /**
- * DAMSClient perform operations through the DAMS REST API
+ * DAMSClient provide basic functions to consume operations through the DAMS REST API
  * 
  * @author lsitu
  * 
@@ -66,6 +73,7 @@ public class DAMSClient {
 	public static final String DAMS_ARK_URL_BASE = "http://libraries.ucsd.edu/ark:/";
 	public static final String DAMS_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
 	public static final String DAMS_DATE_FORMAT_ALT = "MM-dd-yyyy HH:mm:ss";
+	public static final int MAX_SIZE = 1000000;
 	public static enum DataFormat {rdf, xml, json, mets, html};
 	private static final Logger log = Logger.getLogger(DAMSClient.class);
 
@@ -79,7 +87,6 @@ public class DAMSClient {
 	private SimpleDateFormat damsDateFormatAlt = null;
 	private String fileStore = null;
 	private String tripleStore = null;
-	private String resultFormat = null;
 
 	/**
 	 * Constructor for DAMSClient.
@@ -109,8 +116,8 @@ public class DAMSClient {
 	 */
 	public DAMSClient(String storageURL) throws IOException, LoginException {
 		this();
-		if(!storageURL.endsWith("/"))
-			storageURL += "/";
+		if(storageURL.endsWith("/"))
+			storageURL = storageURL.substring(0, storageURL.length() -1);
 		this.storageURL = storageURL;
 
 	}
@@ -129,24 +136,23 @@ public class DAMSClient {
 		this.prop = prop;
 		if (prop != null && prop.size() > 0) {
 			storageURL = prop.getProperty("storageUrl");
-			if(!storageURL.endsWith("/"))
-				storageURL += "/";
+			if(storageURL.endsWith("/"))
+				storageURL = storageURL.substring(0, storageURL.length() -1);
 		}
 	}
 
 	/**
-	 * Mint an ark
+	 * Mint an ark ID
 	 * 
 	 * @return
-	 * @throws LoginException
-	 * @throws IOException
+	 * @throws Exception 
 	 */
-	public String mintArk(String name) throws LoginException, IOException {
+	public String mintArk(String name) throws Exception {
 		String ark = "";
 		//String url = storageURL + "next_id?format=json" + (name!=null&&name.length()>0?"&name=" + name:"");
-		String url = getDAMSRestURL("next_id", null, null, null, "json") + (name!=null&&name.length()>0?"&name=" + name:"");
+		String url = getDAMSRestURL("next_id", null, null, null, null, "json") + (name!=null&&name.length()>0?"&name=" + name:"");
 		HttpPost post = new HttpPost(url);
-		JSONObject resObj = this.getJSONResult(post);
+		JSONObject resObj = getJSONResult(post);
 		if(resObj != null){
 			JSONArray jsonArr = (JSONArray) resObj.get("ids");
 			if(jsonArr!=null && jsonArr.size() > 0)
@@ -160,12 +166,11 @@ public class DAMSClient {
 	/**
 	 * Retrieve the tripleStores in use.
 	 * @return
-	 * @throws IOException 
-	 * @throws LoginException 
+	 * @throws Exception 
 	 */
-	public List<String> listTripleStores() throws LoginException, IOException{
+	public List<String> listTripleStores() throws Exception{
 		//String url = storageURL + "system/triplestores?format=json";
-		String url = getDAMSRestURL("system", "triplestores", null, null, "json");
+		String url = getDAMSRestURL("system", "triplestores", null, null, null, "json");
 		HttpGet get = new HttpGet(url);
 		JSONObject resObj = getJSONResult(get);
 		JSONArray jsonArr = (JSONArray) resObj.get("triplestores");
@@ -176,14 +181,25 @@ public class DAMSClient {
 	}
 	
 	/**
+	 * Retrieve the default triplestore.
+	 * @return
+	 * @throws Exception 
+	 */
+	public String defaultTriplestore() throws Exception{
+		String url = getDAMSRestURL("system", "triplestores", null, null, null, "json");
+		HttpGet get = new HttpGet(url);
+		JSONObject resObj = getJSONResult(get);
+		return  (String)resObj.get("defaultTriplestore");
+	}
+	
+	/**
 	 * Retrieve the fileStores in use.
 	 * @return
-	 * @throws IOException 
-	 * @throws LoginException 
+	 * @throws Exception 
 	 */
-	public List<String> listFileStores() throws LoginException, IOException{
+	public List<String> listFileStores() throws Exception{
 		//String url = storageURL + "system/filestores?format=json";
-		String url = getDAMSRestURL("system", "filestores", null, null, "json");
+		String url = getDAMSRestURL("system", "filestores", null, null, null, "json");
 		HttpGet get = new HttpGet(url);
 		JSONObject resObj = getJSONResult(get);
 		JSONArray jsonArr = (JSONArray) resObj.get("filestores");
@@ -194,16 +210,85 @@ public class DAMSClient {
 	}
 	
 	/**
+	 * Retrieve the default filestore.
+	 * @return
+	 * @throws Exception 
+	 */
+	public String defaultFilestore() throws Exception{
+		String url = getDAMSRestURL("system", "filestores", null, null, null, "json");
+		HttpGet get = new HttpGet(url);
+		JSONObject resObj = getJSONResult(get);
+		return (String)resObj.get("defaultFilestore");
+	}
+
+	/**
+	 * Retrieve the Repositories in DAMS
+	 * /api/repositories
+	 * @return
+	 * @throws Exception 
+	 */
+	public Map<String, String> listRepositories() throws Exception{
+		Map<String, String> map = null;
+		String url = getDAMSRestURL("repositories", null, null, null, null, "json");
+		url = appendStorageInfo(url);
+		HttpGet get = new HttpGet(url);
+		JSONObject resObj = getJSONResult(get);
+		JSONArray colArr = (JSONArray) resObj.get("repositories");
+		JSONObject col = null;
+		map = new TreeMap<String, String>();
+		for(Iterator it= colArr.iterator(); it.hasNext();){
+			col = (JSONObject)it.next();
+			map.put((String)col.get("name"), stripID((String)col.get("repository")));
+		}
+
+		return map;
+	}
+	
+	/**
+	 * Get a list of objects in a repository.
+	 * /api/repositories/repoId
+	 * @throws Exception 
+	 **/
+	public List<String> listRepoObjects(String repoId) throws Exception {
+		String url = getDAMSRestURL("repositories", repoId, null, null, null, null);
+		HttpGet get = new HttpGet(url);
+		Document doc = getXMLResult(get);
+		List<Node> objectNodes = doc.selectNodes(DOCUMENT_RESPONSE__ROOT_PATH + "/objects/value/obj");
+		Node valNode= null;
+		List<String> objectsList = new ArrayList<String>();
+		for(Iterator it= objectNodes.iterator(); it.hasNext();){
+			valNode = (Node)it.next();
+			objectsList.add(stripID(valNode.getText()));
+		}
+		return objectsList;
+	}
+	
+	/**
+	 * Get a list of files in a repository.\
+	 * /api/repositories/repoId/files 
+	 * @throws Exception 
+	 **/
+	public List<DFile> listRepoFiles(String repoId) throws Exception {
+		JSONObject resObj = null;
+		String url = getDAMSRestURL("repositories", repoId, null, null, "files", "json");
+		HttpGet get = new HttpGet(url);
+		resObj = getJSONResult(get);
+		JSONArray jsonArr = (JSONArray) resObj.get("files");
+		List<DFile> files = new ArrayList<DFile>();
+		for(int i=0; i<jsonArr.size(); i++)
+			files.add(DFile.toDFile((JSONObject)jsonArr.get(i)));
+		return files;
+	}
+	
+	/**
 	 * Retrieve the collections in DAMS
 	 * @return
-	 * @throws IOException 
-	 * @throws LoginException 
-	 * @throws ClientProtocolException 
+	 * @throws Exception 
 	 */
-	public Map<String, String> listCollections() throws ClientProtocolException, LoginException, IOException{
+	public Map<String, String> listCollections() throws Exception{
 		Map<String, String> map = null;
 		//String url = storageURL + "collections?format=json";
-		String url = getDAMSRestURL("collections", null, null, null, "json");
+		String url = getDAMSRestURL("collections", null, null, null, null, "json");
 		url = appendStorageInfo(url);
 		HttpGet get = new HttpGet(url);
 		JSONObject resObj = getJSONResult(get);
@@ -220,23 +305,18 @@ public class DAMSClient {
 
 	/**
 	 * Get a list of objects in a collection.
-	 * 
-	 * @throws LoginException
-	 * @throws DocumentException 
+	 * @throws Exception 
 	 **/
-	public List<String> listObjects(String collectionId) throws IOException, LoginException, DocumentException {
-		//String[] objects = {"bb01010101"};
-
-		String url = getDAMSRestURL("collections", collectionId, null, null, null);
-		//System.out.println("listObjects: " + url);
+	public List<String> listObjects(String collectionId) throws Exception {
+		String url = getDAMSRestURL("collections", collectionId, null, null, null, null);
 		HttpGet get = new HttpGet(url);
 		Document doc = getXMLResult(get);
-		List<Node> objectNodes = doc.selectNodes(DOCUMENT_RESPONSE__ROOT_PATH + "/objects/value");
+		List<Node> objectNodes = doc.selectNodes(DOCUMENT_RESPONSE__ROOT_PATH + "/objects/value/obj");
 		Node valNode= null;
 		List<String> objectsList = new ArrayList<String>();
 		for(Iterator it= objectNodes.iterator(); it.hasNext();){
 			valNode = (Node)it.next();
-			 objectsList.add(stripID(valNode.getText()));
+			objectsList.add(stripID(valNode.getText()));
 		}
 		return objectsList;
 	}
@@ -246,14 +326,11 @@ public class DAMSClient {
 	 * Count number of objects in a collection
 	 * @param collectionId
 	 * @return
-	 * @throws ClientProtocolException
-	 * @throws LoginException
-	 * @throws IOException
+	 * @throws Exception 
 	 */
-	public long countObjects(String collectionId) throws ClientProtocolException, LoginException, IOException{
+	public long countObjects(String collectionId) throws Exception{
 		JSONObject resObj = null;
-		String url = getDAMSRestURL("collections", collectionId, null, "count", "json");
-		//System.out.println("countObjects: " + url);
+		String url = getDAMSRestURL("collections", collectionId, null, null, "count", "json");
 		HttpGet get = new HttpGet(url);
 		resObj = getJSONResult(get);
 		return ((Long)resObj.get("count")).longValue();
@@ -266,12 +343,11 @@ public class DAMSClient {
 	 * @param recursive
 	 * @param destFileId
 	 * @return
-	 * @throws ClientProtocolException
-	 * @throws LoginException
-	 * @throws IOException
+	 * @throws Exception 
 	 */
-	public InputStream transform(String object, String xsl, boolean recursive, String destFileId) throws ClientProtocolException, LoginException, IOException{
-		String url = getDAMSRestURL("objects", object, null, null, null);
+	public InputStream transform(String object, String xsl, boolean recursive, String destFileId) throws Exception{
+		String format = null;
+		String url = getDAMSRestURL("objects", object, null, null, null, format);
 		HttpPost post = new HttpPost(url);
 		List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
 		nameValuePairs.add(new BasicNameValuePair("xsl", xsl));
@@ -280,8 +356,11 @@ public class DAMSClient {
 			nameValuePairs.add(new BasicNameValuePair("dest", destFileId));
 		
 		post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+		int status = -1;
 		try{
-			execute(post);
+			status = execute(post);
+			if (!(status == 200 || status == 201))
+				handleError(format);
 		}finally{
 			post.reset();
 		}
@@ -290,99 +369,235 @@ public class DAMSClient {
 	
 	/**
 	 * Get a list of files in an object.
-	 * 
-	 * @throws LoginException
+	 * @throws Exception 
 	 **/
-	public List<String> listFiles(String object) throws IOException,
-			LoginException {
-		// XXX
-		//Implementation to retrieve the files in an object container/folder
-		return null;
+	public List<DFile> listFiles(String object) throws Exception {
+		JSONObject resObj = null;
+		String url = getDAMSRestURL("objects", object, null, null, "files", "json");
+		HttpGet get = new HttpGet(url);
+		resObj = getJSONResult(get);
+		JSONArray jsonArr = (JSONArray) resObj.get("files");
+		List<DFile> files = new ArrayList<DFile>();
+		for(int i=0; i<jsonArr.size(); i++)
+			files.add(DFile.toDFile((JSONObject)jsonArr.get(i)));
+		return files;
 	}
 	
 	/**
-	 * Retrieve list of the items has the same source file name
+	 * Retrieve the object ID from the original source filename
 	 * @param srcFileName
+	 * @param srcPath
+	 * @param collectionId
 	 * @return
+	 * @throws Exception 
 	 */
-	public List<String> getObjects(String srcFileName){
-		//XXX
-		
-		String[] objects = {"bb01010101"};
-		return Arrays.asList(objects);
+	public List<String> retrieveObjectId(String srcFileName, String srcPath, String collectionId, String repoId) throws Exception{
+		HttpGet req = null;
+		List<String> ids = new ArrayList<String>();
+		String url = "";
+		if(collectionId == null && repoId == null){
+			// Retrieve object from SOLR
+		}else{
+			if(collectionId != null)
+				url = getDAMSRestURL("collections", collectionId, null, null, "files", "xml");
+			else
+				url = getDAMSRestURL("repositories", collectionId, null, null, "files", "xml");
+		}
+
+		try{
+
+			req = new HttpGet(url);
+			Document doc = getXMLResult(req);
+			List<Node> idNodes = doc.selectNodes(DOCUMENT_RESPONSE__ROOT_PATH + "/files/value/id[sourceFilename='" + StringEscapeUtils.unescapeXml(srcFileName) + "']");
+			if(idNodes != null){
+				String id = null;
+				String filePath = null;
+				Node idNode = null;
+				int nSize =  idNodes.size();
+				for(int i=0; i<nSize; i++){
+					id = idNodes.get(i).getText();
+					//Source path restriction
+					if(srcPath != null && srcPath.length() > 0){
+						idNode = doc.selectSingleNode(DOCUMENT_RESPONSE__ROOT_PATH + "/files/value/sourcePath[id='" + id + "']");
+						if(idNode != null){
+							filePath = idNode.getText();
+							if(srcPath.equalsIgnoreCase(filePath)){
+								ids.add(id);
+							}
+						}
+					} else {
+						ids.add(id);
+					}
+				}
+			}
+		}finally{
+			req.reset();
+		}
+		return ids;
 	}
 	
 	
 	/**
-	 * Perform crc32 file checksum
+	 * Perform file checksum validation
 	 * @param subjectId
 	 * @param fileName
 	 * @return
+	 * @throws Exception 
 	 */
-	public String checksum (String subjectId, String fileName){
-		//XXX
-		return null;
+	public boolean checksum (String object, String compId, String fileName) throws Exception{
+		// http://gimili.ucsd.edu:8080/dams/api/files/bb01010101/1/1.tif/fixity?format=json
+		// {"crc32":"5ffa698b","md5":"f69c4f85cafbe05e55068cedd4353146","statusCode":200,"request":"\/files\/bb01010101\/1\/1.tif\/fixity","status":"OK"}
+		JSONObject resObj = null;
+		String url = getDAMSRestURL("files", compId, object, fileName, "fixity", "json");
+		HttpGet get = new HttpGet(url);
+		resObj = getJSONResult(get);
+		String status = (String) resObj.get("status");
+		return status != null && status.equalsIgnoreCase("ok");
 	}
 	
 	/**
 	 * Create derivative.
 	 * 
 	 * @param object
+	 * @param compId
 	 * @param fileName
 	 *            Source file name.
-	 * @param derName
-	 *            List of derivative name.
-	 * @param sizeWH
-	 * @param frameNo
+	 * @param size
+	 * 			List of derivative names: 2 (768x768), 3(450x450), 4(150x150), and 5(65x65) or actually size like 150x150.
 	 * @return
+	 * @throws Exception 
 	 */
-	public boolean createDerivative(String subjectId, String srcFileName, String derFileName, String[] sizeWH, int frameNo) {
+	public boolean createDerivatives(String object, String compId, String fileName, String size, String frame) throws Exception {
+		String format = null;
+		String url = getDAMSRestURL("files", object, compId, fileName, "derivatives", format);
+		HttpPost req = new HttpPost(url);
+		List<NameValuePair> params = new ArrayList<NameValuePair>();
+		if(size != null && size.length() > 0 || frame != null && frame.length() > 0){
+			if(size != null && size.length() > 0)
+				params.add(new BasicNameValuePair("size", size));
+			if(frame != null && frame.length() > 0)
+				params.add(new BasicNameValuePair("frame", frame));
+			req.setEntity(new UrlEncodedFormEntity(params));
+		}
+
 		int status = -1;
-		// XXX
-		return status == 200;
+		boolean success = false;
+		try {
+			status = execute(req);
+			if (success=!(status == 200 || status == 201))
+				handleError(format);
+		} finally {
+			req.reset();
+		}
+
+		return success;
 	}
 
 	/**
+	 * Create derivative.
+	 * 
+	 * @param object
+	 * @param compId
+	 * @param fileName
+	 *            Source file name.
+	 * @param size
+	 * 			List of derivative names: 2 (768x768), 3(450x450), 4(150x150), and 5(65x65) or actually size like 150x150.
+	 * @return
+	 * @throws Exception 
+	 */
+	public boolean createDerivatives(String object, String compId, String fileName, String size) throws Exception {
+
+		return createDerivatives(object, compId, fileName, size, null);
+	}
+
 	/**
 	 * Update derivative.
 	 * 
 	 * @param object
+	 * @param compId
 	 * @param fileName
 	 *            Source file name.
-	 * @param derName
-	 *            List of derivative name.
-	 * @param sizeWH
-	 * @param frameNo
+	 * @param size
+	 *            List of derivative names: 2 (768x768), 3(450x450), 4(150x150), and 5(65x65) or actually size like 150x150.
+	 * @param frame
 	 * @return
+	 * @throws Exception 
 	 */
-	public boolean updateDerivative(String subjectId, String srcFileName, String derFileName, String[] sizeWH, int frameNo) {
+	public boolean updateDerivatives(String object, String compId, String fileName, String  size, String frame) throws Exception {
+		String format = null;
+		String url = getDAMSRestURL("files", object, compId, fileName, "derivatives", format);
+		HttpEntityEnclosingRequestBase req = new HttpPut(url);
+		if(exists(object, compId, fileName))
+			req = new HttpPut(url);
+		else
+			req = new HttpPost(url);
+		List<NameValuePair> params = new ArrayList<NameValuePair>();
+		if(size != null && size.length() > 0 || frame != null && frame.length() > 0){
+			if(size != null && size.length() > 0)
+				params.add(new BasicNameValuePair("size", size));
+			if(frame != null && frame.length() > 0)
+				params.add(new BasicNameValuePair("frame", frame));
+			req.setEntity(new UrlEncodedFormEntity(params));
+		}
 		int status = -1;
-		// XXX
-		return status == 200;
-	}
+		boolean success = false;
+		try {
+			status = execute(req);
+			if (success=!(status == 200 || status == 201))
+				handleError(format);
+		} finally {
+			req.reset();
+		}
 
-	/**
-	 * Push a record in SOLR.
-	 * 
-	 * @param object
-	 * @return
-	 */
-	public boolean solrIndex(String object, boolean update) {
-		// XXX
-		int status = -1;
-		return status == 200;
+		return success;
 	}
 	
 	/**
-	 * Update a record in SOLR.
+	 * Update derivative.
+	 * 
+	 * @param object
+	 * @param compId
+	 * @param fileName
+	 *            Source file name.
+	 * @param size
+	 *            List of derivative names: 2 (768x768), 3(450x450), 4(150x150), and 5(65x65) or actually size like 150x150.
+	 * @return
+	 * @throws Exception 
+	 */
+	public boolean updateDerivatives(String object, String compId, String fileName, String  size) throws Exception {
+
+		return updateDerivatives(object, compId, fileName, size, null);
+	}
+
+	
+	/**
+	 * Push or Update a record in SOLR.
 	 * 
 	 * @param object
 	 * @return
+	 * @throws IOException 
+	 * @throws LoginException 
+	 * @throws ClientProtocolException 
+	 * @throws DocumentException 
+	 * @throws IllegalStateException 
 	 */
-	public boolean solrUpdate(String object, boolean update) {
-		// XXX
+	public boolean solrUpdate(String object) throws Exception {
+		//POST /objects/bb1234567x/index
+		String format = "json";
+		String url = getDAMSRestURL("objects", object, null, null, "update", format);
+		HttpPost post = new HttpPost(url);
 		int status = -1;
-		return status == 200;
+		boolean success = false;
+		try {
+			status = execute(post);
+
+			if (success=!(status == 200 || status == 201))
+				handleError(format);
+		} finally {
+			post.reset();
+		}
+
+		return success;
 	}
 
 	/**
@@ -390,11 +605,27 @@ public class DAMSClient {
 	 * 
 	 * @param object
 	 * @return
+	 * @throws DocumentException 
+	 * @throws IOException 
+	 * @throws LoginException 
+	 * @throws IllegalStateException 
 	 */
-	public boolean solrDelete(String object) {
-		// XXX
+	public boolean solrDelete(String object) throws Exception {
+		//DELETE /objects/bb1234567x/index
+		String format = "json";
+		String url = getDAMSRestURL("objects", object, null, null, "update", format);
+		HttpDelete del= new HttpDelete(url);
 		int status = -1;
-		return status == 200;
+		boolean success = false;
+		try {
+			status = execute(del);
+
+			if (success=!(status == 200 || status == 201))
+				handleError(format);
+		} finally {
+			del.reset();
+		}
+		return success;
 	}
 
 	/**
@@ -430,26 +661,25 @@ public class DAMSClient {
 	 * @param object
 	 * @param format
 	 * @return
-	 * @throws ClientProtocolException
-	 * @throws LoginException
-	 * @throws IOException
+	 * @throws Exception 
 	 */
 	public String getMetadata(String object, String format)
-			throws ClientProtocolException, LoginException, IOException {
-		//String url = storageURL + "objects/" + toUrlPath(object, null) + (format!=null?"?format=" + format:"");
-		String url = getDAMSRestURL("objects", object, null, null, format);
-		//System.out.println("getMetadata: " + url);
-		HttpGet get = new HttpGet(url);
+			throws Exception {
+		String url = getDAMSRestURL("objects", object, null, null, null, format);
+		HttpGet req = new HttpGet(url);
+		int status = -1;
 		try {
-			execute(get);
+			status = execute(req);
+			if (status != 200)
+				handleError(format);
 		} finally {
-			get.reset();
+			req.reset();
 		}
 		return EntityUtils.toString(response.getEntity());
 	}
 
 	/**
-	 * Update technical metadata with Jhove extraction and additional
+	 * Extract technical metadata with Jhove extraction and additional
 	 * NameValuePairs
 	 * 
 	 * @param object
@@ -457,25 +687,26 @@ public class DAMSClient {
 	 * @param optionalParams
 	 *            additional NameValuePairs that can add to the file.
 	 * @return
-	 * @throws ClientProtocolException
-	 * @throws LoginException
-	 * @throws IOException
+	 * @throws Exception 
 	 */
-	public boolean createTechnicalMetadata(String object, String fileName,
-			List<NameValuePair> optionalParams) throws ClientProtocolException,
-			LoginException, IOException {
-		//String url = storageURL + "files/" + toUrlPath(object, fileName) + "/characterize";
-		String url = getDAMSRestURL("files", object, fileName, "characterize", null);
+	public boolean saveFileCharacterize(String object, String compId, String fileName,
+			List<NameValuePair> optionalParams) throws Exception {
+		String format = null;
+		String url = getDAMSRestURL("files", object, compId, fileName, "characterize", format);
 		HttpPost post = new HttpPost(url);
 		post.setEntity(new UrlEncodedFormEntity(optionalParams));
 		int status = -1;
+		boolean success = false;
 		try {
 			status = execute(post);
+
+			if (success=!(status == 200 || status == 201))
+				handleError(format);
 		} finally {
 			post.reset();
 		}
 
-		return status == 200;
+		return success;
 	}
 
 	/**
@@ -487,25 +718,48 @@ public class DAMSClient {
 	 * @param optionalParams
 	 *            additional NameValuePairs that can add to the file.
 	 * @return
-	 * @throws ClientProtocolException
-	 * @throws LoginException
-	 * @throws IOException
+	 * @throws Exception 
 	 */
-	public boolean updateTechnicalMetadata(String object, String fileName,
-			List<NameValuePair> optionalParams) throws ClientProtocolException,
-			LoginException, IOException {
-		//String url = storageURL + "files/" + toUrlPath(object, fileName) + "/characterize";
-		String url = getDAMSRestURL("files", object, fileName, "characterize", null);
-		HttpPut put = new HttpPut(url);
-		put.setEntity(new UrlEncodedFormEntity(optionalParams));
+	public boolean updateFileCharacterize(String object, String compId, String fileName,
+			List<NameValuePair> optionalParams) throws Exception {
+		String format = null;
+		String url = getDAMSRestURL("files", object, compId, fileName, "characterize", format);
+		HttpPut req = new HttpPut(url);
+		req.setEntity(new UrlEncodedFormEntity(optionalParams));
 		int status = -1;
+		boolean success = false;
 		try {
-			status = execute(put);
+			status = execute(req);
+			if (success=!(status == 200 || status == 201))
+				handleError(format);
 		} finally {
-			put.reset();
+			req.reset();
 		}
 
-		return status == 200;
+		return success;
+	}
+	
+	/**
+	 * Extract Jhove but not save to the triplestore
+	 * @param object
+	 * @param fileName
+	 * @return
+	 * @throws Exception 
+	 */
+	public DFile extractFileCharacterize(String object, String compId, String fileName) throws Exception {
+		String url = getDAMSRestURL("files", object, compId, fileName, "characterize", "json");
+		HttpGet req = new HttpGet(url);
+		DFile dfile = null;
+		try {
+			JSONObject result = getJSONResult(req);
+			JSONArray dfiles = (JSONArray) result.get("files");
+			if (dfiles.size() > 0)
+				dfile = DFile.toDFile((JSONObject)dfiles.get(0));
+		} finally {
+			req.reset();
+		}
+
+		return dfile;
 	}
 	
 	/**
@@ -516,10 +770,9 @@ public class DAMSClient {
 	 * @return
 	 * @throws Exception
 	 */
-	public boolean exists(String object, String fileName) throws Exception {
+	public boolean exists(String object, String compId, String fileName) throws Exception {
 		boolean exists = false;
-
-		//String url = storageURL;
+		String format = null;
 		String url = null;
 		
 		if (object != null && (object = object.trim()).length() > 0) {
@@ -527,45 +780,35 @@ public class DAMSClient {
 			if (fileName != null && (fileName = fileName.trim()).length() > 0)
 				path = "files";
 				
-			url = getDAMSRestURL(path, object, fileName, "exists", null);
-			/*if (fileName != null && (fileName = fileName.trim()).length() > 0) {
-				url += "files/" + toUrlPath(object, fileName) + "/exists";
-			} else {
-				url += "objects/" + toUrlPath(object, null);
-			}*/
+			url = getDAMSRestURL(path, object, compId, fileName, "exists", format);
 		} else {
 			throw new Exception("Object identifier must be specified");
 		}
-
-		//url = appendStorageInfo(url);
-		//System.out.println("exists: " + url);
-		HttpGet request = new HttpGet(url);
+		HttpGet req = new HttpGet(url);
 		int status = -1;
 		try {
-			status = execute(request);
+			status = execute(req);
 			if (status == 200) {
 				exists = true;
-			} else
-				log.error("Unexpected status for exists check: " + status
-						+ ": " + url);
+			} else if (status == 404) 
+				exists = false;
+			else
+				handleError(format);
 		} catch(FileNotFoundException e){
 			exists = false;
 		} finally {
-			request.reset();
+			req.reset();
 		}
 		return exists;
 	}
 
 	/**
-	 * Get a list of predicates.
-	 * 
-	 * @throws LoginException
-	 * @throws DocumentException 
+	 * Get the list of predicates in use.
+	 * @throws Exception 
 	 **/
-	public Map<String, String> getPredicates() throws IOException, LoginException, DocumentException {
+	public Map<String, String> getPredicates() throws Exception {
 		Map<String, String> predicates = new HashMap<String, String>();
-		//String url = storageURL + "system/predicates";
-		String url = getDAMSRestURL("system", null, null, "predicates", null);
+		String url = getDAMSRestURL("system", null, null, null, "predicates", null);
 		HttpGet get = new HttpGet(url);
 		Document doc = getXMLResult(get);
 		List<Node> nodes = doc.selectNodes(DOCUMENT_RESPONSE__ROOT_PATH + "/predicates/value");
@@ -580,28 +823,21 @@ public class DAMSClient {
 
 	/**
 	 * Retrieve a file and copy it to another location.
-	 * 
-	 * @throws LoginException
+	 * @throws Exception 
 	 **/
-	public int download(String object, String fileName, String destFile)
-			throws IOException, LoginException {
+	public int download(String object, String compId, String fileName, String destFile)
+			throws Exception {
 
 		InputStream in = null;
 		OutputStream out = null;
 		int bytesRead = -1;
 		try {
-			in = read(object, fileName);
+			in = read(object, compId, fileName);
 			out = new FileOutputStream(destFile);
 			bytesRead = copy(in, out);
 		} finally {
-			if (in != null) {
-				in.close();
-				in = null;
-			}
-			if (out != null) {
-				out.close();
-				out = null;
-			}
+			close(in);
+			close(out);
 		}
 		log.info(bytesRead + " bytes written to " + destFile);
 		return bytesRead;
@@ -614,209 +850,154 @@ public class DAMSClient {
 	 * @param object
 	 * @param fileName
 	 * @return
+	 * @throws Exception 
 	 * @throws DAMSException
-	 * @throws IOException
-	 * @throws LoginException
 	 */
-	public InputStream read(String object, String fileName) throws IOException,
-			LoginException {
-		/*String url = storageURL;
-		if (fileName != null && (fileName = fileName.trim()).length() > 0)
-			url += "files/" + toUrlPath(object, fileName);
-		else
-			url += "objects/" + toUrlPath(object, null);*/
+	public InputStream read(String object, String compId, String fileName) throws Exception {
+		String format = null;
 		String path = "objects";
 		if (fileName != null && (fileName = fileName.trim()).length() > 0)
 			path = "files";
-		String url = getDAMSRestURL(path, object, fileName, null, null);
+		String url = getDAMSRestURL(path, object, compId, fileName, null, format);
 		url = appendStorageInfo(url);
-		log.info("url: " + url);
 		HttpGet get = new HttpGet(url);
-		execute(get);
+		int status = -1;
+		try{
+			status = execute(get);
+			if(status != 200)
+				handleError(format);
+		}finally{
+			get.reset();
+		}
 
 		return new HttpContentInputStream(response.getEntity().getContent(), get);
 	}
 
-	
 	/**
-	 * Create a file.
+	 * Create, update/replace a file.
 	 * 
 	 * @param object
 	 * @param fileName
-	 * @param srcFile
+	 * @param in
+	 * @param len
 	 * @return
-	 * @throws IOException
-	 * @throws LoginException
+	 * @throws Exception 
 	 */
-	public boolean createFile(String object, String fileName, String srcFile) throws IOException, LoginException {
-		//String url = storageURL + "files/" + toUrlPath(object, fileName);
-		//url = appendStorageInfo(url);
-		String url = getDAMSRestURL("files", object, fileName, null, null);
-		HttpPost post = new HttpPost(url);
+	public boolean uploadFile(String object, String compId, String fileName, String srcFile) throws Exception {
+		return uploadFile(object, compId, fileName, srcFile, null);
+	}
+	
+	/**
+	 * Create, update/replace a file.
+	 * 
+	 * @param object
+	 * @param fileName
+	 * @param in
+	 * @param len
+	 * @return
+	 * @throws Exception 
+	 */
+	public boolean uploadFile(String object, String compId, String fileName, String srcFile, String use) throws Exception {
+		String format = null;
+		HttpEntityEnclosingRequestBase req = null;
+		//MultipartPostMethod req = new MultipartPostMethod();
+		String url = getDAMSRestURL("files", object, compId, fileName, null, null);
 		int status = -1;
+		boolean success = false;
 		try {
+			if(exists(object, compId, fileName)) {
+				req = new HttpPut(url);
+			} else {
+				req = new HttpPost(url);
+			}
+			MultipartEntity ent = toMultiPartEntity(srcFile);
 			File file = new File(srcFile);
-			MultipartEntity ent = new MultipartEntity();
-			ent.addPart("fileName", new StringBody(file.getName()));
-			String contentType = new FileDataSource(srcFile).getContentType();
-			FileBody fileBody = new FileBody(file, contentType);
-			ent.addPart("file", fileBody);
-			post.setEntity(ent);
-			status = execute(post);
+			ent.addPart("dateCreated", new StringBody(damsDateFormat.format(file.lastModified())));
+			if(use != null && use.length() > 0)
+				ent.addPart("use", new StringBody(use));
+			int idx = srcFile.indexOf(Constants.DAMS_STAGING);
+			if(idx == 0){
+				ent.addPart("local", new StringBody(srcFile.substring(idx+Constants.DAMS_STAGING.length())));
+			}
+			
+			req.setEntity(ent);
+			status = execute(req);
+			if(success=!(status == 200 || status == 201))
+				handleError(format);
 		} finally {
-			post.reset();
+			req.reset();
 		}
-		return status == 201 ;
+		return success;
 	}
 	
 	/**
-	 * Create a file
-	 * @param object
-	 * @param fileName
-	 * @param in
-	 * @param len
-	 * @return
-	 * @throws IOException
-	 * @throws LoginException
-	 */
-	public boolean createFile(String object, String fileName, InputStream in, long len) throws IOException, LoginException {
-		//String url = storageURL + "files/" + toUrlPath(object, fileName);
-		//url = appendStorageInfo(url);
-		String url = getDAMSRestURL("files", object, fileName, null, null);
-		HttpPost post = new HttpPost(url);
-		int status = -1;
-		try {
-			String contentType = new FileDataSource(fileName).getContentType();
-			//InputStreamEntity ent = new InputStreamEntity(in, len, ContentType.create(contentType));
-			InputStreamBody inputBody = new InputStreamBody(in, contentType);
-			MultipartEntity ent = new MultipartEntity();
-			ent.addPart("file", inputBody);
-			post.setEntity(ent);
-			status = execute(post);
-		} finally {
-			post.reset();
-		}
-		return status == 201 ;
-	}
-
-	/**
-	 * Replace a file.
+	 * Create, update/replace a file.
 	 * 
 	 * @param object
 	 * @param fileName
 	 * @param in
 	 * @param len
 	 * @return
-	 * @throws IOException
-	 * @throws LoginException
+	 * @throws Exception 
 	 */
-	public boolean updateFile(String object, String fileName, String srcFile) throws IOException, LoginException {
-		//String url = storageURL + "files/" + toUrlPath(object, fileName);
-		//url = appendStorageInfo(url);
-		String url = getDAMSRestURL("files", object, fileName, null, null);
-		HttpPut put = new HttpPut(url);
+	public boolean uploadFile(String object, String compId, String fileName, InputStream in, long len) throws Exception {
+		HttpEntityEnclosingRequestBase req = null;
+		String format = null;
+		String url = getDAMSRestURL("files", object, compId, fileName, null, format);
+		String contentType = new FileDataSource(fileName).getContentType();
 		int status = -1;
+		boolean success = false;
 		try {
-			File file = new File(srcFile);
-			MultipartEntity ent = new MultipartEntity();
-			ent.addPart("fileName", new StringBody(file.getName()));
-			String contentType = new FileDataSource(srcFile).getContentType();
-			FileBody fileBody = new FileBody(file, contentType);
-			ent.addPart("file", fileBody);
-			put.setEntity(ent);
-			status = execute(put);
+			
+			if(exists(object, compId, fileName)){
+				req = new HttpPut(url);
+			} else {
+				req = new HttpPost(url);
+			}
+			req.setEntity(toMultiPartEntity( in, contentType));
+			status = execute(req);
+			if(success=!(status == 200 || status == 201))
+				handleError(format);
 		} finally {
-			put.reset();
+			req.reset();
 		}
-		return status == 200;
-	}
-	
-	/**
-	 * Replace a file.
-	 * 
-	 * @param object
-	 * @param fileName
-	 * @param in
-	 * @param len
-	 * @return
-	 * @throws IOException
-	 * @throws LoginException
-	 */
-	public boolean updateFile(String object, String fileName, InputStream in, long len) throws IOException, LoginException {
-		//String url = storageURL + "files/" + toUrlPath(object, fileName);
-		//url = appendStorageInfo(url);
-		String url = getDAMSRestURL("files", object, fileName, null, null);
-		HttpPut put = new HttpPut(url);
-		int status = -1;
-		try {
-			String contentType = new FileDataSource(fileName).getContentType();
-			//InputStreamEntity ent = new InputStreamEntity(in, len, ContentType.create(contentType));
-			InputStreamBody inputBody = new InputStreamBody(in, contentType);
-			MultipartEntity ent = new MultipartEntity();
-			ent.addPart("file", inputBody);
-			put.setEntity(ent);
-			status = execute(put);
-		} finally {
-			put.reset();
-		}
-		return status == 200;
+		return success;
 	}
 
-
 	/**
-	 * Create the object with the triples.
+	 * Create, update/replace an object with a object RDF XML.
 	 * 
 	 * @param object
 	 * @param triples
 	 * @return
-	 * @throws ClientProtocolException
-	 * @throws LoginException
-	 * @throws IOException
+	 * @throws Exception 
 	 */
-	public boolean createObject(String object, List<Triple> triples)
-			throws ClientProtocolException, LoginException, IOException {
-		//String url = storageURL + "objects/" + toUrlPath(object, null);
-		//url = appendStorageInfo(url);
-		String url = getDAMSRestURL("objects", object, null, null, null);
-		HttpPost request = new HttpPost(url);
-		// XXX
-		// Create the object with the triples.
-
-		int status = -1;
-		try {
-			status = execute(request);
-		} finally {
-			request.reset();
+	public boolean updateObject(String object, String xml)
+			throws Exception {
+		
+		String format = null;
+		HttpEntityEnclosingRequestBase req = null;
+		String url = getDAMSRestURL("objects", object, null, null, null, format);
+		if(exists(object, null, null)) {
+			req = new HttpPut(url);
+		} else {
+			req = new HttpPost(url);
 		}
-		return status == 200;
-	}
-
-	/**
-	 * Create the object with the triples.
-	 * 
-	 * @param object
-	 * @param triples
-	 * @return
-	 * @throws ClientProtocolException
-	 * @throws LoginException
-	 * @throws IOException
-	 */
-	public boolean updateObject(String object, List<Triple> triples)
-			throws ClientProtocolException, LoginException, IOException {
-		//String url = storageURL + "objects/" + toUrlPath(object, null);
-		//url = appendStorageInfo(url);
-		String url = getDAMSRestURL("objects", object, null, null, null);
-		HttpPost request = new HttpPost(url);
-		// XXX
-		// Create the object with the triples.
-
+	
+		ByteArrayInputStream in = null;
 		int status = -1;
+		boolean success = false;
 		try {
-			status = execute(request);
+			in = new ByteArrayInputStream(xml.getBytes());
+			req.setEntity(toMultiPartEntity(in, "text/xml"));
+			status = execute(req);
+			if(success=!(status == 200 || status == 201))
+				handleError(format);
 		} finally {
-			request.reset();
+			req.reset();
+			close(in);
 		}
-		return status == 200;
+		return success;
 	}
 
 	/**
@@ -825,26 +1006,53 @@ public class DAMSClient {
 	 * @param object
 	 * @param triples
 	 * @return
-	 * @throws ClientProtocolException
-	 * @throws LoginException
-	 * @throws IOException
+	 * @throws Exception 
 	 */
-	public boolean addMetadata(String object, List<Triple> triples)
-			throws ClientProtocolException, LoginException, IOException {
-		//String url = storageURL + toUrlPath(object, null);
-		//url = appendStorageInfo(url);
-		String url = getDAMSRestURL("objects", object, null, null, null);
-		HttpPut request = new HttpPut(url);
-		// XXX
-		// Update triples
+	public boolean addMetadata(String object, List<Statement> stmts)
+			throws Exception {
+		String format = null;
+		HttpEntityEnclosingRequestBase req = null;
+		String url = getDAMSRestURL("objects", object, null, null, null, format);
+
+		List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
+		nameValuePairs.add(new BasicNameValuePair("subject", object));
+		nameValuePairs.add(new BasicNameValuePair("adds", toJSONString(stmts)));
+		nameValuePairs.add(new BasicNameValuePair("mode", "add"));
 
 		int status = -1;
+		boolean success = false;
 		try {
-			status = execute(request);
+			if(exists(object, null, null)) {
+				req = new HttpPut(url);
+			} else {
+				req = new HttpPost(url);
+			}
+			req.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+			status = execute(req);
+			if(success=!(status == 200 || status == 201))
+				handleError(format);
 		} finally {
-			request.reset();
+			req.reset();
 		}
-		return status == 200;
+		return success;
+	}
+	
+	/**
+	 * Add metadata elements to an object
+	 * 
+	 * @param object
+	 * @param triples
+	 * @return
+	 * @throws Exception 
+	 */
+	public boolean addMetadata(String object, String xml)
+			throws Exception {
+		List<Statement> stmts = new ArrayList<Statement>();
+		// XXX
+		// Convert xml metadata elements to Statement
+		
+		
+		return  addMetadata(object, stmts);
 	}
 
 	/**
@@ -855,32 +1063,29 @@ public class DAMSClient {
 	 *            If not null, delete this file.
 	 * @throws Exception
 	 **/
-	public boolean delete(String object, String fileName) throws Exception {
+	public boolean delete(String object, String compId, String fileName) throws Exception {
+		String format = null;
 		String url = null;
 		String path = "objects";
-		//String url = storageURL;
 		if (object != null && (object = object.trim()).length() > 0) {
 			if (fileName != null && (fileName = fileName.trim()).length() > 0)
 				path = "files";
-			url = getDAMSRestURL(path, object, fileName, null, null);
-			/*if (fileName != null && (fileName = fileName.trim()).length() > 0) {
-				url += "files/" + toUrlPath(object, fileName);
-			} else {
-				url += "objects/" + toUrlPath(object, null);
-			}*/
+			url = getDAMSRestURL(path, object, compId, fileName, null, format);
 		} else {
 			throw new Exception("Object identifier must be specified");
 		}
 
-		//url = appendStorageInfo(url);
 		HttpDelete del = new HttpDelete(url);
 		int status = -1;
+		boolean success = false;
 		try {
 			status = execute(del);
+			if(success=!(status == 200 || status == 201))
+				handleError(format);
 		} finally {
 			del.reset();
 		}
-		return status == 200;
+		return success;
 	}
 
 	/**
@@ -891,49 +1096,17 @@ public class DAMSClient {
 	 * @throws IOException
 	 * @throws LoginException
 	 */
-	public int execute(HttpRequestBase request) throws ClientProtocolException,
+	public int execute(HttpRequestBase req) throws ClientProtocolException,
 			IOException, LoginException {
 
-		this.request = request;
+		this.request = req;
 		if (httpContext != null) {
 			response = client.execute(request, httpContext);
 		} else {
 			response = client.execute(request);
 		}
-		int status = response.getStatusLine().getStatusCode();
-		//200 - OK: Success, object/file exists
-		//201 - Created: File/object created successfully
-		if (!(status == 200 || status == 201)) {
-			
-			//403 - Forbidden: Deleting non-existing file, using POST to update or PUT to create
-			if (status == 403) {  
-				log.info("HTTP status: " + status + ". Login required: "
-						+ request.getMethod() + " " + request.getURI() + ".");
-				throw new LoginException("HTTP Status: " + status);
-				
-			//404 - Not Found: Object/file does not exist 
-			} else if (status == 404) { 
-				log.info("HTTP status 404. Resource not found: "
-						+ request.getMethod() + " " + request.getURI() + ".");
-				throw new FileNotFoundException(
-						"HTTP status 404. Resource not found: "
-								+ request.getMethod() + " " + request.getURI()
-								+ ".");
-				
-			//500 - Internal Error: Other errors
-			}  else if (status == 500) {  
-				logError();
-				
-			//502 - Unavailable: Too many uploads 
-			} else if (status == 502) { 
-				logError();
-				
-			//Unknown status code
-			} else { 
-				logError();
-			}
-		}
-		return status;
+
+		return response.getStatusLine().getStatusCode();
 	}
 	
 	/**
@@ -948,29 +1121,33 @@ public class DAMSClient {
 	 * 			xml, html, json, ntriple, etc.
 	 * @return
 	 */
-	private String getDAMSRestURL(String path, String object, String fileName, String function, String format){
-		return appendStorageInfo(storageURL + path + toUrlPath(object, fileName) + (function!=null&&function.length()>0?"/" + function:"") + (format!=null&&format.length()>0?"?format="+format:""));
+	private String getDAMSRestURL(String path, String object, String compId, String fileName, String function, String format){
+		return appendStorageInfo(storageURL + "/" + path + toUrlPath(object, compId, fileName) + (function!=null&&function.length()>0?"/" + function:"") + (format!=null&&format.length()>0?"?format="+format:""));
 	}
 	
 	/**
 	 * Execute http request for JSON format
 	 * @param request
 	 * @return
-	 * @throws ClientProtocolException
-	 * @throws LoginException
-	 * @throws IOException
+	 * @throws Exception 
 	 */
-	public JSONObject getJSONResult(HttpRequestBase request) throws ClientProtocolException, LoginException, IOException{
+	public JSONObject getJSONResult(HttpRequestBase req) throws Exception{
 		JSONObject resObj = null;
 		InputStream in = null;
 		Reader reader = null;
+		int status = -1;
 		try {
-			execute(request);
+			status = execute(req);
 		
-			in = response.getEntity().getContent();
-			resObj = (JSONObject) JSONValue.parse(new InputStreamReader(in));
+			if(status == 200){
+				in = response.getEntity().getContent();
+				reader = new InputStreamReader(in);
+				resObj = (JSONObject) JSONValue.parse(reader);
+			}else{
+				handleError("json");
+			}
 		}finally{
-			request.reset();
+			req.reset();
 			close(in);
 			close(reader);
 		}
@@ -981,21 +1158,22 @@ public class DAMSClient {
 	 * Execute http request for XML format
 	 * @param request
 	 * @return
-	 * @throws ClientProtocolException
-	 * @throws LoginException
-	 * @throws IOException
-	 * @throws DocumentException 
+	 * @throws Exception 
 	 */
-	public Document getXMLResult(HttpRequestBase request) throws ClientProtocolException, LoginException, IOException, DocumentException{
+	public Document getXMLResult(HttpRequestBase request) throws Exception{
 		Document resObj = null;
 		InputStream in = null;
 		SAXReader reader = null;
+		int status = -1;
 		try {
-			reader = new SAXReader();
-			execute(request);
-		
-			in = response.getEntity().getContent();
-			resObj = reader.read(in);
+			status = execute(request);
+			if(status == 200){
+				reader = new SAXReader();
+				in = response.getEntity().getContent();
+				resObj = reader.read(in);
+			}else{
+				handleError("json");
+			}
 		}finally{
 			request.reset();
 			close(in);
@@ -1022,8 +1200,6 @@ public class DAMSClient {
 			storageParams = "fs=" + fileStore;
 		if (tripleStore != null)
 			storageParams = (storageParams.length() > 0 ? "&" : "") + "ds=" + tripleStore;
-		if (resultFormat != null)
-			storageParams = (storageParams.length() > 0 ? "&" : "") + "format=" + resultFormat;
 		if (storageParams.length() > 0) {
 			int idx = url.indexOf('?');
 			if (idx < 0)
@@ -1042,15 +1218,16 @@ public class DAMSClient {
 	 * @param fileName
 	 * @return
 	 */
-	public String toUrlPath(String objectId, String fileName){
-		if(fileName == null || fileName.length() == 0)
-			fileName = "";
-		else
-			fileName = "/" + (fileName.startsWith("0-")?fileName.substring(2):fileName);
-		if(objectId == null  || objectId.length() == 0)
-			objectId = "";
-		String path = (objectId + fileName).replace("-", "/");
-		return path.length()>0?"/"+path:"";
+	public String toUrlPath(String objectId, String compId, String fileName){
+		String path = "";
+		// Object path
+		path += (objectId != null&&objectId.length()>0)?"/" + objectId:"";
+		// Component path
+		path += (compId!=null&&compId.length()>0)?"/" + compId:"";
+		// File path
+		path += (fileName!=null&&fileName.length()>0)?"/" + fileName:"";
+
+		return path;
 	}
 
 	/**
@@ -1058,14 +1235,15 @@ public class DAMSClient {
 	 * 
 	 * @param url
 	 * @return
-	 * @throws IOException
-	 * @throws LoginException
+	 * @throws Exception 
 	 */
-	public String getContentBodyAsString(String url) throws IOException,
-			LoginException {
+	public String getContentBodyAsString(String url) throws Exception {
 		HttpGet get = new HttpGet(url);
+		int status = -1;
 		try {
-			execute(get);
+			status = execute(get);
+			if(status != 200)
+				handleError(null);
 		} finally {
 			get.reset();
 		}
@@ -1074,24 +1252,93 @@ public class DAMSClient {
 
 	/**
 	 * Log response header and body information.
-	 * 
-	 * @throws IOException
-	 * @throws LoginException
+	 * @throws IOException 
+	 * @throws IllegalStateException 
+	 * @throws DocumentException 
+	 * @throws LoginException 
+	 * @throws Exception 
 	 */
-	public void logError() throws IOException, LoginException {
+	public void handleError(String format) throws IllegalStateException, IOException, DocumentException, LoginException {
 		int status = response.getStatusLine().getStatusCode();
-
 		System.out.println(request.getRequestLine());
 		Header[] headers = response.getAllHeaders();
 		for (int i = 0; i < headers.length; i++) {
 			System.out.print(headers[i] + "; ");
 		}
-		System.out.println("  status: " + status);
-		if (!request.getMethod().equals("HEAD")) {
-			System.out.print(EntityUtils.toString(response.getEntity()));
+
+		String respContent = "";
+		if ( !request.getMethod().equals("HEAD") ) {
+
+			HttpEntity ent = response.getEntity();
+			InputStream in = null;
+			System.out.println(EntityUtils.toString(response.getEntity()));
+			try{
+				in = ent.getContent();
+				if(ent.getContentLength() > MAX_SIZE || !ent.getContentType().equals("text/xml")
+						&& !(format!=null && format.equals("json"))){
+
+					byte[] buf = new byte[4096];
+					StringBuffer strContent = new StringBuffer();
+					int bRead = -1;
+
+					while((bRead=in.read(buf)) > 0 && strContent.length() < MAX_SIZE)
+						strContent.append(bRead);
+					respContent = strContent.toString();
+				}else if (ent.getContentType().equals("text/xml")) {
+					SAXReader saxReader = new SAXReader();
+					Document doc = saxReader.read(in);
+					Node node = doc.selectSingleNode("status");
+					if(node != null)
+						respContent += node.getText();
+					node = doc.selectSingleNode("statusCode");
+					if(node != null)
+						respContent += " status code " + doc.selectSingleNode("statusCode").getText();
+					node = doc.selectSingleNode("message");
+					if(node != null)
+						respContent += ". " + node.getText();
+				} else if(format.equals("json")){
+					Reader reader = new InputStreamReader(in);
+					JSONObject resultObj = (JSONObject) JSONValue.parse(reader);
+					respContent += resultObj.get("status") + " status code " + resultObj.get("statusCode") + ". " + resultObj.get(status);
+					reader.close();
+				}
+			}finally{
+				close(in);
+			}
 		}
-		System.out.flush();
-		throw new IOException("Unexpected HTTP Status: " + status);
+		//200 - OK: Success, object/file exists
+		//201 - Created: File/object created successfully
+			
+		//403 - Forbidden: Deleting non-existing file, using POST to update or PUT to create
+		String reqInfo = request.getMethod() + " " + request.getURI();
+		log.info( reqInfo + ": " + respContent);
+		if (status == 403) {  
+			
+			if(respContent.indexOf(" not exists.") > 0)
+				throw new FileNotFoundException(reqInfo + ": " + respContent);
+			else
+				throw new LoginException(reqInfo + ": " + respContent);
+			
+		//404 - Not Found: Object/file does not exist 
+		} else if (status == 404) { 
+			throw new FileNotFoundException(reqInfo + ": " + respContent);
+			
+		//500 - Internal Error: Other errors
+		}  else if (status == 500) {  
+			throw new IOException(reqInfo + ": " + respContent);
+			
+		//502 - Unavailable: Too many uploads 
+		} else if (status == 502) { 
+			throw new IOException(reqInfo + ": " + respContent);
+			
+		//Unknown status code
+		} else { 
+			throw new IOException(reqInfo + ": " + respContent);
+		}
+	}
+	
+	public String getResponseMessage() throws ParseException, IOException{
+		return EntityUtils.toString(response.getEntity());
 	}
 
 	/**
@@ -1162,22 +1409,6 @@ public class DAMSClient {
 	}
 
 	/**
-	 * Get format for the result returned.
-	 * @return
-	 */
-	public String getResultFormat() {
-		return resultFormat;
-	}
-
-	/**
-	 * Set the format for the response.
-	 * @param resultFormat
-	 */
-	public void setResultFormat(String resultFormat) {
-		this.resultFormat = resultFormat;
-	}
-
-	/**
 	 * Date format used in DAMS.
 	 * 
 	 * @return
@@ -1214,6 +1445,76 @@ public class DAMSClient {
 	}
 	
 
+	/**
+	 * Create MultipartEntity
+	 * @param srcFile
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 */
+	public static MultipartEntity toMultiPartEntity(String srcFile) throws UnsupportedEncodingException{
+		File file = new File(srcFile);
+		MultipartEntity ent = new MultipartEntity();
+		ent.addPart("sourcePath", new StringBody(file.getParent()));
+		String contentType = new FileDataSource(srcFile).getContentType();
+		FileBody fileBody = new FileBody(file, contentType);
+		ent.addPart("file", fileBody);
+		return ent;
+	}
+	
+	/**
+	 * Create MultipartEntity
+	 * @param in
+	 * @param contentType
+	 * @return
+	 */
+	public static MultipartEntity toMultiPartEntity(InputStream in, String contentType){
+		InputStreamBody inputBody = new InputStreamBody(in, contentType);
+		MultipartEntity ent = new MultipartEntity();
+		ent.addPart("file", inputBody);
+		return ent;
+	}
+	
+	/**
+	 * Convert list of Statements to JSON String
+	 * @param stmts
+	 * @return
+	 */
+	public static String toJSONString(List<Statement> stmts){
+		Statement stmt = null;
+		JSONObject tmp = null;
+		JSONArray tmpArr = new JSONArray();
+		int tSize = stmts.size();
+		for(int i=0; i<tSize; i++){
+			stmt = stmts.get(i);
+			tmp = new JSONObject();
+			tmp.put("subject", stripID(stmt.getSubject().getURI()));
+			tmp.put("predicate", stripID(stmt.getPredicate().getURI()));
+			tmp.put("object", stmt.getObject().asLiteral().getValue());
+			tmpArr.add(tmp);
+		}
+		return tmpArr.toJSONString();
+	}
+	
+	/**
+	 * Ark org, subject and filename of a full ark file name.
+	 * @param fullArkFileName
+	 * @return
+	 */
+	public static String[] toFileParts(String fullArkFileName)  {
+		return fullArkFileName.split("-", 4);
+	}
+	
+	/**
+	 * Mimetype
+	 * @param filename
+	 * @return
+	 */
+	public static String getMimeType(String filename){
+		MimetypesFileTypeMap mimeTypes = new MimetypesFileTypeMap();
+		String mimeType = mimeTypes.getContentType(filename);
+		return mimeType;
+	}
+	
 	/**
 	 * Wrapper class HttpContentInputStream
 	 * 

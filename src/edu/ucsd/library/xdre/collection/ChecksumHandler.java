@@ -58,25 +58,24 @@ public class ChecksumHandler extends CollectionHandler{
 	
 	private boolean handleComplexObject(String complexObjectId, int complexObjectCount, int itemIndex) throws Exception{
 		String subjectId = null;
-    	String arkFilePrefix = null;
+    	String compId = null;
+    	String fileId = "1";
     	boolean successful = true;
    		for (int i = 0; i < complexObjectCount && !interrupted; i++) {
-   			arkFilePrefix = Constants.ARK_ORG + "-";
-   			subjectId = complexObjectId + "-1-" + (i+1);
-   			arkFilePrefix += subjectId;
+   			compId = "" + (i+1);
    		    //Item reference from DDOM Viewer
    		    String itemLink = getDDOMReference(subjectId);     
    		    setStatus("Processing checksum for " + itemLink  + " ... " 
 	   			     + (itemIndex + 1) + " of " + itemsCount + " in " + collectionTitle);
 
-			if(!handleObject(subjectId, arkFilePrefix, itemIndex))
+			if(!handleObject(subjectId, compId, fileId, itemIndex))
 				successful = false; 			
    		}
    		
    		return successful;
 	}
 	
-	private boolean handleObject(String subjectId, String arkFilePrefix, int itemIdex) throws Exception{
+	private boolean handleObject(String subjectId, String compId, String fileId, int itemIdex) throws Exception{
     	String fExt = null;
     	String arkFileName = null;
     	boolean successful = false;
@@ -89,7 +88,7 @@ public class ChecksumHandler extends CollectionHandler{
 	    
 	    int numTry = 1;
 	    boolean successTry = false;
-	    fExt = getFileExtension(subjectId); 
+	    fExt = getFileExtension(subjectId, compId, fileId); 
 	    
         if(fExt == null){
 			eMessage = "Error: Unable to determine file extension for subject " + subjectId;
@@ -101,7 +100,7 @@ public class ChecksumHandler extends CollectionHandler{
 	        String dateChecked = null;
 	        Date lastCheckedDate = null;
 	        
-	        arkFileName = arkFilePrefix + fExt;
+	        arkFileName = fileId + fExt;
         	numTry = 1;
    			successTry = false;
    			
@@ -133,21 +132,15 @@ public class ChecksumHandler extends CollectionHandler{
 		   		do{
 		   			try{
 						//Invoke CRC32 checksum
-		   				String[] parts = toFileParts(arkFileName);
+		   				//String[] parts = toFileParts(arkFileName);
 		   				
 		   				
 		   				//XXX
 		   				//CRC32 checksum in triplrstore
-						String checksumValueCrc32 = ""; 
-	
-						if(checksumValueCrc32 != null && checksumValueCrc32.length() > 0){
-	   	        			String newChecksumCrc32 = damsClient.checksum(parts[1], parts[2]); 
-	        				checksumPassed = checksumValueCrc32.equals(newChecksumCrc32);
-	   	        			
-		   	        		if(!checksumPassed)
-		   	        			exeReport.append("Checksum values do not match - Current checksum: " + newChecksumCrc32 + ", Original checksum: " + checksumValueCrc32 + "\n");	   	        		
-						}else
-							exeReport.append("CRC32 checksum values isn't available. \n");
+        				checksumPassed = damsClient.checksum(subjectId, compId, fileId);
+   	        			
+	   	        		if(!checksumPassed)
+	   	        			exeReport.append("Checksum values do not match.\n");	
 		   	        	successTry = true;
 				    } catch (Exception e){
 						e.printStackTrace();
@@ -219,20 +212,21 @@ public class ChecksumHandler extends CollectionHandler{
 	 * Task implementation for checksuming.
 	 */
 	public void invokeTask(String subjectId, int idx) throws Exception{
-		String arkFilePrefix = Constants.ARK_ORG + "-";
+		String compId = null;
+		String fileId = null;
 		String itemLink = getDDOMReference(subjectId);     
 		setStatus("Processing checksum for " + itemLink  + " ... " 
 		   		  + (idx + 1) + " of " + getFilesCount() + " in " + collectionTitle);
 		setProgressPercentage( (idx * 100) / itemsCount);
 		
-		arkFilePrefix += subjectId + "-1-1";
+		fileId = "1";
 		long complexObjectCount = queryComplexObject(subjectId);
 		if(complexObjectCount >= 0){
 			totalFiles += (complexObjectCount - 1);
 			//Handle complex object
 			handleComplexObject(subjectId, (int)complexObjectCount, idx);
 		}else
-			handleObject(subjectId, arkFilePrefix, idx);			
+			handleObject(subjectId, compId, fileId, idx);			
 		increaseCounter();
 	}	
 }

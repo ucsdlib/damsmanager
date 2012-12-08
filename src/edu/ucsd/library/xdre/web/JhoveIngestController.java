@@ -46,6 +46,7 @@ public class JhoveIngestController implements Controller {
 
 		if (!loginRequired) {
 			String subject = request.getParameter("subject");
+			String component = request.getParameter("component");
 			String file = request.getParameter("file");
 			String ds = request.getParameter("ds");
 			String fs = request.getParameter("fs");
@@ -76,7 +77,7 @@ public class JhoveIngestController implements Controller {
 
 				try {
 					for (int i = 0; i < subjects.length; i++) {
-						damsClient.updateTechnicalMetadata(subject, file, null);
+						damsClient.extractFileCharacterize(subject, file, null);
 					}
 
 					if (!success)

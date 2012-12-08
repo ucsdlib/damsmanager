@@ -8,6 +8,8 @@ import javax.security.auth.login.LoginException;
 
 import org.apache.log4j.Logger;
 
+import edu.ucsd.library.xdre.utils.DAMSClient;
+
 /**
  * Class TripleStoreSyncHandler handles the synchronization between
  * the source triplestore and the target triplestore
@@ -46,9 +48,9 @@ public class DevUploadHandler extends CollectionHandler{
 				int numTry = 0;
 				while(numTry++ < maxTry && !interrupted){
 					fullName = file.getName();
-					parts = toFileParts(fullName);
+					parts = DAMSClient.toFileParts(fullName);
 					try {
-						damsClient.updateFile(parts[1], parts[2], in, file.length());
+						damsClient.uploadFile(parts[1], parts[2], parts[3], in, file.length());
 	
 						successfuls.append(fileName + "\t");
 						message = "Successfully uploaded " + fileName + " to FileStore " + damsClient.getFileStore() + ".";

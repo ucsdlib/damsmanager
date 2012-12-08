@@ -55,7 +55,7 @@ public class Constants {
 			THUMBNAIL_SIZE, MEDIUM_RESOLUTION3A_SIZE, MEDIUM_RESOLUTION_SIZE };
 
 	public static final int TIMEOUT = 30000;
-
+	
 	public static final String NAMESPACE_RDF = "rdf";
 	public static final String ELEM_ABOUT = "about";
 	public static final String ELEM_NODEID = "nodeId";
@@ -92,11 +92,11 @@ public class Constants {
 			Properties props = new Properties();
 			props.load( in );
 
-			//Cluster host URL
-			CLUSTER_HOST_NAME = props.getProperty("xdre.clusterHostName");
-			
 			//DAMS REST API servlet URL
 			DAMS_STORAGE_URL = props.getProperty("xdre.damsStorageURL");
+			
+			//Cluster host URL
+			CLUSTER_HOST_NAME = props.getProperty("xdre.clusterHostName");
 
 			//Web log directory
 			STATS_LOG_DIR = props.getProperty("xdre.weblogs");
@@ -121,12 +121,6 @@ public class Constants {
 			
 			//Curator role 32
 			CURATOR_ROLE = props.getProperty("xdre.curatorRole");
-			
-			//Default filestore
-			DEFAULT_FILESTORE = props.getProperty("xdre.fsDefault");
-
-			//Default triplestore
-			DEFAULT_TRIPLESTORE = props.getProperty("xdre.tsDefault");
 
 			//Jhove configuration file
 			JETL_JHOVE_CONF_FILE = props.getProperty("xdre.jetlJhoveConfFile");
@@ -136,6 +130,11 @@ public class Constants {
 
 			//SOLR UR
 			SOLR_URL_BASE = props.getProperty("xdre.solrBase");
+			
+			//Retrieve the default triplestore and filestore
+			DAMSClient damsClient = new DAMSClient(DAMS_STORAGE_URL);		
+			DEFAULT_FILESTORE = damsClient.defaultFilestore(); //Default filestore
+			DEFAULT_TRIPLESTORE = damsClient.defaultTriplestore(); //Default triplestore
 			
 		} catch (Exception e) {
 			e.printStackTrace();

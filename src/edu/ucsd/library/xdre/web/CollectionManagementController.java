@@ -24,7 +24,7 @@ import edu.ucsd.library.xdre.utils.DAMSClient;
 
 
  /**
- * Class CollectionManagementController, the Model of the collection management
+ * Class CollectionManagementController, the model of the collection/repositories management
  * home page
  *
  * @author lsitu@ucsd.edu
@@ -34,7 +34,6 @@ public class CollectionManagementController implements Controller {
 	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		Map dataMap = null;
 		String logOutDisplay = "none";
-		boolean statusTagging = true;
 		
 		HttpSession session = request.getSession();
 
@@ -44,8 +43,8 @@ public class CollectionManagementController implements Controller {
 		}
 
 		String message = request.getParameter("message");
-		String ds = request.getParameter("ds");
-		String fs = request.getParameter("fileStore");
+		String ds = request.getParameter("ts");
+		String fs = request.getParameter("fs");
 		if(message == null)
 			message = "";
 		String activeButton = request.getParameter("activeButton");
@@ -61,7 +60,6 @@ public class CollectionManagementController implements Controller {
 			session.setAttribute("category", category);
 
 			damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
-			List<String> fsSrcs = damsClient.listFileStores();
 			
 			dataMap = new HashMap();
 			dataMap.put("logOut", logOutDisplay);
@@ -70,11 +68,10 @@ public class CollectionManagementController implements Controller {
 			dataMap.put("collections", damsClient.listCollections());
 			dataMap.put("triplestore", ds);
 			dataMap.put("triplestores", damsClient.listTripleStores());
-			dataMap.put("statusTagging", statusTagging);
-			dataMap.put("filestores", fsSrcs);
+			dataMap.put("filestores", damsClient.listFileStores());
 			dataMap.put("filestore", fs);
 			dataMap.put("filestoreDefault", Constants.DEFAULT_FILESTORE);
-			System.out.println("Catalina memory:" + Runtime.getRuntime().totalMemory() + "/" + Runtime.getRuntime().maxMemory());
+			dataMap.put("tripletoreDefault", Constants.DEFAULT_TRIPLESTORE);
 		} catch (Exception e) {
 			e.printStackTrace();
 			String eMessage = e.getMessage();
@@ -82,4 +79,4 @@ public class CollectionManagementController implements Controller {
 		}
 		return new ModelAndView("controlPanel", "model", dataMap);
 	}
-	}
+}

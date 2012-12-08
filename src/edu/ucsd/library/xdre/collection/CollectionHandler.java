@@ -77,11 +77,11 @@ public abstract class CollectionHandler implements ProcessHandler {
 
 	public CollectionHandler() {}
 	
-	public CollectionHandler(DAMSClient damsClient) throws LoginException, IOException, DocumentException{
+	public CollectionHandler(DAMSClient damsClient) throws Exception{
 		this(damsClient, null);
 	}
 
-	public CollectionHandler(DAMSClient damsClient, String collectionId) throws LoginException, IOException, DocumentException{
+	public CollectionHandler(DAMSClient damsClient, String collectionId) throws Exception{
 		this.damsClient = damsClient;
 		this.collectionId = collectionId;
 		init();
@@ -94,11 +94,11 @@ public abstract class CollectionHandler implements ProcessHandler {
 		this.userId = userId;
 	}
 
-	protected void init() throws LoginException, IOException, DocumentException {
+	protected void init() throws Exception {
+		exeReport = new StringBuilder();
 		if (collectionId != null && collectionId.length() == 10) {
 			items = damsClient.listObjects(collectionId);
-			collectionData = (JSONArray) JSONValue.parse(damsClient
-					.getMetadata(collectionId, null));
+			collectionData = (JSONArray) JSONValue.parse(damsClient.getMetadata(collectionId, null));
 			itemsCount = items.size();
 		}
 	}
@@ -127,7 +127,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 	 * @param subjectId
 	 * @return
 	 */
-	public String getFileExtension(String subjectId){
+	public String getFileExtension(String subjectId, String compId, String fileId){
 		//XXX
 		return null;
 	}
@@ -186,7 +186,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 					// Write to the log file
 					if (logWriter == null) {
 						String logFileName = Constants.TMP_FILE_DIR
-								+ "damslog-" + submissionId + ".txt";
+								+ "/damslog-" + submissionId + ".txt";
 						try {
 							logWriter = new FileWriter(logFileName, true);
 							logWriter.write("\n"
@@ -528,11 +528,11 @@ public abstract class CollectionHandler implements ProcessHandler {
 	 * Ark org, subject and filename of a full ark file name.
 	 * @param fullArkFileName
 	 * @return
-	 */
-	public static String[] toFileParts(String fullArkFileName)  {
-		return fullArkFileName.split("-", 3);
-	}
 
+	public static String[] toFileParts(String fullArkFileName)  {
+		return fullArkFileName.split("-", 4);
+	}
+	 */
 	public int getSubmissionId() {
 		return submissionId;
 	}

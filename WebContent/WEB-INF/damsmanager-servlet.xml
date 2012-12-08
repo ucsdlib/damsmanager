@@ -12,6 +12,8 @@
         <property name="prefix" value="/WEB-INF/jsp/"/>
         <property name="suffix" value=".jsp"/>
     </bean>
+    <bean name="/ingest.do" class="edu.ucsd.library.xdre.web.IngestController"></bean>
+	<bean name="/directory.do" class="edu.ucsd.library.xdre.web.DirectoryController"></bean>
     <bean name="/jhove.do" class="edu.ucsd.library.xdre.web.JhoveIngestController" />
     <!--<bean name="/derivative.do" class="edu.ucsd.library.xdre.web.DerivativeCreationController" />-->
  	<!--<bean name="/collectionReport.do" class="edu.ucsd.library.xdre.web.CollectionStatusReport" />-->
@@ -40,8 +42,6 @@
 	<bean name="/errorPage.do" class="org.springframework.web.servlet.mvc.ParameterizableViewController" lazy-init="default" autowire="default" dependency-check="default">
 		<property name="viewName" value="errorPage" /> 
 	</bean>
-	<bean name="/jetl.do" class="edu.ucsd.library.xdre.web.JetlLoadingController"></bean>
-	<bean name="/directory.do" class="edu.ucsd.library.xdre.web.DirectoryController"></bean>
 	<bean name="/devUpload.do" class="edu.ucsd.library.xdre.web.DevUploadController"></bean>
 	<!--
 	<bean name="/rdfExport.do" class="edu.ucsd.library.xdre.web.RDFExportController"></bean>

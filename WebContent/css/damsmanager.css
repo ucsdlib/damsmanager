@@ -1,58 +1,7 @@
-body {
-	background: #BDBDBD;
-	color : #717171;
-	font-family: Arial, helvetica;
-	font-size: 11px;
-	margin: 0px;
-	overflow:-moz-scrollbars-vertical; 
-}
-body a {
-	text-decoration: underline;
-	color : #336699;
-}
-body a:hover {
-	color : #FF7400;
-}
-
-.bodyTable{
-	width:850px;
-	border:0px;
-	background:#FFFFFF;
-}
-
-.head {       	
-        background: #FFFFFF;
-        border-bottom: 2px solid #DDDDDD; 
-        height:75px;
-        background:url("../images/sprite.gif") right -630px no-repeat;
-}
-   
-.headerSpace{
-   height: 13px;
-   background: #DDDDDD; 
-   font-size: 12px;
-}
-
-h1 {
-	font-size: 40px;
-	color : #ccc;
-	margin-top: 8px;
-	letter-spacing: 10px;
-	text-align: center;
-}
-h2 {
-	font-size: 25px;
-	color : #eee;
-	margin-top: -47px;
-	letter-spacing: 3px;
-	text-align: center;
-}	
-
+	
 .menubar {   
-	margin: 0px;
 	padding-top: 2px; 
 	font-size: 12px;
-	/*border-bottom: 1px solid #DDDDDD;*/
 }
 
 .menudiv {
@@ -67,6 +16,7 @@ h2 {
 .menu {   
 	font-weight: bold;
 	cursor: pointer;
+	color: #555555;
 }
 
 .seperator {
@@ -115,14 +65,7 @@ h2 {
 	border-bottom:1px solid #C0C0C0; 
 	height:20px;
 }
-#main{
-	background: #FFFFFF;
-}
-.gallery {       
-	background: #FFFFFF;
-	min-height:540px;
-	padding-bottom:30px;
-}
+
 #controlpanel{
 	padding-top:30px;
 	width:650px;
@@ -273,10 +216,10 @@ h2 {
 .emBox_ark {
 	text-align:center;
 	background:#F8F8F8;
-	padding-bottom:50px;
+	padding-bottom:30px;
+	margin-top:10px;
 	border: 1px solid #999;
 	width:650px;
-	height:420px;
 }
 .emBoxBanner{
 	padding-top:5px;
@@ -624,4 +567,231 @@ h2 {
 	margin-top:0px;
 	font-size:13px;
 	color: #333;
+}
+
+.status {
+	font-family: Arial, Helvetica, sans-serif;
+	font-weight: normal;
+	font-size: 14px;
+	color: #003366;
+	padding-left:15px;
+}
+
+.statusText {
+	background:#FFFFFF;
+	font-family: times, serif;
+	font-weight: normal;
+	font-size: 18px;
+	color:  #B0E0E6;
+}
+
+.errorBody {
+	font-family: Arial, Helvetica, sans-serif;
+	font-weight: normal;
+	font-size: 13px;
+	color: #FF0000;
+}
+
+.menuText {
+	font-family: Arial, Helvetica, sans-serif;
+	font-weight: bold;
+	font-size: 12px;
+	color: #336699;
+}
+.text-special {
+	vertical-align: 2;
+	font-size: 12px;
+}
+
+.submenuText {
+	font-family: Arial, Helvetica, sans-serif;
+	font-weight: normal;
+	font-size: 13px;
+	color: #555555;
+}
+.submenuInputText {
+	font-family: Arial, Helvetica, sans-serif;
+	font-weight: normal;
+	font-size: 11px;
+}
+.specialmenuText {
+	font-family: Arial, Helvetica, sans-serif;
+	font-weight: normal;
+	font-size: 11px;
+	color: #333333;
+	margin-left: 2px;
+}
+
+.inputText {
+	font-family: Arial, Helvetica, sans-serif;
+	font-weight: normal;
+	font-size: 12px;
+	background: #FFFFCC;
+}
+
+.pcheckbox {
+	background: #669999;
+	width: 15px;
+	height: 15px;
+}
+
+.pmcheckbox {
+	border: 1px solid #FFFFCC;
+	width: 15px;
+	height: 15px;
+	margin-left: 12px;
+}
+.groupbox {
+	margin-left:25px;
+	width: 320px;	
+	height:95px;
+}
+.groupbox_der {
+	margin-left:25px;
+	width: 440px;	
+	height:95px;
+}
+.groupbox_ts {
+	margin-left:25px;
+	margin-top:10px;
+	width: 380px;	
+	height:100px;
+}
+.groupbox_fs {
+	margin-left:10px;
+	margin-top:10px;
+	width: 200px;	
+	height:65px;
+}
+.groupbox_tss {
+	margin-left:25px;
+	margin-top:10px;
+	width: 380px;	
+	height:65px;
+}
+.groupbox_ingestOpts {
+	margin-left:25px;
+	margin-top:10px;
+	width: 380px;	
+	height:87px;
+}
+.groupbox_ftype {
+	margin-left:20px;
+	width: 60px;	
+	height:80px;
+}
+.groupbox_cdl {
+	margin-left:25px;
+	width: 250px;	
+	height:90px;
+}
+.groupbox_cdlOptions {
+	margin-left:25px;
+	width: 250px;	
+	height:75px;
+}
+.groupbox_rdf {
+	margin-left:25px;
+	width: 250px;	
+	height:45px;
+}
+.groupbox_sip {
+	margin-left:45px;
+	margin-bottom:10px;
+	width: 450px;	
+	height:118px;
+	text-align:left;
+}
+
+.groupbox_ark {
+	margin-left:15px;
+	margin-bottom:5px;
+	width: 460px;	
+	height:280px;
+	text-align:left;
+}
+.groupbox_jetlOptions {
+	margin-left:10px;
+	margin-bottom:2px;
+	width: 360px;	
+	height:18px;
+	text-align:left;
+}
+.groupbox_srb {
+	margin-left:25px;
+	width: 400px;	
+	height:80px;
+}
+.groupbox_compOrder {
+	margin-left:35px;
+	width: 410px;	
+	height:90px;
+}
+.slegandText{
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 10px;
+	color: #333333;
+}
+
+.errorText {
+	font-weight: bold;
+	font-size: 13px;
+	color: #FF0000;
+}
+.section {
+	width: 800px;
+	height: 400px;
+}
+.requiredLabel {
+	color: #FF0000;
+}
+.percentageText {
+	font-family: Arial, Helvetica, sans-serif;
+	font-weight: bold;
+	font-size: 12px;
+	color: #006699;
+}
+.label {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	font-weight: normal;
+}
+.sectionHeaderBackground {
+	background:#BDBDBD;
+}
+.sectionBackground {
+	background:#F8F8F8;
+}
+.statusText {
+	font-weight: bold;
+	font-size: 13px;
+	color: #FF0000;
+}
+.errorText {
+	font-weight: bold;
+	font-size: 13px;
+	color: #FF0000;
+}
+.requiredLabel {
+	color: #FF0000;
+}
+.rowlight {
+	background:#F8F8F8;
+	color: #333333;
+	font-size: 10px;
+}
+.rowdark {
+	background:#D8D8D8;
+	color: #333333;
+	font-size: 10px;
+}
+.theader {
+	background:#BDBDBD;
+	color: #F8F8F8;
+}
+#stsDiv {
+	padding-left:20px;
+	padding-top:2px;
+	padding-bottom:2px;
+	background:#D8D8D8;
 }

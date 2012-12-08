@@ -55,12 +55,17 @@ public class FileCountHandler extends CollectionHandler{
     	String subjectId = null;
     	String arkFilePrefix = Constants.ARK_ORG + "-";
     	totalFiles = (int) itemsCount;
+    	String compId = null;
+    	String fileId = "1";
    		for (int i = 0; i < itemsCount && !interrupted; i++) {
  
-   			subjectId = collectionId + "-1-" + (i+1);
-   			arkFilePrefix += subjectId;
-   			if(!handleObject(subjectId, arkFilePrefix, i))
-   				setExeResult(false);
+   			subjectId = items.get(i);
+   			int complexObjectCount = queryComplexObject(subjectId);
+   			if(complexObjectCount > 0)
+   				handleComplexObject(subjectId, complexObjectCount, i);
+   			else
+	   			if(!handleObject(subjectId, compId, fileId, i))
+	   				setExeResult(false);
    	        setProgressPercentage( ((i+1) * 100) / itemsCount);
    		}
    		
@@ -110,24 +115,24 @@ public class FileCountHandler extends CollectionHandler{
 		return subjectIds;
 	}
 	
-	private boolean handleComplexObject(String complexObjectId, int complexObjectCount, int itemIndex) throws Exception{
+	private boolean handleComplexObject(String subjectId, int complexObjectCount, int itemIndex) throws Exception{
 		boolean successful = true;
+		int compId = 0;
+		String fileId = "1";
 		for(int i=0; i<complexObjectCount && !interrupted; i++){
-			String arkFilePrefix = Constants.ARK_ORG + "-";
-   			String subjectId = complexObjectId + "-1-" + (i+1);
-   			arkFilePrefix += subjectId;
-			if(!handleObject(subjectId, arkFilePrefix, itemIndex))
+			compId = 1 + 1;
+			if(!handleObject(subjectId, ""+compId, fileId, itemIndex))
 				successful = false;
 		}
 		return successful;
 	}
 	
-	private boolean handleObject(String subjectId, String arkFilePrefix, int itemCount) throws Exception {
+	private boolean handleObject(String subjectId, String compId, String fileId, int itemCount) throws Exception {
         //Item reference from DDOM Viewer
 	    String itemLink = getDDOMReference(subjectId);
 	    setStatus("Processing File Count Validation for " + itemLink + " (" + (itemCount+1) + " of " + itemsCount + ")");
 	    String eMessage = "";
-	    String arkFileName = null;
+	    String fileName = null;
 	    BindingIterator bit = null;
     	List tmpList = null;
     	boolean successful = true;
@@ -136,7 +141,7 @@ public class FileCountHandler extends CollectionHandler{
 		int numTry = 0;
 		boolean reTry = true;
 		while(reTry && numTry++ < maxTry && !interrupted){
-			fExt = getFileExtension(subjectId);
+			fExt = getFileExtension(subjectId, compId, fileId);
 			reTry = false;
 		}
         if(fExt == null){	        	
@@ -158,23 +163,24 @@ public class FileCountHandler extends CollectionHandler{
         
         
 		numTry = 1;
-        arkFileName = arkFilePrefix + fExt;
-        String[] parts = toFileParts(arkFileName);
+        fileName = fileId + fExt;
+		String fileURLPath = damsClient.toUrlPath(subjectId, compId, fileName);
+        //String[] parts = toFileParts(arkFileName);
 		do{
    			try{
-				if (damsClient.exists(parts[1], parts[2])){
+				if (damsClient.exists(subjectId, compId, fileName)){
 					successful = false;
 					fileStoreFailedCount++;
 					if(fileStoreFailedCount%5 == 0)
-						fileStoreMissing += arkFileName + "\n";
+						fileStoreMissing +=  fileURLPath + "\n";
 					else
-						fileStoreMissing += arkFileName + "\t";
+						fileStoreMissing += fileURLPath + "\t";
 					
 					String iMessagePrefix = "Error: FileStore master file missing " + itemLink;
 					setStatus(iMessagePrefix + "\n");
 					log("log", iMessagePrefix);
 		        	setExeResult(false);
-		        	System.out.println(" FileStoreMissing " + arkFileName);
+		        	System.out.println(" FileStoreMissing " + fileURLPath);
 		        }else{
 		        	fileStoreCount++;
 		        }
@@ -195,9 +201,10 @@ public class FileCountHandler extends CollectionHandler{
 		numTry = 1;
 		do{
 			//xxx
-   			String fileName = damsClient.getMetadata(subjectId, null);
+   			String itemData = damsClient.getMetadata(subjectId, null);
+   			
    			if(fileName != null){
-   				tmpList = damsClient.getObjects(fileName);
+   				tmpList = damsClient.listObjects(itemData);
    				//Check for duplicated file name
    				
    				if(tmpList.size() > 1){
@@ -246,7 +253,7 @@ public class FileCountHandler extends CollectionHandler{
 			interrupted = true;
 			successful = false;
 			setExeResult(false);
-			eMessage = arkFileName + ". Error: " + e.getMessage();
+			eMessage = fileURLPath + ". Error: " + e.getMessage();
 			String iMessagePrefix = "File count validation interrupted with ";
 			System.out.println(iMessagePrefix + eMessage);
 			setStatus("Canceled");

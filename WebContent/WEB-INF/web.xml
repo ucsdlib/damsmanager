@@ -57,13 +57,13 @@
     <security-constraint>
     	<web-resource-collection>
 	        <web-resource-name>Protected Area</web-resource-name>
+	        <url-pattern>/ingest.do</url-pattern>
 	        <url-pattern>/collectionUpdate.do</url-pattern>
 	        <url-pattern>/controlPanel.do</url-pattern>
 	        <url-pattern>/metaDataImport.do</url-pattern>
 	        <url-pattern>/operationHandler.do</url-pattern>
 	        <url-pattern>/fileUpload.do</url-pattern>
 	        <url-pattern>/customSip.do</url-pattern>
-	        <url-pattern>/jetl.do</url-pattern>
 	        <url-pattern>/login.do</url-pattern>
 	        <url-pattern>/devUpload.do</url-pattern>
 	        <url-pattern>/statusUpload.do</url-pattern>
