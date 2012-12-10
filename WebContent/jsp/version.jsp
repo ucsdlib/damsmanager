@@ -1,37 +1,32 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"%>
 <%
-    String version = application.getInitParameter("version-number");
+    String version = application.getInitParameter("app-version");
     if ( version == null || version.trim().equals("") )
     {
             version = "0.0.0";
     }
     
-    String build = application.getInitParameter("build-date");
+    String build = application.getInitParameter("build-timestamp");
     if ( build == null || build.trim().equals("") )
     {
             build = "Not Available";
     }
     
-	String userVersion = null;
+	String srcVersion = null;
 	try
 	{
-		userVersion = application.getInitParameter("user-version");
+		srcVersion = application.getInitParameter("src-version");
 	}catch ( Exception ex ){}
-	userVersion = userVersion==null?"Not Available":userVersion;
+	srcVersion = srcVersion==null?"Not Available":srcVersion;
 	
-	String buildBranch = null;
-	try
-	{
-		buildBranch = application.getInitParameter("build-branch");
-	}catch ( Exception ex ){}
-	buildBranch = buildBranch==null?"Not Available":buildBranch;
 %><html>
   <head>
-    <title>XDRE Manager Version <%=version%> (<%=build%>), DAMS Version <%=userVersion%></title>
+    <title>DAMS Manager Version <%=version%> (<%=build%>), Git Version <%=srcVersion%></title>
   </head>
   <body>
-    <p>XDRE Manager Version <%=version%>, Build <%=build%></p>
-    <p>DAMS Version <%=userVersion%></p>
-    <p>Built from: <%=buildBranch%></p>
+  	<h1>DAMS Manager</h1>
+    <p>App Version: <%=version%></p>
+    <p>Git Version: <%=srcVersion%></p>
+    <p>Build: <%=build%></p>
   </body>
 </html>

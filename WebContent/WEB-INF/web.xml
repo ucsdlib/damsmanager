@@ -4,24 +4,25 @@
     http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd" version="2.4">
 	<description>DAMS Manager Application</description>
     
-    <!-- Automatic version numbering -->
-    <context-param>
-      <param-name>version-number</param-name>
-      <param-value>@version_string@</param-value>
-    </context-param>
-    <context-param>
-      <param-name>user-version</param-name>
-      <param-value>@user_version@</param-value>
-    </context-param>
-    <context-param>
-      <param-name>build-date</param-name>
-      <param-value>@build_date@ @build_time@</param-value>
-    </context-param>
+  <!-- Automatic version numbering -->
+  <context-param>
+    <param-name>app-version</param-name>
+    <param-value>@app_version@</param-value>
+  </context-param>
+  <context-param>
+    <param-name>src-version</param-name>
+    <param-value>@src_version@</param-value>
+  </context-param>
+  <context-param>
+    <param-name>build-timestamp</param-name>
+    <param-value>@build_timestamp@</param-value>
+  </context-param>
     
   <context-param>
 	  <param-name>webAppRootKey</param-name> 
 	  <param-value>damsmanager.root</param-value> 
   </context-param>
+  
   <servlet>
     <servlet-name>damsmanager</servlet-name>
     <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
@@ -32,7 +33,17 @@
     <servlet-name>damsmanager</servlet-name>
     <url-pattern>*.do</url-pattern>
   </servlet-mapping>
-	
+
+  <servlet>
+    <servlet-name>version</servlet-name>
+	<jsp-file>/jsp/version.jsp</jsp-file>
+  </servlet>
+  
+  <servlet-mapping>
+    <servlet-name>version</servlet-name>
+    <url-pattern>/version</url-pattern>
+  </servlet-mapping>
+  
 	<welcome-file-list>
 		<welcome-file>/jsp/about.jsp</welcome-file>
 	</welcome-file-list>

@@ -12,24 +12,47 @@
 	  <property name="tmp"       value="${basedir}/tmp"/>
 	  <property name="webapp"    value="${tmp}/webapp"/>
 	  <property name="conf"       value="${basedir}/conf"/>
+	  <property name="props"     value="${conf}"/>
 	
 	  <tstamp>
-	    <format property="build_date" pattern="yyyy-MM-dd"/>
-	    <format property="build_time" pattern="HH:mm:ss"/>
+	    <format property="build.timestamp" pattern="yyyy-MM-dd'T'HH:mm:ssZ"/>
 	  </tstamp>
 
 	  <!-- version numbering -->
 	  <target name="version">
-	    <propertyfile file="version.properties" comment="${comment}">
-	      <entry key="major.version" default="0"/>
-	      <entry key="minor.version" default="0"/>
-	      <entry key="build.number" type="int" operation="+" value="1" pattern="#####"/>
-	      <entry key="user.version" default=""/>
-	    </propertyfile>
-	    <property file="version.properties"/>
-	    <property name="version_string" value="${major.version}.${minor.version}.${build.number}"/>
-	    <echo level="info" message="app version: ${version_string}"/>
-	    <echo level="info" message="user version: ${user.version}"/>
+	    <!-- app version from properties files -->
+	    <property file="${props}/version.properties"/>
+	    <property name="app.version"
+	          value="${major.version}.${minor.version}"/>
+
+	    <!-- src version from 'git describe' -->
+	    <exec executable="git" outputproperty="src.version"
+	        failifexecutionfails="false" errorproperty="">
+	      <arg value="describe"/>
+	      <arg value="--all"/>
+	      <arg value="--always"/>
+	      <arg value="--long"/>
+	      <arg value="--abbrev=40"/>
+	      <arg value="HEAD"/>
+	    </exec>
+	    <condition property="src.version" value="${src.version}" else="unknown">
+	      <and>
+	        <isset property="git.revision"/>
+	        <length string="${git.revision}" trim="yes" length="0" when="greater"/>
+	      </and>
+	    </condition>
+
+	    <!-- filters -->
+	    <filterset id="version-filters">
+	      <filter token="app_version"     value="${app.version}"/>
+	      <filter token="src_version"     value="${src.version}"/>
+	      <filter token="build_timestamp" value="${build.timestamp}"/>
+	    </filterset>
+
+	    <echo level="info" message="app ver..: ${app.version}"/>
+	    <echo level="info" message="src ver..: ${src.version}"/>
+	    <echo level="info" message="timestamp: ${build.timestamp}"/>
+
 	  </target>
 
 	  <path id="classpath">
@@ -37,7 +60,7 @@
 	      <include name="*.jar"/>
 	    </fileset>
 	  </path>
-
+	
 	  <!-- clean -->
 	  <target name="clean" description="Delete generated directories">
 	    <delete dir="${tmp}"/>
@@ -63,10 +86,13 @@
 
 	    <!-- copy properties and jar files -->
 	    <copy todir="${webapp}">
-	      <fileset dir="${web}" includes="**/*"/>
+	      <fileset dir="${web}" excludes="**/web.xml"/>
 	    </copy>
 	    <copy todir="${webapp}/WEB-INF/classes">
 	      <fileset dir="${conf}" includes="**/*"/>
+	    </copy>
+	    <copy file="${web}/WEB-INF/web.xml" tofile="${webapp}/WEB-INF/web.xml">
+	      <filterset refid="version-filters"/>
 	    </copy>
 	  </target>
 	  <!-- webapp -->
