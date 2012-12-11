@@ -238,7 +238,8 @@ public class DAMSClient {
 		map = new TreeMap<String, String>();
 		for(Iterator it= colArr.iterator(); it.hasNext();){
 			col = (JSONObject)it.next();
-			map.put((String)col.get("name"), stripID((String)col.get("repository")));
+			// Repo title, repo URL
+			map.put((String)col.get("name"), (String)col.get("repository"));
 		}
 
 		return map;
@@ -297,7 +298,8 @@ public class DAMSClient {
 		map = new TreeMap<String, String>();
 		for(Iterator it= colArr.iterator(); it.hasNext();){
 			col = (JSONObject)it.next();
-			map.put((String)col.get("title"), stripID((String)col.get("collection")));
+			// Collection title, collection URL
+			map.put((String)col.get("title"), (String)col.get("collection"));
 		}
 
 		return map;

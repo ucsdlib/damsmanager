@@ -228,7 +228,7 @@ public class CollectionOperationController implements Controller {
 
 		String logLink = (Constants.CLUSTER_HOST_NAME.indexOf(":8080/")<0?Constants.CLUSTER_HOST_NAME.replaceFirst("http://", "https://"):Constants.CLUSTER_HOST_NAME) + "/damsmanager/downloadLog.do?sessionId=" + session.getId();
 		
-		String ds = request.getParameter("ds");
+		String ds = request.getParameter("ts");
 		String dsDest = null;
 		if((ds == null || (ds=ds.trim()).length() == 0) && !(operations[15] || operations[16]))
 			throw new ServletException("No triplestore data source provided...");
@@ -240,7 +240,7 @@ public class CollectionOperationController implements Controller {
 				throw new ServletException("Can't sync triplestore from " + ds + " to destination " + dsDest + ".");
 		}
 		
-		String fileStore = request.getParameter("fileStore");
+		String fileStore = request.getParameter("fs");
 		damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
 		damsClient.setTripleStore(ds);
 
@@ -358,7 +358,7 @@ public class CollectionOperationController implements Controller {
 	if(message.length() == 0){
 	 int userId = -1;
 	 String userIdAttr = (String) request.getSession().getAttribute("employeeId");
-	 System.out.println("XDRE Manager User: " + request.getRemoteUser() + "; IP: " + request.getRemoteAddr());
+	 System.out.println("DAMS Manager User: " + request.getRemoteUser() + "; IP: " + request.getRemoteAddr());
 	 if(userIdAttr != null && userIdAttr.length() > 0){
 		 try{
 		     userId = Integer.parseInt(userIdAttr);
@@ -553,7 +553,9 @@ public class CollectionOperationController implements Controller {
 				    	throw new ServletException("Unsupported data format: " + srcFormat);
 	    
 			 }else if (i == 10){	
-				    session.setAttribute("status", opMessage + "JETL Ingesting ...");
+				    session.setAttribute("status", opMessage + "Stage Ingesting ...");
+				    
+					String repoId = request.getParameter("repo");
 				    String arkSetting = request.getParameter("arkSetting").trim();
 				 	String filePath = request.getParameter("filePath").trim();
 				 	String fileFilter = request.getParameter("fileFilter").trim();
@@ -601,6 +603,7 @@ public class CollectionOperationController implements Controller {
 		            ((FileIngestionHandler)handler).setHttpServletRequest(request);
 		            ((FileIngestionHandler)handler).setUploadOption(uploadOption);
 		            ((FileIngestionHandler)handler).setPreferedOrder(preferedOrder);
+		            ((FileIngestionHandler)handler).setRepository(repoId);
 	    
 			 } else if (i == 15){	
 				 session.setAttribute("status", opMessage + "Moving files from dev to LocalStore ...");
@@ -721,10 +724,10 @@ public class CollectionOperationController implements Controller {
 						logLink += "&category=" + collectionName.replace(" ", "");
 					handler.setExeResult(successful);
 					exeInfo += handler.getExeInfo();
-				} 			
+				} 
+		   	}
 		 }else
-		  continue;
-		 }
+			 continue;
       
 	  message += exeInfo.replace("\n", "<br />") + "<br />";
 	  if(! successful){
@@ -744,7 +747,7 @@ public class CollectionOperationController implements Controller {
 		returnMessage = message;
 	
 	String logMessage = "For details, please view " + "<a href=\"" + logLink + "\">log</a>" + ".";
-	if(returnMessage.length() > 3000){
+	if(returnMessage.length() > 1000){
 		returnMessage = returnMessage.substring(0, 1000);
 		int idx = returnMessage.lastIndexOf("<br ");
 		if(idx > 0)

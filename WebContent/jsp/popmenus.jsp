@@ -1,8 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"%>
 <div id="cButtonMenu" class="popMenu">
- 	<div id="cMenu1" class="menuItem" onclick="document.location.href='/damsmanager/jsp/introduction.jsp';" onMouseOver="activadeMenuItem(this, 'cButton');" onMouseOut="resetMenuItem(this, 'cButton');">Introdution</div>
- 	<div id="cMenu2" class="menuItem" onclick="document.location.href='/damsmanager/collectionUpdate.do';" onMouseOver="activadeMenuItem(this, 'cButton');" onMouseOut="resetMenuItem(this, 'cButton');">Create &amp; Update</div>
-	<div id="cMenu3" class="menuItem" onclick="document.location.href='/damsmanager/jetl.do'" onMouseOver="activadeMenuItem(this, 'cButton');" onMouseOut="resetMenuItem(this, 'cButton');">JETL</div>
+ 	<div id="cMenu1" class="menuItem" onclick="document.location.href='/damsmanager/jsp/introduction.jsp';" onMouseOver="activadeMenuItem(this, 'cButton');" onMouseOut="resetMenuItem(this, 'cButton');">Introduction</div>
+	<div id="cMenu3" class="menuItem" onclick="document.location.href='/damsmanager/ingest.do'" onMouseOver="activadeMenuItem(this, 'cButton');" onMouseOut="resetMenuItem(this, 'cButton');">Staging Ingest</div>
  	<div id="cMenu4" class="menuItem" onclick="document.location.href='/damsmanager/controlPanel.do'" onMouseOver="activadeMenuItem(this, 'cButton');" onMouseOut="resetMenuItem(this, 'cButton');">Process Manager</div>
  	<div id="cMenu5" class="menuItem" onclick="document.location.href='/damsmanager/dataConverter.do'" onMouseOver="activadeMenuItem(this, 'cButton');" onMouseOut="resetMenuItem(this, 'cButton');">Data Converter</div>
 </div>
@@ -12,7 +11,6 @@
 	<div id="mMenu2" class="menuItem" onclick="document.location.href='/damsmanager/devUpload.do'" onMouseOver="activadeMenuItem(this, 'mButton');" onMouseOut="resetMenuItem(this, 'mButton');">FileStore Upload</div>
 	<div id="mMenu3" class="menuItem" onclick="document.location.href='/damsmanager/statusUpload.do'" onMouseOver="activadeMenuItem(this, 'mButton');" onMouseOut="resetMenuItem(this, 'mButton');">Status Upload</div>
 	<div id="mMenu4" class="menuItem" onclick="document.location.href='/damsmanager/tsAnalyzer.do'" onMouseOver="activadeMenuItem(this, 'mButton');" onMouseOut="resetMenuItem(this, 'mButton');">SPARQL Analyzer</div>
-	<div id="mMenu5" class="menuItem" onclick="document.location.href='/damsmanager/tsSync.do'" onMouseOver="activadeMenuItem(this, 'mButton');" onMouseOut="resetMenuItem(this, 'mButton');">TripleStore Sync</div>
 </div>
 <div id="tButtonMenu" class="popMenuShort">
  	<div id="tMenu1" class="menuItem" onclick="document.location.href='/damsmanager/stats.do'" onMouseOver="activadeMenuItem(this, 'tButton');" onMouseOut="resetMenuItem(this, 'tButton');">DLC</div>

@@ -33,6 +33,7 @@ public class FileIngestionHandler extends CollectionHandler {
 
 	private static Map<String, FileWriter> fileStoreLogs = null;
 
+	private String repository = null;
 	private List<String> fileList = null;
 	private String fileFilter = null;
 	private String coDelimiter = null; // Delimiter for complex object ordering
@@ -223,7 +224,7 @@ public class FileIngestionHandler extends CollectionHandler {
 									setExeResult(false);
 									eMessage = "Content files group with object " + uploadFile.getValue()
 											+ " have being loaded in " + ark + " and " + subId.substring(0, 10);
-									String iMessagePrefix = "JETL Loading failed. ";
+									String iMessagePrefix = "File upload failed. ";
 									setStatus(iMessagePrefix + eMessage);
 									log("log", iMessagePrefix + eMessage);
 									log.error(iMessagePrefix + eMessage);
@@ -371,23 +372,31 @@ public class FileIngestionHandler extends CollectionHandler {
 							if (i == 0 && ((objBatch.size() > 1 && uploadType == UploadTaskOrganizer.MIX_LOADING)
 									|| (upLoadTask.getComponentsCount() > 1 && (uploadType == UploadTaskOrganizer.COMPLEXOBJECT_LOADING 
 									|| uploadType == UploadTaskOrganizer.MIX_CO_SHARE_ARK_LOADING)))) {
-								// Only process when duplicated files checking passed
-								numTry = 0;
-								successful = false;
-
-								while (!successful && numTry++ < maxTry) {
-									try {
-
-										// XXX
-										// Insert statement for complex object
-										  
-										RDFStore rdfStore = new RDFStore();
-										List<Statement> stmts = new ArrayList<Statement>();
-										stmts.add(rdfStore.createStatement(subjectId, predicates.get("dams:collection"), collectionId, false));
-										damsClient.addMetadata(subjectId, stmts);
-										successful = true;
-									} catch (Exception e) {
-										e.printStackTrace();
+								RDFStore rdfStore = new RDFStore();
+								List<Statement> stmts = new ArrayList<Statement>();
+								if(collectionId != null && collectionId.length() > 0)
+									stmts.add(rdfStore.createStatement(subjectId, "dams:collection", collectionId, false));
+								if(repository != null && repository.length() > 0)
+									stmts.add(rdfStore.createStatement(subjectId, "dams:repository", repository, false));
+								if(stmts.size() > 0){
+									numTry = 1;
+									successful = false;
+									while (!successful && numTry++ <= maxTry) {
+										try {
+											damsClient.addMetadata(subjectId, stmts);
+											successful = true;
+										} catch (Exception e) {
+											if(numTry == maxTry){
+												e.printStackTrace();
+												successful = false;
+												setExeResult(false);
+												eMessage = subjectId + " (" + fileName + ").";
+												String iMessagePrefix = "Failed to add repository/collection links for  ";
+												setStatus(iMessagePrefix + eMessage);
+												log("log", iMessagePrefix + eMessage);
+												log.error(iMessagePrefix + eMessage);
+											}
+										}
 									}
 								}
 							}
@@ -404,10 +413,19 @@ public class FileIngestionHandler extends CollectionHandler {
 								if((mimeType.startsWith("image") || mimeType.endsWith("pdf")) 
 										&& ((use == null && fileId.startsWith("1.")) || use.endsWith("service"))){
 									derivCreated = damsClient.createDerivatives(uploadHandler.getSubjectId(), uploadHandler.getCompId(), fileId, null);
-									if(derivCreated)
-										log.info("Created derivatives for " + damsClient.getRequestURL());
-									else
-										log.info("Failed to created derivatives for " + damsClient.getRequestURL());
+									if(derivCreated){
+										String iMessage = "Created derivatives for " + damsClient.getRequestURL();
+										setStatus(iMessage);
+										log("log", iMessage);
+									}else {
+										successful = false;
+										setExeResult(false);
+										eMessage = subjectId + " (" + fileName + ").";
+										String iMessagePrefix = "Failed to created derivatives for  ";
+										setStatus(iMessagePrefix + eMessage);
+										log("log", iMessagePrefix + eMessage);
+										log.error(iMessagePrefix + eMessage);
+									}
 								}
 							} catch (Exception e) {
 								e.printStackTrace();
@@ -482,7 +500,7 @@ public class FileIngestionHandler extends CollectionHandler {
 		}
 		exeReport.append("For records, please download the <a href=\""
 				+ Constants.CLUSTER_HOST_NAME
-				+ "damsmanager/downloadLog.do?log=ingest&category="
+				+ "/damsmanager/downloadLog.do?log=ingest&category="
 				+ collectionId + "\">Ingestion log</a>");
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
@@ -518,6 +536,14 @@ public class FileIngestionHandler extends CollectionHandler {
 		if(mimeType.toLowerCase().endsWith("pdf"))
 			return "document-" + useSuffix;
 		return mimeType.substring(0, mimeType.indexOf("/"))+ "-" + useSuffix;
+	}
+
+	public String getRepository() {
+		return repository;
+	}
+
+	public void setRepository(String repository) {
+		this.repository = repository;
 	}
 
 	public int getUploadOption() {

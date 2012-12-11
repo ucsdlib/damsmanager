@@ -28,13 +28,13 @@ public class IngestController implements Controller {
 	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		
 		String filePath = null;
-		String filePrefix = null;
 		String fileFilter = null;
 		String arkSetting = null;
 		String preferedOrder = null;
 		
 		String ds = request.getParameter("ts");
 		String category =  request.getParameter("category");
+		String repo =  request.getParameter("repo");
 		String reset = request.getParameter("reset");
 		String message = request.getParameter("message");
 		String fileStore = request.getParameter("fs");
@@ -51,13 +51,8 @@ public class IngestController implements Controller {
 			if(category == null){
 				if(reset != null){
 					filePath = "";
-					//Retrieve default value in the triplestore, then convert it to application value
-					String defaultArkSetting = "";
-					if(defaultArkSetting != null)
-						arkSetting = String.valueOf(convertArkSetting(defaultArkSetting));
 					fileStore = "";
 					session.removeAttribute("filePath");
-					session.removeAttribute("filePrefix");
 					session.removeAttribute("fileFilter");
 					session.removeAttribute("category");
 					session.removeAttribute("arkSetting");
@@ -65,12 +60,12 @@ public class IngestController implements Controller {
 					session.removeAttribute("fileStore");
 				}else{
 					filePath = (String) session.getAttribute("filePath");
-					filePrefix = (String) session.getAttribute("filePrefix");
 					fileFilter = (String) session.getAttribute("fileFilter");
 					category = (String) session.getAttribute("category");
 					arkSetting = (String) session.getAttribute("arkSetting");
 					preferedOrder = (String) session.getAttribute("preferedOrder");
 					fileStore = (String) session.getAttribute("fileStore");
+					repo = (String) session.getAttribute("fileStore");
 				}
 			}
 			
@@ -80,6 +75,7 @@ public class IngestController implements Controller {
 		}
 
 		Map<String, String> collectionMap = damsClient.listCollections();
+		Map<String, String> repoMap = damsClient.listRepositories();
 		List<String> tsSrcs = damsClient.listTripleStores();
 		List<String> fsSrcs = damsClient.listFileStores();
 		String fsDefault = damsClient.defaultFilestore();
@@ -88,6 +84,8 @@ public class IngestController implements Controller {
 		Map dataMap = new HashMap();
 		dataMap.put("categories", collectionMap);
 		dataMap.put("category", category);
+		dataMap.put("repos", repoMap);
+		dataMap.put("repo", repo);
 		dataMap.put("stagingArea", Constants.DAMS_STAGING);
 		dataMap.put("filePath", filePath);
 		dataMap.put("fileFilter", fileFilter);

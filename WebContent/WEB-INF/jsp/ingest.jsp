@@ -158,6 +158,20 @@
 		</tr>
 		<tr align ="left">
 			<td height="25px">
+				<span class="submenuText"><b>Repository: </b></span>
+				</td><td>
+					<select id="repo" name="repo" class="inputText">
+						<option value=""> -- repositories -- </option>
+						<c:forEach var="entry" items="${model.repos}">
+							<option value="${entry.value}" <c:if test="${model.repo == entry.value}">selected</c:if>>
+                       			<c:out value="${entry.key}" />
+                        	</option>
+						</c:forEach>
+					</select>
+			</td>
+		</tr>
+		<tr align ="left">
+			<td height="25px">
 				<span class="submenuText"><b>Staging Area: </b></span>
 				</td><td>
 				<span class="submenuText">
