@@ -51,15 +51,12 @@ public class FileIngestionHandler extends CollectionHandler {
 	private FileWriter fileStoreLog = null;
 	private int uploadType = UploadTaskOrganizer.SIMPLE_LOADING;
 	
-	private Map<String, String> predicates = null;
-	
 
 	public FileIngestionHandler(List<String> fileList, int uploadType)
 			throws Exception {
 		super();
 		this.fileList = fileList;
 		this.uploadType = uploadType;
-		initHandler();
 	}
 
 	public FileIngestionHandler(DAMSClient damsClient, List<String> fileList, int uploadType,
@@ -67,7 +64,6 @@ public class FileIngestionHandler extends CollectionHandler {
 		super(damsClient, collectionId);
 		this.fileList = fileList;
 		this.uploadType = uploadType;
-		initHandler();
 	}
 
 	public FileIngestionHandler(DAMSClient damsClient, List<String> fileList, int uploadType,
@@ -82,9 +78,6 @@ public class FileIngestionHandler extends CollectionHandler {
 		this.coDelimiter = coDelimiter;
 	}
 
-	private void initHandler() throws Exception{
-		predicates = damsClient.getPredicates();
-	}
 	
 	public HttpServletRequest getHttpServletRequest() {
 		return request;
@@ -117,7 +110,7 @@ public class FileIngestionHandler extends CollectionHandler {
 		Pair uploadFile = null;
 		UploadTask upLoadTask = null;
 		boolean successful = false;
-		fileStoreLog = getFileStoreLog(collectionId);
+		fileStoreLog = getFileStoreLog(collectionId!=null?collectionId:repository!=null?repository:"dams");
 		taskOrganizer = new UploadTaskOrganizer(fileList, uploadType,
 				fileFilter, fileOrderSuffixes, coDelimiter, preferedOrder);
 
@@ -153,7 +146,8 @@ public class FileIngestionHandler extends CollectionHandler {
 
 					System.out.println("Batch size: " + batchSize + " -> " + fileName + " " + contentId);
 					uploadHandler = new DAMSUploadTaskHandler(contentId,
-							fileName, collectionId, damsClient);
+							fileName, DAMSClient.stripID(collectionId), damsClient);
+					uploadHandler.setRepositoryId(repository!=null?DAMSClient.stripID(repository):null);
 
 					if (uploadOption == UploadTaskOrganizer.PAIR_LOADING) {
 						if(i == 0 && batchSize > 1)
@@ -501,7 +495,7 @@ public class FileIngestionHandler extends CollectionHandler {
 		exeReport.append("For records, please download the <a href=\""
 				+ Constants.CLUSTER_HOST_NAME
 				+ "/damsmanager/downloadLog.do?log=ingest&category="
-				+ collectionId + "\">Ingestion log</a>");
+				+ DAMSClient.stripID(collectionId) + "\">Ingestion log</a>");
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
 		return exeInfo;
@@ -521,13 +515,7 @@ public class FileIngestionHandler extends CollectionHandler {
 				} catch (IOException e1) {
 				}
 			}
-			fileStoreLog = fileStoreLogs.get(collectionId);
-			if (fileStoreLog == null) {
-				String logFileName = Constants.TMP_FILE_DIR + "/ingest-"
-						+ collectionId + ".log";
-				fileStoreLog = new FileWriter(logFileName, true);
-				fileStoreLogs.put(collectionId, fileStoreLog);
-			}
+			fileStoreLog = getFileStoreLog(collectionId);
 		}
 	}
 	
@@ -570,7 +558,7 @@ public class FileIngestionHandler extends CollectionHandler {
 		FileWriter fw = fileStoreLogs.get(collectionId);
 		if (fw == null) {
 			String logFileName = Constants.TMP_FILE_DIR + "/ingest-"
-					+ collectionId + ".log";
+					+ DAMSClient.stripID(collectionId) + ".log";
 			fw = new FileWriter(logFileName, true);
 			fileStoreLogs.put(collectionId, fw);
 		}

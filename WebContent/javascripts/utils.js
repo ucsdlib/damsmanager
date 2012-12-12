@@ -89,25 +89,17 @@
   }
       
   function httpcall(url, handler){   
-      var cObj = YAHOO.util.Connect.asyncRequest('GET', url, handler, null);               
+     YAHOO.util.Connect.asyncRequest('GET', url, handler, null);               
   }
   
   function isInteger(nText){
    var checkstr = "0123456789";
-   for (i = 0; i < nText.length; i++) {
+   for (var i = 0; i < nText.length; i++) {
 	  if (checkstr.indexOf(nText.substr(i,1)) < 0) {
 	     return false;
 	  }
    }
-   /*
-    var anInteger = false;
-    if(isNumeric(nText)){    
-      if(nText.indexOf('.') == -1){
-          anInteger = true;
-       }
-     }
-    return anInteger;
-    */ 
+   
     return true; 
    }
    
@@ -122,5 +114,16 @@
    
   function popWindow(url){
   	window.open(url);
+  }
+  
+  var gField;
+  function setFilePaths(filePaths){
+     document.getElementById(gField).value = filePaths;
+   }
+
+  function showFilePicker(id, event){
+	  gField = id;
+	  var popwin = window.open("/damsmanager/directory.do", "dirPicker", "toolbar=0,scrollbars=1,location=0,statusbar=0,menubar=0,resizable=0,width=450,height=300,left=400,top=184");
+	  popwin.focus();
   }
   

@@ -100,6 +100,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 			items = damsClient.listObjects(collectionId);
 			collectionData = (JSONArray) JSONValue.parse(damsClient.getMetadata(collectionId, null));
 			itemsCount = items.size();
+			collectionTitle = damsClient.listCollections().get(collectionId);
 		}
 	}
 

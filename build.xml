@@ -2,8 +2,6 @@
 <project name="damsmanager" default="webapp" basedir=".">
     <description>XDRE Manager</description>
 	<!-- deploy and versioning -->
-    <property file="build.properties" />
-    <property file="${user.home}/build.properties"/>
 	<property name="appName" value="damsmanager"/>
 	  <property name="src"       value="${basedir}/src"/>
 	  <property name="web"   value="${basedir}/WebContent"/>
