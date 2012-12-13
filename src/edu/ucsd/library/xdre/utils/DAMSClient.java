@@ -59,6 +59,7 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
+import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Statement;
 
 
@@ -1201,7 +1202,7 @@ public class DAMSClient {
 		if (fileStore != null)
 			storageParams = "fs=" + fileStore;
 		if (tripleStore != null)
-			storageParams = (storageParams.length() > 0 ? "&" : "") + "ds=" + tripleStore;
+			storageParams = (storageParams.length() > 0 ? "&" : "") + "ts=" + tripleStore;
 		if (storageParams.length() > 0) {
 			int idx = url.indexOf('?');
 			if (idx < 0)
@@ -1223,7 +1224,7 @@ public class DAMSClient {
 	public String toUrlPath(String objectId, String compId, String fileName){
 		String path = "";
 		// Object path
-		path += (objectId != null&&objectId.length()>0)?"/" + objectId:"";
+		path += (objectId != null&&objectId.length()>0)?"/" + stripID(objectId):"";
 		// Component path
 		path += (compId!=null&&compId.length()>0)?"/" + compId:"";
 		// File path
@@ -1491,7 +1492,11 @@ public class DAMSClient {
 			tmp = new JSONObject();
 			tmp.put("subject", stripID(stmt.getSubject().getURI()));
 			tmp.put("predicate", stripID(stmt.getPredicate().getURI()));
-			tmp.put("object", stmt.getObject().asLiteral().getValue());
+			RDFNode node = stmt.getObject();
+			if(node.isLiteral())
+				tmp.put("object", node.asLiteral().getValue());
+			else
+				tmp.put("object", node.asResource().getId().toString());
 			tmpArr.add(tmp);
 		}
 		return tmpArr.toJSONString();

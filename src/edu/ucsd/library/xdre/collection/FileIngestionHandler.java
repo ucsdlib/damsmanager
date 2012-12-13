@@ -2,6 +2,8 @@ package edu.ucsd.library.xdre.collection;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -146,8 +148,8 @@ public class FileIngestionHandler extends CollectionHandler {
 
 					System.out.println("Batch size: " + batchSize + " -> " + fileName + " " + contentId);
 					uploadHandler = new DAMSUploadTaskHandler(contentId,
-							fileName, DAMSClient.stripID(collectionId), damsClient);
-					uploadHandler.setRepositoryId(repository!=null?DAMSClient.stripID(repository):null);
+							fileName, collectionId, damsClient);
+					uploadHandler.setRepositoryId(repository);
 
 					if (uploadOption == UploadTaskOrganizer.PAIR_LOADING) {
 						if(i == 0 && batchSize > 1)
@@ -208,16 +210,16 @@ public class FileIngestionHandler extends CollectionHandler {
 							successful = true;
 							if (subjectURI != null && subjectURI.length() > 0) {
 								subjectURI = CollectionHandler.getIDValue(subjectURI);
-								String subId = DAMSClient.stripID(subjectURI);
+								//String subId = DAMSClient.stripID(subjectURI);
 
-								String tmpArk = subId.substring(0, 10);
+								String tmpArk = subjectURI;//subId.substring(0, 10);
 								if (ark == null)
 									ark = tmpArk;
-								else if (!ark.equals(tmpArk)) {
+								else if (!tmpArk.endsWith(ark)) {
 									successful = false;
 									setExeResult(false);
 									eMessage = "Content files group with object " + uploadFile.getValue()
-											+ " have being loaded in " + ark + " and " + subId.substring(0, 10);
+											+ " have being loaded in " + ark + " and " + subjectURI;
 									String iMessagePrefix = "File upload failed. ";
 									setStatus(iMessagePrefix + eMessage);
 									log("log", iMessagePrefix + eMessage);
@@ -229,7 +231,9 @@ public class FileIngestionHandler extends CollectionHandler {
 								if (i > 0 && !(uploadType == UploadTaskOrganizer.PAIR_LOADING
 												|| uploadType == UploadTaskOrganizer.SHARE_ARK_LOADING
 												|| uploadType == UploadTaskOrganizer.COMPLEXOBJECT_LOADING || uploadType == UploadTaskOrganizer.MIX_CO_SHARE_ARK_LOADING)) {
-									if (!subId.endsWith(String.valueOf(i + 1))) {
+									// XXX
+									// contentId from the ingested file.
+									if (!contentId.endsWith(String.valueOf(i + 1))) {
 										successful = false;
 										setExeResult(false);
 										String iMessagePrefix = "File upload failed. ";
@@ -363,15 +367,13 @@ public class FileIngestionHandler extends CollectionHandler {
 							}
 						} else {
 
-							if (i == 0 && ((objBatch.size() > 1 && uploadType == UploadTaskOrganizer.MIX_LOADING)
-									|| (upLoadTask.getComponentsCount() > 1 && (uploadType == UploadTaskOrganizer.COMPLEXOBJECT_LOADING 
-									|| uploadType == UploadTaskOrganizer.MIX_CO_SHARE_ARK_LOADING)))) {
+							if ( i == 0 ) {
 								RDFStore rdfStore = new RDFStore();
 								List<Statement> stmts = new ArrayList<Statement>();
 								if(collectionId != null && collectionId.length() > 0)
-									stmts.add(rdfStore.createStatement(subjectId, "dams:collection", collectionId, false));
+									stmts.add(rdfStore.createStatement(subjectId, "dams:collection", collectionId, true));
 								if(repository != null && repository.length() > 0)
-									stmts.add(rdfStore.createStatement(subjectId, "dams:repository", repository, false));
+									stmts.add(rdfStore.createStatement(subjectId, "dams:repository", repository, true));
 								if(stmts.size() > 0){
 									numTry = 1;
 									successful = false;
@@ -495,7 +497,7 @@ public class FileIngestionHandler extends CollectionHandler {
 		exeReport.append("For records, please download the <a href=\""
 				+ Constants.CLUSTER_HOST_NAME
 				+ "/damsmanager/downloadLog.do?log=ingest&category="
-				+ DAMSClient.stripID(collectionId) + "\">Ingestion log</a>");
+				+ DAMSClient.stripID(collectionId!=null?collectionId:repository!=null?repository:"dams") + "\">Ingestion log</a>");
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
 		return exeInfo;

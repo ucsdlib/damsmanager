@@ -96,7 +96,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 
 	protected void init() throws Exception {
 		exeReport = new StringBuilder();
-		if (collectionId != null && collectionId.length() == 10) {
+		if (collectionId != null) {
 			items = damsClient.listObjects(collectionId);
 			collectionData = (JSONArray) JSONValue.parse(damsClient.getMetadata(collectionId, null));
 			itemsCount = items.size();
