@@ -38,21 +38,10 @@ public class Constants {
 	public static final int METADAT_REPOPULATE_ONLY = 3;
 	public static final int METADAT_SAME_PREDICATE_REPLACEMENT = 4;
 
-	public static final int THUMBNAIL = 1;
 	public static final int MEDIUM_RESOLUTION = 2;
 	public static final int MEDIUM_RESOLUTION3A = 3;
-	public static final int THUMBNAIL2A = 4;
-	public static final String THUMBNAIL_SIZE = "150x150";
-	public static final String THUMBNAIL2A_SIZE = "65x65";
-	public static final String MEDIUM_RESOLUTION_SIZE = "768x768";
-	public static final String MEDIUM_RESOLUTION3A_SIZE = "450x450";
-	public static final String THUMBNAIL_NAME_EXT = "-2.jpg";
-	public static final String MEDIUM_RESOLUTION_NAME_EXT = "-3.jpg";
-	public static final String MEDIUM_RESOLUTION3A_NAME_EXT = "-3a.jpg";
-	public static final String THUMBNAIL2A_NAME_EXT = "-2a.jpg";
-	public static final String[] DERIVATIVE_NAMES = { "2a", "2", "3a", "3" };
-	public static final String[] DERIVATIVE_SIZES = { THUMBNAIL2A_SIZE,
-			THUMBNAIL_SIZE, MEDIUM_RESOLUTION3A_SIZE, MEDIUM_RESOLUTION_SIZE };
+	public static final int THUMBNAIL = 4;
+	public static final int THUMBNAIL2A = 5;
 
 	public static final int TIMEOUT = 30000;
 	
