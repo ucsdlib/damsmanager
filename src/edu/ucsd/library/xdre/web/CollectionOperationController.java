@@ -1,14 +1,11 @@
 package edu.ucsd.library.xdre.web;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
@@ -31,24 +28,10 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import edu.ucsd.library.shared.Mail;
 import edu.ucsd.library.util.sql.EmployeeInfo;
-import edu.ucsd.library.xdre.collection.ChecksumHandler;
 import edu.ucsd.library.xdre.collection.CollectionHandler;
-import edu.ucsd.library.xdre.collection.CollectionReportHandler;
-import edu.ucsd.library.xdre.collection.DerivativeHandler;
-import edu.ucsd.library.xdre.collection.DevUploadHandler;
-import edu.ucsd.library.xdre.collection.FileCountHandler;
 import edu.ucsd.library.xdre.collection.FileIngestionHandler;
-import edu.ucsd.library.xdre.collection.JhoveReportHandler;
-import edu.ucsd.library.xdre.collection.MetaDataStreamUploadHandler;
-import edu.ucsd.library.xdre.collection.SolrIndexHandler;
-import edu.ucsd.library.xdre.exports.CSVMetadataExportHandler;
-import edu.ucsd.library.xdre.exports.CdlIngestHandler;
-import edu.ucsd.library.xdre.exports.NTriplesMetadataExportHandler;
-import edu.ucsd.library.xdre.exports.RDFMetadaExportHandler;
-import edu.ucsd.library.xdre.imports.ExcelConverter;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
-import edu.ucsd.library.xdre.utils.ProcessHandler;
 import edu.ucsd.library.xdre.utils.RequestOrganizer;
 
 
@@ -89,9 +72,10 @@ public class CollectionOperationController implements Controller {
 		String forwardTo = "/controlPanel.do?ts=" + ds + (fileStore!=null?"&fs=" + fileStore:"");
 		if(dataConvert)
 			forwardTo = "/pathMapping.do?ts=" + ds + (fileStore!=null?"&fs=" + fileStore:"");
-		else if(isIngest)
-			forwardTo = "/ingest.do?ts=" + ds + (fileStore!=null?"&fs=" + fileStore:"");
-		else if(isDevUpload)
+		else if(isIngest){
+			String repo = request.getParameter("repository");
+			forwardTo = "/ingest.do?ts=" + ds + (fileStore!=null?"&fs=" + fileStore:"") + (repo!=null?"&repo=" + repo:"");
+		}else if(isDevUpload)
 			forwardTo = "/devUpload.do?" + (fileStore!=null?"&fs=" + fileStore:"");
 		else if(isSolrDump)
 			forwardTo = "/solrDump.do?" + (fileStore!=null?"&fs=" + fileStore:"");
@@ -226,7 +210,8 @@ public class CollectionOperationController implements Controller {
 		operations[18] = request.getParameter("exportRdf") != null;
 		operations[19] = request.getParameter("jhoveReport") != null;
 
-		String logLink = (Constants.CLUSTER_HOST_NAME.indexOf(":8080/")<0?Constants.CLUSTER_HOST_NAME.replaceFirst("http://", "https://"):Constants.CLUSTER_HOST_NAME) + "/damsmanager/downloadLog.do?sessionId=" + session.getId();
+		int submissionId = (int)System.currentTimeMillis();
+		String logLink = (Constants.CLUSTER_HOST_NAME.indexOf(":8080/")<0?Constants.CLUSTER_HOST_NAME.replaceFirst("http://", "https://"):Constants.CLUSTER_HOST_NAME) + "/damsmanager/downloadLog.do?submissionId=" + submissionId;
 		
 		String ds = request.getParameter("ts");
 		String dsDest = null;
@@ -272,7 +257,7 @@ public class CollectionOperationController implements Controller {
 		
 		String rdfXml = null;	
 		int metadataOperationId = -1;
-	    if(operations[2]){
+	    /*if(operations[2]){
 			String rdfFileOption = null;
 			String tsOperation = null;
 			if(request.getParameter("tsRepopulateOnly") != null)
@@ -306,7 +291,7 @@ public class CollectionOperationController implements Controller {
 			  }
 	       }else
 	    	   rdfXml = uploadData;
-	    }
+	    }*/
 	    
 	    JSONObject jsonToUpdate = null;
 	    String subjectId = null;
@@ -386,13 +371,13 @@ public class CollectionOperationController implements Controller {
 			 RequestOrganizer.setProgressPercentage(session, 0);
 			 message = "";
 			
-			 if(i == 0){
+			 /*if(i == 0){
 				 session.setAttribute("status", opMessage + "File Count Validation for FileStore " + fileStore + " ...");
 				 handler = new FileCountHandler(damsClient, collectionId, totalFiles);
 			 }else if (i == 1){
 				   session.setAttribute("status", opMessage + "Checksum Validation for FileStore " + fileStore + " ...");
 				   handler = new ChecksumHandler(damsClient, collectionId, ckDate);
-			 }/*else if (i == 2){	
+			 }else if (i == 2){	
 				  session.setAttribute("status", opMessage + "Populating tripleStore ...");
 				  String fileType = request.getParameter("fileType");
 				  if(fileType.equalsIgnoreCase("RDF")){
@@ -405,56 +390,15 @@ public class CollectionOperationController implements Controller {
 				  } else
 					  throw new ServiceException("Unsupported file format: " + fileType);
 				  
-			 }*/else if (i == 3){
-				 session.setAttribute("status", opMessage + "Derivative Creation ...");
+			 }else*/ if (i == 3){
+				 session.setAttribute("status", opMessage + "Derivatives Creation ...");
 				 boolean derivativeReplace = request.getParameter("derivativeReplace")==null?false:true;
 				 
-				 String[] sizes = null;
-			     String[] newImageExts = null;
-				 String derivativeType = request.getParameter("derivativeType");
-				 if("thumbnail".equalsIgnoreCase(derivativeType)){
-					 sizes = new String[1];
-					 newImageExts = new String[1];
-					 
-					 sizes[0] = Constants.THUMBNAIL_SIZE;//"150x150";
-			         newImageExts[0] = Constants.THUMBNAIL_NAME_EXT;//"-1-2.jpg";
 
-				 } else if("mediumResource".equalsIgnoreCase(derivativeType)){
-					 sizes = new String[1];
-					 newImageExts = new String[1];
-					 
-					 sizes[0] = Constants.MEDIUM_RESOLUTION_SIZE;//"768x768";	   
-			         newImageExts[0] = Constants.MEDIUM_RESOLUTION_NAME_EXT;//"-3.jpg";
-				 } else if("mediumResource3a".equalsIgnoreCase(derivativeType)){
-					 sizes = new String[1];
-					 newImageExts = new String[1];
-					 
-					 sizes[0] = Constants.MEDIUM_RESOLUTION3A_SIZE;//"450x450";	   
-			         newImageExts[0] = Constants.MEDIUM_RESOLUTION3A_NAME_EXT;//"-3a.jpg";
-				 } else if("thumbnail2a".equalsIgnoreCase(derivativeType)){
-					 sizes = new String[1];
-					 newImageExts = new String[1];
-					 
-					 sizes[0] = Constants.THUMBNAIL2A_SIZE;//"65x65";	   
-			         newImageExts[0] = Constants.THUMBNAIL2A_NAME_EXT;//"-2a.jpg";
-				 } else {
-					 sizes = new String[4];
-					 newImageExts = new String[4];
-					 
-					 sizes[0] = Constants.THUMBNAIL2A_SIZE;//"65x65";
-					 sizes[1] = Constants.THUMBNAIL_SIZE;//"150x150";
-					 sizes[2] = Constants.MEDIUM_RESOLUTION3A_SIZE;//"450x450";
-					 sizes[3] = Constants.MEDIUM_RESOLUTION_SIZE;//"768x768";
-					 
-					 newImageExts[0] = Constants.THUMBNAIL2A_NAME_EXT;//"-2a.jpg";
-			         newImageExts[1] = Constants.THUMBNAIL_NAME_EXT;//"-2.jpg";
-			         newImageExts[2] = Constants.MEDIUM_RESOLUTION3A_NAME_EXT;//"-3a.jpg";
-			         newImageExts[3] = Constants.MEDIUM_RESOLUTION_NAME_EXT;//"-3.jpg";
-				 }
+				 String deriSize = request.getParameter("deriSize");
+				 //handler = new DerivativeHandler(damsClient, collectionId, deriSize, derivativeReplace);
 
-					handler = new DerivativeHandler(damsClient, collectionId, sizes, derivativeReplace);
-
-			 }else if (i == 4){	
+			 }/*else if (i == 4){	
 				 session.setAttribute("status", opMessage + "RDF XML File Creation &amp; File Store Upload ...");
 				 String rdfXmlDataType = request.getParameter("rdfXmlDataType");
 				 boolean rdfXmlReplace = request.getParameter("rdfXmlReplace") != null;
@@ -552,10 +496,10 @@ public class CollectionOperationController implements Controller {
 				    }else
 				    	throw new ServletException("Unsupported data format: " + srcFormat);
 	    
-			 }else if (i == 10){	
+			 }*/else if (i == 10){	
 				    session.setAttribute("status", opMessage + "Stage Ingesting ...");
 				    
-					String repoId = request.getParameter("repo");
+					String repo = request.getParameter("repo");
 				    String arkSetting = request.getParameter("arkSetting").trim();
 				 	String filePath = request.getParameter("filePath").trim();
 				 	String fileFilter = request.getParameter("fileFilter").trim();
@@ -590,6 +534,8 @@ public class CollectionOperationController implements Controller {
 				 			|| Constants.DAMS_STAGING.endsWith("\\")))
 				 		filePath = filePath.substring(1);
 
+				 	session.setAttribute("category", collectionId);
+				 	session.setAttribute("repo", repo);
 				 	session.setAttribute("arkSetting", arkSetting);
 				 	session.setAttribute("filePath", filePath);
 				 	session.setAttribute("fileFilter", fileFilter);
@@ -603,9 +549,9 @@ public class CollectionOperationController implements Controller {
 		            ((FileIngestionHandler)handler).setHttpServletRequest(request);
 		            ((FileIngestionHandler)handler).setUploadOption(uploadOption);
 		            ((FileIngestionHandler)handler).setPreferedOrder(preferedOrder);
-		            ((FileIngestionHandler)handler).setRepository(repoId);
+		            ((FileIngestionHandler)handler).setRepository(repo);
 	    
-			 } else if (i == 15){	
+			 }/* else if (i == 15){	
 				 session.setAttribute("status", opMessage + "Moving files from dev to LocalStore ...");
 				 //localStore = getLocalFileStore();
 				 List<String> files = new ArrayList<String>();
@@ -614,7 +560,7 @@ public class CollectionOperationController implements Controller {
 					 files.add(URLDecoder.decode((String)it.next(), "UTF-8"));
 				 }
 				 handler = new DevUploadHandler(files);
-			 }/* else if (i == 16){	
+			 } else if (i == 16){	
 				 session.setAttribute("status", opMessage + "Single Item DIFF Updating ...");				    
 				 dHandler = new JSONDiffUpdateHandler(subjectId, jsonToUpdate, tsUtils);
 				 //((JSONDiffUpdateHandler)dHandler).setSession(session);
@@ -628,7 +574,7 @@ public class CollectionOperationController implements Controller {
 				 }else
 					 session.setAttribute("status", opMessage + "Manifest Valification ...");
 			     handler = new LocalStoreManifestHandler(tsUtils, collectionId, validateManifest, writeManifest);
-			 }*/ else if (i == 18){
+			 } else if (i == 18){
 				 String exFormat = request.getParameter("exportFormat");
 				 String xslSource = request.getParameter("xsl");
 				 if(xslSource == null || (xslSource=xslSource.trim()).length() == 0){
@@ -678,7 +624,7 @@ public class CollectionOperationController implements Controller {
 				 
 				 //xxx 
 				 //bytestream only support
-				 /*if(bytestreamFilesOnly){
+				 if(bytestreamFilesOnly){
 					 ((LocalStoreJhoveReportHandler)handler).setUpdateFormat(formatUpdate);
 					 if(collectionId==null || collectionId.length()==0){
 						 BindingIterator bit = null;
@@ -697,12 +643,13 @@ public class CollectionOperationController implements Controller {
 						 }
 						 handler.setItems(items);
 					 }	 
-				 }*/
-			 }else 	
+				 }
+			 }*/else 	
 		          throw new ServletException("Unhandle operation index: " + i);
 			 
 		   	if(handler != null){
 	 			try {
+	 				handler.setSubmissionId(submissionId);
 	 				handler.setDamsClient(damsClient);
 	 				handler.setSession(session);
 	 				handler.setUserId(userId);
@@ -731,7 +678,7 @@ public class CollectionOperationController implements Controller {
       
 	  message += exeInfo.replace("\n", "<br />") + "<br />";
 	  if(! successful){
-		  String errors = "Execution interrupted due to the following reason:<br />" + message + "<br />";
+		  String errors = "Execution failed:<br />" + message + "<br />";
 		  returnMessage += errors;
 		  break;
 	  }else{
@@ -746,7 +693,7 @@ public class CollectionOperationController implements Controller {
 	}else
 		returnMessage = message;
 	
-	String logMessage = "For details, please view " + "<a href=\"" + logLink + "\">log</a>" + ".";
+	String logMessage = "For details information, please download " + "<a href=\"" + logLink + "\">log</a>" + ".";
 	if(returnMessage.length() > 1000){
 		returnMessage = returnMessage.substring(0, 1000);
 		int idx = returnMessage.lastIndexOf("<br ");

@@ -151,7 +151,7 @@ public class DAMSClient {
 	public String mintArk(String name) throws Exception {
 		String ark = "";
 		//String url = storageURL + "next_id?format=json" + (name!=null&&name.length()>0?"&name=" + name:"");
-		String url = getDAMSRestURL("next_id", null, null, null, null, "json") + (name!=null&&name.length()>0?"&name=" + name:"");
+		String url = getDAMSFunctionURL("next_id", null, "json") + (name!=null&&name.length()>0?"&name=" + name:"");
 		HttpPost post = new HttpPost(url);
 		JSONObject resObj = getJSONResult(post);
 		if(resObj != null){
@@ -171,7 +171,7 @@ public class DAMSClient {
 	 */
 	public List<String> listTripleStores() throws Exception{
 		//String url = storageURL + "system/triplestores?format=json";
-		String url = getDAMSRestURL("system", "triplestores", null, null, null, "json");
+		String url = getDAMSFunctionURL("system", "triplestores", "json");
 		HttpGet get = new HttpGet(url);
 		JSONObject resObj = getJSONResult(get);
 		JSONArray jsonArr = (JSONArray) resObj.get("triplestores");
@@ -187,7 +187,7 @@ public class DAMSClient {
 	 * @throws Exception 
 	 */
 	public String defaultTriplestore() throws Exception{
-		String url = getDAMSRestURL("system", "triplestores", null, null, null, "json");
+		String url = getDAMSFunctionURL("system", "triplestores", "json");
 		HttpGet get = new HttpGet(url);
 		JSONObject resObj = getJSONResult(get);
 		return  (String)resObj.get("defaultTriplestore");
@@ -200,7 +200,7 @@ public class DAMSClient {
 	 */
 	public List<String> listFileStores() throws Exception{
 		//String url = storageURL + "system/filestores?format=json";
-		String url = getDAMSRestURL("system", "filestores", null, null, null, "json");
+		String url = getDAMSFunctionURL("system", "filestores", "json");
 		HttpGet get = new HttpGet(url);
 		JSONObject resObj = getJSONResult(get);
 		JSONArray jsonArr = (JSONArray) resObj.get("filestores");
@@ -216,7 +216,7 @@ public class DAMSClient {
 	 * @throws Exception 
 	 */
 	public String defaultFilestore() throws Exception{
-		String url = getDAMSRestURL("system", "filestores", null, null, null, "json");
+		String url = getDAMSFunctionURL("system", "filestores", "json");
 		HttpGet get = new HttpGet(url);
 		JSONObject resObj = getJSONResult(get);
 		return (String)resObj.get("defaultFilestore");
@@ -230,8 +230,7 @@ public class DAMSClient {
 	 */
 	public Map<String, String> listRepositories() throws Exception{
 		Map<String, String> map = null;
-		String url = getDAMSRestURL("repositories", null, null, null, null, "json");
-		url = appendStorageInfo(url);
+		String url = getRepositoriesURL(null, null, "json");
 		HttpGet get = new HttpGet(url);
 		JSONObject resObj = getJSONResult(get);
 		JSONArray colArr = (JSONArray) resObj.get("repositories");
@@ -252,7 +251,7 @@ public class DAMSClient {
 	 * @throws Exception 
 	 **/
 	public List<String> listRepoObjects(String repoId) throws Exception {
-		String url = getDAMSRestURL("repositories", repoId, null, null, null, null);
+		String url = getRepositoriesURL(repoId, null, "xml");
 		HttpGet get = new HttpGet(url);
 		Document doc = getXMLResult(get);
 		List<Node> objectNodes = doc.selectNodes(DOCUMENT_RESPONSE__ROOT_PATH + "/objects/value/obj");
@@ -260,7 +259,7 @@ public class DAMSClient {
 		List<String> objectsList = new ArrayList<String>();
 		for(Iterator it= objectNodes.iterator(); it.hasNext();){
 			valNode = (Node)it.next();
-			objectsList.add(stripID(valNode.getText()));
+			objectsList.add(valNode.getText());
 		}
 		return objectsList;
 	}
@@ -272,7 +271,7 @@ public class DAMSClient {
 	 **/
 	public List<DFile> listRepoFiles(String repoId) throws Exception {
 		JSONObject resObj = null;
-		String url = getDAMSRestURL("repositories", repoId, null, null, "files", "json");
+		String url = getRepositoriesURL(repoId, "files", "json");
 		HttpGet get = new HttpGet(url);
 		resObj = getJSONResult(get);
 		JSONArray jsonArr = (JSONArray) resObj.get("files");
@@ -290,8 +289,7 @@ public class DAMSClient {
 	public Map<String, String> listCollections() throws Exception{
 		Map<String, String> map = null;
 		//String url = storageURL + "collections?format=json";
-		String url = getDAMSRestURL("collections", null, null, null, null, "json");
-		url = appendStorageInfo(url);
+		String url = getCollectionsURL(null, null, "json");
 		HttpGet get = new HttpGet(url);
 		JSONObject resObj = getJSONResult(get);
 		JSONArray colArr = (JSONArray) resObj.get("collections");
@@ -311,7 +309,7 @@ public class DAMSClient {
 	 * @throws Exception 
 	 **/
 	public List<String> listObjects(String collectionId) throws Exception {
-		String url = getDAMSRestURL("collections", collectionId, null, null, null, null);
+		String url = getCollectionsURL(collectionId, null, "xml");
 		HttpGet get = new HttpGet(url);
 		Document doc = getXMLResult(get);
 		List<Node> objectNodes = doc.selectNodes(DOCUMENT_RESPONSE__ROOT_PATH + "/objects/value/obj");
@@ -319,7 +317,7 @@ public class DAMSClient {
 		List<String> objectsList = new ArrayList<String>();
 		for(Iterator it= objectNodes.iterator(); it.hasNext();){
 			valNode = (Node)it.next();
-			objectsList.add(stripID(valNode.getText()));
+			objectsList.add(valNode.getText());
 		}
 		return objectsList;
 	}
@@ -333,7 +331,7 @@ public class DAMSClient {
 	 */
 	public long countObjects(String collectionId) throws Exception{
 		JSONObject resObj = null;
-		String url = getDAMSRestURL("collections", collectionId, null, null, "count", "json");
+		String url = getCollectionsURL(collectionId, "count", "json");
 		HttpGet get = new HttpGet(url);
 		resObj = getJSONResult(get);
 		return ((Long)resObj.get("count")).longValue();
@@ -350,7 +348,7 @@ public class DAMSClient {
 	 */
 	public InputStream transform(String object, String xsl, boolean recursive, String destFileId) throws Exception{
 		String format = null;
-		String url = getDAMSRestURL("objects", object, null, null, null, format);
+		String url = getObjectsURL(object, null, null, format);
 		HttpPost post = new HttpPost(url);
 		List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
 		nameValuePairs.add(new BasicNameValuePair("xsl", xsl));
@@ -374,9 +372,9 @@ public class DAMSClient {
 	 * Get a list of files in an object.
 	 * @throws Exception 
 	 **/
-	public List<DFile> listFiles(String object) throws Exception {
+	public List<DFile> listObjectFiles(String object) throws Exception {
 		JSONObject resObj = null;
-		String url = getDAMSRestURL("objects", object, null, null, "files", "json");
+		String url = getObjectsURL(object, null, "files", "json");
 		HttpGet get = new HttpGet(url);
 		resObj = getJSONResult(get);
 		JSONArray jsonArr = (JSONArray) resObj.get("files");
@@ -387,56 +385,57 @@ public class DAMSClient {
 	}
 	
 	/**
-	 * Retrieve the object ID from the original source filename
+	 * Retrieve the file ID from the original source filename
 	 * @param srcFileName
 	 * @param srcPath
 	 * @param collectionId
 	 * @return
 	 * @throws Exception 
 	 */
-	public List<String> retrieveObjectId(String srcFileName, String srcPath, String collectionId, String repoId) throws Exception{
+	public List<FileURI> retrieveFileURI(String srcFileName, String srcPath, String collectionId, String repoId) throws Exception{
 		HttpGet req = null;
-		List<String> ids = new ArrayList<String>();
+		List<FileURI> fileURIs = new ArrayList<FileURI>();
 		String url = "";
 		if(collectionId == null && repoId == null){
 			// Retrieve object from SOLR
 		}else{
 			if(collectionId != null)
-				url = getDAMSRestURL("collections", collectionId, null, null, "files", "xml");
+				url = getCollectionsURL(collectionId, "files", "xml");
 			else
-				url = getDAMSRestURL("repositories", collectionId, null, null, "files", "xml");
+				url = getRepositoriesURL(repoId, "files", "xml");
 		}
 
 		try{
 
 			req = new HttpGet(url);
 			Document doc = getXMLResult(req);
-			List<Node> idNodes = doc.selectNodes(DOCUMENT_RESPONSE__ROOT_PATH + "/files/value/id[sourceFilename='" + StringEscapeUtils.unescapeXml(srcFileName) + "']");
+			List<Node> idNodes = doc.selectNodes(DOCUMENT_RESPONSE__ROOT_PATH + "/files/value[sourceFileName='" + srcFileName + "']");
 			if(idNodes != null){
+				System.out.println("Result size: " + idNodes.size());
 				String id = null;
+				String object = null;
 				String filePath = null;
 				Node idNode = null;
 				int nSize =  idNodes.size();
 				for(int i=0; i<nSize; i++){
-					id = idNodes.get(i).getText();
+					idNode = idNodes.get(i);
+					id = idNode.selectSingleNode("id").getText();
+					object = idNode.selectSingleNode("object").getText();
 					//Source path restriction
 					if(srcPath != null && srcPath.length() > 0){
-						idNode = doc.selectSingleNode(DOCUMENT_RESPONSE__ROOT_PATH + "/files/value/sourcePath[id='" + id + "']");
-						if(idNode != null){
-							filePath = idNode.getText();
-							if(srcPath.equalsIgnoreCase(filePath)){
-								ids.add(id);
-							}
+						filePath = idNode.selectSingleNode("sourcePath").getText();
+						if(srcPath.equalsIgnoreCase(filePath)){
+							fileURIs.add(FileURI.toParts(id, object));
 						}
 					} else {
-						ids.add(id);
+						fileURIs.add(FileURI.toParts(id, object));
 					}
 				}
 			}
 		}finally{
 			req.reset();
 		}
-		return ids;
+		return fileURIs;
 	}
 	
 	
@@ -451,7 +450,7 @@ public class DAMSClient {
 		// http://gimili.ucsd.edu:8080/dams/api/files/bb01010101/1/1.tif/fixity?format=json
 		// {"crc32":"5ffa698b","md5":"f69c4f85cafbe05e55068cedd4353146","statusCode":200,"request":"\/files\/bb01010101\/1\/1.tif\/fixity","status":"OK"}
 		JSONObject resObj = null;
-		String url = getDAMSRestURL("files", compId, object, fileName, "fixity", "json");
+		String url = getFilesURL(object, compId, fileName, "fixity", "json");
 		HttpGet get = new HttpGet(url);
 		resObj = getJSONResult(get);
 		String status = (String) resObj.get("status");
@@ -472,7 +471,7 @@ public class DAMSClient {
 	 */
 	public boolean createDerivatives(String object, String compId, String fileName, String size, String frame) throws Exception {
 		String format = null;
-		String url = getDAMSRestURL("files", object, compId, fileName, "derivatives", format);
+		String url = getFilesURL(object, compId, fileName, "derivatives", format);
 		HttpPost req = new HttpPost(url);
 		List<NameValuePair> params = new ArrayList<NameValuePair>();
 		if(size != null && size.length() > 0 || frame != null && frame.length() > 0){
@@ -487,7 +486,8 @@ public class DAMSClient {
 		boolean success = false;
 		try {
 			status = execute(req);
-			if (success=!(status == 200 || status == 201))
+			success= (status == 200 || status == 201);
+			if (!success)
 				handleError(format);
 		} finally {
 			req.reset();
@@ -528,7 +528,7 @@ public class DAMSClient {
 	 */
 	public boolean updateDerivatives(String object, String compId, String fileName, String  size, String frame) throws Exception {
 		String format = null;
-		String url = getDAMSRestURL("files", object, compId, fileName, "derivatives", format);
+		String url = getFilesURL(object, compId, fileName, "derivatives", format);
 		HttpEntityEnclosingRequestBase req = new HttpPut(url);
 		if(exists(object, compId, fileName))
 			req = new HttpPut(url);
@@ -587,7 +587,7 @@ public class DAMSClient {
 	public boolean solrUpdate(String object) throws Exception {
 		//POST /objects/bb1234567x/index
 		String format = "json";
-		String url = getDAMSRestURL("objects", object, null, null, "update", format);
+		String url = getObjectsURL(object, null, "update", format);
 		HttpPost post = new HttpPost(url);
 		int status = -1;
 		boolean success = false;
@@ -616,7 +616,7 @@ public class DAMSClient {
 	public boolean solrDelete(String object) throws Exception {
 		//DELETE /objects/bb1234567x/index
 		String format = "json";
-		String url = getDAMSRestURL("objects", object, null, null, "update", format);
+		String url = getObjectsURL(object, null, "update", format);
 		HttpDelete del= new HttpDelete(url);
 		int status = -1;
 		boolean success = false;
@@ -668,7 +668,7 @@ public class DAMSClient {
 	 */
 	public String getMetadata(String object, String format)
 			throws Exception {
-		String url = getDAMSRestURL("objects", object, null, null, null, format);
+		String url = getObjectsURL(object, null, null, format);
 		HttpGet req = new HttpGet(url);
 		int status = -1;
 		try {
@@ -695,7 +695,7 @@ public class DAMSClient {
 	public boolean saveFileCharacterize(String object, String compId, String fileName,
 			List<NameValuePair> optionalParams) throws Exception {
 		String format = null;
-		String url = getDAMSRestURL("files", object, compId, fileName, "characterize", format);
+		String url = getFilesURL(object, compId, fileName, "characterize", format);
 		HttpPost post = new HttpPost(url);
 		post.setEntity(new UrlEncodedFormEntity(optionalParams));
 		int status = -1;
@@ -726,7 +726,7 @@ public class DAMSClient {
 	public boolean updateFileCharacterize(String object, String compId, String fileName,
 			List<NameValuePair> optionalParams) throws Exception {
 		String format = null;
-		String url = getDAMSRestURL("files", object, compId, fileName, "characterize", format);
+		String url = getFilesURL(object, compId, fileName, "characterize", format);
 		HttpPut req = new HttpPut(url);
 		req.setEntity(new UrlEncodedFormEntity(optionalParams));
 		int status = -1;
@@ -750,7 +750,7 @@ public class DAMSClient {
 	 * @throws Exception 
 	 */
 	public DFile extractFileCharacterize(String object, String compId, String fileName) throws Exception {
-		String url = getDAMSRestURL("files", object, compId, fileName, "characterize", "json");
+		String url = getFilesURL(object, compId, fileName, "characterize", "json");
 		HttpGet req = new HttpGet(url);
 		DFile dfile = null;
 		try {
@@ -779,11 +779,10 @@ public class DAMSClient {
 		String url = null;
 		
 		if (object != null && (object = object.trim()).length() > 0) {
-			String path = "objects";
 			if (fileName != null && (fileName = fileName.trim()).length() > 0)
-				path = "files";
-				
-			url = getDAMSRestURL(path, object, compId, fileName, "exists", format);
+				url = getFilesURL(object, compId, fileName, "exists", format);
+			else
+				url = getObjectsURL(object, compId, "exists", format);
 		} else {
 			throw new Exception("Object identifier must be specified");
 		}
@@ -811,7 +810,7 @@ public class DAMSClient {
 	 **/
 	public Map<String, String> getPredicates() throws Exception {
 		Map<String, String> predicates = new HashMap<String, String>();
-		String url = getDAMSRestURL("system", null, null, null, "predicates", null);
+		String url = getDAMSFunctionURL("system", "predicates", "xml");
 		HttpGet get = new HttpGet(url);
 		Document doc = getXMLResult(get);
 		List<Node> nodes = doc.selectNodes(DOCUMENT_RESPONSE__ROOT_PATH + "/predicates/value");
@@ -819,7 +818,7 @@ public class DAMSClient {
 		
 		for(Iterator<Node> it=nodes.iterator(); it.hasNext();){
 			node = (Node)it.next();
-			predicates.put(stripID(node.selectSingleNode("@key").getStringValue()), node.getText());
+			predicates.put(node.selectSingleNode("@key").getStringValue(), node.getText());
 		}
 		return predicates;
 	}
@@ -858,11 +857,11 @@ public class DAMSClient {
 	 */
 	public InputStream read(String object, String compId, String fileName) throws Exception {
 		String format = null;
-		String path = "objects";
+		String url = null;
 		if (fileName != null && (fileName = fileName.trim()).length() > 0)
-			path = "files";
-		String url = getDAMSRestURL(path, object, compId, fileName, null, format);
-		url = appendStorageInfo(url);
+			url = getFilesURL(object, compId, fileName, null, format);
+		else
+			url = getObjectsURL(object, compId, null, format);
 		HttpGet get = new HttpGet(url);
 		int status = -1;
 		try{
@@ -904,7 +903,7 @@ public class DAMSClient {
 		String format = null;
 		HttpEntityEnclosingRequestBase req = null;
 		//MultipartPostMethod req = new MultipartPostMethod();
-		String url = getDAMSRestURL("files", object, compId, fileName, null, null);
+		String url = getFilesURL(object, compId, fileName, null, null);
 		int status = -1;
 		boolean success = false;
 		try {
@@ -946,7 +945,7 @@ public class DAMSClient {
 	public boolean uploadFile(String object, String compId, String fileName, InputStream in, long len) throws Exception {
 		HttpEntityEnclosingRequestBase req = null;
 		String format = null;
-		String url = getDAMSRestURL("files", object, compId, fileName, null, format);
+		String url = getFilesURL(object, compId, fileName, null, format);
 		String contentType = new FileDataSource(fileName).getContentType();
 		int status = -1;
 		boolean success = false;
@@ -980,7 +979,7 @@ public class DAMSClient {
 		
 		String format = null;
 		HttpEntityEnclosingRequestBase req = null;
-		String url = getDAMSRestURL("objects", object, null, null, null, format);
+		String url = getObjectsURL(object, null, null, format);
 		if(exists(object, null, null)) {
 			req = new HttpPut(url);
 		} else {
@@ -1015,13 +1014,14 @@ public class DAMSClient {
 			throws Exception {
 		String format = null;
 		HttpEntityEnclosingRequestBase req = null;
-		String url = getDAMSRestURL("objects", object, null, null, null, format);
+		String url = getObjectsURL(object, null, null, format);
 
+		/*
 		List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>();
 		nameValuePairs.add(new BasicNameValuePair("subject", object));
 		nameValuePairs.add(new BasicNameValuePair("adds", toJSONString(stmts)));
 		nameValuePairs.add(new BasicNameValuePair("mode", "add"));
-
+		*/
 		int status = -1;
 		boolean success = false;
 		try {
@@ -1030,7 +1030,11 @@ public class DAMSClient {
 			} else {
 				req = new HttpPost(url);
 			}
-			req.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+			MultipartEntity ent = new MultipartEntity();
+			ent.addPart("subject", new StringBody(object));
+			ent.addPart("adds", new StringBody(toJSONString(stmts)));
+			ent.addPart("mode", new StringBody("add"));
+			req.setEntity(ent);
 			status = execute(req);
 			if(success=!(status == 200 || status == 201))
 				handleError(format);
@@ -1069,11 +1073,11 @@ public class DAMSClient {
 	public boolean delete(String object, String compId, String fileName) throws Exception {
 		String format = null;
 		String url = null;
-		String path = "objects";
 		if (object != null && (object = object.trim()).length() > 0) {
 			if (fileName != null && (fileName = fileName.trim()).length() > 0)
-				path = "files";
-			url = getDAMSRestURL(path, object, compId, fileName, null, format);
+				url = getFilesURL(object, compId, fileName, null, format);
+			else 
+				url = getObjectsURL(object, compId, null, format);
 		} else {
 			throw new Exception("Object identifier must be specified");
 		}
@@ -1113,19 +1117,88 @@ public class DAMSClient {
 	}
 	
 	/**
-	 * Construct the URL for the DAMS REST API
+	 * Construct the functional URL for DAMS REST API
 	 * @param path -
-	 * 			objects, files, collections, system, client etc.
+	 * 			system, nextId, index, client etc.
 	 * @param object
-	 * @param fileName
 	 * @param function -
-	 * 			function exist, fixity, transform, files, export, triplestores, filestores, predicates, index etc.
+	 * 			triplestores, filestores, predicates etc.
 	 * @param format
-	 * 			xml, html, json, ntriple, etc.
+	 * 			xml, html, json,  etc.
 	 * @return
 	 */
-	private String getDAMSRestURL(String path, String object, String compId, String fileName, String function, String format){
-		return appendStorageInfo(storageURL + "/" + path + toUrlPath(object, compId, fileName) + (function!=null&&function.length()>0?"/" + function:"") + (format!=null&&format.length()>0?"?format="+format:""));
+	public String getDAMSFunctionURL(String path, String function, String format){
+		String[] parts = {path, function};
+		return storageURL + toUrlPath(parts) + (format!=null&&format.length()>0?"?format="+format:"");
+	}
+
+	public String getIndexURL(String format){
+		String[] parts = {"index"};
+		return toDAMSURL(parts, format);
+	}
+	
+	/**
+	 * Construct REST URL for repositories, collections
+	 * @param collection
+	 * @param function
+	 * @param format
+	 * @return
+	 */
+	public String getRepositoriesURL(String repository, String function, String format){
+		String[] parts = {"repositories", repository, function};
+		return toDAMSURL(parts, format);
+	}
+	
+	/**
+	 * Construct REST URL for repositories, collections
+	 * @param collection
+	 * @param function
+	 * @param format
+	 * @return
+	 */
+	public String getCollectionsURL(String collection, String function, String format){
+		String[] parts = {"collections", collection, function};
+		return toDAMSURL(parts, format);
+	}
+	
+	/**
+	 * Construct REST URL for objects and components
+	 * @param object
+	 * @param compId
+	 * @param function
+	 * @param format
+	 * @return
+	 */
+	public String getObjectsURL(String object, String compId, String function, String format){
+		String[] parts = {"objects", object, function};
+		return toDAMSURL(parts, format);
+	}
+	
+	/**
+	 * Construct Files REST URL
+	 * @param object
+	 * @param compId
+	 * @param fileName
+	 * @param function
+	 * @param format
+	 * @return
+	 */
+	public String getFilesURL(String object, String compId, String fileName, String function, String format){
+		String[] parts = {"files", object, compId, fileName, function};
+		return toDAMSURL(parts, format);
+	}
+	
+	/**
+	 * Construct DAMS REST URL
+	 * @param urlParts
+	 * @param format
+	 * @return
+	 */
+	public String toDAMSURL(String[] urlParts, String format){
+		NameValuePair[] params = {new BasicNameValuePair("format", format), new BasicNameValuePair("ts",tripleStore), new BasicNameValuePair("fs", fileStore)};
+		String paramsStr = concatParams(params);
+		System.out.println(storageURL + toUrlPath(urlParts) + (paramsStr.length()>0?"?":"") + paramsStr);
+		return storageURL + toUrlPath(urlParts) + (paramsStr.length()>0?"?":"") + paramsStr;
 	}
 	
 	/**
@@ -1193,42 +1266,32 @@ public class DAMSClient {
 	}
 
 	/**
-	 * Append fileStore and tripleStore parameters to the URL
-	 * 
-	 * @param url
+	 * Concatenate parameters
+	 * @param params
+	 * @return
 	 */
-	private String appendStorageInfo(String url) {
-		String storageParams = "";
-		if (fileStore != null)
-			storageParams = "fs=" + fileStore;
-		if (tripleStore != null)
-			storageParams = (storageParams.length() > 0 ? "&" : "") + "ts=" + tripleStore;
-		if (storageParams.length() > 0) {
-			int idx = url.indexOf('?');
-			if (idx < 0)
-				url += "?" + storageParams;
-			else if (idx == url.length() - 1)
-				url += storageParams;
-			else
-				url += "&" + storageParams;
+	public String concatParams(NameValuePair[] params) {
+		String paramStr = "";
+		for(int i=0; i<params.length; i++){
+			String paramValue = params[i].getValue();
+			if(paramValue != null && paramValue.length() > 0)
+				paramStr += (paramStr.length()>0?"&":"") + params[i].getName() + "=" + paramValue;
 		}
-		return url;
+		return paramStr;
 	}
 	
 	/**
 	 * Convert object ID and the file name to DAMS REST URL path: objectId/[componentId/]/fileName
 	 * @param objectId
-	 * @param fileName
 	 * @return
 	 */
-	public String toUrlPath(String objectId, String compId, String fileName){
+	public String toUrlPath(String[] parts){
 		String path = "";
-		// Object path
-		path += (objectId != null&&objectId.length()>0)?"/" + stripID(objectId):"";
-		// Component path
-		path += (compId!=null&&compId.length()>0)?"/" + compId:"";
-		// File path
-		path += (fileName!=null&&fileName.length()>0)?"/" + fileName:"";
+		for(int i=0; i<parts.length; i++){
+			if(parts[i] != null && parts[i].length() > 0){
+				path += "/" + stripID(parts[i]);
+			}
+		}
 
 		return path;
 	}
@@ -1499,6 +1562,7 @@ public class DAMSClient {
 				tmp.put("object", node.asResource().getId().toString());
 			tmpArr.add(tmp);
 		}
+		System.out.println("Adds: "+tmpArr.toJSONString());
 		return tmpArr.toJSONString();
 	}
 	

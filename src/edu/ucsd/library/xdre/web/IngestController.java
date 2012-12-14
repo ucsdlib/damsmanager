@@ -33,7 +33,7 @@ public class IngestController implements Controller {
 		String preferedOrder = null;
 		
 		String ds = request.getParameter("ts");
-		String category =  request.getParameter("category");
+		String collectionId =  request.getParameter("category");
 		String repo =  request.getParameter("repo");
 		String reset = request.getParameter("reset");
 		String message = request.getParameter("message");
@@ -48,24 +48,25 @@ public class IngestController implements Controller {
 			
 			damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
 			damsClient.setTripleStore(ds);
-			if(category == null){
+			if(collectionId == null){
 				if(reset != null){
 					filePath = "";
 					fileStore = "";
 					session.removeAttribute("filePath");
 					session.removeAttribute("fileFilter");
-					session.removeAttribute("category");
+					session.removeAttribute("collectionId");
 					session.removeAttribute("arkSetting");
 					session.removeAttribute("preferedOrder");
 					session.removeAttribute("fileStore");
+					session.removeAttribute("repo");
 				}else{
 					filePath = (String) session.getAttribute("filePath");
 					fileFilter = (String) session.getAttribute("fileFilter");
-					category = (String) session.getAttribute("category");
+					collectionId = (String) session.getAttribute("collectionId");
 					arkSetting = (String) session.getAttribute("arkSetting");
 					preferedOrder = (String) session.getAttribute("preferedOrder");
 					fileStore = (String) session.getAttribute("fileStore");
-					repo = (String) session.getAttribute("fileStore");
+					repo = (String) session.getAttribute("repo");
 				}
 			}
 			
@@ -83,7 +84,7 @@ public class IngestController implements Controller {
 			fileStore = fsDefault;
 		Map dataMap = new HashMap();
 		dataMap.put("categories", collectionMap);
-		dataMap.put("category", category);
+		dataMap.put("category", collectionId);
 		dataMap.put("repos", repoMap);
 		dataMap.put("repo", repo);
 		dataMap.put("stagingArea", Constants.DAMS_STAGING);

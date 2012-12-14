@@ -16,7 +16,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import edu.ucsd.library.xdre.model.Utility.DAMSClient;
 import edu.ucsd.library.xdre.utils.Constants;
 
 
@@ -52,16 +51,16 @@ public class DownloadLogController implements Controller {
 		String downloadName = "";
 		if(fileName == null){
 			String logType = request.getParameter("log");
-			String sessionId = request.getParameter("sessionId");
+			String submissionId = request.getParameter("submissionId");
 			String category = request.getParameter("category");
-			downloadName = (category==null?sessionId:category);
+			downloadName = (category==null?submissionId:category);
 			if(logType != null && logType.equalsIgnoreCase("ingest")){
 				response.setHeader("Content-Disposition", "attachment; filename=ingest.log");
-				fileName = Constants.TMP_FILE_DIR + "/ingest-" + category + ".log";
+				fileName = (Constants.TMP_FILE_DIR==null||Constants.TMP_FILE_DIR.length()==0?"":Constants.TMP_FILE_DIR+"/") + "ingest-" + category + ".log";
 				downloadName = "ingest-" + downloadName  + ".log";
 			}else{
 				response.setHeader("Content-Disposition", "attachment; filename=damslog.txt");
-				fileName = Constants.TMP_FILE_DIR + "/damslog-" + sessionId + ".txt";
+				fileName = (Constants.TMP_FILE_DIR==null||Constants.TMP_FILE_DIR.length()==0?"":Constants.TMP_FILE_DIR+"/") + "damslog-" + submissionId + ".txt";
 				downloadName = "damslog-" + downloadName  + ".txt";
 			}
 		}else{

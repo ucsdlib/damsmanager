@@ -16,8 +16,9 @@ import java.net.URL;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
-import javax.security.auth.login.LoginException;
 import javax.servlet.http.HttpSession;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
@@ -75,18 +76,35 @@ public abstract class CollectionHandler implements ProcessHandler {
 	protected String collectionTitle = null;
 	protected int itemsCount = 0; //Total number of items in the collection/batch
 
+	/**
+	 * Empty constructor
+	 */
 	public CollectionHandler() {}
 	
 	public CollectionHandler(DAMSClient damsClient) throws Exception{
 		this(damsClient, null);
 	}
 
+	/**
+	 * Constructor
+	 * @param damsClient
+	 * @param collectionId
+	 * @throws Exception
+	 */
 	public CollectionHandler(DAMSClient damsClient, String collectionId) throws Exception{
 		this.damsClient = damsClient;
 		this.collectionId = collectionId;
 		init();
 	}
 
+	/**
+	 * Constructor
+	 * @param damsClient
+	 * @param collectionId
+	 * @param session
+	 * @param userId
+	 * @throws Exception
+	 */
 	public CollectionHandler(DAMSClient damsClient, String collectionId, HttpSession session,
 			int userId) throws Exception {
 		this(damsClient, collectionId);
@@ -94,13 +112,25 @@ public abstract class CollectionHandler implements ProcessHandler {
 		this.userId = userId;
 	}
 
+	/**
+	 * Object initiation for a collection 
+	 * @throws Exception
+	 */
 	protected void init() throws Exception {
 		exeReport = new StringBuilder();
 		if (collectionId != null) {
 			items = damsClient.listObjects(collectionId);
 			collectionData = (JSONArray) JSONValue.parse(damsClient.getMetadata(collectionId, null));
 			itemsCount = items.size();
-			collectionTitle = damsClient.listCollections().get(collectionId);
+			Map<String, String> colls = damsClient.listCollections();
+			Entry<String, String> ent = null;
+			for (Iterator<Entry<String, String>> it=colls.entrySet().iterator(); it.hasNext();){
+				ent = (Entry<String, String>) it.next();
+				if(ent.getValue().equals(collectionId)){
+					collectionTitle = ent.getKey();
+					break;
+				}
+			}
 		}
 	}
 
@@ -186,8 +216,8 @@ public abstract class CollectionHandler implements ProcessHandler {
 				synchronized (session) {
 					// Write to the log file
 					if (logWriter == null) {
-						String logFileName = Constants.TMP_FILE_DIR
-								+ "/damslog-" + submissionId + ".txt";
+						String logFileName = (Constants.TMP_FILE_DIR==null||Constants.TMP_FILE_DIR.length()==0?"":Constants.TMP_FILE_DIR+"/")
+								+ "damslog-" + submissionId + ".txt";
 						try {
 							logWriter = new FileWriter(logFileName, true);
 							logWriter.write("\n"
@@ -198,13 +228,8 @@ public abstract class CollectionHandler implements ProcessHandler {
 
 						} catch (IOException e) {
 							e.printStackTrace();
-							if (logWriter != null) {
-								try {
-									logWriter.close();
-								} catch (IOException e1) {
-								}
-								logWriter = null;
-							}
+							close(logWriter);
+							logWriter = null;
 						}
 					}
 					if (logWriter != null) {
@@ -213,10 +238,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 							logWriter.flush();
 						} catch (IOException e) {
 							e.printStackTrace();
-							try {
-								logWriter.close();
-							} catch (IOException e1) {
-							}
+							close(logWriter);
 							logWriter = null;
 						}
 					}
@@ -240,7 +262,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 		reader.close();
 		return strBuilder.toString();
 	}
-
+	
 	public static Element createSubject(String subjectId, boolean useArk) {
 		Element rdfSubjectElem = DomUtil.createElement(null,
 				StringEscapeUtils.escapeXml("rdf:Description"), null, null);
@@ -294,15 +316,8 @@ public abstract class CollectionHandler implements ProcessHandler {
 	}
 
 	public void releaseResource() throws Exception {
-
-		try {
-			if (logWriter != null)
-				logWriter.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			logWriter = null;
-		}
+		close(logWriter);	
+		logWriter = null;
 	}
 
 	public boolean getExeResult() {
@@ -320,7 +335,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 						RequestOrganizer.PROGRESS_PERCENTAGE_ATTRIBUTE,
 						Long.toString(percent));
 			} catch (IllegalStateException e) {
-				// e.printStackTrace();
+				e.printStackTrace();
 			}
 		}
 	}
@@ -450,22 +465,8 @@ public abstract class CollectionHandler implements ProcessHandler {
 				out.write(buf, 0, len);
 			}
 		} finally {
-			if (in != null) {
-				try {
-					in.close();
-					in = null;
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-			if (out != null) {
-				try {
-					out.close();
-					out = null;
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
+			close(in);
+			close(out);
 		}
 	}
 
@@ -500,22 +501,8 @@ public abstract class CollectionHandler implements ProcessHandler {
 							+ (lenthCopied * 100 / srcLength) + "% done ...");
 			}
 		} finally {
-			if (in != null) {
-				try {
-					in.close();
-					in = null;
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-			if (out != null) {
-				try {
-					out.close();
-					out = null;
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
+			close(in);
+			close(out);
 		}
 	}
 

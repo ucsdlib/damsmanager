@@ -14,13 +14,13 @@
     </bean>
     <bean name="/ingest.do" class="edu.ucsd.library.xdre.web.IngestController"></bean>
 	<bean name="/directory.do" class="edu.ucsd.library.xdre.web.DirectoryController"></bean>
-    <bean name="/jhove.do" class="edu.ucsd.library.xdre.web.JhoveIngestController" />
+    <!--<bean name="/jhove.do" class="edu.ucsd.library.xdre.web.JhoveIngestController" />-->
     <!--<bean name="/derivative.do" class="edu.ucsd.library.xdre.web.DerivativeCreationController" />-->
  	<!--<bean name="/collectionReport.do" class="edu.ucsd.library.xdre.web.CollectionStatusReport" />-->
 	<bean name="/logout.do" class="edu.ucsd.library.xdre.web.LogoutController" />
 	<bean name="/login.do" class="edu.ucsd.library.xdre.web.LoginController" />
 	<bean name="/loginPas.do" class="edu.ucsd.library.xdre.web.LoginPasController" />
-	<bean name="/metaDataImport.do" class="edu.ucsd.library.xdre.web.MetadataImportController" />
+	<!--<bean name="/metaDataImport.do" class="edu.ucsd.library.xdre.web.MetadataImportController" />-->
 	<!--<bean name="/solrIndex.do" class="edu.ucsd.library.xdre.web.SolrIndexController" />-->
 	<!--<bean name="/collectionUpdate.do" class="edu.ucsd.library.xdre.web.CollectionUpdateController"></bean>-->
 	<bean name="/controlPanel.do" class="edu.ucsd.library.xdre.web.CollectionManagementController"></bean>
@@ -42,7 +42,7 @@
 	<bean name="/errorPage.do" class="org.springframework.web.servlet.mvc.ParameterizableViewController" lazy-init="default" autowire="default" dependency-check="default">
 		<property name="viewName" value="errorPage" /> 
 	</bean>
-	<bean name="/devUpload.do" class="edu.ucsd.library.xdre.web.DevUploadController"></bean>
+	<!--<bean name="/devUpload.do" class="edu.ucsd.library.xdre.web.DevUploadController"></bean>-->
 	<!--
 	<bean name="/rdfExport.do" class="edu.ucsd.library.xdre.web.RDFExportController"></bean>
 	<bean name="/metadataExport.do" class="edu.ucsd.library.xdre.web.RDFExportController"></bean>
@@ -74,7 +74,7 @@
 	<!--<bean name="/tsAnalyzer.do" class="edu.ucsd.library.xdre.web.SparqlAnalyzerController"></bean>-->
 	<!--<bean name="/statusUpload.do" class="edu.ucsd.library.xdre.web.MerrittStatusUploadController"></bean>-->
 	
-	<bean name="/emu.do" class="edu.ucsd.library.xdre.web.EMUController"></bean>
-	<bean name="/csvExport.do" class="edu.ucsd.library.xdre.web.CSVExportController"></bean>
+	<!--<bean name="/emu.do" class="edu.ucsd.library.xdre.web.EMUController"></bean>-->
+	<!--<bean name="/csvExport.do" class="edu.ucsd.library.xdre.web.CSVExportController"></bean>-->
 		
 </beans>
