@@ -74,6 +74,7 @@ public class DAMSClient {
 	public static final String DAMS_ARK_URL_BASE = "http://libraries.ucsd.edu/ark:/";
 	public static final String DAMS_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
 	public static final String DAMS_DATE_FORMAT_ALT = "MM-dd-yyyy HH:mm:ss";
+	public static final String XPATH_HASCOMPONENT = "/rdf:RDF/dams:Object/dams:hasComponent";
 	public static final int MAX_SIZE = 1000000;
 	public static enum DataFormat {rdf, xml, json, mets, html};
 	private static final Logger log = Logger.getLogger(DAMSClient.class);
@@ -546,7 +547,8 @@ public class DAMSClient {
 		boolean success = false;
 		try {
 			status = execute(req);
-			if (success=!(status == 200 || status == 201))
+			success = (status == 200 || status == 201);
+			if (!success)
 				handleError(format);
 		} finally {
 			req.reset();
@@ -593,8 +595,8 @@ public class DAMSClient {
 		boolean success = false;
 		try {
 			status = execute(post);
-
-			if (success=!(status == 200 || status == 201))
+			success=(status == 200 || status == 201);
+			if (!success)
 				handleError(format);
 		} finally {
 			post.reset();
@@ -622,8 +624,8 @@ public class DAMSClient {
 		boolean success = false;
 		try {
 			status = execute(del);
-
-			if (success=!(status == 200 || status == 201))
+			success= (status == 200 || status == 201);
+			if (!success)
 				handleError(format);
 		} finally {
 			del.reset();
@@ -702,8 +704,8 @@ public class DAMSClient {
 		boolean success = false;
 		try {
 			status = execute(post);
-
-			if (success=!(status == 200 || status == 201))
+			success= (status == 200 || status == 201);
+			if (!success)
 				handleError(format);
 		} finally {
 			post.reset();
@@ -733,7 +735,8 @@ public class DAMSClient {
 		boolean success = false;
 		try {
 			status = execute(req);
-			if (success=!(status == 200 || status == 201))
+			success= (status == 200 || status == 201);
+			if (!success)
 				handleError(format);
 		} finally {
 			req.reset();
@@ -874,6 +877,33 @@ public class DAMSClient {
 
 		return new HttpContentInputStream(response.getEntity().getContent(), get);
 	}
+	
+	/**
+	 * Create a new file.
+	 * @param object
+	 * @param compId
+	 * @param fileName
+	 * @param srcFile
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean createFile(String object, String compId, String fileName, String srcFile) throws Exception {
+		return uploadFile(object, compId, fileName, srcFile, null, false);
+	}
+	
+	/**
+	 * Create a new file.
+	 * @param object
+	 * @param compId
+	 * @param fileName
+	 * @param srcFile
+	 * @param use
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean createFile(String object, String compId, String fileName, String srcFile, String use) throws Exception {
+		return uploadFile(object, compId, fileName, srcFile, use, false);
+	}
 
 	/**
 	 * Create, update/replace a file.
@@ -885,8 +915,8 @@ public class DAMSClient {
 	 * @return
 	 * @throws Exception 
 	 */
-	public boolean uploadFile(String object, String compId, String fileName, String srcFile) throws Exception {
-		return uploadFile(object, compId, fileName, srcFile, null);
+	public boolean uploadFile(String object, String compId, String fileName, String srcFile, boolean replace) throws Exception {
+		return uploadFile(object, compId, fileName, srcFile, null, replace);
 	}
 	
 	/**
@@ -899,7 +929,7 @@ public class DAMSClient {
 	 * @return
 	 * @throws Exception 
 	 */
-	public boolean uploadFile(String object, String compId, String fileName, String srcFile, String use) throws Exception {
+	public boolean uploadFile(String object, String compId, String fileName, String srcFile, String use, boolean replace) throws Exception {
 		String format = null;
 		HttpEntityEnclosingRequestBase req = null;
 		//MultipartPostMethod req = new MultipartPostMethod();
@@ -907,7 +937,7 @@ public class DAMSClient {
 		int status = -1;
 		boolean success = false;
 		try {
-			if(exists(object, compId, fileName)) {
+			if(replace && exists(object, compId, fileName)) {
 				req = new HttpPut(url);
 			} else {
 				req = new HttpPost(url);
@@ -924,7 +954,8 @@ public class DAMSClient {
 			
 			req.setEntity(ent);
 			status = execute(req);
-			if(success=!(status == 200 || status == 201))
+			success = (status == 200 || status == 201);
+			if(!success)
 				handleError(format);
 		} finally {
 			req.reset();
@@ -942,7 +973,7 @@ public class DAMSClient {
 	 * @return
 	 * @throws Exception 
 	 */
-	public boolean uploadFile(String object, String compId, String fileName, InputStream in, long len) throws Exception {
+	public boolean uploadFile(String object, String compId, String fileName, InputStream in, long len, boolean replace) throws Exception {
 		HttpEntityEnclosingRequestBase req = null;
 		String format = null;
 		String url = getFilesURL(object, compId, fileName, null, format);
@@ -951,14 +982,15 @@ public class DAMSClient {
 		boolean success = false;
 		try {
 			
-			if(exists(object, compId, fileName)){
+			if(replace && exists(object, compId, fileName)){
 				req = new HttpPut(url);
 			} else {
 				req = new HttpPost(url);
 			}
 			req.setEntity(toMultiPartEntity( in, contentType));
 			status = execute(req);
-			if(success=!(status == 200 || status == 201))
+			success = (status == 200 || status == 201);
+			if(!success)
 				handleError(format);
 		} finally {
 			req.reset();
@@ -993,7 +1025,8 @@ public class DAMSClient {
 			in = new ByteArrayInputStream(xml.getBytes());
 			req.setEntity(toMultiPartEntity(in, "text/xml"));
 			status = execute(req);
-			if(success=!(status == 200 || status == 201))
+			success = (status == 200 || status == 201);
+			if(!success)
 				handleError(format);
 		} finally {
 			req.reset();
@@ -1036,7 +1069,8 @@ public class DAMSClient {
 			ent.addPart("mode", new StringBody("add"));
 			req.setEntity(ent);
 			status = execute(req);
-			if(success=!(status == 200 || status == 201))
+			success= (status == 200 || status == 201);
+			if(!success)
 				handleError(format);
 		} finally {
 			req.reset();
@@ -1087,12 +1121,33 @@ public class DAMSClient {
 		boolean success = false;
 		try {
 			status = execute(del);
-			if(success=!(status == 200 || status == 201))
+			success= (status == 200 || status == 201);
+			if(!success)
 				handleError(format);
 		} finally {
 			del.reset();
 		}
 		return success;
+	}
+	
+	/**
+	 * List the master service files in an object.
+	 * @return List of top level component node
+	 * @throws Exception 
+	 * @throws DocumentException 
+	 */
+	public List<DFile> listServiceFiles(String object) throws DocumentException, Exception{
+		List<DFile> mFiles = new ArrayList<DFile>();
+		List<DFile> dFiles = listObjectFiles(object);
+		DFile dFile = null;
+		String use = null;
+		for(Iterator<DFile> it=dFiles.iterator(); it.hasNext();){
+			dFile = it.next();
+			use = dFile.getUse();
+			if (use != null && use.endsWith("-service"))
+				mFiles.add(dFile);
+		}
+		return mFiles;
 	}
 
 	/**
