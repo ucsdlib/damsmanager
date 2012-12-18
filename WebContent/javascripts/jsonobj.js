@@ -48,7 +48,7 @@ function renderObject(obj, element, depth) {
 	    }
 	    paths = "/" + paths;
 	    document.getElementById("dir").value = paths;
-	 }
+	 };
      return;
   } else {
     var label = isFunction(obj) ? '(function)' :
@@ -73,7 +73,6 @@ function renderObjectDetails(obj, element, depth) {
     var arrtab = document.createElement('table');
     arrtab.className = 'dbg-arr';
     var arrtbody = document.createElement('tbody');
-    var cnt=0;
     for (var i=0; i<obj.length; i++) {
       if (isSerializable(obj[i])) {
         var row = document.createElement('tr');
@@ -169,7 +168,7 @@ function createToggleElement(obj, target, label, depth) {
     paths = "/" + paths;
     document.getElementById("dir").value = paths;
    // }
-  }
+  };
   wrapper.appendChild(toggle);
   wrapper.appendChild(target);
   return wrapper;
@@ -182,7 +181,7 @@ function toJSON(obj) {
                     .replace(/\n|\r|\t/g, function(a){
                        return (a=='\n') ? '\\n':
                               (a=='\r') ? '\\r':
-                              (a=='\t') ? '\\t': ''
+                              (a=='\t') ? '\\t': '';
                     }) + '"';
 
   } if (isArray(obj)) {
@@ -219,7 +218,7 @@ DebuggableObject.prototype = {
   toString : function () {
     return toJSON(this.obj);
   }
-}
+};
 
 })();
 

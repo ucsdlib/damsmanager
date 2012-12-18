@@ -156,6 +156,7 @@
 	padding-right: 30px;
 	padding-top: 30px;
 	color: #333333;
+	text-align: left;
 }
 #submitDiv{
 	padding-top:20px;
@@ -794,4 +795,78 @@
 	padding-top:2px;
 	padding-bottom:2px;
 	background:#D8D8D8;
+}
+
+
+.logout {  float:right;font:13px arial,helvetica,clean,sans-serif;/* for IE6/7 */*font-size:small;/* for IE Quirks Mode */*font:x-small;}
+
+#tdr_crumbs{display: inline;}
+/* navigation reset */
+#menu_nav, #menu_nav div, #menu_nav a, #menu_nav ul, #menu_nav li{margin: 0;padding: 0;}
+#menu_nav li {list-style: none;}
+/* navigation fonts */
+#menu_nav {  font:13px arial,helvetica,clean,sans-serif;/* for IE6/7 */*font-size:small;/* for IE Quirks Mode */*font:x-small;}
+/* navigation default layout */
+
+#menu_nav {
+   min-width:180px;
+   text-align:center;
+}
+
+/* son of suckerfish: http://htmldog.com/articles/suckerfish/dropdowns/ */
+#menu_nav ul {padding: 0;margin: 0;list-style: none;line-height: 1;}
+#menu_nav ul a {display: block;}
+#menu_nav ul li { /* all list items */float: left; /* width needed or else Opera goes nuts */}
+#menu_nav ul li ul { /* second-level lists */position: absolute;left: -999em; /* Using left instead of display to hide menus because display: none isn't read by screen readers */}
+#menu_nav ul li:hover ul, #menu_nav ul li.sfhover ul { /* lists nested under hovered list items */left: auto;}
+/* non son of suckerfish */
+#menu_nav {}
+#menu_nav ul {position:relative;z-index:999;border-left:1px solid #B3CBDC; height: 20px;}
+#menu_nav ul li {}
+#menu_nav ul li ul {background:#f2f6f8;}
+#menu_nav ul li span {display: block;cursor:default;}
+#menu_nav ul li span {display: block;}
+
+#menu_nav ul li a, #menu_nav ul li span
+{
+    background: #F0FAFF;
+    background: rgba(255, 255, 255, 0.4);
+    border-right: solid 1px #B3CBDC;
+    border-left: solid 1px rgba(255, 255, 255, 0.6);
+    /*  border-bottom: solid 1px #95AFC9;*/
+    color: rgb(0, 75, 110);
+    text-decoration: none;
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.9);
+    padding: 0px 7px 1px 7px;
+    height: 20px;
+    white-space: nowrap;
+    text-align: left;
+    text-transform: none;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+#menu_nav ul li.active a,#menu_nav ul li.active span
+{
+    background: #F0FAFF;
+    background: rgba(255, 255, 255, 0.8);
+    border-bottom: #D56A03 solid 3px;
+}
+
+#menu_nav ul li a:hover
+{
+    background: #fff;
+}
+
+#menu_nav ul li span:hover, #menu_nav ul li.sfhover span {
+    background: #fff;
+}
+
+#menu_nav ul li:hover ul,#menu_nav ul li.sfhover ul {margin-left:-1px;height:auto;border:1px solid #adbcc5;border-bottom:0;} /* same as border-bottom on content */
+#menu_nav ul li:hover ul li,#menu_nav ul li.sfhover ul li {display:inline;/* fixes ie6 3px bug */width:10em;float:none;padding-right:0;}
+#menu_nav ul li:hover ul li a,#menu_nav ul li.sfhover ul li a {color:#0d4b73;background:#f2f6f8;border-right:0;border-bottom:1px solid #adbcc5;}
+
+#menu_nav ul li:hover ul li a:hover,#menu_nav ul li.sfhover ul li a:hover
+{
+    background: #fff;
 }

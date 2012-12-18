@@ -10,41 +10,41 @@
    var progress = {
 	 success: dispMessage,
 	 failure: rfailed		
-   }
+   };
    var canceled ={
 	 success: resetPanel,
 	 failure: cfailed		
-    }
+    };
    var assignment={
      success: displayProgress,
 	 failure: cfailed
-    }
+    };
    var loadPage={
      success: displayPage,
 	 failure: cfailed
-    }
+    };
     
    function submitForm(){
       var formObj = document.mainForm;
-  	  var dsIndex = formObj.ds.selectedIndex;
-  	  var ds = formObj.ds.options[dsIndex].value; 
       var collectionIndex = document.mainForm.collection.selectedIndex;
-      var collectionName;
-      var category = "";
+      var collectionName = "";
       operations = "";
       
       var rdfImport = formObj.rdfImport.checked;
       var jhoveReport = formObj.jhoveReport.checked;
-      var jsonDiffUpdate = formObj.jsonDiffUpdate.checked;
-      if(rdfImport && jsonDiffUpdate){
-         alert("Please choose Metadata Population OR Single Item DIFF Update only but not both.");
-         return false;
-      }
+      var urlParams = "?activeButton=" + formObj.activeButton.value; 
+      var validateFileCount = formObj.validateFileCount.checked;
+      var validateChecksums = formObj.validateChecksums.checked;
+      var createDerivatives = formObj.createDerivatives.checked;
+      var uploadRDF = formObj.uploadRDF.checked;
+      var createMETSFiles = formObj.createMETSFiles.checked; 
+      var sendToCDL = formObj.sendToCDL.checked;
+      var luceneIndex = formObj.luceneIndex.checked;
       
-      if((checkedCount > 1 && collectionIndex == 0) || (checkedCount == 1 && collectionIndex == 0 && (!(jsonDiffUpdate || rdfImport || (rdfImport && (formObj.tsRepopulation.checked || formObj.samePredicatesReplacement.checked)) || (jhoveReport && formObj.bsJhoveReport.checked))))){
+      if((checkedCount > 1 && collectionIndex == 0) || (checkedCount == 1 && collectionIndex == 0 && (!(rdfImport || (rdfImport && (formObj.tsRepopulation.checked || formObj.samePredicatesReplacement.checked)) || (jhoveReport && formObj.bsJhoveReport.checked))))){
          alert("Please choose a collection.");
          return false;
-      }else if(collectionIndex != 0) {
+      } else if(collectionIndex != 0) {
       	 var selectedOption =  document.mainForm.collection.options[collectionIndex];     	    
          collectionName = selectedOption.text;        
       	 category = selectedOption.value;
@@ -55,51 +55,16 @@
          return false;
       }
       
-      var urlParams = "?ds=" + ds + "&activeButton=" + formObj.activeButton.value; 
-      var validateFileCount = formObj.validateFileCount.checked;
-      var validateChecksums = formObj.validateChecksums.checked;
-      //var rdfImport = formObj.rdfImport.checked;
-      var createDerivatives = formObj.createDerivatives.checked;
-      var uploadRDF = formObj.uploadRDF.checked;
-      var cacheThumbnails = formObj.cacheThumbnails.checked;
-      var createMETSFiles = formObj.createMETSFiles.checked; 
-      var sendToCDL = formObj.sendToCDL.checked;
-      var luceneIndex = formObj.luceneIndex.checked;
-      var createJson = formObj.createJson.checked;
-      //var cacheJson = formObj.cacheJson.checked;
-      //var sendToFlickr = formObj.sendToFlickr.checked;
-      var manifest = formObj.validateManifest.checked;
-      var disableTagging = formObj.disableTagging.checked;
 
       if(validateFileCount == true){
-         operations += "- Validate file count \n";
-         if(urlParams.length != 1)
-             urlParams += "&";
-         urlParams += "validateFileCount";  
+         operations += "- Validate file count \n"; 
       }
       
       if(validateChecksums == true){
-          var checksumDate;
-         if(!validateDate(formObj.checksumDate)){
+         if(!validateDate(formObj.checksumDate))
              return false;
-         }else
-            checksumDate = formObj.checksumDate.value;
-            
+
           operations += "- Validate checksum \n";
-          if(urlParams.length != 1)
-             urlParams += "&";
-          urlParams += "validateChecksums&checksumDate=" + checksumDate;
-       }
-       
-       if(manifest == true){
-          var manifestOptions = formObj.manifestOptions;
-          if(manifestOptions.checked == true)
-          	operations += "- Write  Manifest \n";
-          else           
-          	operations += "- Varify  Manifest \n";
-          if(urlParams.length != 1)
-             urlParams += "&";
-          urlParams += "manifest";
        }
        
        if(jhoveReport == true){ 
@@ -112,182 +77,37 @@
        
        if(createDerivatives == true){
           operations += "- Create derivatives: ";
-          if(urlParams.length != 1)
-             urlParams += "&";
-          urlParams += "createDerivatives";
-          
-          var dTypeOptions = formObj.derivativeType;
-          var derivativeType = "both";
-          if(dTypeOptions[1].checked == true){
-          	 derivativeType = "Thumbnail2a";
-             operations += "Thumbnail Only (65px) \n";
-          }else if(dTypeOptions[2].checked == true){
-          	 derivativeType = "thumbnail";
-             operations += "Thumbnail Only (150px) \n";
-          }else if(dTypeOptions[3].checked == true){
-             derivativeType = "MediumResource3a";
-             operations += "Medium resolution image (450px) only \n";
-          }else if(dTypeOptions[4].checked == true){
-             derivativeType = "MediumResource";
-             operations += "Medium resolution image (768px) only \n";
-          }else{
-             derivativeType = "both";
-             operations += "Thumbnails (65px & 150px) & Medium resolution images (450px & 768px) \n";
-         }
-             
-          urlParams += "&derivativeType=" + derivativeType;
-          
-          var derivativeReplace = formObj.derivativeReplace.checked;
-          if(derivativeReplace == true)
-             urlParams += "&derivativeReplace";
        }
        
        if(uploadRDF == true){
           operations += "- Upload RDF XML files ";
-          if(urlParams.length != 1)
-             urlParams += "&";
-          urlParams += "uploadRDF";
-          var rdfXmlDataType = "all";
-          var rdfXmlDataTypeOption = formObj.rdfXmlDataType;
-          if(rdfXmlDataTypeOption[1].checked == true){
-             rdfXmlDataType = "jhove";
-             operations += " - JHOVE Metadata \n";
-          }else
-          	operations += " \n";
-          urlParams += "&rdfXmlDataType=" + rdfXmlDataType;	
-          var rdfXmlReplace = formObj.rdfXmlReplace.checked;
-          if(rdfXmlReplace == true)
-             urlParams += "&rdfXmlReplace";
        }
        
        if(createMETSFiles == true){
          operations += "- METS creation and upload \n";
-         if(urlParams.length != 1)
-             urlParams += "&";
-          urlParams += "createMETSFiles";
-         var metsReplace = formObj.metsReplace.checked;
-         if(metsReplace == true)
-                urlParams += "&metsReplace";
        }
-       
-     if(createJson == true){
-         operations += "- JSON creation and upload \n";
-         if(urlParams.length != 1)
-             urlParams += "&";
-          urlParams += "createJson";
-         var jsonReplace = formObj.jsonReplace.checked;
-         if(metsReplace == true)
-                urlParams += "&jsonReplace";
-       }
-       
-      /*if(cacheJson == true){
-         operations += "- JSON Caching \n";
-         if(urlParams.length != 1)
-             urlParams += "&";
-          urlParams += "cacheJson";
-         var jsonCacheReplace = formObj.jsonCacheReplace.checked;
-         if(jsonCacheReplace == true)
-                urlParams += "&jsonCacheReplace";
-       }*/
                 
-       if(cacheThumbnails == true){
-          operations += "- Cache thumbnails \n";
-          if(urlParams.length != 1)
-             urlParams += "&";
-          urlParams += "cacheThumbnails";
-          var cacheReplace = formObj.cacheReplace.checked;
-          if(cacheReplace == true)
-             urlParams += "&cacheReplace";
-       }
-       
       if (luceneIndex == true) {
       	operations += "- Solr Index \n";
-        if(urlParams.length != 1)
-             urlParams += "&";
-        urlParams += "luceneIndex";
-        var indexReplace = formObj.indexReplace.checked;
-        if(indexReplace == true)
-             urlParams += "&indexReplace";
       }
        
        if(sendToCDL == true){
           operations += "- Send object to CDL ";
-          if(urlParams.length != 1)
-             urlParams += "&";
-          urlParams += "sendToCDL";
-          var cdlResend = formObj.cdlResend.checked;
-          if(cdlResend == true)
-             urlParams += "&cdlResend";
-           else{
-          	  var cdlResendMets = formObj.cdlResendMets.checked;
-          	  if(cdlResend == true)
-             	  urlParams += "&cdlResendMets";
-           }
-           
-           var feederOptions = formObj.feeder;
-           if(feederOptions[1].checked == true){
-           	operations += "Merritt METS Feeder \n";
-           }else{
-           	operations += "DPR METS Feeder \n";
-           }
        }
-       
-  	   /*if(sendToFlickr == true){
-          operations += "- Send object to Flickr \n";
-          if(urlParams.length != 1)
-             urlParams += "&";
-          urlParams += "sendToFlickr";
-          var flickrResend = formObj.flickrResend.checked;
-          if(flickrResend == true)
-             urlParams += "&flickrResend";
-       }*/
              
      if(rdfImport == true){
          
          operations += "- TripleStore Population \n";
-         if(urlParams.length != 1)
-             urlParams += "&";
-         urlParams += "rdfImport";
-         var tsRenew = formObj.tsRenew.checked;
-         var repopulation = formObj.tsRepopulation.checked;
-         var repopulateOnly = formObj.tsRepopulateOnly.checked;
-         var samePredicatesReplacement = formObj.samePredicatesReplacement.checked;
-         var fileTypeOptions = formObj.fileType;
-         var fileOptions = formObj.fileToIngest;
-         var disableTagging = formObj.disableTagging.checked;
-         var fileType = "rdf";
-
-         for(var i=0; i<fileTypeOptions.length; i++){
-         	if(fileTypeOptions[i].checked == true){
-         		fileType = fileTypeOptions[i].value;
-         		break;
-         		}
-          }         
-          urlParams += "&fileType=" + fileType;
-          if(repopulateOnly == true)
-                urlParams += "&tsRepopulateOnly";
-          else if(repopulation == true)
-                urlParams += "&tsRepopulation";
-          else if(tsRenew == true){
-                urlParams += "&tsRenew";
-                
-          }else if(samePredicatesReplacement == true)
-           	urlParams += "&samePredicatesReplacement";
-           	
-          if(disableTagging)
-           	 urlParams += "&disableTagging";
-                
+         var fileOptions = formObj.fileToIngest;        
           if(fileOptions[1].checked == true){
              var fileUrl = formObj.saemUrl.value;
              if(fileUrl == null || trim(fileUrl).length == 0){
                 alert("Please enter a url for the RDF file.");
                 return false;
              }            
-            urlParams += "&fileToIngest=" + fileOptions[1].value + "&rdfUrl=" + fileUrl;
          }else{
-             urlParams += "&fileToIngest=" + fileOptions[0].value; 
              
-             var exeConfirm = confirm("Are you sure you want to perform the following operations on the " + collectionName + " \n" + operations);
+             var exeConfirm = confirm("Are you sure you want to perform the following operations " + collectionName + " \n" + operations);
              if(!exeConfirm){
                 return false;
              }
@@ -295,41 +115,12 @@
              setDispStyle("main", "none");
              setDispStyle("saemFileDiv", "inline");
              displayMessage("message", "");
-             document.formSaemFile.action = "/damsmanager/fileUpload.do" + urlParams + "&operation=formSaemFile&formId=formSaemFile&collection=" + category + "&sid=" + getSid();
+             document.formSaemFile.action = "/damsmanager/fileUpload.do?formId=formSaemFile&" + urlParams + "&sid=" + getSid();
             return false;
          }
       }
-
-    if(jsonDiffUpdate){
-         
-         operations += "- Single Item DIFF JSON Update \n";
-         if(urlParams.length != 1)
-             urlParams += "&";
-         urlParams += "jsonDiffUpdate";
-         var fileOptions = formObj.fileToUpdate;                
-          if(fileOptions[1].checked == true){
-             var fileUrl = formObj.jsonUrl.value;
-             if(fileUrl == null || trim(fileUrl).length == 0){
-                alert("Please enter a url for the JSON file.");
-                return false;
-             }            
-            urlParams += "&fileToUpdate=" + fileOptions[1].value + "&jsonUrl=" + fileUrl;
-         }else{
-             urlParams += "&fileToUpdate=" + fileOptions[0].value; 
-             
-             var exeConfirm = confirm("Are you sure you want to perform the following operations on the " + collectionName + " \n" + operations);
-             if(!exeConfirm){
-                return false;
-             }
-             setDispStyle("main", "none");
-             setDispStyle("saemFileDiv", "inline");
-             displayMessage("message", "");
-             document.formSaemFile.action = "/damsmanager/fileUpload.do" + urlParams + "&operation=formJsonFile&formId=formSaemFile&collection=" + category + "&sid=" + getSid();
-            return false;
-         }
-      }
-      
-     if(urlParams.length == 1){
+     
+     if(operations.length == 1){
         alert("Please choose an operation.");
         return false;
      }
@@ -339,7 +130,7 @@
            return false;
       }
       
-     document.mainForm.action = url + urlParams + "&progress=0&formId=mainForm&sid=" + getSid();
+     document.mainForm.action = url + "?progress=0&formId=mainForm&" + urlParams + "&sid=" + getSid();
      displayMessage("message", "");
      getAssignment("mainForm");
      displayProgressBar(0);
@@ -348,20 +139,11 @@
    function checkSelections(checkboxObj, childName){
       var formObj = document.mainForm;
       var collectionIndex = formObj.collection.selectedIndex;
-      var validateFileCount = formObj.validateFileCount.checked;
-      var validateChecksums = formObj.validateChecksums.checked;
       var rdfImport = formObj.rdfImport.checked;
-      var createDerivatives = formObj.createDerivatives.checked;
-      var uploadRDF = formObj.uploadRDF.checked;
-      var cacheThumbnails = formObj.cacheThumbnails.checked;
-      var luceneIndex = formObj.luceneIndex.checked;
-      var createMETSFiles = formObj.createMETSFiles.checked; 
-      var sendToCDL = formObj.sendToCDL.checked;
-      var jsonDiffUpdate = formObj.jsonDiffUpdate.checked;
       var jhoveReport = formObj.jhoveReport.checked;
       
      if(checkboxObj.checked == true){
-     	if((collectionIndex == 0 && !(rdfImport || jsonDiffUpdate || jhoveReport)) || (rdfImport && collectionIndex == 0 && checkedCount == 1)){
+     	if((collectionIndex == 0 && !(rdfImport || jhoveReport)) || (rdfImport && collectionIndex == 0 && checkedCount == 1)){
      	    checkboxObj.checked = false;
      		alert("Please select a collection to start the operations.");
      		return false;
@@ -398,7 +180,6 @@
   
   function confirmSelection(checkObj, message, parentName){
      var collectionIndex = document.getElementById("collection").selectedIndex;
-     var rdfImport = document.getElementById("rdfImport").checked;
      if(checkObj.checked == true){
      	if((collectionIndex == 0 && !checkObj.name=="tsRepopulation") || (collectionIndex == 0 && checkedCount > 1)){
      	    checkObj.checked = false;
@@ -503,13 +284,6 @@
        alert("Please choose a file.");
        return false;      
     }
-    /*var ext = fileName.substring(fileName.length-4, fileName.length);
-    ext = ext.toLowerCase();
-    if(ext != '.xml'){
-      alert('Only a file with .xml extension will be accepted.');
-      return false;      
-    }*/
-    
     displayMessage("message", "");
     getAssignment("formSaemFile");
   }
@@ -550,14 +324,12 @@
        	timeoutReload = setTimeout(
         	function(){document.location.href = document.location.href;},1000
         );
-		//httpcall(progressUrl + "?progress=0&formId=" + formId + "&sid="+progressId, assignment);
   }
   
   function rfailed(resp){
      errorsCount += 1;
      document.getElementById('status').innerHTML="Error: " + resp.statusText;
      if(errorsCount < 2){
-        //var url = "/damsmanager/collectionManagement";
         getStatus(progressUrl + "?progress&sid=" + getSid()); 
      }else{
         alert("Failed to connect to server.");
@@ -596,9 +368,6 @@
         logMessageNode = errors[0].firstChild;
         if(logMessageNode != null){
            logMessage = logMessageNode.nodeValue;
-          /* var preMessage = getInnerHTML("message");
-           preMessage = truncateMessage(preMessage);
-           displayMessage("message", preMessage + logMessage);*/
         }
      }
      
@@ -673,11 +442,6 @@
        if(progressId != null){
            var formIdNode = resp.responseXML.getElementsByTagName('formId');
            var formId = formIdNode[0].firstChild.nodeValue;
-           var formObj = document.getElementById(formId);
-           /*var action = formObj.action + "&progressId=" + progressId;  
-           currServletId = progressId;             
-           formObj.action = action;
-           formObj.submit();*/
            setDispStyle("statusDiv", "inline");
            displayMessage("status", "Accepting request ...");
            getStatus(progressUrl + "?progress&sid=" + getSid());     
@@ -752,21 +516,6 @@
 	}
 
   function submitFiles(){
-  /*
-    var formFileObj = document.formSaemFile;
-   
-    var fileName = formFileObj.saemFilePath.value;
-    if(fileName == null || trim(fileName).length == 0){
-       alert("Please choose an S-AEM xml file.");
-       return false;      
-    }
-    var ext = fileName.substring(fileName.length-4, fileName.length);
-    ext = ext.toLowerCase();
-    if(ext != '.xml'){
-      alert('Only a file with .xml extension will be accepted.');
-      return false;      
-    }
-    */
     
     displayMessage("message", "");
     getAssignment("multipleUploadForm");
