@@ -508,20 +508,24 @@ public class DAMSClient {
 		String format = null;
 		String url = getFilesURL(object, compId, fileName, "derivatives", format);
 		HttpEntityEnclosingRequestBase req = new HttpPut(url);
-		if(replace && exists(object, compId, fileName))
-			req = new HttpPut(url);
-		else
-			req = new HttpPost(url);
-		List<NameValuePair> params = new ArrayList<NameValuePair>();
+		String paramsStr = "";
 		if(sizes != null && sizes.length > 0){
+			paramsStr = "size=";
 			for(int i=0; i<sizes.length; i++)
-				params.add(new BasicNameValuePair("size", sizes[i]));
+				paramsStr += sizes[i]+",";
+			paramsStr = paramsStr.substring(0, paramsStr.length()-1);
 		}
 		if(frame != null && frame.length() > 0)
-			params.add(new BasicNameValuePair("frame", frame));
+			paramsStr += paramsStr.length()>0?"&frame=" + frame:"";
 		
-		if(params.size() > 0)
-			req.setEntity(new UrlEncodedFormEntity(params));
+		if(paramsStr != null && paramsStr.length() > 0)
+			url += (url.indexOf('?')>0?"&":"?") + paramsStr;
+		
+		if(replace)
+			req = new HttpPut(url);
+		else
+			req = new HttpPost(url);		
+
 		int status = -1;
 		boolean success = false;
 		try {
