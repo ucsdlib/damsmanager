@@ -8,7 +8,7 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <jsp:include flush="true" page="/jsp/libhtmlheader.jsp" />
-<body onLoad="load('jetl')" style="background-color:#fff;">
+<body onLoad="load('ingest')" style="background-color:#fff;">
 <script type="text/javascript">	
 	function confirmIngest(){
 		var dsIdx = document.mainForm.ts.selectedIndex;
@@ -98,7 +98,7 @@
 	
 <div id="tdr_crumbs">
 	<div id="tdr_crumbs_content">
-		<span class="menubar" style="margin-top:2px;float:right"><jsp:include flush="true" page="/jsp/menus.jsp" /><a style="padding:left:5px;" href="logout.do?">Log out</a></span>
+		<a class="logout" style="margin:5px;" href="logout.do?">Log out</a><div id="menu_nav" style="float:right;"><jsp:include flush="true" page="/jsp/menu_nav.jsp" /></div>
 		<ul>
 			<li><a href="http://libraries.ucsd.edu">Home</a></li>
 			<li><a href="/curator">Digital Library Collections</a></li>
@@ -252,5 +252,4 @@
 </table>
 <jsp:include flush="true" page="/jsp/libfooter.jsp" />
 </body>
-<jsp:include flush="true" page="/jsp/popmenus.jsp" />
 </html>

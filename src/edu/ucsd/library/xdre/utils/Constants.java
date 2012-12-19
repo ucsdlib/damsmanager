@@ -68,6 +68,7 @@ public class Constants {
 	public static String JETL_JHOVE_CONF_FILE = "";
 	public static String DEFAULT_TRIPLESTORE = "";
 	public static String DEFAULT_FILESTORE = "";
+	public static String DEFAULT_DERIVATIVES = "";
 
 	static {
 		InputStream in = null;
@@ -118,8 +119,10 @@ public class Constants {
 			SOLR_PDF_FULLTEXT_COLLECTIONS = props.getProperty("xdre.pdfFulltextCollections");
 
 			//SOLR UR
-			SOLR_URL_BASE = props.getProperty("xdre.solrBase");
+			DEFAULT_DERIVATIVES = props.getProperty("xdre.defaultDerivatives");
 			
+			//Default derivatives
+			SOLR_URL_BASE = props.getProperty("xdre.solrBase");
 			//Retrieve the default triplestore and filestore
 			DAMSClient damsClient = new DAMSClient(DAMS_STORAGE_URL);		
 			DEFAULT_FILESTORE = damsClient.defaultFilestore(); //Default filestore

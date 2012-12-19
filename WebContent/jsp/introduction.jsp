@@ -10,7 +10,8 @@
 	
 <div id="tdr_crumbs">
 	<div id="tdr_crumbs_content">
-		<span style="float:right;"><jsp:include flush="true" page="/jsp/menus.jsp" /></span>
+		<a class="logout" style="margin:5px;" href="logout.do?">Log out</a><div id="menu_nav" style="float:right;"><jsp:include flush="true" page="/jsp/menu_nav.jsp" /></div>
+
 		<ul>
 			<li><a href="http://libraries.ucsd.edu">Home</a></li>
 			<li><a href="/curator">Digital Library Collections</a></li>
@@ -26,11 +27,10 @@
 </td>
 </tr>
 <tr>
-<td>
-<div class="adjustDiv" style="padding-top:0px;">
+<td align="center" style="width:950px;padding-bottom:30px;">
 <div class="title" align="center" style="font-size:22px;">Collection Manager</div>
 <div class="dtext" style="padding-top:18px;">
-	<span style="padding:10px;">&nbsp;</span>With the mission of delivering high quality and stable software products to our end users, 
+	With the mission of delivering high quality and stable software products to our end users, 
 	the Collection Manager are designed and implemented carefully with the algorithm to protect itself 
 	from any misuse or wrong submission to the server by mistake, so that the user can use it feely without 
 	any pressures. It also provides in time report regarding the progress of a submitted task, 
@@ -61,7 +61,7 @@
 </table>
 </div>
 <div class="dtext" style="padding-top:18px;">
-	<span style="padding:10px;">&nbsp;</span>To easy the updating of the digital collections, the Collection Manager also provides a 
+	To easy the updating of the digital collections, the Collection Manager also provides a 
 	corresponding set of functions for collection maintenance. The Collection Manager includes the following tool sets:
 	<table width="100%">
 		<tr><td width="50%">
@@ -95,12 +95,10 @@
 		</tr>
 	</table>
 </div>
-</div>
 </td>
 </tr>
 </table>
 </div>
 <jsp:include flush="true" page="/jsp/libfooter.jsp" />
 </body>
-<jsp:include flush="true" page="popmenus.jsp" />
 </html>

@@ -9,6 +9,7 @@ import org.json.simple.JSONObject;
  */
 public class DFile {
 	private String id = null; //ID property
+	private String object = null; //ID property
 	private String use = null;
 	private String sourceFilename = null;
 	private String sourcePath = null;
@@ -42,10 +43,11 @@ public class DFile {
 	 * @param md5Checksum
 	 * @param sha1Checksum
 	 */
-	public DFile(String id, String use, String sourceFilename, String sourcePath, String dateCreated, 
+	public DFile(String id, String object, String use, String sourceFilename, String sourcePath, String dateCreated, 
 			String size, String formatName, String formatVersion, String mimeType, String crc32checksum, 
 			String md5checksum, String sha1checksum){
 		this.id = id;
+		this.object = object;
 		this.use = use;
 		this.sourceFilename = sourceFilename;
 		this.sourcePath = sourcePath;
@@ -79,12 +81,12 @@ public class DFile {
 	 * @param objectCategory
 	 * @param compositionLevel
 	 */
-	public DFile(String id, String use, String sourceFilename, String sourcePath, String dateCreated, 
+	public DFile(String id, String object, String use, String sourceFilename, String sourcePath, String dateCreated, 
 			String size, String formatName, String formatVersion, String mimeType, String crc32checksum, 
 			String md5checksum, String sha1checksum, String sha256checksum, String sha512checksum, 
 			String preservationLevel, String objectCategory, String compositionLevel) {
 
-		this(id, use, sourceFilename, sourcePath, dateCreated, size, formatName, formatVersion, mimeType,
+		this(id, object, use, sourceFilename, sourcePath, dateCreated, size, formatName, formatVersion, mimeType,
 				crc32checksum, md5checksum, sha1checksum);
 		this.sha256checksum = sha256checksum;
 		this.sha512checksum = sha512checksum;
@@ -228,8 +230,16 @@ public class DFile {
 		this.sha512checksum = sha512checksum;
 	}
 
+	public String getObject() {
+		return object;
+	}
+
+	public void setObject(String object) {
+		this.object = object;
+	}
+
 	public static DFile toDFile(JSONObject jsonObject){
-		DFile dFile = new DFile((String)jsonObject.get("id"), (String)jsonObject.get("use"), (String)jsonObject.get("sourceFilename"), (String)jsonObject.get("sourcePath"), (String)jsonObject.get("dateCreated"), 
+		DFile dFile = new DFile((String)jsonObject.get("id"), (String)jsonObject.get("object"), (String)jsonObject.get("use"), (String)jsonObject.get("sourceFilename"), (String)jsonObject.get("sourcePath"), (String)jsonObject.get("dateCreated"), 
 				(String)jsonObject.get("size"), (String)jsonObject.get("formatName"),(String)jsonObject.get("formatVersion"), (String)jsonObject.get("mimeType"), (String)jsonObject.get("crc32checksum"), 
 						(String)jsonObject.get("md5checksum"), (String)jsonObject.get("sha1checksum"), (String)jsonObject.get("sha256checksum"), (String)jsonObject.get("sha512checksum"), 
 								(String)jsonObject.get("preservationLevel"), (String)jsonObject.get("objectCategory"), (String)jsonObject.get("compositionLevel"));

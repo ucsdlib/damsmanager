@@ -29,6 +29,7 @@ import org.springframework.web.servlet.mvc.Controller;
 import edu.ucsd.library.shared.Mail;
 import edu.ucsd.library.util.sql.EmployeeInfo;
 import edu.ucsd.library.xdre.collection.CollectionHandler;
+import edu.ucsd.library.xdre.collection.DerivativeHandler;
 import edu.ucsd.library.xdre.collection.FileIngestionHandler;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
@@ -392,11 +393,13 @@ public class CollectionOperationController implements Controller {
 				  
 			 }else*/ if (i == 3){
 				 session.setAttribute("status", opMessage + "Derivatives Creation ...");
-				 boolean derivativeReplace = request.getParameter("derivativeReplace")==null?false:true;
+				 boolean derReplace = request.getParameter("derReplace")==null?false:true;
 				 
-
-				 String deriSize = request.getParameter("deriSize");
-				 //handler = new DerivativeHandler(damsClient, collectionId, deriSize, derivativeReplace);
+				 String reqSize = request.getParameter("size");
+				 String[] sizes = null;
+				 if(reqSize != null && reqSize.length() > 0)
+					 sizes = reqSize.split(",");
+				 handler = new DerivativeHandler(damsClient, collectionId, sizes, derReplace);
 
 			 }/*else if (i == 4){	
 				 session.setAttribute("status", opMessage + "RDF XML File Creation &amp; File Store Upload ...");
@@ -666,6 +669,7 @@ public class CollectionOperationController implements Controller {
 	 				exeInfo += "\n" + e.getMessage();
 	 				e.printStackTrace();
 				}finally{
+					handler.release();
 					String collectionName = handler.getCollectionId();
 					if(collectionName != null && collectionName.length() >0 && logLink.indexOf("&category=")<0)
 						logLink += "&category=" + collectionName.replace(" ", "");

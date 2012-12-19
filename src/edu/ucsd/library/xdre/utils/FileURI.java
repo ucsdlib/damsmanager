@@ -66,14 +66,19 @@ public class FileURI {
 			} else
 				fileName = fileURI;
 		} else {
-			String[] tmp = fileURI.split(fileURI);
+			String[] tmp = fileURI.split("/");
 			int len = tmp.length;
-			try {
-				Integer.parseInt(tmp[len - 2]);
-				object = fileURI.substring(0, fileURI.indexOf(tmp[len-2])-1);
-				component = tmp[len-2];
-				fileName = tmp[len-1];
-			}catch(NumberFormatException ne){
+			if(len > 2){
+				try {
+					Integer.parseInt(tmp[len - 2]);
+					object = fileURI.substring(0, fileURI.indexOf(tmp[len-2])-1);
+					component = tmp[len-2];
+					fileName = tmp[len-1];
+				}catch(NumberFormatException ne){
+					object = fileURI.substring(0, fileURI.indexOf(tmp[len-1])-1);
+					fileName = tmp[len-1];
+				}
+			}else{
 				object = fileURI.substring(0, fileURI.indexOf(tmp[len-1])-1);
 				fileName = tmp[len-1];
 			}

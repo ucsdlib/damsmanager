@@ -43,8 +43,9 @@ public class CollectionManagementController implements Controller {
 		}
 
 		String message = request.getParameter("message");
-		String ds = request.getParameter("ts");
+		String ts = request.getParameter("ts");
 		String fs = request.getParameter("fs");
+
 		if(message == null)
 			message = "";
 		String activeButton = request.getParameter("activeButton");
@@ -60,13 +61,19 @@ public class CollectionManagementController implements Controller {
 			session.setAttribute("category", category);
 
 			damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
+			if(ts == null || ts.length() == 0)
+				ts = damsClient.defaultTriplestore();
+			
+			if(fs == null || fs.length() == 0)
+				fs = damsClient.defaultFilestore();
 			
 			dataMap = new HashMap();
 			dataMap.put("logOut", logOutDisplay);
 			dataMap.put("message", message);
 			dataMap.put("activeButton", activeButton);
+			dataMap.put("category", category);
 			dataMap.put("collections", damsClient.listCollections());
-			dataMap.put("triplestore", ds);
+			dataMap.put("triplestore", ts);
 			dataMap.put("triplestores", damsClient.listTripleStores());
 			dataMap.put("filestores", damsClient.listFileStores());
 			dataMap.put("filestore", fs);
