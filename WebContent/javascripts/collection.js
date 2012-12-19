@@ -26,7 +26,7 @@
     
    function submitForm(){
       var formObj = document.mainForm;
-      var collectionIndex = document.mainForm.collection.selectedIndex;
+      var collectionIndex = document.mainForm.category.selectedIndex;
       var collectionName = "";
       operations = "";
       
@@ -45,7 +45,7 @@
          alert("Please choose a collection.");
          return false;
       } else if(collectionIndex != 0) {
-      	 var selectedOption =  document.mainForm.collection.options[collectionIndex];     	    
+      	 var selectedOption =  document.mainForm.category.options[collectionIndex];     	    
          collectionName = selectedOption.text;        
       	 category = selectedOption.value;
       }
@@ -138,7 +138,7 @@
       
    function checkSelections(checkboxObj, childName){
       var formObj = document.mainForm;
-      var collectionIndex = formObj.collection.selectedIndex;
+      var collectionIndex = formObj.category.selectedIndex;
       var rdfImport = formObj.rdfImport.checked;
       var jhoveReport = formObj.jhoveReport.checked;
       
@@ -217,7 +217,7 @@
             	return false; 
             }       
          }else if(checkObj.name == "tsRenew"){
-             var collectionIndex = document.mainForm.collection.selectedIndex;
+             var collectionIndex = document.mainForm.category.selectedIndex;
              if(collectionIndex == 0){
              	checkObj.checked = false;
              	alert("Please select a collection to start a new round of triplestore population.");

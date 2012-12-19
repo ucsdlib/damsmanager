@@ -71,7 +71,7 @@
 			</span>
 			<span class="menuText">Collection Chooser:&nbsp; </span>
 			
-			<span><select id="collection" name="collection" class="inputText" onChange="requestStats(this);">
+			<span><select id="category" name="category" class="inputText" onChange="requestStats(this);">
 						<option value=""> -- collections -- </option>
 						<c:forEach var="entry" items="${model.collections}">
 							<option value="${entry.value}" <c:if test="${model.category == entry.value}">selected</c:if>>
@@ -126,7 +126,7 @@
 									   <span class="submenuText"><input type="radio" name="size" value="2" > Medium Resolution (768px)</span><br />
 									</fieldset>
 						</div>
-						<div title="Check this checkbox to replace the derivatives if exist." class="specialmenuText"><input style="margin-left:15px;" type="checkbox" id="derivativeReplace" name="derivativeReplace" class="pmcheckbox" onClick="confirmSelection(this, 'replace the selected derivative type above', 'createDerivatives');">
+						<div title="Check this checkbox to replace the derivatives if exist." class="specialmenuText"><input style="margin-left:15px;" type="checkbox" id="derReplace" name="derReplace" class="pmcheckbox" onClick="confirmSelection(this, 'replace the selected derivative type above', 'createDerivatives');">
 									 <span class="text-special">Replace the derivatives for the selected type(s)</span>
 						</div>
 					</div>

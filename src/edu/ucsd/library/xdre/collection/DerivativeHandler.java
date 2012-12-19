@@ -1,14 +1,20 @@
 package edu.ucsd.library.xdre.collection;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import javax.security.auth.login.LoginException;
 
 import org.apache.log4j.Logger;
 
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
+import edu.ucsd.library.xdre.utils.DFile;
+import edu.ucsd.library.xdre.utils.FileURI;
 
 /**
- * Class LocalStoreDerivativeHandler creats derivative LocalStore 
+ * Class DerivativeHandler creates thumbnails/derivatives 
  * 
  * @author lsitu@ucsd.edu
  */
@@ -16,22 +22,23 @@ public class DerivativeHandler extends CollectionHandler{
 
 	private static Logger log = Logger.getLogger(DerivativeHandler.class);
 	private String[] sizes = null;
-	boolean replaceOrNot = false;
+	boolean replace = false;
 	//Using frameNo -1 to diable the page/frame option
-	private int frameNo = 0;
+	private String frameNo = null;
 	private boolean frameDefault = true;
 	
     private int failedsCount;
     private int updatedCount;
     private int skipCount;
+    private int createdCount;
     private int counter = 0;
     private int totalFiles = 0;
 	
-	public DerivativeHandler(DAMSClient damsClient, String collectionId, String[] sizes, boolean replaceOrNot) 
+	public DerivativeHandler(DAMSClient damsClient, String collectionId, String[] sizes, boolean replace) 
 	        throws Exception {
 		super(damsClient, collectionId);
 		this.sizes = sizes;		
-		this.replaceOrNot = replaceOrNot;
+		this.replace = replace;
 	}
 
 	/**
@@ -41,40 +48,73 @@ public class DerivativeHandler extends CollectionHandler{
 	 */
 	public boolean execute() throws Exception{
 	    	String itemLink = null;
-	    	totalFiles = itemsCount;
+	    	totalFiles = 0;
 
-			for (int k = 0; k < totalFiles && !interrupted; k++) {        
+			for (int i = 0; i < itemsCount && !interrupted; i++) {        
 		        String subjectId = null;
-		        String compId = null;
-		        String masterFileId = "1";
 		        counter++;
 
-	        	subjectId = (String) items.get(k);
-	        	
+	        	subjectId = (String) items.get(i);
+	        	setStatus("Processing derivation for subject " + subjectId  + " (" + (i+1) + " of " + itemsCount + ") ... " ); 
 	        	itemLink = getDDOMReference(subjectId);
+		        List<DFile> dFiles = damsClient.listObjectFiles(subjectId);
+		        DFile dFile = null;
 
-	        	long complexObjectCount = 0;
-	    		
-	    		complexObjectCount = queryComplexObject(subjectId);
-	    		
-   				if(complexObjectCount >= 0){
-   					totalFiles += (complexObjectCount - 1);
-   					//Handle complex object
-   					handleComplexObject(subjectId, (int)complexObjectCount, k);
-   					//counter++;
-   					continue;
-   				}
-		        
-		        handleObject(subjectId, compId, masterFileId, k, true);
+		        String[] reqSizes = Constants.DEFAULT_DERIVATIVES.split(",");
+		        if(sizes != null)
+		        	reqSizes = sizes;  	
+		        for(Iterator<DFile> it=dFiles.iterator(); it.hasNext();){
+		        	dFile = it.next();
+		        	String use = dFile.getUse();
+		        	//Check for derivative created for service files
+    				String sizs2create = "";
+    				String sizs2replace = "";
+		        	if(use != null && use.endsWith("-service")){
+			        	totalFiles += 1;
+			        	FileURI fileURI = FileURI.toParts(dFile.getId(), dFile.getObject());
+		        		String derId = null;
+		        		for(int j=0; j<reqSizes.length; j++){
+		        			derId = fileURI.toString().replace("/"+fileURI.getFileName(), "/"+reqSizes[j]+".jpg");
+		        			if(!isFileExists(derId, dFiles)){
+		        				sizs2create += reqSizes[j] + ",";
+		        			}else{
+		        				sizs2replace += reqSizes[j] + ",";
+		        			}
+		        		}
+		        		
+		        		int len = sizs2create.length();
+		        		sizs2create = len>0?sizs2create.substring(0, len-1):"";	        		
+		           		len = sizs2replace.length();
+		        		sizs2replace = len>0?sizs2replace.substring(0, len-1):"";
+		        		
+		        		String[] derSize = null;
+		        		// Perform create with POST to DAMS
+		        		if( sizs2create.length() > 0 ){
+		        			derSize = sizs2create.split(",");
+		        			if(reqSizes.length == derSize.length)
+		        				derSize = sizes;
+		        			handleFile(subjectId, fileURI.getComponent(), fileURI.getFileName(), derSize, false, i);
+		        		}else if (!replace)
+		        			skipCount++;
+		        		
+		        		// Replace option. Perform replace with PUT to DAMS for derivatives that were created
+		        		if (replace && sizs2replace.length() > 0){
+		        			derSize = sizs2replace.split(",");
+		        			if(reqSizes.length == sizs2replace.split(",").length)
+		        				derSize = sizes;
+		        			handleFile(subjectId, fileURI.getComponent(), fileURI.getFileName(), derSize, true, i);
+		        		}
+		        	}
+		        }
 	        	//counter++;
-		        setProgressPercentage( ((k + 1) * 100) / getFilesCount());
+		        setProgressPercentage( ((i + 1) * 100) / itemsCount);
 		        
 	        	try{	        		
 	        		Thread.sleep(10);
 	        	} catch (InterruptedException e1) {
 	        		interrupted = true;
 	        		setExeResult(false);
-	    			String eMessage = "Derivative creation canceled on " + itemLink + " ( " + (k + 1) + " of " + itemsCount + ").";
+	    			String eMessage = "Derivative creation canceled on " + itemLink + " ( " + (i + 1) + " of " + itemsCount + ").";
 	    			String iMessagePrefix = "Derivative creation interrupted with ";
 					System.out.println(iMessagePrefix + eMessage);
 					setStatus("Canceled");
@@ -90,65 +130,32 @@ public class DerivativeHandler extends CollectionHandler{
 	public String getExeInfo() {
 		String message = "";
 			if(exeResult && failedsCount <=0){
-				if(replaceOrNot)
+				if(replace)
 					message += " updated ";
 				else
 					message += " created ";
-				message += " for " + collectionTitle + ". \n"+ counter + " objects processed: " + (replaceOrNot?"updated " + updatedCount + ", ":"") + "skit " + skipCount + ", total " + totalFiles + " master files.\n"; 
+				message += " for " + collectionTitle + ": " + "created " + createdCount + ", " + (replace?"updated " + updatedCount + ", ":"") + "skit " + skipCount + ", total " + totalFiles + " master files in " + counter + " objects.\n"; 
 			}else{
 				message = "Execution result for derivative creation " 
-					+ " in " + collectionTitle + ": " + failedsCount + " of " + totalFiles + " files failed (Total " + counter + " of " + itemsCount + " objects processed:  " + (replaceOrNot?"updated " + updatedCount  + ", ":"") + "skit " + skipCount + "). \n";
+					+ " in " + collectionTitle + ": " + "created " + createdCount + ", " + (replace?"updated " + updatedCount  + ", ":"") + "skit " + skipCount + ", failed " + failedsCount + "(Total " + counter + " of " + itemsCount + " objects processed). \n";
 			}
 		log("log", message);
 		return message;
 	}
 
 
-	public int getFrameNo() {
+	public String getFrameNo() {
 		return frameNo;
 	}
 
-	public void setFrameNo(int frameNo) {
+	public void setFrameNo(String frameNo) {
 		frameDefault = false;
 		this.frameNo = frameNo;
 	}
-
-	private boolean handleComplexObject(String subjectId, int complexObjectCount, int itemIndex) 
-			throws Exception{
-		String compId = null;
-		String fileId = "1";
-		boolean successful = true;
-		
-		for(int i=0; i<complexObjectCount && !interrupted; i++){
-			//Create derivatives for the PDF files in ETD only
-			if(collectionId != null && collectionId.equals(Constants.COLLECTION_ETD) && i>0)
-				continue;
-			compId = "" + (i+1);
-	    	if(!handleObject(subjectId, compId, fileId, itemIndex, false))
-	    		successful = false;
-		    try{
-   				Thread.sleep(10);
-   	        }catch (InterruptedException e2) {
-   	        	interrupted = true;
-   	        	successful = false;
-   				setExeResult(false);
-   				String eMessage = subjectId + ". Error: " + e2.getMessage();
-   				String iMessagePrefix = "Derivative creation interrupted with ";
-   				System.out.println(iMessagePrefix + eMessage);
-   				setStatus("Canceled");
-   				clearSession();
-   				log("log", iMessagePrefix + eMessage);
-   				log.info(iMessagePrefix + eMessage, e2);
-   			}		
-   			setProgressPercentage( (itemIndex * 100) / itemsCount);	 
-		}
-		return successful;
-	}
 	
-	private boolean handleObject(String subjectId, String compId, String fileId, int itemIndex, boolean countUpdate) throws Exception{
+	private boolean handleFile(String subjectId, String compId, String fileName, String[] derSizes, boolean update, int itemIndex) throws Exception{
         
         //Item reference from DDOM Viewer
-		String masterFileName = "";
 		String derivFullName = "";
 	    String itemLink = getDDOMReference(subjectId);
 	    String message = "Preprocessing derivative creation for " + itemLink + " (" 
@@ -157,170 +164,89 @@ public class DerivativeHandler extends CollectionHandler{
 	    
 	    String eMessage ="";
         String eMessagePrefix = "Derivative creation failed with ";
-        boolean handled = true;
-    	String fExt = null;
-	  	int numTry = 1;
-	  	boolean successTry = false;
-	  	fExt = getFileExtension(subjectId, compId, fileId);
+        
+    	if(frameDefault){
+        	if(fileName.toLowerCase().endsWith("jpg") || fileName.endsWith("png") || fileName.endsWith("gif"))
+        		frameNo = "-1";
+        	else if((fileName.toLowerCase().endsWith("mp4") || fileName.endsWith("avi") || fileName.endsWith("mov")))
+        		//Use frame 100 to create derivatives for videos as default.
+            	frameNo = "100";
+    	}
 
-        if(fExt == null){
-    		eMessage = "Error: Unable to determine file extension for subject " + subjectId + (compId!=null&&compId.length()>0?"/"+compId:"") + (fileId!=null&&fileId.length()>0?"/"+fileId:"");
-        }else{
-    
-	        masterFileName = fileId + fExt;
-	        if(collectionId != null && collectionId.equals(Constants.COLLECTION_SHOTSOFWAR)){ 
-	        	//Shots of the War collection uses the master-edited file.
-	        	String masterEditedFileName = "4" + fExt;
-	        	String fullArkMasterEdited = Constants.ARK_ORG + "-" + subjectId + "-" + masterEditedFileName;
-	        	//String[] parts = toFileParts(fullArkMasterEdited); 
-	        	if(damsClient.exists(subjectId, compId, fileId)){
-	        		masterFileName = masterEditedFileName;
-	        		log("log", "Choosing master-edited file " + fullArkMasterEdited + " for derivative creation.");
-	        	}
-	        }else if(collectionId != null && collectionId.equals(Constants.COLLECTION_UNIVERSITYCOMMUNICATIONNSEWSRELEASE)){
-	        	//Simple object with master 1-1.xml and access PDF 1-2.pdf in University Communications News Releases. 
-	        	masterFileName = "2.pdf";
-	        }else if(fExt.endsWith("avi") || fExt.endsWith("mov")){
-	        	//Use derivative mp4 for thumbnail creation
-	        	masterFileName = "2.mp4";
-	        }
-	        
-        	if(frameDefault){
-	        	if(fExt.toLowerCase().endsWith("jpg") || fExt.endsWith("png") || fExt.endsWith("gif"))
-	        		frameNo = -1;
-	        	else if((fExt.toLowerCase().endsWith("mp4") || fExt.endsWith("avi") || fExt.endsWith("mov")))
-	        		//Use frame 100 to create derivatives for videos as default.
-	            	frameNo = 100;
-        	}
-		}
-
-        if(eMessage == null || eMessage.length() == 0){
-        	message = "Generating derivative(s) for " + itemLink + " ...   " 
-				+ (itemIndex + 1) + " of " + getFilesCount() + " in '" + collectionTitle + "'.";
-        	setStatus(message);
-			String derFileName = "";
-			if(sizes.length > 0){
-				for(int i=0; i<sizes.length && !interrupted; i++){
-					derFileName += derFileName.length()>0?",":""+derFileName;
-				}
+    	message = "Generating derivative(s) for " + itemLink + " ...   " 
+			+ (itemIndex + 1) + " of " + getFilesCount() + " in '" + collectionTitle + "'.";
+    	setStatus(message);
+		
+		boolean successful = false;
+		try {
+			// Derivative Replacement implementation ???
+			if(update) {
+				successful = damsClient.updateDerivatives(subjectId, compId, fileName, derSizes, frameNo, update);				
+			} else
+				successful = damsClient.createDerivatives(subjectId, compId, fileName, derSizes, frameNo);
+			if(!successful){
+				failedsCount += 1;
+        		setExeResult(false);
+        		message = "Failed to create derivative " + derivFullName + " for " + itemLink 
+					+ (itemIndex + 1) + " of " + getFilesCount() + " in " +collectionTitle + ").";
+        		log("log", message);
+        		setStatus(message);
+			} else {
+				if(update)
+					updatedCount++;
+				else
+					createdCount++;
+				message = "Derivative " + derivFullName + " for " + itemLink + " generated (" 
+					+ (itemIndex + 1) + " of " + getFilesCount() + " in " + collectionTitle + ").";
+			    setStatus(message);
 			}
-				
-        	//for(int i=0; i<sizes.length && !interrupted; i++){
-        		boolean successful = false;
-      		  	numTry = 1;
-      		  	successTry = false;
-      		  	do{
-	        		try {
-	        			boolean generated = false;
-	        			boolean updated = false;
-	        	
-			        	if((!replaceOrNot && !generated) || (replaceOrNot && !updated)){
-			
-		        			boolean deriExists = damsClient.exists(subjectId, compId, masterFileName);
-		        			successful = deriExists;
-		        			if(!successful || replaceOrNot){
-		        				successful = false;
-		        				if(deriExists){
-		        					successful = damsClient.updateDerivatives(subjectId, compId, masterFileName, derFileName, ""+frameNo);
-		        				}else
-		        					successful = damsClient.createDerivatives(subjectId, compId, masterFileName, derFileName, ""+frameNo);
-		        			}
-							if(!successful){
-								failedsCount += 1;
-			            		setExeResult(false);
-			            		message = "Failed to create derivative " + derivFullName + " for " + itemLink 
-			    					+ (itemIndex + 1) + " of " + getFilesCount() + " in " +collectionTitle + ").";
-			            		log("log", message);
-				        		setStatus(message);
-							}
-								
-		        		    if(replaceOrNot  && countUpdate)
-					        	updatedCount++;
-		        		    
-							message = "Derivative " + derivFullName + " for " + itemLink + " generated (" 
-		    					+ (itemIndex + 1) + " of " + getFilesCount() + " in " + collectionTitle + ").";
-		        		    setStatus(message);
 
-			        	}else{
-			        		skipCount++;
-			        		successful = true;
-			        	}
-			        	successTry = true;
-	        		} catch (LoginException e){
-						e.printStackTrace();
-						if(numTry == maxTry){
-							setExeResult(false);
-							failedsCount += 1;
-							eMessage = subjectId + ". FileStoreAuthException: " + e.getMessage();
-							String iMessagePrefix = "Derivative creation failed with ";
-							setStatus(iMessagePrefix + eMessage);
-							log("log", iMessagePrefix + eMessage );
-							log.error(iMessagePrefix + eMessage, e);
-						}
-					} catch (Exception e) {
-						e.printStackTrace();
-		   				if(numTry==maxTry){
-		   					handled = false;
-		   					failedsCount += 1;
-		            		setExeResult(false);
-		            		StackTraceElement[] trace = e.getStackTrace();
-		                	String traceInfo = "";
-		                	if(trace != null && trace.length > 0){
-		                		int printLines = trace.length > 2?2:trace.length;
-		                		for(int j=0; j<printLines; j++)
-		                			traceInfo += "@" + trace[j] + "; ";
-		                	}
-		        			eMessage = "Failed to create " + derivFullName + ". Error: " + e.getMessage() + " -- " + traceInfo;
-		        			setStatus(eMessagePrefix + eMessage + traceInfo);
-							System.out.println(eMessagePrefix + eMessage + "\n" + traceInfo);
-							log("log", eMessagePrefix + eMessage + " -- " + traceInfo);
-							log.error(eMessagePrefix + eMessage, e);
-		   				}
-	        		}
-	        	if(!successful)
-	        		handled = false;
-	        	
-	        	try{	        		
-	        		Thread.sleep(10);
-	        	} catch (InterruptedException e1) {
-	        		handled = false;
-	        		interrupted = true;
-	        		setExeResult(false);
-	        		failedsCount += 1;
-	    			eMessage = "Derivative creation canceled on " + itemLink + " ( " + itemIndex + " of " + itemsCount + ").";
-	    			String iMessagePrefix = "Derivative creation interrupted with ";
-					System.out.println(iMessagePrefix + eMessage);
-					setStatus("Canceled");
-					clearSession();
-					log("log", iMessagePrefix + eMessage);
-					log.info(iMessagePrefix + eMessage, e1);
-				}
-      		  }while(!successTry && numTry++<maxTry && !interrupted);
-        	//}
-                	
-        }else{
-        	handled = false;
-        	setExeResult(false);
-        	failedsCount += 1;
-    	    setStatus(eMessagePrefix + eMessage);
+		} catch (LoginException e){
+			e.printStackTrace();
+			exeResult = false;
+			failedsCount += 1;
+			eMessage = subjectId + ". FileStoreAuthException: " + e.getMessage();
+			String iMessagePrefix = "Derivative creation failed with ";
+			setStatus(iMessagePrefix + eMessage);
+			log("log", iMessagePrefix + eMessage );
+			log.error(iMessagePrefix + eMessage, e);
+		} catch (Exception e) {
+			e.printStackTrace();
+			failedsCount += 1;
+    		exeResult = false;
+			eMessage = "Failed to create " + derivFullName + ". Error: " + e.getMessage();
+			setStatus(eMessagePrefix + eMessage);
 			System.out.println(eMessagePrefix + eMessage + "\n");
 			log("log", eMessagePrefix + eMessage);
-			log.error(eMessagePrefix + eMessage);
-        	try{	        		
-        		Thread.sleep(10);
-        	} catch (InterruptedException e1) {
-        		handled = false;
-        		interrupted = true;
-        		setExeResult(false);
-    			eMessage = "Derivative creation canceled on " + itemLink + " ( " + itemIndex + " of " + itemsCount + ").";
-    			String iMessagePrefix = "Derivative creation interrupted with ";
-				System.out.println(iMessagePrefix + eMessage);
-				setStatus("Canceled");
-				clearSession();
-				log("log", iMessagePrefix + eMessage);
-				log.info(iMessagePrefix + eMessage, e1);
+			log.error(eMessagePrefix + eMessage, e);
+		}
+    	
+    	try{	        		
+    		Thread.sleep(10);
+    	} catch (InterruptedException e1) {
+    		interrupted = true;
+    		exeResult = false;
+    		failedsCount += 1;
+			eMessage = "Derivative creation canceled on " + itemLink + " ( " + itemIndex + " of " + itemsCount + ").";
+			String iMessagePrefix = "Derivative creation interrupted with ";
+			System.out.println(iMessagePrefix + eMessage);
+			setStatus("Canceled");
+			clearSession();
+			log("log", iMessagePrefix + eMessage);
+			log.info(iMessagePrefix + eMessage, e1);
+		}
+                	
+		return successful;
+	}
+	
+	public boolean isFileExists(String fileId, List<DFile> dFiles){
+		DFile dFile = null;
+		for(Iterator<DFile> it=dFiles.iterator(); it.hasNext();){
+			dFile = it.next();
+			if(dFile.getId().equals(fileId)){
+				return true;
 			}
-        }
-		return handled;
+		}
+		return false;
 	}
 }

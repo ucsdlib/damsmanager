@@ -25,7 +25,6 @@ import javax.activation.FileDataSource;
 import javax.activation.MimetypesFileTypeMap;
 import javax.security.auth.login.LoginException;
 
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -70,7 +69,7 @@ import com.hp.hpl.jena.rdf.model.Statement;
  * 
  */
 public class DAMSClient {
-	public static final String DOCUMENT_RESPONSE__ROOT_PATH = "/response";
+	public static final String DOCUMENT_RESPONSE_ROOT_PATH = "/response";
 	public static final String DAMS_ARK_URL_BASE = "http://libraries.ucsd.edu/ark:/";
 	public static final String DAMS_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
 	public static final String DAMS_DATE_FORMAT_ALT = "MM-dd-yyyy HH:mm:ss";
@@ -255,7 +254,7 @@ public class DAMSClient {
 		String url = getRepositoriesURL(repoId, null, "xml");
 		HttpGet get = new HttpGet(url);
 		Document doc = getXMLResult(get);
-		List<Node> objectNodes = doc.selectNodes(DOCUMENT_RESPONSE__ROOT_PATH + "/objects/value/obj");
+		List<Node> objectNodes = doc.selectNodes(DOCUMENT_RESPONSE_ROOT_PATH + "/objects/value/obj");
 		Node valNode= null;
 		List<String> objectsList = new ArrayList<String>();
 		for(Iterator it= objectNodes.iterator(); it.hasNext();){
@@ -313,7 +312,7 @@ public class DAMSClient {
 		String url = getCollectionsURL(collectionId, null, "xml");
 		HttpGet get = new HttpGet(url);
 		Document doc = getXMLResult(get);
-		List<Node> objectNodes = doc.selectNodes(DOCUMENT_RESPONSE__ROOT_PATH + "/objects/value/obj");
+		List<Node> objectNodes = doc.selectNodes(DOCUMENT_RESPONSE_ROOT_PATH + "/objects/value/obj");
 		Node valNode= null;
 		List<String> objectsList = new ArrayList<String>();
 		for(Iterator it= objectNodes.iterator(); it.hasNext();){
@@ -364,6 +363,7 @@ public class DAMSClient {
 			if (!(status == 200 || status == 201))
 				handleError(format);
 		}finally{
+			post.releaseConnection();
 			post.reset();
 		}
 		return new HttpContentInputStream(response.getEntity().getContent(), request);
@@ -410,9 +410,8 @@ public class DAMSClient {
 
 			req = new HttpGet(url);
 			Document doc = getXMLResult(req);
-			List<Node> idNodes = doc.selectNodes(DOCUMENT_RESPONSE__ROOT_PATH + "/files/value[sourceFileName='" + srcFileName + "']");
+			List<Node> idNodes = doc.selectNodes(DOCUMENT_RESPONSE_ROOT_PATH + "/files/value[sourceFileName='" + srcFileName + "']");
 			if(idNodes != null){
-				System.out.println("Result size: " + idNodes.size());
 				String id = null;
 				String object = null;
 				String filePath = null;
@@ -434,6 +433,7 @@ public class DAMSClient {
 				}
 			}
 		}finally{
+			req.releaseConnection();
 			req.reset();
 		}
 		return fileURIs;
@@ -470,31 +470,8 @@ public class DAMSClient {
 	 * @return
 	 * @throws Exception 
 	 */
-	public boolean createDerivatives(String object, String compId, String fileName, String size, String frame) throws Exception {
-		String format = null;
-		String url = getFilesURL(object, compId, fileName, "derivatives", format);
-		HttpPost req = new HttpPost(url);
-		List<NameValuePair> params = new ArrayList<NameValuePair>();
-		if(size != null && size.length() > 0 || frame != null && frame.length() > 0){
-			if(size != null && size.length() > 0)
-				params.add(new BasicNameValuePair("size", size));
-			if(frame != null && frame.length() > 0)
-				params.add(new BasicNameValuePair("frame", frame));
-			req.setEntity(new UrlEncodedFormEntity(params));
-		}
-
-		int status = -1;
-		boolean success = false;
-		try {
-			status = execute(req);
-			success= (status == 200 || status == 201);
-			if (!success)
-				handleError(format);
-		} finally {
-			req.reset();
-		}
-
-		return success;
+	public boolean createDerivatives(String object, String compId, String fileName, String[] sizes, String frame) throws Exception {
+		return updateDerivatives(object, compId, fileName, sizes, frame, false);
 	}
 
 	/**
@@ -509,9 +486,9 @@ public class DAMSClient {
 	 * @return
 	 * @throws Exception 
 	 */
-	public boolean createDerivatives(String object, String compId, String fileName, String size) throws Exception {
+	public boolean createDerivatives(String object, String compId, String fileName, String[] sizes) throws Exception {
 
-		return createDerivatives(object, compId, fileName, size, null);
+		return createDerivatives(object, compId, fileName, sizes, null);
 	}
 
 	/**
@@ -527,22 +504,24 @@ public class DAMSClient {
 	 * @return
 	 * @throws Exception 
 	 */
-	public boolean updateDerivatives(String object, String compId, String fileName, String  size, String frame) throws Exception {
+	public boolean updateDerivatives(String object, String compId, String fileName, String[]  sizes, String frame, boolean replace) throws Exception {
 		String format = null;
 		String url = getFilesURL(object, compId, fileName, "derivatives", format);
 		HttpEntityEnclosingRequestBase req = new HttpPut(url);
-		if(exists(object, compId, fileName))
+		if(replace && exists(object, compId, fileName))
 			req = new HttpPut(url);
 		else
 			req = new HttpPost(url);
 		List<NameValuePair> params = new ArrayList<NameValuePair>();
-		if(size != null && size.length() > 0 || frame != null && frame.length() > 0){
-			if(size != null && size.length() > 0)
-				params.add(new BasicNameValuePair("size", size));
-			if(frame != null && frame.length() > 0)
-				params.add(new BasicNameValuePair("frame", frame));
-			req.setEntity(new UrlEncodedFormEntity(params));
+		if(sizes != null && sizes.length > 0){
+			for(int i=0; i<sizes.length; i++)
+				params.add(new BasicNameValuePair("size", sizes[i]));
 		}
+		if(frame != null && frame.length() > 0)
+			params.add(new BasicNameValuePair("frame", frame));
+		
+		if(params.size() > 0)
+			req.setEntity(new UrlEncodedFormEntity(params));
 		int status = -1;
 		boolean success = false;
 		try {
@@ -551,6 +530,7 @@ public class DAMSClient {
 			if (!success)
 				handleError(format);
 		} finally {
+			req.releaseConnection();
 			req.reset();
 		}
 
@@ -558,7 +538,7 @@ public class DAMSClient {
 	}
 	
 	/**
-	 * Update derivative.
+	 * Update derivatives.
 	 * 
 	 * @param object
 	 * @param compId
@@ -569,9 +549,9 @@ public class DAMSClient {
 	 * @return
 	 * @throws Exception 
 	 */
-	public boolean updateDerivatives(String object, String compId, String fileName, String  size) throws Exception {
+	public boolean updateDerivatives(String object, String compId, String fileName, String[]  sizes) throws Exception {
 
-		return updateDerivatives(object, compId, fileName, size, null);
+		return updateDerivatives(object, compId, fileName, sizes, null, true);
 	}
 
 	
@@ -599,6 +579,7 @@ public class DAMSClient {
 			if (!success)
 				handleError(format);
 		} finally {
+			post.releaseConnection();
 			post.reset();
 		}
 
@@ -628,6 +609,7 @@ public class DAMSClient {
 			if (!success)
 				handleError(format);
 		} finally {
+			del.releaseConnection();
 			del.reset();
 		}
 		return success;
@@ -678,6 +660,7 @@ public class DAMSClient {
 			if (status != 200)
 				handleError(format);
 		} finally {
+			req.releaseConnection();
 			req.reset();
 		}
 		return EntityUtils.toString(response.getEntity());
@@ -708,6 +691,7 @@ public class DAMSClient {
 			if (!success)
 				handleError(format);
 		} finally {
+			post.releaseConnection();
 			post.reset();
 		}
 
@@ -739,6 +723,7 @@ public class DAMSClient {
 			if (!success)
 				handleError(format);
 		} finally {
+			req.releaseConnection();
 			req.reset();
 		}
 
@@ -762,6 +747,7 @@ public class DAMSClient {
 			if (dfiles.size() > 0)
 				dfile = DFile.toDFile((JSONObject)dfiles.get(0));
 		} finally {
+			req.releaseConnection();
 			req.reset();
 		}
 
@@ -802,6 +788,7 @@ public class DAMSClient {
 		} catch(FileNotFoundException e){
 			exists = false;
 		} finally {
+			req.releaseConnection();
 			req.reset();
 		}
 		return exists;
@@ -816,7 +803,7 @@ public class DAMSClient {
 		String url = getDAMSFunctionURL("system", "predicates", "xml");
 		HttpGet get = new HttpGet(url);
 		Document doc = getXMLResult(get);
-		List<Node> nodes = doc.selectNodes(DOCUMENT_RESPONSE__ROOT_PATH + "/predicates/value");
+		List<Node> nodes = doc.selectNodes(DOCUMENT_RESPONSE_ROOT_PATH + "/predicates/value");
 		Node node = null;
 		
 		for(Iterator<Node> it=nodes.iterator(); it.hasNext();){
@@ -872,6 +859,7 @@ public class DAMSClient {
 			if(status != 200)
 				handleError(format);
 		}finally{
+			get.releaseConnection();
 			get.reset();
 		}
 
@@ -958,6 +946,7 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		} finally {
+			req.releaseConnection();
 			req.reset();
 		}
 		return success;
@@ -993,6 +982,7 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		} finally {
+			req.releaseConnection();
 			req.reset();
 		}
 		return success;
@@ -1029,6 +1019,7 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		} finally {
+			req.releaseConnection();
 			req.reset();
 			close(in);
 		}
@@ -1073,6 +1064,7 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		} finally {
+			req.releaseConnection();
 			req.reset();
 		}
 		return success;
@@ -1125,6 +1117,7 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		} finally {
+			del.releaseConnection();
 			del.reset();
 		}
 		return success;
@@ -1278,6 +1271,7 @@ public class DAMSClient {
 				handleError("json");
 			}
 		}finally{
+			req.releaseConnection();
 			req.reset();
 			close(in);
 			close(reader);
@@ -1306,6 +1300,7 @@ public class DAMSClient {
 				handleError("json");
 			}
 		}finally{
+			request.releaseConnection();
 			request.reset();
 			close(in);
 		}
@@ -1366,6 +1361,7 @@ public class DAMSClient {
 			if(status != 200)
 				handleError(null);
 		} finally {
+			get.releaseConnection();
 			get.reset();
 		}
 		return EntityUtils.toString(response.getEntity());
@@ -1381,7 +1377,6 @@ public class DAMSClient {
 	 */
 	public void handleError(String format) throws IllegalStateException, IOException, DocumentException, LoginException {
 		int status = response.getStatusLine().getStatusCode();
-		System.out.println(request.getRequestLine());
 		Header[] headers = response.getAllHeaders();
 		for (int i = 0; i < headers.length; i++) {
 			System.out.print(headers[i] + "; ");
@@ -1392,35 +1387,39 @@ public class DAMSClient {
 
 			HttpEntity ent = response.getEntity();
 			InputStream in = null;
-			System.out.println(EntityUtils.toString(response.getEntity()));
 			try{
 				in = ent.getContent();
-				if(ent.getContentLength() > MAX_SIZE || !ent.getContentType().equals("text/xml")
+				String contentType = ent.getContentType().getValue();
+				if(ent.getContentLength() > MAX_SIZE || !contentType.startsWith("text/xml")
 						&& !(format!=null && format.equals("json"))){
 
 					byte[] buf = new byte[4096];
-					StringBuffer strContent = new StringBuffer();
+					StringBuilder strContent = new StringBuilder();
 					int bRead = -1;
 
 					while((bRead=in.read(buf)) > 0 && strContent.length() < MAX_SIZE)
-						strContent.append(bRead);
+						strContent.append((char)bRead);
 					respContent = strContent.toString();
-				}else if (ent.getContentType().equals("text/xml")) {
+					System.out.println(respContent);
+				}else if (contentType.startsWith("text/xml")) {
 					SAXReader saxReader = new SAXReader();
 					Document doc = saxReader.read(in);
-					Node node = doc.selectSingleNode("status");
+					System.out.println(doc.asXML());
+					Node node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/status");
+					
 					if(node != null)
 						respContent += node.getText();
-					node = doc.selectSingleNode("statusCode");
+					node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/statusCode");
 					if(node != null)
-						respContent += " status code " + doc.selectSingleNode("statusCode").getText();
-					node = doc.selectSingleNode("message");
+						respContent += " status code " + doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/statusCode").getText();
+					node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/message");
 					if(node != null)
 						respContent += ". " + node.getText();
 				} else if(format.equals("json")){
 					Reader reader = new InputStreamReader(in);
 					JSONObject resultObj = (JSONObject) JSONValue.parse(reader);
 					respContent += resultObj.get("status") + " status code " + resultObj.get("statusCode") + ". " + resultObj.get(status);
+					System.out.println(resultObj.toString());
 					reader.close();
 				}
 			}finally{
@@ -1617,7 +1616,6 @@ public class DAMSClient {
 				tmp.put("object", node.asResource().getId().toString());
 			tmpArr.add(tmp);
 		}
-		System.out.println("Adds: "+tmpArr.toJSONString());
 		return tmpArr.toJSONString();
 	}
 	
@@ -1667,6 +1665,7 @@ public class DAMSClient {
 				in.close();
 			} finally {
 				// Reset http request
+				request.releaseConnection();
 				request.reset();
 			}
 		}

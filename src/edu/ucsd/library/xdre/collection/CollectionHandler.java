@@ -145,15 +145,6 @@ public abstract class CollectionHandler implements ProcessHandler {
 	}
 	
 	/**
-	 * Check for complex objects type
-	 * @return number of components
-	 */
-	public int queryComplexObject(String object){
-		//XXX
-		return 0;
-	}
-	
-	/**
 	 * Retrieve the file extension
 	 * @param subjectId
 	 * @return
@@ -315,7 +306,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 		RequestOrganizer.clearSession(session);
 	}
 
-	public void releaseResource() throws Exception {
+	public void release() throws Exception {
 		close(logWriter);	
 		logWriter = null;
 	}
