@@ -134,10 +134,10 @@ public class DerivativeHandler extends CollectionHandler{
 					message += " updated ";
 				else
 					message += " created ";
-				message += " for " + collectionTitle + ": " + "created " + createdCount + ", " + (replace?"updated " + updatedCount + ", ":"") + "skit " + skipCount + ", total " + totalFiles + " master files in " + itemsCount + " objects.\n"; 
+				message += " for " + collectionTitle + ": " + "created " + createdCount + ", " + (replace?"updated " + updatedCount + ", ":"") + "skit " + skipCount + ", total " + totalFiles + " master files in " + counter + " objects.\n"; 
 			}else{
 				message = "Execution result for derivative creation " 
-					+ " in " + collectionTitle + ": " + "created " + createdCount + ", " + (replace?"updated " + updatedCount  + ", ":"") + "skit " + skipCount + ", failed " + failedsCount + " (Total " + counter + " of " + itemsCount + " objects processed). \n";
+					+ " in " + collectionTitle + ": " + "created " + createdCount + ", " + (replace?"updated " + updatedCount  + ", ":"") + "skit " + skipCount + ", failed " + failedsCount + " (Total " + itemsCount +  " items found. " + totalFiles + " master files in " + counter + " objects processed). \n";
 			}
 		log("log", message);
 		return message;

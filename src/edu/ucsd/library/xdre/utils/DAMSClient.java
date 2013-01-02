@@ -363,7 +363,6 @@ public class DAMSClient {
 			if (!(status == 200 || status == 201))
 				handleError(format);
 		}finally{
-			post.releaseConnection();
 			post.reset();
 		}
 		return new HttpContentInputStream(response.getEntity().getContent(), request);
@@ -433,7 +432,6 @@ public class DAMSClient {
 				}
 			}
 		}finally{
-			req.releaseConnection();
 			req.reset();
 		}
 		return fileURIs;
@@ -534,7 +532,6 @@ public class DAMSClient {
 			if (!success)
 				handleError(format);
 		} finally {
-			req.releaseConnection();
 			req.reset();
 		}
 
@@ -573,7 +570,7 @@ public class DAMSClient {
 	public boolean solrUpdate(String object) throws Exception {
 		//POST /objects/bb1234567x/index
 		String format = "json";
-		String url = getObjectsURL(object, null, "update", format);
+		String url = getObjectsURL(object, null, "index", format);
 		HttpPost post = new HttpPost(url);
 		int status = -1;
 		boolean success = false;
@@ -583,7 +580,6 @@ public class DAMSClient {
 			if (!success)
 				handleError(format);
 		} finally {
-			post.releaseConnection();
 			post.reset();
 		}
 
@@ -603,7 +599,7 @@ public class DAMSClient {
 	public boolean solrDelete(String object) throws Exception {
 		//DELETE /objects/bb1234567x/index
 		String format = "json";
-		String url = getObjectsURL(object, null, "update", format);
+		String url = getObjectsURL(object, null, "index", format);
 		HttpDelete del= new HttpDelete(url);
 		int status = -1;
 		boolean success = false;
@@ -664,7 +660,6 @@ public class DAMSClient {
 			if (status != 200)
 				handleError(format);
 		} finally {
-			req.releaseConnection();
 			req.reset();
 		}
 		return EntityUtils.toString(response.getEntity());
@@ -695,7 +690,6 @@ public class DAMSClient {
 			if (!success)
 				handleError(format);
 		} finally {
-			post.releaseConnection();
 			post.reset();
 		}
 
@@ -727,7 +721,6 @@ public class DAMSClient {
 			if (!success)
 				handleError(format);
 		} finally {
-			req.releaseConnection();
 			req.reset();
 		}
 
@@ -751,7 +744,6 @@ public class DAMSClient {
 			if (dfiles.size() > 0)
 				dfile = DFile.toDFile((JSONObject)dfiles.get(0));
 		} finally {
-			req.releaseConnection();
 			req.reset();
 		}
 
@@ -792,7 +784,6 @@ public class DAMSClient {
 		} catch(FileNotFoundException e){
 			exists = false;
 		} finally {
-			req.releaseConnection();
 			req.reset();
 		}
 		return exists;
@@ -863,7 +854,6 @@ public class DAMSClient {
 			if(status != 200)
 				handleError(format);
 		}finally{
-			get.releaseConnection();
 			get.reset();
 		}
 
@@ -950,7 +940,6 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		} finally {
-			req.releaseConnection();
 			req.reset();
 		}
 		return success;
@@ -986,7 +975,6 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		} finally {
-			req.releaseConnection();
 			req.reset();
 		}
 		return success;
@@ -1000,7 +988,7 @@ public class DAMSClient {
 	 * @return
 	 * @throws Exception 
 	 */
-	public boolean updateObject(String object, String xml)
+	public boolean updateObject(String object, String xml, String mode)
 			throws Exception {
 		
 		String format = null;
@@ -1017,13 +1005,15 @@ public class DAMSClient {
 		boolean success = false;
 		try {
 			in = new ByteArrayInputStream(xml.getBytes());
-			req.setEntity(toMultiPartEntity(in, "text/xml"));
+			MultipartEntity ent = toMultiPartEntity(in, "text/xml");
+			if(mode != null)
+				ent.addPart("mode", new StringBody(mode));
+			req.setEntity(ent);
 			status = execute(req);
 			success = (status == 200 || status == 201);
 			if(!success)
 				handleError(format);
 		} finally {
-			req.releaseConnection();
 			req.reset();
 			close(in);
 		}
@@ -1068,7 +1058,6 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		} finally {
-			req.releaseConnection();
 			req.reset();
 		}
 		return success;
@@ -1275,7 +1264,6 @@ public class DAMSClient {
 				handleError("json");
 			}
 		}finally{
-			req.releaseConnection();
 			req.reset();
 			close(in);
 			close(reader);
@@ -1289,13 +1277,13 @@ public class DAMSClient {
 	 * @return
 	 * @throws Exception 
 	 */
-	public Document getXMLResult(HttpRequestBase request) throws Exception{
+	public Document getXMLResult(HttpRequestBase req) throws Exception{
 		Document resObj = null;
 		InputStream in = null;
 		SAXReader reader = null;
 		int status = -1;
 		try {
-			status = execute(request);
+			status = execute(req);
 			if(status == 200){
 				reader = new SAXReader();
 				in = response.getEntity().getContent();
@@ -1304,8 +1292,7 @@ public class DAMSClient {
 				handleError("json");
 			}
 		}finally{
-			request.releaseConnection();
-			request.reset();
+			req.reset();
 			close(in);
 		}
 		return resObj;
@@ -1365,7 +1352,7 @@ public class DAMSClient {
 			if(status != 200)
 				handleError(null);
 		} finally {
-			get.releaseConnection();
+			
 			get.reset();
 		}
 		return EntityUtils.toString(response.getEntity());
@@ -1438,7 +1425,7 @@ public class DAMSClient {
 		log.info( reqInfo + ": " + respContent);
 		if (status == 403) {  
 			
-			if(respContent.indexOf(" not exists.") > 0)
+			if(respContent.indexOf(" exists ") > 0)
 				throw new FileNotFoundException(reqInfo + ": " + respContent);
 			else
 				throw new LoginException(reqInfo + ": " + respContent);
@@ -1669,7 +1656,6 @@ public class DAMSClient {
 				in.close();
 			} finally {
 				// Reset http request
-				request.releaseConnection();
 				request.reset();
 			}
 		}

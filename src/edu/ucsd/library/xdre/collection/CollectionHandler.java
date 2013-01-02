@@ -36,8 +36,6 @@ import org.dom4j.Attribute;
 import org.dom4j.DocumentException;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONValue;
 
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
@@ -70,7 +68,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 	protected StringBuilder exeReport = null;
 	protected FileWriter logWriter = null;
 
-	protected JSONArray collectionData = null;
+	protected String collectionData = null;
 	protected DAMSClient damsClient = null;
 
 	protected String collectionTitle = null;
@@ -118,9 +116,9 @@ public abstract class CollectionHandler implements ProcessHandler {
 	 */
 	protected void init() throws Exception {
 		exeReport = new StringBuilder();
-		if (collectionId != null) {
+		if (collectionId != null && collectionId.length() > 0) {
 			items = damsClient.listObjects(collectionId);
-			collectionData = (JSONArray) JSONValue.parse(damsClient.getMetadata(collectionId, null));
+			//collectionData = damsClient.getMetadata(collectionId, null);
 			itemsCount = items.size();
 			Map<String, String> colls = damsClient.listCollections();
 			Entry<String, String> ent = null;
