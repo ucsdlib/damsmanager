@@ -9,7 +9,7 @@
 <tr><td>
 <div id="tdr_crumbs">
 	<div id="tdr_crumbs_content">
-		<a class="logout" style="margin:5px;" href="logout.do?">Log out</a><div id="menu_nav" style="float:right;"><jsp:include flush="true" page="/jsp/menu_nav.jsp" /></div>
+		<div id="menu_nav" style="float:right;"><jsp:include flush="true" page="/jsp/menu_nav.jsp" /></div>
 		<ul>
 			<li><a href="http://libraries.ucsd.edu">Home</a></li>
 			<li><a href="/curator">Digital Library Collections</a></li>

@@ -114,7 +114,7 @@
 				<div id="imagesButtonDiv" <c:if test="${model.activeButton != 'imagesButton'}">style="display:none;"</c:if>>
 					<div id="derivativeDiv" class="processlayout">
 						<div title="Create thumbnails and medium resource images." class="menuText">
-								    <span><input class="pcheckbox" type="checkbox" id="createDerivatives" name="createDerivatives" onClick="checkSelections(this, 'derivativeReplace');">
+								    <span><input class="pcheckbox" type="checkbox" id="createDerivatives" name="createDerivatives" onClick="checkSelections(this, 'derReplace');">
 								   <span class="text-special">Derivatives Creation</span></span><br/>								   
 						</div>
 						<div>
@@ -133,41 +133,38 @@
 				</div>
 				<div id="sipButtonDiv" <c:if test="${model.activeButton != 'sipButton'}">style="display:none;"</c:if>>
 					<div id="populationDiv" class="processlayout">
-						<div title="Populate the triple store with RDF." class="menuText"><input disabled class="pcheckbox" type="checkbox" id="rdfImport" name="rdfImport" onClick="checkSelections(this);">
-									  <span class="text-special">TripleStore Population</span>
+						<div title="Populate the triple store with RDF." class="menuText"><input class="pcheckbox" type="checkbox" id="rdfImport" name="rdfImport" onClick="checkSelections(this);">
+									  <span class="text-special">Metadata Import</span>
 						</div>
 						<div>
 							<fieldset class="groupbox_ts"><legend class="slegandText">File</legend>
 									<div id="fileFormat">
 											<span class="submenuText"><strong>Choose File Format: </strong></span><br/>
-											<span class="submenuText"><input type="radio" name="fileType" value="rdf" checked><a title="View sample format" href="/damsmanager/files/sampleRdf.xml" target="_blank"><span class="text-special">RDF</span></a></span>
-											<span class="submenuText"><input type="radio" name="fileType" value="msclXml" disabled><a title="View sample format" href="/damsmanager/files/sampleMscl.xml" target="_blank"><span class="text-special">MSCL XML</span></a></span>
-											<span class="submenuText"><input type="radio" name="fileType" value="mets" disabled><span class="text-special">METS</span></span>
-											<span class="submenuText"><input type="radio" name="fileType" value="json" disabled><span class="text-special">JSON</span></span><br>
+											<span class="submenuText"><input type="radio" name="dataFormat" value="rdf" checked><a title="View sample format" href="/damsmanager/files/sampleRdf.xml" target="_blank"><span class="text-special">RDF XML</span></a></span>
+											<span class="submenuText"><input type="radio" name="dataFormat" value="msclXml"><a title="View sample format" href="/damsmanager/files/sampleMscl.xml" target="_blank"><span class="text-special">N-Triples</span></a></span>
+											<span class="submenuText"><input type="radio" name="dataFormat" value="json" disabled><span class="text-special">JSON</span></span><br>
 									</div>
 									<div id="fileLocation" style="padding-top:5px;">	
-											<span class="submenuText"><strong>Choose File Location: </strong></span><br />	
-											<span class="submenuText"><input type="radio" name="fileToIngest" value="rdfFile" checked><span class="text-special">Local data file</span></span><br>
-											<span class="submenuText"><input type="radio" name="fileToIngest" value="rdfUrl"><span class="text-special">Data from a URL: </span><input type="text" name="saemUrl" size="35"></span><br/>
+											<span class="submenuText"><strong>Choose File: </strong></span><input type="file" name="dataFile" size="40" /><br>
 									</div>
 							</fieldset>
 						 </div>
 						 <div>
 						 <fieldset class="groupbox_ingestOpts"><legend class="slegandText">Special Options</legend>
 						 <div title="Check this checkbox to start a new round of TripleStore population." class="specialmenuText">
-									<input type="checkbox" id="tsRenew" name="tsRenew" class="pmcheckbox" onClick="specialSelections(this, 'start a new round of triplestore population', 'rdfImport');">
-									 <span class="text-special">Start the process to add metadata</span>
+									<input type="radio" id="importMode" name="importMode" value="add" class="pmcheckbox">
+									 <span class="text-special">Add metadata</span>
 						 </div>
-						 <div title="Check this checkbox to repopulate the metadata (JHOVE data excluded) for all the subjects included in the submitted RDF." class="specialmenuText">
-									<input type="checkbox" id="tsRepopulateOnly" name="tsRepopulateOnly" class="pmcheckbox" onClick="specialSelections(this, 'repopulate the metadata (JHOVE data excluded) in the submitted RDF', 'rdfImport');">
-									 <span class="text-special">Repopulate metadata (keep JHOVE extracted metadata)</span>
+						 <div title="Check this checkbox to repopulate metadata but keep file characterize metadata for all the subjects included in the file submitted." class="specialmenuText">
+									<input disabled type="radio" id="importMode" name="importMode" value="desciptive" class="pmcheckbox">
+									 <span class="text-special">Repopulate subjects but keep file characterize metadata</span>
 						  </div>
 						 <div title="Check this checkbox to replace the subject with the subjects included in the submitted RDF." class="specialmenuText">
-									<input type="checkbox" id="tsRepopulation" name="tsRepopulation" class="pmcheckbox" onClick="specialSelections(this, 'replace the subjects in the submitted RDF', 'rdfImport');">
+									<input type="radio" id="importMode" name="importMode" value="all"  class="pmcheckbox">
 									 <span class="text-special">Replace subject with the metadata submitted</span>
 						  </div>
 						  <div title="Check this checkbox for the same predicates replacement with the triples included in the submitted RDF." class="specialmenuText">
-									<input type="checkbox" id="samePredicatesReplacement" name="samePredicatesReplacement" class="pmcheckbox" onClick="specialSelections(this, 'replace the same predicates in the submitted RDF', 'rdfImport');">
+									<input disabled type="radio" id="importMode" name="importMode" value="samePredicates" class="pmcheckbox">
 									 <span class="text-special">Same predicates replacement with the metadata submitted</span>
 						  </div>
 						  </fieldset>
