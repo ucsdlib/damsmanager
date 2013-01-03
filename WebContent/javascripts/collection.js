@@ -32,7 +32,7 @@
       
       var rdfImport = formObj.rdfImport.checked;
       var jhoveReport = formObj.jhoveReport.checked;
-      var urlParams = "?activeButton=" + formObj.activeButton.value; 
+      var urlParams = "activeButton=" + formObj.activeButton.value; 
       var validateFileCount = formObj.validateFileCount.checked;
       var validateChecksums = formObj.validateChecksums.checked;
       var createDerivatives = formObj.createDerivatives.checked;
@@ -45,7 +45,7 @@
          alert("Please choose a collection.");
          return false;
       } else if(collectionIndex != 0) {
-      	 var selectedOption =  document.mainForm.category.options[collectionIndex];     	    
+      	 var selectedOption =  formObj.category.options[collectionIndex];     	    
          collectionName = selectedOption.text;        
       	 category = selectedOption.value;
       }
@@ -96,31 +96,16 @@
        }
              
      if(rdfImport == true){
-         
-         operations += "- TripleStore Population \n";
-         var fileOptions = formObj.fileToIngest;        
-          if(fileOptions[1].checked == true){
-             var fileUrl = formObj.saemUrl.value;
-             if(fileUrl == null || trim(fileUrl).length == 0){
-                alert("Please enter a url for the RDF file.");
-                return false;
-             }            
-         }else{
-             
-             var exeConfirm = confirm("Are you sure you want to perform the following operations " + collectionName + " \n" + operations);
-             if(!exeConfirm){
-                return false;
-             }
-             
-             setDispStyle("main", "none");
-             setDispStyle("saemFileDiv", "inline");
-             displayMessage("message", "");
-             document.formSaemFile.action = "/damsmanager/fileUpload.do?formId=formSaemFile&" + urlParams + "&sid=" + getSid();
-            return false;
-         }
+    	var fileName = formObj.dataFile.value;
+	    if(fileName == null || trim(fileName).length == 0){
+	       alert("Please choose a data file.");
+	       return false;      
+	    }
+         operations += "- Metadata Import \n";
+         formObj.enctype = "multipart/form-data";
       }
      
-     if(operations.length == 1){
+     if(operations.length == 0){
         alert("Please choose an operation.");
         return false;
      }
@@ -130,7 +115,7 @@
            return false;
       }
       
-     document.mainForm.action = url + "?progress=0&formId=mainForm&" + urlParams + "&sid=" + getSid();
+     formObj.action = url + "?progress=0&formId=mainForm&" + urlParams + "&sid=" + getSid();
      displayMessage("message", "");
      getAssignment("mainForm");
      displayProgressBar(0);
@@ -164,22 +149,12 @@
             	if(cObj.checked == true)
               	    cObj.checked = false;
             }
-        }else if(checkboxObj.name == 'rdfImport'){
-           var cObj = eval("document.mainForm.tsRenew");
-           if(cObj.checked == true)
-               cObj.checked = false;
-           cObj = eval("document.mainForm.tsRepopulation");
-           if(cObj.checked == true)
-               cObj.checked = false;
-           cObj = eval("document.mainForm.tsRepopulateOnly");
-           if(cObj.checked == true)
-              cObj.checked = false;
         }
      }
    }
   
   function confirmSelection(checkObj, message, parentName){
-     var collectionIndex = document.getElementById("collection").selectedIndex;
+     var collectionIndex = document.getElementById("category").selectedIndex;
      if(checkObj.checked == true){
      	if((collectionIndex == 0 && !checkObj.name=="tsRepopulation") || (collectionIndex == 0 && checkedCount > 1)){
      	    checkObj.checked = false;
@@ -214,42 +189,6 @@
              if(formObj.cdlResend.checked == true){
              	checkObj.checked = false;
             	alert("Resend option is selected. Please uncheck it for another option.");
-            	return false; 
-            }       
-         }else if(checkObj.name == "tsRenew"){
-             var collectionIndex = document.mainForm.category.selectedIndex;
-             if(collectionIndex == 0){
-             	checkObj.checked = false;
-             	alert("Please select a collection to start a new round of triplestore population.");
-            	return false; 
-             }         
-             if(formObj.tsRepopulation.checked == true){
-             	checkObj.checked = false;
-            	alert("Metadata Repopulation option is selected. Please uncheck it for another option.");
-            	return false; 
-            }else if(formObj.tsRepopulateOnly.checked == true){
-             	checkObj.checked = false;
-            	alert("Metadata Repopulate option is selected. Please uncheck it for another option.");
-            	return false; 
-            }         
-         }else if(checkObj.name == "tsRepopulation"){
-             if(formObj.tsRenew.checked == true){
-             	checkObj.checked = false;
-            	alert("Metadata Renew option is selected. Please uncheck it for another option.");
-            	return false; 
-            } else if(formObj.tsRepopulateOnly.checked == true){
-             	checkObj.checked = false;
-            	alert("Metadata Repopulate option is selected. Please uncheck it for another option.");
-            	return false; 
-            }       
-         }else if(checkObj.name == "tsRepopulateOnly"){
-             if(formObj.tsRenew.checked == true){
-             	checkObj.checked = false;
-            	alert("Metadata Renew option is selected. Please uncheck it for another option.");
-            	return false; 
-            } else if(formObj.tsRepopulation.checked == true){
-             	checkObj.checked = false;
-            	alert("Metadata Replace option is selected. Please uncheck it for another option.");
             	return false; 
             }       
          }

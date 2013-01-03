@@ -1,5 +1,7 @@
 package edu.ucsd.library.xdre.utils;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.File;
@@ -11,6 +13,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -609,10 +612,30 @@ public class DAMSClient {
 			if (!success)
 				handleError(format);
 		} finally {
-			del.releaseConnection();
 			del.reset();
 		}
 		return success;
+	}
+	
+	/**
+	 * List objects for items in a repository and/or collection
+	 * @param repository
+	 * @param collection
+	 * @return
+	 * @throws Exception
+	 */
+	public List<String> solrListObjects(String repoTitle, String collectionTitle) throws Exception {
+		int rows = 1000;
+		int start = 0;
+		boolean hasMore = false;
+		List<String> items = new ArrayList<String>();
+		//Retrieve objects in SOLR recursively
+		do{
+			hasMore = appendSOLRItems(items, repoTitle, collectionTitle, start, rows);
+			start = rows + start;
+		}while(hasMore );
+		
+		return items;
 	}
 
 	/**
@@ -1628,6 +1651,52 @@ public class DAMSClient {
 		MimetypesFileTypeMap mimeTypes = new MimetypesFileTypeMap();
 		String mimeType = mimeTypes.getContentType(filename);
 		return mimeType;
+	}
+	
+	/**
+	 * Append items found in SOLR
+	 * @param items
+	 * @param repository
+	 * @param collection
+	 * @param start
+	 * @param rows
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean appendSOLRItems(List<String> items, String repoTitle, String collectionTitle, int start, int rows) throws Exception{
+		String solrQuery = toSolrQuery(repoTitle, collectionTitle);
+		String solrParams = solrQuery + "&rows=" + rows + "&start=" + start + "&fl=id&wt=xml";
+		
+		String url = getIndexURL(null);
+		url += (url.indexOf('?')>0?"&":"?") + solrParams;
+		System.out.println("SOLR URL: " + url);
+		HttpGet req= new HttpGet(url);
+		Document doc = getXMLResult(req);
+		int numFound = Integer.parseInt(doc.selectSingleNode("/response/result/@numFound").getStringValue());
+		start = Integer.parseInt(doc.selectSingleNode("/response/result/@numFound").getStringValue());
+		List<Node> idNodes = doc.selectNodes("/response/result/doc/str[@name='id']");
+		for (Iterator<Node> it = idNodes.iterator(); it.hasNext();){
+			Node idNode = it.next();
+			items.add(idNode.getText());
+		}
+		return rows+start < numFound; 
+	}
+	
+	/**
+	 * Construct SOLR query
+	 * @param repository
+	 * @param collection
+	 * @return
+	 * @throws UnsupportedEncodingException 
+	 */
+	public static String toSolrQuery(String repository, String collection) throws UnsupportedEncodingException{
+		String solrParams = (repository==null?"":"repository:\""+repository + "\"");
+		solrParams += (collection!=null&&solrParams.length()>0?" AND ":"") + (collection!=null?"collection:"+collection:"");
+		if(solrParams.length() > 0)
+			solrParams = solrParams.replace(" ", "+");
+		
+		solrParams = "q=" + URLEncoder.encode(solrParams, "UTF-8");
+		return solrParams;
 	}
 	
 	/**

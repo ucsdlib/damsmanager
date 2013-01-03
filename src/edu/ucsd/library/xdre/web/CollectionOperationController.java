@@ -41,6 +41,7 @@ import edu.ucsd.library.util.sql.EmployeeInfo;
 import edu.ucsd.library.xdre.collection.CollectionHandler;
 import edu.ucsd.library.xdre.collection.DerivativeHandler;
 import edu.ucsd.library.xdre.collection.FileIngestionHandler;
+import edu.ucsd.library.xdre.collection.SOLRIndexHandler;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.RequestOrganizer;
@@ -464,7 +465,7 @@ public class CollectionOperationController implements Controller {
 				   session.setAttribute("status", opMessage + "METS File Creation &amp; File Store Upload ...");
 				   boolean metsReplace = getParameter(paramsMap, "metsReplace") != null;
 				   handler = new MetaDataStreamUploadHandler(damsClient, collectionId, "mets", metsReplace);
-			 } else if (i == 7) {
+			 } */else if (i == 7) {
 				 session.setAttribute("status", opMessage + "SOLR Index ...");
 				 boolean update = getParameter(paramsMap, "indexReplace") != null;
 				 if(collectionId.indexOf(",") > 0){
@@ -497,7 +498,7 @@ public class CollectionOperationController implements Controller {
 				 }else
 					 handler = new SOLRIndexHandler(damsClient, collectionId, update);
 
-			 }else if (i == 8){	
+			 }/*else if (i == 8){	
 				    //session.setAttribute("status", opMessage + "CDL Sending ...");
 				    int operationType = 0;
 				 		boolean resend = getParameter(paramsMap, "cdlResend") != null;
@@ -737,7 +738,7 @@ public class CollectionOperationController implements Controller {
 	}else
 		returnMessage = message;
 	
-	String logMessage = "For details information, please download " + "<a href=\"" + logLink + "\">log</a>" + ".";
+	String logMessage = "For details, please download " + "<a href=\"" + logLink + "\">log</a>" + ".";
 	if(returnMessage.length() > 1000){
 		returnMessage = returnMessage.substring(0, 1000);
 		int idx = returnMessage.lastIndexOf("<br ");

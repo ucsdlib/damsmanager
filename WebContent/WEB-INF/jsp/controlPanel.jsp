@@ -133,26 +133,26 @@
 				</div>
 				<div id="sipButtonDiv" <c:if test="${model.activeButton != 'sipButton'}">style="display:none;"</c:if>>
 					<div id="populationDiv" class="processlayout">
-						<div title="Populate the triple store with RDF." class="menuText"><input class="pcheckbox" type="checkbox" id="rdfImport" name="rdfImport" onClick="checkSelections(this);">
+						<div title="Populate the triple store with RDF." class="menuText"><input disabled class="pcheckbox" type="checkbox" id="rdfImport" name="rdfImport" onClick="checkSelections(this);">
 									  <span class="text-special">Metadata Import</span>
 						</div>
 						<div>
 							<fieldset class="groupbox_ts"><legend class="slegandText">File</legend>
 									<div id="fileFormat">
 											<span class="submenuText"><strong>Choose File Format: </strong></span><br/>
-											<span class="submenuText"><input type="radio" name="dataFormat" value="rdf" checked><a title="View sample format" href="/damsmanager/files/sampleRdf.xml" target="_blank"><span class="text-special">RDF XML</span></a></span>
-											<span class="submenuText"><input type="radio" name="dataFormat" value="msclXml"><a title="View sample format" href="/damsmanager/files/sampleMscl.xml" target="_blank"><span class="text-special">N-Triples</span></a></span>
+											<span class="submenuText"><input disabled type="radio" name="dataFormat" value="rdf" checked><a title="View sample format" href="/damsmanager/files/sampleRdf.xml" target="_blank"><span class="text-special">RDF XML</span></a></span>
+											<span class="submenuText"><input disabled type="radio" name="dataFormat" value="msclXml"><a title="View sample format" href="/damsmanager/files/sampleMscl.xml" target="_blank"><span class="text-special">N-Triples</span></a></span>
 											<span class="submenuText"><input type="radio" name="dataFormat" value="json" disabled><span class="text-special">JSON</span></span><br>
 									</div>
 									<div id="fileLocation" style="padding-top:5px;">	
-											<span class="submenuText"><strong>Choose File: </strong></span><input type="file" name="dataFile" size="40" /><br>
+											<span class="submenuText"><strong>Choose File: </strong></span><input disabled type="file" name="dataFile" size="40" /><br>
 									</div>
 							</fieldset>
 						 </div>
 						 <div>
 						 <fieldset class="groupbox_ingestOpts"><legend class="slegandText">Special Options</legend>
 						 <div title="Check this checkbox to start a new round of TripleStore population." class="specialmenuText">
-									<input type="radio" id="importMode" name="importMode" value="add" class="pmcheckbox">
+									<input disabled type="radio" id="importMode" name="importMode" value="add" class="pmcheckbox">
 									 <span class="text-special">Add metadata</span>
 						 </div>
 						 <div title="Check this checkbox to repopulate metadata but keep file characterize metadata for all the subjects included in the file submitted." class="specialmenuText">
@@ -160,7 +160,7 @@
 									 <span class="text-special">Repopulate subjects but keep file characterize metadata</span>
 						  </div>
 						 <div title="Check this checkbox to replace the subject with the subjects included in the submitted RDF." class="specialmenuText">
-									<input type="radio" id="importMode" name="importMode" value="all"  class="pmcheckbox">
+									<input disabled type="radio" id="importMode" name="importMode" value="all"  class="pmcheckbox">
 									 <span class="text-special">Replace subject with the metadata submitted</span>
 						  </div>
 						  <div title="Check this checkbox for the same predicates replacement with the triples included in the submitted RDF." class="specialmenuText">
@@ -177,11 +177,11 @@
 				<div id="metadataButtonDiv" <c:if test="${model.activeButton != 'metadataButton'}">style="display:none;"</c:if>>
 					<div id="solrIndexDiv" class="processlayout">
 						 <div><span title="SOLR index" class="menuText">
-					            <input disabled class="pcheckbox" type="checkbox" id="luceneIndex" name="luceneIndex" onClick="checkSelections(this, 'indexReplace');">
+					            <input class="pcheckbox" type="checkbox" id="luceneIndex" name="luceneIndex" onClick="checkSelections(this, 'indexReplace');">
 						          <span class="text-special">SOLR Indexing</span></span><br />
 						  </div>
-						  <div title="Check this checkbox to replace the existed SOLR Indexes if exist [optional]." class="specialmenuText"><input style="margin-left:15px;" type="checkbox" id="indexReplace" name="indexReplace" class="pmcheckbox" onClick="confirmSelection(this, 'replace the existing SOLR Index', 'luceneIndex');">
-									 <span class="text-special">Replace the SOLR indexes for the collection selected</span>
+						  <div title="Check this checkbox to Clean up SOLR the collection selected [optional]." class="specialmenuText"><input style="margin-left:15px;" type="checkbox" id="indexReplace" name="indexReplace" class="pmcheckbox" onClick="confirmSelection(this, 'clean up SOLR for the collection selected', 'luceneIndex');">
+									 <span class="text-special">Clean up SOLR for the collection selected</span>
 						  </div>
 					</div>
 					<div id="rdfUploadDiv" class="processlayout">
@@ -190,11 +190,11 @@
 						 </div>	
 						 <div>
 							<fieldset class="groupbox_rdf"><legend class="slegandText">Meta Data</legend>
-   						        <span class="submenuText"><input type="radio" name="rdfXmlDataType" value="all" checked>All</span><br />
-						        <span class="submenuText"><input type="radio" name="rdfXmlDataType" value="jhove" >JHOVE extracted metadata only</span><br />
+   						        <span class="submenuText"><input disabled type="radio" name="rdfXmlDataType" value="all" checked>All</span><br />
+						        <span class="submenuText"><input disabled type="radio" name="rdfXmlDataType" value="jhove" >JHOVE extracted metadata only</span><br />
 						   </fieldset>
 						 </div>	
-						 <div title="Check this checkbox to replace the RDF XML files if exist." class="specialmenuText"><input style="margin-left:15px;" type="checkbox" id="rdfXmlReplace" name="rdfXmlReplace" class="pmcheckbox" onClick="confirmSelection(this, 'replace the RDF XML files', 'uploadRDF');">
+						 <div title="Check this checkbox to replace the RDF XML files if exist." class="specialmenuText"><input disabled style="margin-left:15px;" type="checkbox" id="rdfXmlReplace" name="rdfXmlReplace" class="pmcheckbox" onClick="confirmSelection(this, 'replace the RDF XML files', 'uploadRDF');">
 									 <span class="text-special">Replace the RDF XML files</span>
 						  </div>
 					</div>
@@ -203,7 +203,7 @@
 								   <input disabled class="pcheckbox" type="checkbox" id="createMETSFiles" name="createMETSFiles" onClick="checkSelections(this, 'metsReplace');">
 									 <span class="text-special">METS Creation &amp; uploading</span></span><br />
 						</div>
-						<div title="Check this checkbox to replace the METS files if exist [optional]." class="specialmenuText"><input style="margin-left:15px;" type="checkbox" id="metsReplace" name="metsReplace" class="pmcheckbox" onClick="confirmSelection(this, 'replace the METS', 'createMETSFiles');">
+						<div title="Check this checkbox to replace the METS files if exist [optional]." class="specialmenuText"><input disabled style="margin-left:15px;" type="checkbox" id="metsReplace" name="metsReplace" class="pmcheckbox" onClick="confirmSelection(this, 'replace the METS', 'createMETSFiles');">
 									 <span class="text-special">Replace the METS files</span>
 						</div>
 					</div>
@@ -213,14 +213,14 @@
 						<div class="menuText"><input disabled class="pcheckbox" type="checkbox" id="exportRdf" name="exportRdf" onClick="checkSelections(this);"><span class="text-special"><strong>Metadata Export: </strong></span><br />
 						    <div style="padding-left:18px;">
 						    	<div title="Export metadata with namespaces limitation." class="specialmenuText">
-								    <span class="text-special">&nbsp;Export triples in namespace(s): <input type="text" name="nsInput" size="30" class="inputText" />&nbsp; (<span style="color:red;font-size:12px;">*</span>delimited by comma)</span> 
+								    <span class="text-special">&nbsp;Export triples in namespace(s): <input disabled type="text" name="nsInput" size="30" class="inputText" />&nbsp; (<span style="color:red;font-size:12px;">*</span>delimited by comma)</span> 
 								</div>
-								<div class="specialmenuText"><input type="radio" name="exportFormat" value="rdf" checked><span class="text-special">RDF XML Export</span></div>
-								<div title="Check this checkbox to export RDF with literal namespaces translation."><input style="margin-left:15px;" type="checkbox" id="translated" name="translated" class="pmcheckbox" onClick="confirmSelection(this, 'Export with literal namespaces translation', 'exportRdf');">
+								<div class="specialmenuText"><input disabled type="radio" name="exportFormat" value="rdf" checked><span class="text-special">RDF XML Export</span></div>
+								<div title="Check this checkbox to export RDF with literal namespaces translation."><input disabled style="margin-left:15px;" type="checkbox" id="translated" name="translated" class="pmcheckbox" onClick="confirmSelection(this, 'Export with literal namespaces translation', 'exportRdf');">
 									<span class="specialmenuText">With literal namespaces translation.</span>
 								</div>
-								<div class="specialmenuText"><input type="radio" name="exportFormat" value="csv"><span class="text-special">CSV Export</span></div>
-								<div class="specialmenuText"><input type="radio" name="exportFormat" value="ntriples"><span class="text-special">NTriples Export</span></div>
+								<div class="specialmenuText"><input disabled type="radio" name="exportFormat" value="csv"><span class="text-special">CSV Export</span></div>
+								<div class="specialmenuText"><input disabled type="radio" name="exportFormat" value="ntriples"><span class="text-special">NTriples Export</span></div>
 							</div>
 						</div>
 					</div>
@@ -231,17 +231,17 @@
 						</div>
 						<div>
 							<fieldset class="groupbox_cdl"><legend class="slegandText">METS Feeder</legend>
-							   <span class="submenuText"><input type="radio" name="feeder" value="dpr" checked> DPR </span><br />
-							   <span class="submenuText"><input type="radio" name="feeder" value="merritt" checked> Merritt </span><br />
+							   <span class="submenuText"><input disabled type="radio" name="feeder" value="dpr" checked> DPR </span><br />
+							   <span class="submenuText"><input disabled type="radio" name="feeder" value="merritt" checked> Merritt </span><br />
 								<div style="margin-left:28px;">
-									<span class="submenuInputText">Account #:&nbsp;<input type="text" name="account" size="12" class="inputText" />&nbsp;</span><br /><span class="submenuInputText">Auth code:&nbsp;<input type="password" name="password" size="12" class="inputText" /></span>						
+									<span class="submenuInputText">Account #:&nbsp;<input disabled type="text" name="account" size="12" class="inputText" />&nbsp;</span><br /><span class="submenuInputText">Auth code:&nbsp;<input disabled type="password" name="password" size="12" class="inputText" /></span>						
 								</div>
 							</fieldset>
 							<fieldset class="groupbox_cdlOptions"><legend class="slegandText">Special Options</legend>
 							<span class="submenuText" title="Check this checkbox to include the embargo objects to send to CDL." class="specialmenuText">
-								<input type="checkbox" id="includeEmbargoed" name="includeEmbargoed" class="pmcheckbox"></span><span class="text-special">Include embargoed objects</span><br />
+								<input disabled type="checkbox" id="includeEmbargoed" name="includeEmbargoed" class="pmcheckbox"></span><span class="text-special">Include embargoed objects</span><br />
 							<span class="submenuText" title="Check this checkbox to resend objects to CDL." class="specialmenuText">
-								<input type="checkbox" id="cdlResend" name="cdlResend" class="pmcheckbox" onClick="specialSelections(this, 'resend objects already sent to CDL', 'sendToCDL');"></span><span class="text-special">Resend objects already sent</span><br />
+								<input disabled type="checkbox" id="cdlResend" name="cdlResend" class="pmcheckbox" onClick="specialSelections(this, 'resend objects already sent to CDL', 'sendToCDL');"></span><span class="text-special">Resend objects already sent</span><br />
 							<span class="submenuText" title="Check this checkbox to resend the METS file to CDL only.">
 								<input type="checkbox" id="cdlResendMets" name="cdlResendMets" class="pmcheckbox" onClick="specialSelections(this, 'resend METS files to CDL only', 'sendToCDL');" disabled></span><span class="text-special">Resend METS files only</span>
 							</fieldset>
