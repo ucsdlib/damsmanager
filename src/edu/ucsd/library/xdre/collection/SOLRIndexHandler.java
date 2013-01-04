@@ -17,6 +17,8 @@ public class SOLRIndexHandler extends CollectionHandler{
 
 	private int count = 0;
 	private int failedCount = 0;
+	private int deletedCount = 0;
+	private int cleanUpdateCount = 0;
 	private boolean indexUpdate = false;
 	
 	/**
@@ -130,20 +132,41 @@ public class SOLRIndexHandler extends CollectionHandler{
 				
 				// Perform solr cleaning up when more items is found in SOLR for the collection
 				if(solrCount > colItems.size()){
+					boolean OExist = false;
+					String oidPrefix = "";
+					String idPrefix = colItems.get(0);
+					if(idPrefix.startsWith("http")){
+						oidPrefix = idPrefix.substring(0, idPrefix.lastIndexOf("/"));
+					}
+						
 					for(Iterator<String> it=solrItems.iterator();it.hasNext();){
 						count++;
 						subject = it.next();
+						if(!subject.startsWith("http"))
+							subject = oidPrefix + "/" + subject;
+						
 						if(colItems.indexOf(subject) <= 0){
-							setStatus("Processing SOLR cleaning up item " + subjectURI  + " for collection " + colTitle + " (" + count + " of " + solrCount + ") ... " ); 
-							boolean suceeded = damsClient.solrUpdate(subjectURI);
+							OExist = damsClient.exists(subject, null, null);
+							boolean suceeded = false;
+							if(OExist){
+								// Update SOLR
+								cleanUpdateCount++;
+								setStatus("Processing SOLR cleaning up to update item " + subject  + " for collection " + colTitle + " (" + count + " of " + solrCount + ") ... " ); 
+								suceeded = damsClient.solrUpdate(subjectURI);
+							}else{
+								// Delete it from SOLR
+								deletedCount++;
+								setStatus("Processing SOLR cleaning up to delete item " + subject  + " from collection " + colTitle + " (" + count + " of " + solrCount + ") ... " ); 
+								suceeded = damsClient.solrDelete(subject);
+							}
 							if(!suceeded){
 								exeResult = false;
-								String iMessage = "SOLR index cleaning up failed " + " for subject " + subjectURI  + ".\n";
+								String iMessage = "SOLR index cleaning up failed " + " for subject " + subject  + ".\n";
 								setStatus( iMessage.replace("\n", "<br/>")); 
 								log("log", iMessage);
 								log.info(iMessage);
 							}else{
-								String iMessage = "SOLR index cleaning up succeedded " + " for subject " + subjectURI  + ".\n";
+								String iMessage = "SOLR index cleaning up succeedded " + " for subject " + subject  + ".\n";
 								setStatus( iMessage.replace("\n", "<br/>")); 
 								log("log", iMessage);
 								log.info(iMessage);
@@ -175,10 +198,15 @@ public class SOLRIndexHandler extends CollectionHandler{
 	 */
 	public String getExeInfo() {
 		if(exeResult)
-			exeReport.append("SOLR index succeeded. \n ");
+			exeReport.append("SOLR index succeeded: \n ");
 		else
 			exeReport.append("SOLR index failed (" + failedCount + " of " + count + " failed): \n ");	
-		exeReport.append("Total items found " + itemsCount + ". Number of items updated " + count + ".\n");
+		exeReport.append("Total items found " + itemsCount + " (Number of items updated: " + count);
+		if(deletedCount > 0)
+			exeReport.append(", deleted: " + deletedCount);
+		if(cleanUpdateCount > 0)
+			exeReport.append(", clear: " + cleanUpdateCount);
+		exeReport.append(").");
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
 		return exeInfo;

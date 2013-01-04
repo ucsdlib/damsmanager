@@ -103,7 +103,7 @@
 			<li><a href="http://libraries.ucsd.edu">Home</a></li>
 			<li><a href="/curator">Digital Library Collections</a></li>
 			<li><a href="/damsmanager/">DAMS Manager</a></li>
-			<li>Staging Ingestion</li>
+			<li>Staging Ingest</li>
 		</ul>
 	</div><!-- /tdr_crumbs_content -->
 	
@@ -118,7 +118,7 @@
 <div id="main" class="mainDiv">
 <form id="mainForm" name="mainForm" method="post" action="/damsmanager/operationHandler.do?ingest" >
 <div class="emBox_ark">
-<div class="emBoxBanner">Staging Ingestion</div>
+<div class="emBoxBanner">Staging Ingest</div>
 <div style="background:#DDDDDD;padding-top:8px;padding-bottom:8px;padding-left:25px;" align="left">
 		<span id="dsSpan" class="menuText" Title="Double click to change the triplestore used for operation." ondblclick="setTriplestore();" onMouseOver="this.style.cursor='pointer'">${fn:toUpperCase(tsNameFl)}${fn:substring(model.triplestore, 1, tsNameLen)} </span>
 			<span id="dsSelectSpan" ondblclick="resetTriplestore();" style="display:none" >
@@ -245,7 +245,7 @@
 </div>
 	<jsp:include flush="true" page="/jsp/status.jsp" />
 	<div id="messageDiv">
-		<div id="message" align="left" class="errorBody">${model.message}</div>
+		<div id="message" align="left">${model.message}</div>
 	</div>
 </td>
 </tr>

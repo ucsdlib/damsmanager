@@ -276,7 +276,7 @@
 	<!-- jsp:include flush="true" page="/jsp/fileUpload.jsp" /-->
 	<jsp:include flush="true" page="/jsp/status.jsp" />
 	<div id="messageDiv">
-		<div id="message" align="left" class="errorBody">${model.message}</div>
+		<div id="message" align="left">${model.message}</div>
 	</div>
 </td>
 </tr>
