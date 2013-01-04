@@ -25,32 +25,17 @@ public class Constants {
 
 	public static String MAILSENDER_DAMSSUPPORT = "dams-support@ucsd.edu";
 
-	public static final int JETL_UPLOAD_ALL = 0;
-	public static final int JETL_UPLOAD_FILE_ONLY = 1;
-	public static final int JETL_UPLOAD_JHOVE_ONLY = 2;
-
-	public static final String PATHS_DELIMITER = ";";
-	public static final String XPATH_ESCAPE_SEQUENCE = "|||";
-	public static final String SUBJECT_XPATH = "/RDF/Description";
-	public static final int METADAT_NEW = 0;
-	public static final int METADAT_RENEW = 1;
-	public static final int METADAT_REPOPULATE_ALL = 2;
-	public static final int METADAT_REPOPULATE_ONLY = 3;
-	public static final int METADAT_SAME_PREDICATE_REPLACEMENT = 4;
-
+	public static final String IMPORT_MODE_ADD = "add";
+	public static final String IMPORT_MODE_ALL = "all";
+	public static final String IMPORT_MODE_SAMEPREDICATES = "samePredicates";
+	public static final String IMPORT_MODE_DESCRIPTIVE = "descriptive";
+	
 	public static final int MEDIUM_RESOLUTION = 2;
 	public static final int MEDIUM_RESOLUTION3A = 3;
 	public static final int THUMBNAIL = 4;
 	public static final int THUMBNAIL2A = 5;
 
 	public static final int TIMEOUT = 30000;
-	
-	public static final String NAMESPACE_RDF = "rdf";
-	public static final String ELEM_ABOUT = "about";
-	public static final String ELEM_NODEID = "nodeId";
-	public static final String ELEM_PARSETYPE = "parseType";
-	public static final String RESOURCE = "Resource";
-
 
 	public static String CLUSTER_HOST_NAME = "";
 	public static String DAMS_STORAGE_URL = "";

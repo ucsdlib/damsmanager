@@ -14,6 +14,7 @@ import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -36,8 +37,6 @@ import org.dom4j.Attribute;
 import org.dom4j.DocumentException;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONValue;
 
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
@@ -70,10 +69,11 @@ public abstract class CollectionHandler implements ProcessHandler {
 	protected StringBuilder exeReport = null;
 	protected FileWriter logWriter = null;
 
-	protected JSONArray collectionData = null;
+	protected String collectionData = null;
 	protected DAMSClient damsClient = null;
 
 	protected String collectionTitle = null;
+	protected Map<String, String> collectionsMap = null;
 	protected int itemsCount = 0; //Total number of items in the collection/batch
 
 	/**
@@ -118,19 +118,20 @@ public abstract class CollectionHandler implements ProcessHandler {
 	 */
 	protected void init() throws Exception {
 		exeReport = new StringBuilder();
-		if (collectionId != null) {
-			items = damsClient.listObjects(collectionId);
-			collectionData = (JSONArray) JSONValue.parse(damsClient.getMetadata(collectionId, null));
+		collectionsMap = new HashMap<String, String>();
+		Map<String, String> colls = damsClient.listCollections();
+		Entry<String, String> ent = null;
+		for (Iterator<Entry<String, String>> it=colls.entrySet().iterator(); it.hasNext();){
+			ent = (Entry<String, String>) it.next();
+			String colId = ent.getValue();
+			String colTitle = ent.getKey();
+			collectionsMap.put(colId, colTitle);
+		}
+		if (collectionId != null && collectionId.length() > 0) {
+			items = listItems(collectionId, damsClient);
+			//collectionData = damsClient.getMetadata(collectionId, null);
 			itemsCount = items.size();
-			Map<String, String> colls = damsClient.listCollections();
-			Entry<String, String> ent = null;
-			for (Iterator<Entry<String, String>> it=colls.entrySet().iterator(); it.hasNext();){
-				ent = (Entry<String, String>) it.next();
-				if(ent.getValue().equals(collectionId)){
-					collectionTitle = ent.getKey();
-					break;
-				}
-			}
+			collectionTitle = collectionsMap.get(collectionId);
 		}
 	}
 
@@ -531,6 +532,10 @@ public abstract class CollectionHandler implements ProcessHandler {
 	public String getCollectionTitle() {
 		return collectionTitle;
 	}
+	
+	public String getCollectionTitle(String colId) {
+		return collectionsMap.get(colId);
+	}
 
 	public void setCollectionTitle(String collectionTitle) {
 		this.collectionTitle = collectionTitle;
@@ -575,9 +580,13 @@ public abstract class CollectionHandler implements ProcessHandler {
 			}
 		}
 	}
+	
+	public static List<String> listItems(String collectionId, DAMSClient damsClient) throws Exception{
+		return damsClient.listObjects(collectionId);
+	}
 
 	/**
-	 * Default implementation. Overide when necessary.
+	 * Default implementation. Override when necessary.
 	 */
 	@Override
 	public boolean execute() throws Exception {
@@ -601,7 +610,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 	}
 
 	/**
-	 * Overide when necessary for task invocation.
+	 * Override for task invocation.
 	 */
 	@Override
 	public void invokeTask(String subjectId, int idx) throws Exception {

@@ -15,11 +15,11 @@ import org.apache.log4j.Logger;
 
 import com.hp.hpl.jena.rdf.model.Statement;
 
-import edu.ucsd.library.jetl.DAMSUploadTaskHandler;
-import edu.ucsd.library.jetl.organizer.Pair;
-import edu.ucsd.library.jetl.organizer.UploadTask;
-import edu.ucsd.library.jetl.organizer.UploadTaskOrganizer;
-import edu.ucsd.library.jetl.organizer.UploadTaskOrganizer.PreferedOrder;
+import edu.ucsd.library.xdre.ingest.DAMSUploadTaskHandler;
+import edu.ucsd.library.xdre.ingest.assembler.Pair;
+import edu.ucsd.library.xdre.ingest.assembler.UploadTask;
+import edu.ucsd.library.xdre.ingest.assembler.UploadTaskOrganizer;
+import edu.ucsd.library.xdre.ingest.assembler.UploadTaskOrganizer.PreferedOrder;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.FileURI;
@@ -41,7 +41,6 @@ public class FileIngestionHandler extends CollectionHandler {
 	private String fileFilter = null;
 	private String coDelimiter = null; // Delimiter for complex object ordering
 	private String[] fileOrderSuffixes = null;
-	private int uploadOption = 0;
 	private PreferedOrder preferedOrder = null;
 	private String masterContent = "-1";
 
@@ -50,7 +49,6 @@ public class FileIngestionHandler extends CollectionHandler {
 	private int failedCount = 0;
 	private int objectsCount = 0;
 	private final StringBuilder filesFailed = new StringBuilder();
-	private HttpServletRequest request = null;
 	private FileWriter fileStoreLog = null;
 	private int uploadType = UploadTaskOrganizer.SIMPLE_LOADING;
 	
@@ -79,15 +77,6 @@ public class FileIngestionHandler extends CollectionHandler {
 			String collectionId, String fileFilter, String coDelimiter) throws Exception {
 		this(damsClient, fileList, uploadType, collectionId, fileFilter);
 		this.coDelimiter = coDelimiter;
-	}
-
-	
-	public HttpServletRequest getHttpServletRequest() {
-		return request;
-	}
-
-	public void setHttpServletRequest(HttpServletRequest request) {
-		this.request = request;
 	}
 
 	public void setPreferedOrder(String orderCode) {
@@ -151,7 +140,7 @@ public class FileIngestionHandler extends CollectionHandler {
 							fileName, collectionId, damsClient);
 					uploadHandler.setRepositoryId(repository);
 
-					if (uploadOption == UploadTaskOrganizer.PAIR_LOADING) {
+					if (uploadType == UploadTaskOrganizer.PAIR_LOADING) {
 						if(i == 0 && batchSize > 1)
 							 uploadHandler.setUse(fileUse(fileName, "source"));
 						else
@@ -502,14 +491,6 @@ public class FileIngestionHandler extends CollectionHandler {
 
 	public void setRepository(String repository) {
 		this.repository = repository;
-	}
-
-	public int getUploadOption() {
-		return uploadOption;
-	}
-
-	public void setUploadOption(int uploadOption) {
-		this.uploadOption = uploadOption;
 	}
 
 	public String[] getFileOrderSuffixes() {

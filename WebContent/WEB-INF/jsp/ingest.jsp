@@ -199,7 +199,7 @@
 				<span class="text-special">One ARK to files in the same directory</span>
 				<fieldset class="groupbox_compOrder">
 				 	<legend class="slegandText">Components Ordering</legend>
-					<input type="radio" name="preferedOrder" value="cofDelimiter" <c:if test="${model.preferedOrder == null || fn:length(model.preferedOrder)== 0 || model.preferedOrder == 'cofDelimiter'}">checked</c:if>/><span>Alphabetic order. [Optional] Order delimited by: <input type="text" name="cofDelimiter" id="cofDelimiter" value="" size="5"></span><br />
+					<input type="radio" name="preferedOrder" value="cofDelimiter" <c:if test="${model.preferedOrder == null || fn:length(model.preferedOrder)== 0 || model.preferedOrder == 'cofDelimiter'}">checked</c:if>/><span>Alphabetic order. [Optional] Order delimited by: <input type="text" name="cofDelimiter" id="cofDelimiter" value="" size="10"></span><br />
 					<input type="radio" name="preferedOrder" value="pdfAndPdf" <c:if test="${model.preferedOrder == 'pdfAndPdf'}">checked</c:if> /><span>A PDF following a low resolution PDF for access.</span><br />
 					<input type="radio" name="preferedOrder" value="pdfAndXml" <c:if test="${model.preferedOrder == 'pdfAndXml'}">checked</c:if> /><span>A PDF following a proquest xml file.</span><br />
 					<input type="radio" name="preferedOrder" value="suffix" <c:if test="${model.preferedOrder == 'suffix'}">checked</c:if> /><span>Components ordered by their suffixes provided.</span>
@@ -222,14 +222,14 @@
 	  </div>
 	  <div title="Assign one ARK to complex objects with '_' delimiting ordering along with derivatives." class="specialmenuText"><div>
 				<input type="radio" name="arkSetting" value="5" class="pmcheckbox" <c:if test="${model.arkSetting == '5'}">checked</c:if>>
-				<span class="text-special">One ARK to complex objects, components order delimited by: <input type="text" name="coDelimiter" id="coDelimiter" value="" size="5"></span></div>
+				<span class="text-special">One ARK to complex objects, components order delimited by: <input type="text" name="coDelimiter" id="coDelimiter" value="" size="10"></span></div>
 				<!-- <div style="margin-left:30px;">- File Suffixes delimited by comma in order: <input type="text" name="cosuffixes" id="cosuffixes" value="" size="18">
 				</div>
 				 -->
 	  </div>
 	  <div class="specialmenuText" style="margin-left:15px;">
-		  <fieldset class="jetlOptions_group"><legend class="slegandText"> Options </legend>
-		  	<div class="specialmenuText"><div>Files/derivatives ordered with suffixes delimited by comma: <input type="text" name="fileSuffixes" id="fileSuffixes" value="" size="18"></div></div>
+		  <fieldset class="groupbox_jetlOptions"><legend class="slegandText"> Option </legend>
+		  	<div class="specialmenuText"><div>Files ordered by suffixes (delimited by comma): <input type="text" name="fileSuffixes" id="fileSuffixes" value="" size="30"></div></div>
 		  </fieldset>
 	  </div>
 	  </td>

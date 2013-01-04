@@ -11,7 +11,7 @@ import javax.servlet.http.HttpSession;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import edu.ucsd.library.jetl.organizer.UploadTaskOrganizer;
+import edu.ucsd.library.xdre.ingest.assembler.UploadTaskOrganizer;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 

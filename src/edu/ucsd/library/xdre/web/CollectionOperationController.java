@@ -1,12 +1,17 @@
 package edu.ucsd.library.xdre.web;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URLEncoder;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.PostConstruct;
 import javax.mail.MessagingException;
@@ -20,6 +25,11 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.sql.DataSource;
 
+import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.FileItemFactory;
+import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.fileupload.disk.DiskFileItemFactory;
+import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -31,6 +41,7 @@ import edu.ucsd.library.util.sql.EmployeeInfo;
 import edu.ucsd.library.xdre.collection.CollectionHandler;
 import edu.ucsd.library.xdre.collection.DerivativeHandler;
 import edu.ucsd.library.xdre.collection.FileIngestionHandler;
+import edu.ucsd.library.xdre.collection.SOLRIndexHandler;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.RequestOrganizer;
@@ -51,22 +62,78 @@ public class CollectionOperationController implements Controller {
 	
 	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String message = "";
-		String collectionId = request.getParameter("category");
-		String activeButton = request.getParameter("activeButton");
-		boolean dataConvert = request.getParameter("dataConvert") != null;
-		boolean isIngest = request.getParameter("ingest") != null;
-		boolean isDevUpload = request.getParameter("devUpload") != null;
-		boolean isBSJhoveReport = request.getParameter("bsJhoveReport") != null;
-		boolean isSolrDump = request.getParameter("solrDump") != null;
-		String fileStore = request.getParameter("fs");
+		
+		Map<String, String[]> paramsMap = null;
+		if(ServletFileUpload.isMultipartContent(request)){
+			paramsMap = new HashMap<String, String[]>();
+			paramsMap.putAll(request.getParameterMap());
+			FileItemFactory factory = new DiskFileItemFactory();
+
+	        //Create a new file upload handler
+			ServletFileUpload upload = new ServletFileUpload(factory);
+	        
+			List items = null;
+			InputStream in = null;
+			ByteArrayOutputStream out = null;
+			byte[] buf = new byte[4096];
+			List<String> dataItems = new ArrayList<String>();
+			try {
+				items = upload.parseRequest(request);
+
+			    Iterator<FileItem> iter = items.iterator();
+			    while (iter.hasNext()) {
+				    FileItem item = (FileItem) iter.next();
+		
+				    out = new ByteArrayOutputStream();
+				    if (item.isFormField()){
+				    	paramsMap.put(item.getFieldName(), new String[]{item.getString()});
+				    }else{
+				    	in = item.getInputStream();
+
+				    	int bytesRead = -1;
+						while((bytesRead=in.read(buf)) > 0){
+							out.write(buf, 0, bytesRead);
+						}
+						dataItems.add(out.toString()) ;
+				    }
+			    }		    
+			} catch (FileUploadException e) {
+				throw new ServletException(e.getMessage());
+			}finally{
+				if(in != null){
+					in.close();
+					in = null;
+				}
+				if(out != null){
+					out.close();
+					out = null;
+				}
+			}
+			
+			if(dataItems.size() > 0){
+				String[] a = new String[dataItems.size()];
+				paramsMap.put("data", dataItems.toArray(a));
+			}
+		}else
+			paramsMap = request.getParameterMap();
+		
+		String collectionId = getParameter(paramsMap, "category");
+		String activeButton = getParameter(paramsMap, "activeButton");
+		boolean dataConvert = getParameter(paramsMap, "dataConvert") != null;
+		boolean isIngest = getParameter(paramsMap, "ingest") != null;
+		boolean isDevUpload = getParameter(paramsMap, "devUpload") != null;
+		boolean isBSJhoveReport = getParameter(paramsMap, "bsJhoveReport") != null;
+		boolean isSolrDump = getParameter(paramsMap, "solrDump") != null;
+		String fileStore = getParameter(paramsMap, "fs");
 		if(activeButton == null || activeButton.length() == 0)
 			activeButton = "validateButton";
 		HttpSession session = request.getSession();
 		session.setAttribute("category", collectionId);
 		
-		String ds = request.getParameter("ts");
-		if((ds == null || (ds=ds.trim()).length() == 0))
+		String ds = getParameter(paramsMap, "ts");
+		if(ds == null || ds.length() == 0)
 			throw new ServletException("No triplestore data source provided...");
+		
 		if(fileStore == null || (fileStore=fileStore.trim()).length() == 0)
 			fileStore = null;
 			
@@ -74,7 +141,7 @@ public class CollectionOperationController implements Controller {
 		if(dataConvert)
 			forwardTo = "/pathMapping.do?ts=" + ds + (fileStore!=null?"&fs=" + fileStore:"");
 		else if(isIngest){
-			String repo = request.getParameter("repository");
+			String repo = getParameter(paramsMap, "repository");
 			forwardTo = "/ingest.do?ts=" + ds + (fileStore!=null?"&fs=" + fileStore:"") + (repo!=null?"&repo=" + repo:"");
 		}else if(isDevUpload)
 			forwardTo = "/devUpload.do?" + (fileStore!=null?"&fs=" + fileStore:"");
@@ -84,11 +151,11 @@ public class CollectionOperationController implements Controller {
 
 		String user = "";
 		String email = "";
-		if(( !(isBSJhoveReport || isDevUpload) && request.getParameter("rdfImport") == null && request.getParameter("dataConvert") == null )&& 
+		if(( !(isBSJhoveReport || isDevUpload) && getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "dataConvert") == null )&& 
 				(collectionId == null || (collectionId=collectionId.trim()).length() == 0)){
 			message = "Please choose a collection ...";
 		}else{
-			String servletId = request.getParameter("progressId");
+			String servletId = getParameter(paramsMap, "progressId");
 			boolean vRequest = false; 
 			try{
 				vRequest = RequestOrganizer.setReferenceServlet(session, servletId, Thread.currentThread());
@@ -104,7 +171,7 @@ public class CollectionOperationController implements Controller {
 			try {				
 				user = getUserName(request);
 				email = getUserEmail(request);
-				message = handleProcesses(collectionId, null, request);
+				message = handleProcesses(paramsMap, request.getSession());
 			} catch (Exception e) {
 				e.printStackTrace();
 				//throw new ServletException(e.getMessage());
@@ -178,62 +245,59 @@ public class CollectionOperationController implements Controller {
 	/*
 	 * Method to handler the major requests
 	 */
-	public static String handleProcesses(
-			String collectionId, String uploadData,
-			HttpServletRequest request) throws Exception
+	public static String handleProcesses( Map<String, String[]> paramsMap, HttpSession session) throws Exception
 	{
 		
-		String result = "";
 		String message = "";
 		String returnMessage = "";
 		DAMSClient damsClient = null;
+		String collectionId = getParameter(paramsMap, "category");
 		
-		HttpSession session = request.getSession();
 		boolean[] operations = new boolean[20];
-		operations[0] = request.getParameter("validateFileCount") != null;
-		operations[1] = request.getParameter("validateChecksums") != null;
-		operations[2] = request.getParameter("rdfImport") != null;
-		operations[3] = request.getParameter("createDerivatives") != null;
-		operations[4] = request.getParameter("uploadRDF") != null;
-		operations[5] = request.getParameter("cacheThumbnails") != null || request.getAttribute("cacheThumbnails") != null;
-		operations[6] = request.getParameter("createMETSFiles") != null;
-		operations[7] = request.getParameter("luceneIndex") != null || request.getParameter("solrDump") != null;
-		operations[8] = request.getParameter("sendToCDL") != null;
-		operations[9] = request.getParameter("dataConvert") != null;
-		operations[10] = request.getParameter("ingest") != null;
-		operations[11] = request.getParameter("srbSyn") != null;
-		operations[12] = request.getParameter("tsSyn") != null;
-		operations[13] = request.getParameter("createJson") != null;
-		operations[14] = request.getParameter("cacheJson") != null;
-		operations[15] = request.getParameter("devUpload") != null;
-		operations[16] = request.getParameter("jsonDiffUpdate") != null;
-		operations[17] = request.getParameter("validateManifest") != null;
-		operations[18] = request.getParameter("exportRdf") != null;
-		operations[19] = request.getParameter("jhoveReport") != null;
+		operations[0] = getParameter(paramsMap, "validateFileCount") != null;
+		operations[1] = getParameter(paramsMap, "validateChecksums") != null;
+		operations[2] = getParameter(paramsMap, "rdfImport") != null;
+		operations[3] = getParameter(paramsMap, "createDerivatives") != null;
+		operations[4] = getParameter(paramsMap, "uploadRDF") != null;
+		operations[5] = getParameter(paramsMap, "cacheThumbnails") != null;
+		operations[6] = getParameter(paramsMap, "createMETSFiles") != null;
+		operations[7] = getParameter(paramsMap, "luceneIndex") != null || getParameter(paramsMap, "solrDump") != null;
+		operations[8] = getParameter(paramsMap, "sendToCDL") != null;
+		operations[9] = getParameter(paramsMap, "dataConvert") != null;
+		operations[10] = getParameter(paramsMap, "ingest") != null;
+		operations[11] = getParameter(paramsMap, "srbSyn") != null;
+		operations[12] = getParameter(paramsMap, "tsSyn") != null;
+		operations[13] = getParameter(paramsMap, "createJson") != null;
+		operations[14] = getParameter(paramsMap, "cacheJson") != null;
+		operations[15] = getParameter(paramsMap, "devUpload") != null;
+		operations[16] = getParameter(paramsMap, "jsonDiffUpdate") != null;
+		operations[17] = getParameter(paramsMap, "validateManifest") != null;
+		operations[18] = getParameter(paramsMap, "exportRdf") != null;
+		operations[19] = getParameter(paramsMap, "jhoveReport") != null;
 
 		int submissionId = (int)System.currentTimeMillis();
-		String logLink = (Constants.CLUSTER_HOST_NAME.indexOf(":8080/")<0?Constants.CLUSTER_HOST_NAME.replaceFirst("http://", "https://"):Constants.CLUSTER_HOST_NAME) + "/damsmanager/downloadLog.do?submissionId=" + submissionId;
+		String logLink = (Constants.CLUSTER_HOST_NAME.indexOf(":8080/")>0?Constants.CLUSTER_HOST_NAME.replaceFirst("http://", "https://").replace(":8080/", ":8443/"):Constants.CLUSTER_HOST_NAME) + "/damsmanager/downloadLog.do?submissionId=" + submissionId;
 		
-		String ds = request.getParameter("ts");
+		String ds = getParameter(paramsMap, "ts");
 		String dsDest = null;
 		if((ds == null || (ds=ds.trim()).length() == 0) && !(operations[15] || operations[16]))
 			throw new ServletException("No triplestore data source provided...");
 		else if (operations[12]){
-			dsDest = request.getParameter("dsDest");
+			dsDest = getParameter(paramsMap, "dsDest");
 			if (dsDest == null)
 				throw new ServletException("No destination triplestore data source provided...");
 			else if(ds.equals(dsDest) || !dsDest.startsWith("ts/"))
 				throw new ServletException("Can't sync triplestore from " + ds + " to destination " + dsDest + ".");
 		}
 		
-		String fileStore = request.getParameter("fs");
+		String fileStore = getParameter(paramsMap, "fs");
 		damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
 		damsClient.setTripleStore(ds);
 
 		int totalFiles = 0;
 		Date ckDate = null;
 		if(operations[0]){
-			String fileCount = request.getParameter("numOfFiles");
+			String fileCount = getParameter(paramsMap, "numOfFiles");
 			if(fileCount != null && fileCount.length() > 0){
 				//if(fileCount == null && fileCount.length() == 0)
 				//message += "Please enter the number of files for validation.<br>";
@@ -246,7 +310,7 @@ public class CollectionOperationController implements Controller {
 			}
 		}
 		if(operations[1]){
-			String checksumDate = request.getParameter("checksumDate");
+			String checksumDate = getParameter(paramsMap, "checksumDate");
 			if(checksumDate == null || (checksumDate = checksumDate.trim()).length() == 0)
 				message += "Please enter a date for checksum validation ...<br>";
 			try{
@@ -261,13 +325,13 @@ public class CollectionOperationController implements Controller {
 	    /*if(operations[2]){
 			String rdfFileOption = null;
 			String tsOperation = null;
-			if(request.getParameter("tsRepopulateOnly") != null)
+			if(getParameter(paramsMap, "tsRepopulateOnly") != null)
 				tsOperation = "tsRepopulateOnly";
-			else if(request.getParameter("tsRepopulation") != null)
+			else if(getParameter(paramsMap, "tsRepopulation") != null)
 				tsOperation = "tsRepopulation";
-			else if(request.getParameter("samePredicatesReplacement") != null)
+			else if(getParameter(paramsMap, "samePredicatesReplacement") != null)
 				tsOperation = "samePredicatesReplacement";
-			else if(request.getParameter("tsRenew") != null){
+			else if(getParameter(paramsMap, "tsRenew") != null){
 				tsOperation = "tsRenew";
 				if(collectionId == null || collectionId.length() == 0)
 					message += "Please select a Collection to start a new round of triplestore population. \n";				
@@ -276,9 +340,9 @@ public class CollectionOperationController implements Controller {
 		   if(tsOperation == null)
 			   tsOperation = "tsNew";
 		   metadataOperationId = MetadataImportController.getOperationId(tsOperation);
-		   rdfFileOption = request.getParameter("fileToIngest");
+		   rdfFileOption = getParameter(paramsMap, "fileToIngest");
 		   if(rdfFileOption.equalsIgnoreCase("rdfUrl")){
-			   rdfXml = request.getParameter("rdfUrl");
+			   rdfXml = getParameter(paramsMap, "rdfUrl");
 			  if(rdfXml == null || (rdfXml=rdfXml.trim()).length() == 0)
 				 message += "Please enter a URL for the RDF file.<br>";
 			  else{
@@ -299,9 +363,9 @@ public class CollectionOperationController implements Controller {
 	    if(operations[16]){
 	    	 String jsonString = null;
 			 String jsonFileOption = null;
-			 jsonFileOption = request.getParameter("fileToUpdate");
+			 jsonFileOption = getParameter(paramsMap, "fileToUpdate");
 			 if(jsonFileOption.equalsIgnoreCase("jsonUrl")){
-				jsonString = request.getParameter("jsonUrl");
+				jsonString = getParameter(paramsMap, "jsonUrl");
 			  if(jsonString == null || (jsonString=jsonString.trim()).length() == 0)
 				 message += "Please enter a URL for the JSON file.<br>";
 			  else{
@@ -313,7 +377,7 @@ public class CollectionOperationController implements Controller {
 					}
 			  }
 	       }else
-	    	   jsonToUpdate = (JSONObject)JSONValue.parse(uploadData);
+	    	   jsonToUpdate = (JSONObject)JSONValue.parse(getParameter(paramsMap, "data"));
 			 
 			 if(jsonToUpdate != null && jsonToUpdate.size() > 0){
 				 subjectId = (String) jsonToUpdate.remove("arkId");
@@ -331,7 +395,7 @@ public class CollectionOperationController implements Controller {
 		
 		JSONArray filesJsonArr = null;
 		if(operations[15]){
-			String filesArr = request.getParameter("files");
+			String filesArr = getParameter(paramsMap, "files");
 			if(filesArr == null || (filesArr = filesArr.trim()).length() == 0)
 				message += "Missing perameter files.<br>";
 			try{
@@ -343,8 +407,7 @@ public class CollectionOperationController implements Controller {
 		}
 	if(message.length() == 0){
 	 int userId = -1;
-	 String userIdAttr = (String) request.getSession().getAttribute("employeeId");
-	 System.out.println("DAMS Manager User: " + request.getRemoteUser() + "; IP: " + request.getRemoteAddr());
+	 String userIdAttr = (String) session.getAttribute("employeeId");
 	 if(userIdAttr != null && userIdAttr.length() > 0){
 		 try{
 		     userId = Integer.parseInt(userIdAttr);
@@ -367,7 +430,6 @@ public class CollectionOperationController implements Controller {
 		 String exeInfo = "";
 				
 		 if(operations[i]){
-			 System.out.println("FileStore " + fileStore + " selected for " + getUserName(request) + " to process operation " + i);
 			 String opMessage = "Preparing procedure ";
 			 RequestOrganizer.setProgressPercentage(session, 0);
 			 message = "";
@@ -379,23 +441,15 @@ public class CollectionOperationController implements Controller {
 				   session.setAttribute("status", opMessage + "Checksum Validation for FileStore " + fileStore + " ...");
 				   handler = new ChecksumHandler(damsClient, collectionId, ckDate);
 			 }else if (i == 2){	
-				  session.setAttribute("status", opMessage + "Populating tripleStore ...");
-				  String fileType = request.getParameter("fileType");
-				  if(fileType.equalsIgnoreCase("RDF")){
-					  if(metadataOperationId == Constants.METADAT_RENEW)
-						  handler = new RDFLoadingHandler(tsUtils, collectionId, rdfXml, metadataOperationId);
-					  else{
-						  handler = new RDFLoadingHandler(tsUtils, rdfXml, metadataOperationId);
-						  handler.setCollectionId(collectionId);
-					  }
-				  } else
-					  throw new ServiceException("Unsupported file format: " + fileType);
-				  
-			 }else*/ if (i == 3){
+				  session.setAttribute("status", opMessage + "Importing metadata ...");
+				  String dataFormat = getParameter(paramsMap, "dataFormat");
+				  String importMode = getParameter(paramsMap, "importMode");
+				  handler = new MetadataImportHandler(damsClient, collectionId, getParameter(paramsMap, "data"), dataFormat, importMode);
+			 }else */if (i == 3){
 				 session.setAttribute("status", opMessage + "Derivatives Creation ...");
-				 boolean derReplace = request.getParameter("derReplace")==null?false:true;
+				 boolean derReplace = getParameter(paramsMap, "derReplace")==null?false:true;
 				 
-				 String reqSize = request.getParameter("size");
+				 String reqSize = getParameter(paramsMap, "size");
 				 String[] sizes = null;
 				 if(reqSize != null && reqSize.length() > 0)
 					 sizes = reqSize.split(",");
@@ -403,21 +457,18 @@ public class CollectionOperationController implements Controller {
 
 			 }/*else if (i == 4){	
 				 session.setAttribute("status", opMessage + "RDF XML File Creation &amp; File Store Upload ...");
-				 String rdfXmlDataType = request.getParameter("rdfXmlDataType");
-				 boolean rdfXmlReplace = request.getParameter("rdfXmlReplace") != null;
+				 String rdfXmlDataType = getParameter(paramsMap, "rdfXmlDataType");
+				 boolean rdfXmlReplace = getParameter(paramsMap, "rdfXmlReplace") != null;
 	             
 				 handler = new MetaDataStreamUploadHandler(damsClient, collectionId, "rdf", rdfXmlReplace);
 			 } else if (i == 6){	
 				   session.setAttribute("status", opMessage + "METS File Creation &amp; File Store Upload ...");
-				   boolean metsReplace = request.getParameter("metsReplace") != null;
+				   boolean metsReplace = getParameter(paramsMap, "metsReplace") != null;
 				   handler = new MetaDataStreamUploadHandler(damsClient, collectionId, "mets", metsReplace);
-			 } else if (i == 7) {
+			 } */else if (i == 7) {
 				 session.setAttribute("status", opMessage + "SOLR Index ...");
-				 boolean replaceIndex = request.getParameter("indexReplace") != null;
+				 boolean update = getParameter(paramsMap, "indexReplace") != null;
 				 if(collectionId.indexOf(",") > 0){
-					 if(collectionId.equals("bb8738126n"))
-						 throw new Exception("Unsupported SOLR update mixing with STAR collection for batch updates.");
-					 CollectionHandler reportHandler = null;
 					 String collIDs = collectionId;
 					 String[] collArr = collectionId.split(",");
 					 List<String> items = new ArrayList<String>();
@@ -427,49 +478,46 @@ public class CollectionOperationController implements Controller {
 						 if(collArr[j] != null && (collArr[j]=collArr[j].trim()).length()>0){
 							 collectionId = collArr[j];
 							 try{
-								 reportHandler = new CollectionReportHandler(damsClient, collectionId, false);
-								 items.addAll(reportHandler.getItems());
-								 collNames += reportHandler.getCollectionTitle() + "(" + reportHandler.getFilesCount() + "), ";
+								 handler = new SOLRIndexHandler( damsClient, collectionId );
+								 items.addAll(handler.getItems());
+								 collNames += handler.getCollectionTitle() + "(" + handler.getFilesCount() + "), ";
 								 if(j>0 && j%5==0)
 									 collNames += "\n";
 							 }finally{
-								 if(reportHandler != null){
-									 reportHandler.releaseResource();
-									 reportHandler = null;
+								 if(handler != null){
+									 handler.release();
+									 handler = null;
 								 } 
 							 }
 						 }
 					 }
-					 handler = new SolrIndexHandler( damsClient, items, userId, replaceIndex);
+					 handler = new SOLRIndexHandler( damsClient, null, update );
+					 handler.setItems(items);
 					 handler.setCollectionTitle(collNames.substring(0, collNames.lastIndexOf(",")));
 					 handler.setCollectionId(collIDs);
 				 }else
-					 handler = new SolrIndexHandler(damsClient, collectionId, userId, replaceIndex);
+					 handler = new SOLRIndexHandler(damsClient, collectionId, update);
 
-				// if(dsSearchName == null || (dsSearchName=dsSearchName.trim()).length() == 0)
-				//		dsSearchName = SolrIndexHelper.getDSName();
-					
-				//  ((SolrIndexHandler)handler).setDsSearchName(dsSearchName);
-			 }else if (i == 8){	
+			 }/*else if (i == 8){	
 				    //session.setAttribute("status", opMessage + "CDL Sending ...");
 				    int operationType = 0;
-				 		boolean resend = request.getParameter("cdlResend") != null;
+				 		boolean resend = getParameter(paramsMap, "cdlResend") != null;
 				 		if(resend){
 				 			operationType = 1;
 				 		}else{
-				 			resend = request.getParameter("cdlResendMets") != null;
+				 			resend = getParameter(paramsMap, "cdlResendMets") != null;
 				 			if(resend)
 				 				operationType = 2;
 				 		}
 		            //handler = new CdlIngestHandler(tsUtils, collectionId, userId, operationType);
 	    
-			 		String feeder = request.getParameter("feeder");
+			 		String feeder = getParameter(paramsMap, "feeder");
 			 		session.setAttribute("status", opMessage + "CDL " + feeder.toUpperCase() + " METS feeding ...");
-		 			boolean includeEmbargoed = (request.getParameter("includeEmbargoed")!=null);
+		 			boolean includeEmbargoed = (getParameter(paramsMap, "includeEmbargoed")!=null);
 			 		if(feeder.equals("merritt")){
-			 			String account = request.getParameter("account");
-			 			String password = request.getParameter("password");
-			 			//String accessGroupId = request.getParameter("accessGroup");
+			 			String account = getParameter(paramsMap, "account");
+			 			String password = getParameter(paramsMap, "password");
+			 			//String accessGroupId = getParameter(paramsMap, "accessGroup");
 			 			handler = new CdlIngestHandler(damsClient, collectionId, userId, operationType, feeder, account, password);
 			 		}else
 			 			handler = new CdlIngestHandler(damsClient, collectionId, userId, operationType);
@@ -477,7 +525,7 @@ public class CollectionOperationController implements Controller {
 			 			handler.excludeEmbargoedObjects();
 			 }else if (i == 9){	
 				    session.setAttribute("status", opMessage + "Metadata Converting and populating ...");
-				    String tsOperation = request.getParameter("sipOption");
+				    String tsOperation = getParameter(paramsMap, "sipOption");
 				    
 				    if(tsOperation == null || tsOperation.length() == 0)
 				    	tsOperation = "tsNew";
@@ -502,37 +550,33 @@ public class CollectionOperationController implements Controller {
 			 }*/else if (i == 10){	
 				    session.setAttribute("status", opMessage + "Stage Ingesting ...");
 				    
-					String repo = request.getParameter("repo");
-				    String arkSetting = request.getParameter("arkSetting").trim();
-				 	String filePath = request.getParameter("filePath").trim();
-				 	String fileFilter = request.getParameter("fileFilter").trim();
-				 	String preferedOrder = request.getParameter("preferedOrder");
-				 	//String fileSuffixes = request.getParameter("suffixes").trim();
-				 	String fileSuffixes = request.getParameter("fileSuffixes");
+					String repo = getParameter(paramsMap, "repo");
+				    String arkSetting = getParameter(paramsMap, "arkSetting").trim();
+				 	String filePath = getParameter(paramsMap, "filePath").trim();
+				 	String fileFilter = getParameter(paramsMap, "fileFilter").trim();
+				 	String preferedOrder = getParameter(paramsMap, "preferedOrder");
+				 	//String fileSuffixes = getParameter(paramsMap, "suffixes").trim();
+				 	String fileSuffixes = getParameter(paramsMap, "fileSuffixes");
 			 		if(fileSuffixes != null && fileSuffixes.length() > 0)
 			 			fileSuffixes = fileSuffixes.trim();
 			 		
 				 	String coDelimiter = "p";
 				 	if(arkSetting.equals("1")){
 				 		if(preferedOrder == null || preferedOrder.equalsIgnoreCase("cofDelimiter")){
-				 			coDelimiter = request.getParameter("cofDelimiter").trim();
+				 			coDelimiter = getParameter(paramsMap, "cofDelimiter").trim();
 				 		}else if (preferedOrder.equals("suffix"))
-				 			coDelimiter = request.getParameter("coDelimiter").trim();
+				 			coDelimiter = getParameter(paramsMap, "coDelimiter").trim();
 				 		else
 				 			coDelimiter = null;
 				 	}else{
 				 		if(arkSetting.equals("5")){
-					 		coDelimiter = request.getParameter("coDelimiter").trim();
+					 		coDelimiter = getParameter(paramsMap, "coDelimiter").trim();
 				 		}
 				 	}
 				 		
 				 	String[] fileOrderSuffixes = null;
 				 	if(fileSuffixes != null && fileSuffixes.length() > 0)
 				 		fileOrderSuffixes = fileSuffixes.split(",");
-				 	int uploadOption = Constants.JETL_UPLOAD_ALL;
-				 	boolean uploadFileOnly = request.getParameter("masterFile") != null;
-				 	if(uploadFileOnly)
-				 		uploadOption = Constants.JETL_UPLOAD_FILE_ONLY;
 				 	if((filePath.startsWith("/") || filePath.startsWith("\\")) && (Constants.DAMS_STAGING.endsWith("/") 
 				 			|| Constants.DAMS_STAGING.endsWith("\\")))
 				 		filePath = filePath.substring(1);
@@ -549,8 +593,6 @@ public class CollectionOperationController implements Controller {
 
 		            handler = new FileIngestionHandler(damsClient, fileList, Integer.parseInt(arkSetting), collectionId, fileFilter, coDelimiter);
 		            ((FileIngestionHandler)handler).setFileOrderSuffixes(fileOrderSuffixes);
-		            ((FileIngestionHandler)handler).setHttpServletRequest(request);
-		            ((FileIngestionHandler)handler).setUploadOption(uploadOption);
 		            ((FileIngestionHandler)handler).setPreferedOrder(preferedOrder);
 		            ((FileIngestionHandler)handler).setRepository(repo);
 	    
@@ -568,7 +610,7 @@ public class CollectionOperationController implements Controller {
 				 dHandler = new JSONDiffUpdateHandler(subjectId, jsonToUpdate, tsUtils);
 				 //((JSONDiffUpdateHandler)dHandler).setSession(session);
 			 } else if (i == 17){
-				 String manifestOption = request.getParameter("manifestOptions");
+				 String manifestOption = getParameter(paramsMap, "manifestOptions");
 				 boolean validateManifest = true;
 				 boolean writeManifest = manifestOption != null && manifestOption.equals("write");
 				 if(writeManifest){
@@ -578,8 +620,8 @@ public class CollectionOperationController implements Controller {
 					 session.setAttribute("status", opMessage + "Manifest Valification ...");
 			     handler = new LocalStoreManifestHandler(tsUtils, collectionId, validateManifest, writeManifest);
 			 } else if (i == 18){
-				 String exFormat = request.getParameter("exportFormat");
-				 String xslSource = request.getParameter("xsl");
+				 String exFormat = getParameter(paramsMap, "exportFormat");
+				 String xslSource = getParameter(paramsMap, "xsl");
 				 if(xslSource == null || (xslSource=xslSource.trim()).length() == 0){
 					 xslSource = "/pub/data1/import/apps/glossary/xsl/dams/convertToCSV.xsl";
 					 if(!new File(xslSource).exists())
@@ -587,8 +629,8 @@ public class CollectionOperationController implements Controller {
 				 }
 				 session.setAttribute("status", opMessage + (exFormat.equalsIgnoreCase("csv")?"CSV":exFormat.equalsIgnoreCase("ntriples")?"NTriples":"RDF") + " Metadata Export ...");
 				 File outputFile = new File(Constants.TMP_FILE_DIR, "export-" + collectionId + "-" +System.currentTimeMillis() + "-rdf.xml");
-				 boolean translated = request.getParameter("translated")!= null;
-			     String nsInput = request.getParameter("nsInput");
+				 boolean translated = getParameter(paramsMap, "translated")!= null;
+			     String nsInput = getParameter(paramsMap, "nsInput");
 			     List<String> nsInputs = new ArrayList<String>();
 			     boolean componentsIncluded = true;
 			     if(nsInput != null && (nsInput=nsInput.trim()).length() > 0){
@@ -621,8 +663,8 @@ public class CollectionOperationController implements Controller {
 			     }
 			 }else if (i == 19){
 				 session.setAttribute("status", opMessage + "Jhove report ...");
-				 boolean bytestreamFilesOnly = request.getParameter("bsJhoveReport") != null;
-				 boolean formatUpdate = request.getParameter("bsJhoveUpdate") != null;
+				 boolean bytestreamFilesOnly = getParameter(paramsMap, "bsJhoveReport") != null;
+				 boolean formatUpdate = getParameter(paramsMap, "bsJhoveUpdate") != null;
 				 handler = new JhoveReportHandler(collectionId, bytestreamFilesOnly);
 				 
 				 //xxx 
@@ -686,7 +728,6 @@ public class CollectionOperationController implements Controller {
 		  returnMessage += errors;
 		  break;
 	  }else{
-		  result += exeInfo + "<br />";
 		  returnMessage += "<br />" + message;
 	  }
 	 }
@@ -697,7 +738,7 @@ public class CollectionOperationController implements Controller {
 	}else
 		returnMessage = message;
 	
-	String logMessage = "For details information, please download " + "<a href=\"" + logLink + "\">log</a>" + ".";
+	String logMessage = "For details, please download " + "<a href=\"" + logLink + "\">log</a>" + ".";
 	if(returnMessage.length() > 1000){
 		returnMessage = returnMessage.substring(0, 1000);
 		int idx = returnMessage.lastIndexOf("<br ");
@@ -746,5 +787,14 @@ public class CollectionOperationController implements Controller {
 			}
 		}
 		return userName;
+	}
+	
+	public static String getParameter(Map<String, String[]> paramsMap, String paramName){
+		String paramValue = null;
+		String[] paramArr = paramsMap.get(paramName);
+		if(paramArr != null && paramArr.length > 0){
+			paramValue = paramArr[0];
+		}
+		return paramValue;
 	}
 }
