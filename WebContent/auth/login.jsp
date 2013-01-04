@@ -25,7 +25,7 @@
 				<div id="temporaryBreadcrumb" style="display: none">
 			</div>
 		</div><!-- /tdr_crumbs -->
-		<div id="loginError" class="message">
+		<div id="loginError" style="color:#ff0000;">
 			<c:if test="${param.error != null}">Invalid AD username/password! Please try again...</c:if>
 		</div>
 		<jsp:include flush="true" page="loginForm.jsp" />

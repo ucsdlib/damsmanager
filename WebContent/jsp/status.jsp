@@ -20,8 +20,8 @@
 		<tr height="70px"><td colspan="2">
 				<div id="status" class="status"></div>			
 		</td></tr> 
-		</table>
-	<div class="buttonDiv"><input type="button" id="Cancel" value="Cancel" onClick="actionCanceled();" disabled></div>	 	
+		</table>	 	
 	</div>
+	<div class="buttonDiv"><input type="button" id="Cancel" value="Cancel" onClick="actionCanceled();" disabled></div>
 	</div>
 </div>
