@@ -88,8 +88,8 @@
 		    <div id="processesDiv">             
 				<div id="validateButtonDiv" <c:if test="${model.activeButton != 'validateButton'}">style="display:none;"</c:if>>
 				    <div id="fileCountDiv" class="processlayout">
-						<span title="Validate master files for duplicate files, mixed file format, and file count" class="menuText"><input disabled class="pcheckbox" type="checkbox" name="validateFileCount" id="validateFileCount" onClick="checkSelections(this);">
-									<span class="text-special">File Count Validation</span></span><br />  
+						<span title="Validate master files for duplicate files, mixed file format, and file count" class="menuText"><input class="pcheckbox" type="checkbox" name="validateFileCount" id="validateFileCount" onClick="checkSelections(this);">
+									<span class="text-special">File Count Validation <c:if test="${model.itemsCount > 0}">(${model.itemsCount} objects)</c:if></span></span><br />  
 					</div>
 				    <div id="fileCountDiv" class="processlayout">
 						<span title="Generate Jhove Report" class="menuText">

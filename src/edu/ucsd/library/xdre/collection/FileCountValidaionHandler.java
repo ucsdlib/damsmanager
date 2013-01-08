@@ -1,0 +1,169 @@
+package edu.ucsd.library.xdre.collection;
+
+import java.util.Iterator;
+import java.util.List;
+
+import org.apache.log4j.Logger;
+import org.dom4j.Document;
+import org.dom4j.Node;
+
+import edu.ucsd.library.xdre.utils.Constants;
+import edu.ucsd.library.xdre.utils.DAMSClient;
+import edu.ucsd.library.xdre.utils.DFile;
+import edu.ucsd.library.xdre.utils.FileURI;
+
+/**
+ * 
+ * FileCountValidaionHandler: perform checksum validation.
+ * @author lsitu@ucsd.edu
+ */
+public class FileCountValidaionHandler extends CollectionHandler{
+	private static Logger log = Logger.getLogger(FileCountValidaionHandler.class);
+
+	protected int count = 0;
+	protected int missingCount = 0;
+	protected int failedCount = 0;
+	protected int totalFiles = 0;
+	protected StringBuilder missingFiles = new StringBuilder();
+	protected StringBuilder duplicatedFiles = new StringBuilder();
+	protected Document filesDoc = null;
+	
+	/**
+	 * Constructor for FileCountValidaionHandler
+	 * @param damsClient
+	 * @throws Exception
+	 */
+	public FileCountValidaionHandler(DAMSClient damsClient) throws Exception{
+		this(damsClient, null);
+	}
+	
+	/**
+	 * Constructor for FileCountValidaionHandler
+	 * @param damsClient
+	 * @param collectionId
+	 * @throws Exception
+	 */
+	public FileCountValidaionHandler(DAMSClient damsClient, String collectionId) throws Exception{
+		super(damsClient, collectionId);
+		if(collectionId != null)
+			filesDoc = damsClient.getCollectionFiles(collectionId);
+	}
+
+	/**
+	 * Procedure for file count validation
+	 */
+	public boolean execute() throws Exception {
+
+		String eMessage = "";
+		String subjectURI = null;
+		String use = null;
+		boolean fileExist = false;
+		for(int i=0; i<itemsCount; i++){
+			count++;
+			fileExist = false;
+			subjectURI = items.get(i);
+			try{
+				setStatus("Processing file count validation for subject " + subjectURI  + " (" + (i+1) + " of " + itemsCount + ") ... " ); 
+				DFile dFile = null;
+				int duSize = 0;
+				List<DFile> files = damsClient.listObjectFiles(subjectURI);
+				for(Iterator<DFile> it=files.iterator(); it.hasNext();){
+
+					dFile = it.next();
+					use = dFile.getUse();
+					if(use.endsWith(Constants.SERVICE) || use.endsWith(Constants.SOURCE)){
+						totalFiles++;
+						fileExist = true;
+						List<FileURI> duFiles = DAMSClient.getFiles(filesDoc, null, dFile.getSourceFilename());
+						if((duSize=duFiles.size()) > 1){
+							String[] checksums = new String[duSize];
+							for(int j=0; j<duSize; j++){
+								checksums[j] = getChecksum(duFiles.get(j));
+							}
+							
+							// Check checksums for duplication
+							boolean duplicated = false;
+							String duItems = "";
+							for(int j=0; j<duSize; j++){
+								for(int k=j+1; k<duSize; k++){
+									if(checksums[j].equals(checksums[k]) && duplicatedFiles.indexOf(duFiles.get(j).toString())<0){
+										duItems += duFiles.get(j) + ", " + duFiles.get(k) + ", ";
+										duplicated = true;
+									}
+								}
+							}
+							if(duplicated){
+								failedCount++;
+								exeResult = false;
+								duplicatedFiles.append(duItems.substring(0, duItems.length()-2) + "\n");
+								eMessage = "Duplicated files found: " + duItems;
+								log("log", eMessage );
+							}
+						}
+					}
+				}
+				if(!fileExist){
+					missingCount++;
+					exeResult = false;
+					missingFiles.append(subjectURI + "\t" + (missingCount%10==0?"\n":""));
+					eMessage = "No master files exist: " + subjectURI;
+					log("log", eMessage );
+					log.info(eMessage );
+				}
+			} catch (Exception e) {
+				failedCount++;
+				e.printStackTrace();
+				exeResult = false;
+				eMessage = "File count validation failed: " + e.getMessage();
+				log("log", eMessage );
+				log.info(eMessage );
+			}
+			setProgressPercentage( ((i + 1) * 100) / itemsCount);
+			
+			try{
+				Thread.sleep(10);
+			} catch (InterruptedException e1) {
+				failedCount++;
+        		exeResult = false;
+    			eMessage = "File count validation interrupted for subject " + subjectURI  + ". \n Error: " + e1.getMessage() + "\n";
+				setStatus("Canceled");
+				clearSession();
+				log("log", eMessage.replace("\n", ""));
+				log.info(eMessage, e1);
+				break;
+			}
+		}
+		
+		return exeResult;
+	}
+	
+	private String getChecksum(FileURI fileURI){
+		String checksum = "";
+		String checkSumXPath = DAMSClient.DOCUMENT_RESPONSE_ROOT_PATH + "/files/value[id='" + fileURI.toString() + "']/crc32checksum";
+		Node checksumNode = filesDoc.selectSingleNode(checkSumXPath);
+		if(checksumNode != null)
+			checksum = checksumNode.getText();
+		return checksum;
+	}
+	
+	/**
+	 * Execution result message
+	 */
+	public String getExeInfo() {
+		String missingMessage = " object" + (missingCount>1?"s have ":" has ") + " no master files";
+		if(exeResult)
+			exeReport.append("File count validation succeeded. \n ");
+		else
+			exeReport.append("File count validation (" + failedCount + " of " + totalFiles + " failed" + (missingCount>0?", " + missingCount + missingMessage:"") + ") -- \n ");	
+		exeReport.append("Number of objects found " + itemsCount + ". \nNumber of objects processed " + count + ". \nTotal number of source and service files found " + totalFiles + ".\n");
+		if(duplicatedFiles.length() > 0)
+			exeReport.append("\nThe following files are duplicated: \n" + duplicatedFiles.toString());
+		
+		if(missingFiles.length() > 0)
+			exeReport.append("\nThe following object" + missingMessage + " : \n" + missingFiles.toString() );
+		
+		String exeInfo = exeReport.toString();
+		log("log", exeInfo);
+		return exeInfo;
+	}
+}
