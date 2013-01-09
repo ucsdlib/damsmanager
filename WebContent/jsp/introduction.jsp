@@ -3,19 +3,16 @@
 <html>
 <jsp:include flush="true" page="/jsp/libhtmlheader.jsp" />
 <body style="background-color:#fff;">
+<script type="text/javascript">
+	var crumbs = [{"Home":"http://libraries.ucsd.edu"}, {"Digital Library Collections":"/curator"},{"DAMS Manager":"/damsmanager/"}, {"Process Manager":""}];
+	drawBreadcrumbNMenu(crumbs, "tdr_crumbs_content", true);
+</script>
 <jsp:include flush="true" page="/jsp/libanner.jsp" />
 <table align="center" cellspacing="0px" cellpadding="0px" class="bodytable">
 <tr><td>
 	
 <div id="tdr_crumbs">
 	<div id="tdr_crumbs_content">
-		<div id="menu_nav" style="float:right;"><jsp:include flush="true" page="/jsp/menu_nav.jsp" /></div>
-		<ul>
-			<li><a href="http://libraries.ucsd.edu">Home</a></li>
-			<li><a href="/curator">Digital Library Collections</a></li>
-			<li><a href="/damsmanager/">XDRE Manager</a></li>
-			<li>Process Manager</li>
-		</ul>
 	</div><!-- /tdr_crumbs_content -->
 	
 	<!-- This div is for temporarily writing breadcrumbs to for processing purposes -->

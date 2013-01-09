@@ -89,7 +89,13 @@
   }
       
   function httpcall(url, handler){   
-     YAHOO.util.Connect.asyncRequest('GET', url, handler, null);               
+     //YAHOO.util.Connect.asyncRequest('GET', url, handler, null);  
+	  $.ajax({
+		  url: url,
+		  dataType: "xml",
+		  success: handler.success,
+		  error: handler.failure
+	  });
   }
   
   function isInteger(nText){
