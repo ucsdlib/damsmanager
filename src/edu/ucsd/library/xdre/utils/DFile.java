@@ -239,7 +239,7 @@ public class DFile {
 	}
 
 	public static DFile toDFile(JSONObject jsonObject){
-		DFile dFile = new DFile((String)jsonObject.get("id"), (String)jsonObject.get("object"), (String)jsonObject.get("use"), (String)jsonObject.get("sourceFilename"), (String)jsonObject.get("sourcePath"), (String)jsonObject.get("dateCreated"), 
+		DFile dFile = new DFile((String)jsonObject.get("id"), (String)jsonObject.get("object"), (String)jsonObject.get("use"), (String)jsonObject.get("sourceFileName"), (String)jsonObject.get("sourcePath"), (String)jsonObject.get("dateCreated"), 
 				(String)jsonObject.get("size"), (String)jsonObject.get("formatName"),(String)jsonObject.get("formatVersion"), (String)jsonObject.get("mimeType"), (String)jsonObject.get("crc32checksum"), 
 						(String)jsonObject.get("md5checksum"), (String)jsonObject.get("sha1checksum"), (String)jsonObject.get("sha256checksum"), (String)jsonObject.get("sha512checksum"), 
 								(String)jsonObject.get("preservationLevel"), (String)jsonObject.get("objectCategory"), (String)jsonObject.get("compositionLevel"));

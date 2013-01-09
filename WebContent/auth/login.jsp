@@ -17,7 +17,7 @@
 				<ul>
 					<li><a href="http://libraries.ucsd.edu/index.html">Home</a></li>
 					<li><a href="/digital">Digital Library Collections</a></li>
-					<li>XDRE Manager</li>
+					<li>DAMS Manager</li>
 				</ul>
 			</div><!-- /tdr_crumbs_content -->
 			

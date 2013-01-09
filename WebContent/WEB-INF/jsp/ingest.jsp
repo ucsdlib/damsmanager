@@ -91,6 +91,9 @@
 		var ds = document.mainForm.ts.options[dsIdx].value;
 		document.location.href="/damsmanager/ingest.do?ts=" + ds;
 	}
+	
+	var crumbs = [{"Home":"http://libraries.ucsd.edu"}, {"Digital Library Collections":"/curator"},{"DAMS Manager":"/damsmanager/"}, {"Staging Ingest":""}];
+	drawBreadcrumbNMenu(crumbs, "tdr_crumbs_content", true);
 </script>
 <jsp:include flush="true" page="/jsp/libanner.jsp" />
 <table align="center" cellspacing="0px" cellpadding="0px" class="bodytable">
@@ -98,13 +101,6 @@
 	
 <div id="tdr_crumbs">
 	<div id="tdr_crumbs_content">
-		<a class="logout" style="margin:5px;" href="logout.do?">Log out</a><div id="menu_nav" style="float:right;"><jsp:include flush="true" page="/jsp/menu_nav.jsp" /></div>
-		<ul>
-			<li><a href="http://libraries.ucsd.edu">Home</a></li>
-			<li><a href="/curator">Digital Library Collections</a></li>
-			<li><a href="/damsmanager/">DAMS Manager</a></li>
-			<li>Staging Ingest</li>
-		</ul>
 	</div><!-- /tdr_crumbs_content -->
 	
 	<!-- This div is for temporarily writing breadcrumbs to for processing purposes -->

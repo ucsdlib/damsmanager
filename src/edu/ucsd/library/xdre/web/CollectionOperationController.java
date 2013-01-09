@@ -40,6 +40,7 @@ import edu.ucsd.library.shared.Mail;
 import edu.ucsd.library.util.sql.EmployeeInfo;
 import edu.ucsd.library.xdre.collection.CollectionHandler;
 import edu.ucsd.library.xdre.collection.DerivativeHandler;
+import edu.ucsd.library.xdre.collection.FileCountValidaionHandler;
 import edu.ucsd.library.xdre.collection.FileIngestionHandler;
 import edu.ucsd.library.xdre.collection.SOLRIndexHandler;
 import edu.ucsd.library.xdre.utils.Constants;
@@ -293,22 +294,9 @@ public class CollectionOperationController implements Controller {
 		String fileStore = getParameter(paramsMap, "fs");
 		damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
 		damsClient.setTripleStore(ds);
+		damsClient.setFileStore(fileStore);
 
-		int totalFiles = 0;
 		Date ckDate = null;
-		if(operations[0]){
-			String fileCount = getParameter(paramsMap, "numOfFiles");
-			if(fileCount != null && fileCount.length() > 0){
-				//if(fileCount == null && fileCount.length() == 0)
-				//message += "Please enter the number of files for validation.<br>";
-			//else{
-				try{
-					totalFiles = Integer.parseInt(fileCount.trim());
-				}catch(NumberFormatException e){
-					message += "Please enter a valid integer:" + fileCount + ".<br>";
-				}
-			}
-		}
 		if(operations[1]){
 			String checksumDate = getParameter(paramsMap, "checksumDate");
 			if(checksumDate == null || (checksumDate = checksumDate.trim()).length() == 0)
@@ -434,10 +422,10 @@ public class CollectionOperationController implements Controller {
 			 RequestOrganizer.setProgressPercentage(session, 0);
 			 message = "";
 			
-			 /*if(i == 0){
+			 if(i == 0){
 				 session.setAttribute("status", opMessage + "File Count Validation for FileStore " + fileStore + " ...");
-				 handler = new FileCountHandler(damsClient, collectionId, totalFiles);
-			 }else if (i == 1){
+				 handler = new FileCountValidaionHandler(damsClient, collectionId);
+			 }else /*if (i == 1){
 				   session.setAttribute("status", opMessage + "Checksum Validation for FileStore " + fileStore + " ...");
 				   handler = new ChecksumHandler(damsClient, collectionId, ckDate);
 			 }else if (i == 2){	

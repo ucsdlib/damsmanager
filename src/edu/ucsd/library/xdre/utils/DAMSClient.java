@@ -1,7 +1,5 @@
 package edu.ucsd.library.xdre.utils;
 
-import static org.junit.Assert.assertTrue;
-
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.File;
@@ -268,7 +266,7 @@ public class DAMSClient {
 	}
 	
 	/**
-	 * Get a list of files in a repository.\
+	 * Get a list of files in a repository.
 	 * /api/repositories/repoId/files 
 	 * @throws Exception 
 	 **/
@@ -282,6 +280,19 @@ public class DAMSClient {
 		for(int i=0; i<jsonArr.size(); i++)
 			files.add(DFile.toDFile((JSONObject)jsonArr.get(i)));
 		return files;
+	}
+	
+	/**
+	 * Get the files in a repository.
+	 * /api/repositories/repoId/files 
+	 * @throws Exception 
+	 **/
+	public Document getRepoFiles(String repoId) throws Exception {
+		Document doc = null;
+		String url = getRepositoriesURL(repoId, "files", "xml");
+		HttpGet get = new HttpGet(url);
+		doc = getXMLResult(get);
+		return doc;
 	}
 	
 	/**
@@ -323,6 +334,19 @@ public class DAMSClient {
 			objectsList.add(valNode.getText());
 		}
 		return objectsList;
+	}
+	
+	/**
+	 * Get the files in a collection.
+	 * /api/collections/collId/files 
+	 * @throws Exception 
+	 **/
+	public Document getCollectionFiles(String collectionId) throws Exception {
+		Document doc = null;
+		String url = getCollectionsURL(collectionId, "files", "xml");
+		HttpGet get = new HttpGet(url);
+		doc = getXMLResult(get);
+		return doc;
 	}
 	
 
@@ -397,7 +421,7 @@ public class DAMSClient {
 	 */
 	public List<FileURI> retrieveFileURI(String srcFileName, String srcPath, String collectionId, String repoId) throws Exception{
 		HttpGet req = null;
-		List<FileURI> fileURIs = new ArrayList<FileURI>();
+		List<FileURI> fileURIs = null;
 		String url = "";
 		if(collectionId == null && repoId == null){
 			// Retrieve object from SOLR
@@ -412,35 +436,13 @@ public class DAMSClient {
 
 			req = new HttpGet(url);
 			Document doc = getXMLResult(req);
-			List<Node> idNodes = doc.selectNodes(DOCUMENT_RESPONSE_ROOT_PATH + "/files/value[sourceFileName='" + srcFileName + "']");
-			if(idNodes != null){
-				String id = null;
-				String object = null;
-				String filePath = null;
-				Node idNode = null;
-				int nSize =  idNodes.size();
-				for(int i=0; i<nSize; i++){
-					idNode = idNodes.get(i);
-					id = idNode.selectSingleNode("id").getText();
-					object = idNode.selectSingleNode("object").getText();
-					//Source path restriction
-					if(srcPath != null && srcPath.length() > 0){
-						filePath = idNode.selectSingleNode("sourcePath").getText();
-						if(srcPath.equalsIgnoreCase(filePath)){
-							fileURIs.add(FileURI.toParts(id, object));
-						}
-					} else {
-						fileURIs.add(FileURI.toParts(id, object));
-					}
-				}
-			}
+			fileURIs = getFiles(doc, srcPath, srcFileName);
 		}finally{
 			req.reset();
 		}
 		return fileURIs;
 	}
-	
-	
+		
 	/**
 	 * Perform file checksum validation
 	 * @param subjectId
@@ -1697,6 +1699,40 @@ public class DAMSClient {
 		
 		solrParams = "q=" + URLEncoder.encode(solrParams, "UTF-8");
 		return solrParams;
+	}
+	
+	/**
+	 * Retrieve the files that have the same source fileName and source path
+	 * @param doc
+	 * @param srcPath
+	 * @param srcFileName
+	 * @return
+	 */
+	public static List<FileURI> getFiles(Document doc, String srcPath, String srcFileName){
+		List<FileURI> fileURIs = new ArrayList<FileURI>();
+		List<Node> idNodes = doc.selectNodes(DOCUMENT_RESPONSE_ROOT_PATH + "/files/value[sourceFileName='" + srcFileName.replace("'", "&quot;") + "']");
+		if(idNodes != null){
+			String id = null;
+			String object = null;
+			String filePath = null;
+			Node idNode = null;
+			int nSize =  idNodes.size();
+			for(int i=0; i<nSize; i++){
+				idNode = idNodes.get(i);
+				id = idNode.selectSingleNode("id").getText();
+				object = idNode.selectSingleNode("object").getText();
+				//Source path restriction
+				if(srcPath != null && srcPath.length() > 0){
+					filePath = idNode.selectSingleNode("sourcePath").getText();
+					if(srcPath.equalsIgnoreCase(filePath)){
+						fileURIs.add(FileURI.toParts(id, object));
+					}
+				} else {
+					fileURIs.add(FileURI.toParts(id, object));
+				}
+			}
+		}
+		return fileURIs;
 	}
 	
 	/**

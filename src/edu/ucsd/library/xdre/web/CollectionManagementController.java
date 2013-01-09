@@ -56,6 +56,7 @@ public class CollectionManagementController implements Controller {
 		
 		String category = null;
 		DAMSClient damsClient = null;
+		long itemsCount = 0;
 		try {
 			category = request.getParameter("category");
 			session.setAttribute("category", category);
@@ -67,11 +68,15 @@ public class CollectionManagementController implements Controller {
 			if(fs == null || fs.length() == 0)
 				fs = damsClient.defaultFilestore();
 			
+			if(category != null && category.length() > 0)
+				itemsCount = damsClient.countObjects(category);
+			
 			dataMap = new HashMap();
 			dataMap.put("logOut", logOutDisplay);
 			dataMap.put("message", message);
 			dataMap.put("activeButton", activeButton);
 			dataMap.put("category", category);
+			dataMap.put("itemsCount", itemsCount);
 			dataMap.put("collections", damsClient.listCollections());
 			dataMap.put("triplestore", ts);
 			dataMap.put("triplestores", damsClient.listTripleStores());
@@ -79,6 +84,7 @@ public class CollectionManagementController implements Controller {
 			dataMap.put("filestore", fs);
 			dataMap.put("filestoreDefault", Constants.DEFAULT_FILESTORE);
 			dataMap.put("tripletoreDefault", Constants.DEFAULT_TRIPLESTORE);
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 			String eMessage = e.getMessage();

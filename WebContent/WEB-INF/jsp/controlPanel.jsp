@@ -10,7 +10,7 @@
 <html>
 <jsp:include flush="true" page="/jsp/libhtmlheader.jsp" />
 <body onLoad="load('controlPanel')" style="background-color:#fff;">
-<script language="javaScript">
+<script type="text/javascript">
 	var activeButtonId = "<c:out value="${model.activeButton}" />";
 	function setTriplestore(){
 		document.getElementById("dsSpan").style.display = "none";
@@ -32,19 +32,15 @@
 			return false;
 		}
 	}
+
+	var crumbs = [{"Home":"http://libraries.ucsd.edu"}, {"Digital Library Collections":"/curator"},{"DAMS Manager":"/damsmanager/"}, {"Process Manager":""}];
+	drawBreadcrumbNMenu(crumbs, "tdr_crumbs_content", true);
 </script>
 <jsp:include flush="true" page="/jsp/libanner.jsp" />
 <table align="center" cellspacing="0px" cellpadding="0px" class="bodytable">
 <tr><td>
 <div id="tdr_crumbs">
 	<div id="tdr_crumbs_content">
-		<a class="logout" style="margin:5px;" href="logout.do?">Log out</a><div id="menu_nav" style="float:right;"><jsp:include flush="true" page="/jsp/menu_nav.jsp" /></div>
-		<ul>
-			<li><a href="http://libraries.ucsd.edu">Home</a></li>
-			<li><a href="/curator">Digital Library Collections</a></li>
-			<li><a href="/damsmanager/">DAMS Manager</a></li>
-			<li>Process Manager</li>
-		</ul>
 	</div><!-- /tdr_crumbs_content -->
 	<!-- This div is for temporarily writing breadcrumbs to for processing purposes -->
 		<div id="temporaryBreadcrumb" style="display: none">
@@ -88,8 +84,8 @@
 		    <div id="processesDiv">             
 				<div id="validateButtonDiv" <c:if test="${model.activeButton != 'validateButton'}">style="display:none;"</c:if>>
 				    <div id="fileCountDiv" class="processlayout">
-						<span title="Validate master files for duplicate files, mixed file format, and file count" class="menuText"><input disabled class="pcheckbox" type="checkbox" name="validateFileCount" id="validateFileCount" onClick="checkSelections(this);">
-									<span class="text-special">File Count Validation</span></span><br />  
+						<span title="Validate master files for duplicate files, mixed file format, and file count" class="menuText"><input class="pcheckbox" type="checkbox" name="validateFileCount" id="validateFileCount" onClick="checkSelections(this);">
+									<span class="text-special">File Count Validation <c:if test="${model.itemsCount > 0}">(${model.itemsCount} objects)</c:if></span></span><br />  
 					</div>
 				    <div id="fileCountDiv" class="processlayout">
 						<span title="Generate Jhove Report" class="menuText">

@@ -14,7 +14,10 @@ import javax.naming.InitialContext;
  * @author Longshou Situ (lsitu@ucsd.edu)
  */
 public class Constants {
-	public static final String ARK_DAMS_TITLE = "bb3652744n"; //ARK for ETD collection
+	public static final String SERVICE = "service";
+	public static final String SOURCE = "source";
+	
+	public static final String ARK_DAMS_TITLE = "bb3652744n"; //ARK for dams:title
 
 	public static final String COLLECTION_ETD = "bb0956474h"; //ARK for ETD collection
 	public static final String COLLECTION_SHOTSOFWAR = "bb3209056n"; //ARK for Shot of War collection

@@ -233,7 +233,7 @@
    }
   
   function displayPage(resp){
-     var results = resp.responseXML.getElementsByTagName('status');
+     var results = resp.getElementsByTagName('status');
      var message = results[0].firstChild.nodeValue;
      status = message;
      
@@ -278,7 +278,7 @@
 		 
   function dispMessage(resp){
      errorsCount = 0;
-     var results = resp.responseXML.getElementsByTagName('result');
+     var results = resp.getElementsByTagName('result');
      var resultsMessageNode = null;
      if(results != null && results[0] != null)
         resultsMessageNode = results[0].firstChild;
@@ -286,21 +286,21 @@
      if(resultsMessageNode != null)
          resultsMessage = resultsMessageNode.nodeValue;
          
-     var status = resp.responseXML.getElementsByTagName('status');
+     var status = resp.getElementsByTagName('status');
      var message = "";
      if(status != null && status[0] != null && status[0].firstChild != null)
      	message = status[0].firstChild.nodeValue;
      status = message;
      displayMessage("status", resultsMessage + "<br />" + message);
            
-     var progressElement = resp.responseXML.getElementsByTagName('progressPercentage');
+     var progressElement = resp.getElementsByTagName('progressPercentage');
      var progressPercentage = null;
      if(progressElement != null && progressElement[0] != null && progressElement[0].firstChild != null){
         progressPercentage = progressElement[0].firstChild.nodeValue;
         displayProgressBar(progressPercentage);
      }
      
-     var errors = resp.responseXML.getElementsByTagName('log');
+     var errors = resp.getElementsByTagName('log');
      var logMessageNode = null;
      var logMessage = "";
      if(errors != null && errors[0] != null){
@@ -354,7 +354,7 @@
   		clearTimeout(timeoutReload);
   		timeoutReload = null;
   	}
-     var responseDoc = resp.responseXML;
+     var responseDoc = resp;
      if(responseDoc == null){
      	var login = resp.responseText.indexOf("loginForm"); 
      	if(login > 0 ){
@@ -374,12 +374,12 @@
      }else{
     // alert("Spring displayProgress(resp)");
        document.getElementById('tdr_crumbs').style.display='none';
-       var progressIdNode = resp.responseXML.getElementsByTagName('progressId');
+       var progressIdNode = resp.getElementsByTagName('progressId');
        var progressId = null;
        if(progressIdNode != null && progressIdNode[0] != null && progressIdNode[0].firstChild != null)
        	progressId = progressIdNode[0].firstChild.nodeValue;
        if(progressId != null){
-           var formIdNode = resp.responseXML.getElementsByTagName('formId');
+           var formIdNode = resp.getElementsByTagName('formId');
            var formId = formIdNode[0].firstChild.nodeValue;
            setDispStyle("statusDiv", "inline");
            displayMessage("status", "Accepting request ...");
@@ -410,7 +410,7 @@
   }
   
    function resetPanel(resp){
-     var statusNodes = resp.responseXML.getElementsByTagName('status'); 
+     var statusNodes = resp.getElementsByTagName('status'); 
          
      var status = "";
      if(statusNodes != null && statusNodes[0] != null && statusNodes[0].firstChild != null)
@@ -481,4 +481,52 @@
     }else
        newMessage = message;
     return newMessage;
+ }
+ 
+ var tmpClassName;
+ function displayPanel(obj){
+ 	var bId = obj.id;
+ 	if(bId != activeButtonId){
+ 		var panelObj = document.getElementById(bId + "Div");
+ 		panelObj.style.display = "inline";
+ 		obj.className = "apanelbutton";
+ 		tmpClassName = "apanelbutton";;
+ 		panelObj = document.getElementById(activeButtonId + "Div");
+ 		panelObj.style.display = "none";
+ 		document.getElementById(activeButtonId).className = "panelbutton";
+ 		activeButtonId = bId;
+ 		document.getElementById("activeButton").value = bId;
+ 	}
+ }
+
+
+ function activateClass(obj){
+  	tmpClassName = obj.className;
+  	obj.className = "apanelbutton";
+ }
+
+ function resetClass(obj){
+  	obj.className = tmpClassName;
+ }
+ 
+ function drawBreadcrumbNMenu(crumbs, crumbElem, includeMenu){
+	 var html = "<ul>";
+	 for (var i=0; i<crumbs.length; i++) {
+		 var obj = crumbs[i];
+		 for (var propName in obj) {
+			 if(obj[propName].length > 0)
+				 html += "<li><a href=\"" + obj[propName] + "\">" + propName + "</a></li>";
+			 else
+				 html += "<li>" + propName + "</li>";
+		 }
+	 }
+	 html += "</ul>";
+	 
+	 if(includeMenu){
+		 $.ajax({url:"/damsmanager/jsp/menu_nav.jsp",success:function(menu){
+			 var menuHtml = "<a class=\"logout\" style=\"margin:5px;\" href=\"logout.do?\">Log out</a><div id=\"menu_nav\" style=\"float:right;\">" + menu + "</div>";
+			    $("#"+crumbElem).html(menuHtml + html);
+		 }});
+	 }else
+		 $("#"+crumbElem).html(html);
  }
