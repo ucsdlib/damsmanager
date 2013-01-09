@@ -21,9 +21,12 @@ public class FileCountValidaionHandler extends CollectionHandler{
 	private static Logger log = Logger.getLogger(FileCountValidaionHandler.class);
 
 	protected int count = 0;
-	protected int missingCount = 0;
+	protected int missingObjectsCount = 0;
+	protected int missingFilesCount = 0;
 	protected int failedCount = 0;
-	protected int totalFiles = 0;
+	protected int masterTotal = 0;
+	protected int filesTotal = 0;
+	protected StringBuilder missingObjects = new StringBuilder();
 	protected StringBuilder missingFiles = new StringBuilder();
 	protected StringBuilder duplicatedFiles = new StringBuilder();
 	protected Document filesDoc = null;
@@ -55,25 +58,43 @@ public class FileCountValidaionHandler extends CollectionHandler{
 	public boolean execute() throws Exception {
 
 		String eMessage = "";
-		String subjectURI = null;
+		String subjectId = null;
+		String fileId = null;
+		FileURI fileURI = null;
 		String use = null;
-		boolean fileExist = false;
 		for(int i=0; i<itemsCount; i++){
+
+			boolean masterExists = false;
+			boolean missing = false;
 			count++;
-			fileExist = false;
-			subjectURI = items.get(i);
+			subjectId = items.get(i);
 			try{
-				setStatus("Processing file count validation for subject " + subjectURI  + " (" + (i+1) + " of " + itemsCount + ") ... " ); 
+				setStatus("Processing file count validation for subject " + subjectId  + " (" + (i+1) + " of " + itemsCount + ") ... " ); 
 				DFile dFile = null;
 				int duSize = 0;
-				List<DFile> files = damsClient.listObjectFiles(subjectURI);
+				List<DFile> files = damsClient.listObjectFiles(subjectId);
 				for(Iterator<DFile> it=files.iterator(); it.hasNext();){
-
+					filesTotal++;
 					dFile = it.next();
 					use = dFile.getUse();
+					
+					// Check file existence
+					fileId = dFile.getId();
+					fileURI = FileURI.toParts(fileId, subjectId);
+
+					if(!damsClient.exists(fileURI.getObject(), fileURI.getComponent(), fileURI.getFileName())){
+						missingFilesCount++;
+						missing = true;
+						exeResult = false;
+						missingFiles.append(fileId + "\t" + (missingFilesCount%10==0?"\n":""));
+						eMessage = "File " + fileId + " doesn't exists.";
+						log("log", eMessage );
+						log.info(eMessage );
+					}
+					// Check source and service files 
 					if(use.endsWith(Constants.SERVICE) || use.endsWith(Constants.SOURCE)){
-						totalFiles++;
-						fileExist = true;
+						masterTotal++;
+						masterExists = true;
 						List<FileURI> duFiles = DAMSClient.getFiles(filesDoc, null, dFile.getSourceFilename());
 						if((duSize=duFiles.size()) > 1){
 							String[] checksums = new String[duSize];
@@ -102,13 +123,16 @@ public class FileCountValidaionHandler extends CollectionHandler{
 						}
 					}
 				}
-				if(!fileExist){
-					missingCount++;
-					exeResult = false;
-					missingFiles.append(subjectURI + "\t" + (missingCount%10==0?"\n":""));
-					eMessage = "No master files exist: " + subjectURI;
-					log("log", eMessage );
-					log.info(eMessage );
+				if(!masterExists || missing){
+					failedCount++;
+					if(!masterExists){
+						missingObjectsCount++;
+						exeResult = false;
+						missingObjects.append(subjectId + "\t" + (missingObjectsCount%10==0?"\n":""));
+						eMessage = "No master files exist: " + subjectId;
+						log("log", eMessage );
+						log.info(eMessage );
+					}
 				}
 			} catch (Exception e) {
 				failedCount++;
@@ -125,7 +149,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 			} catch (InterruptedException e1) {
 				failedCount++;
         		exeResult = false;
-    			eMessage = "File count validation interrupted for subject " + subjectURI  + ". \n Error: " + e1.getMessage() + "\n";
+    			eMessage = "File count validation interrupted for subject " + subjectId  + ". \n Error: " + e1.getMessage() + "\n";
 				setStatus("Canceled");
 				clearSession();
 				log("log", eMessage.replace("\n", ""));
@@ -150,17 +174,21 @@ public class FileCountValidaionHandler extends CollectionHandler{
 	 * Execution result message
 	 */
 	public String getExeInfo() {
-		String missingMessage = " object" + (missingCount>1?"s have ":" has ") + " no master files";
+		String missingObjectsMessage = " object" + (missingObjectsCount>1?"s have ":" has ") + " no master files";
+		String missingFilesMessage = " file" + (missingFilesCount>1?"s are ":" is ") + " missing from " + damsClient.getFileStore();
 		if(exeResult)
 			exeReport.append("File count validation succeeded. \n ");
 		else
-			exeReport.append("File count validation (" + failedCount + " of " + totalFiles + " failed" + (missingCount>0?", " + missingCount + missingMessage:"") + ") -- \n ");	
-		exeReport.append("Number of objects found " + itemsCount + ". \nNumber of objects processed " + count + ". \nTotal number of source and service files found " + totalFiles + ".\n");
+			exeReport.append("File count validation (" + failedCount + " of " + itemsCount + " failed" + (missingObjectsCount>0?", " + missingObjectsCount + missingObjectsMessage:"") + (missingFilesCount>0?", " + missingFilesCount + missingFilesMessage:"") + "): \n ");	
+		exeReport.append("Total files found " + filesTotal + ". \nNumber of objects found " + itemsCount + ". \nNumber of objects processed " + count  + ". \nNumber of source and service files exist " + masterTotal + ".\n");
 		if(duplicatedFiles.length() > 0)
 			exeReport.append("\nThe following files are duplicated: \n" + duplicatedFiles.toString());
 		
+		if(missingObjects.length() > 0)
+			exeReport.append("\nThe following object" + missingObjectsMessage + " : \n" + missingObjects.toString() );
+		
 		if(missingFiles.length() > 0)
-			exeReport.append("\nThe following object" + missingMessage + " : \n" + missingFiles.toString() );
+			exeReport.append("\nThe following object" + missingFilesMessage + " : \n" + missingFiles.toString() );
 		
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
