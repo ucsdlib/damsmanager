@@ -509,7 +509,7 @@
   	obj.className = tmpClassName;
  }
  
- function drawBreadcrumbNMenu(crumbs, crumbElem, includeMenu){
+ function drawBreadcrumbNMenu(crumbs, crumbElem, includeMenu, excludeLogout){
 	 var html = "<ul>";
 	 for (var i=0; i<crumbs.length; i++) {
 		 var obj = crumbs[i];
@@ -524,7 +524,10 @@
 	 
 	 if(includeMenu){
 		 $.ajax({url:"/damsmanager/jsp/menu_nav.jsp",success:function(menu){
-			 var menuHtml = "<a class=\"logout\" style=\"margin:5px;\" href=\"logout.do?\">Log out</a><div id=\"menu_nav\" style=\"float:right;\">" + menu + "</div>";
+			 var menuHtml = "<div id=\"menu_nav\" style=\"float:right;\">" + menu + "</div>";
+			 if(!excludeLogout || excludeLogout==null)
+				 menuHtml = "<a class=\"logout\" style=\"margin:5px;\" href=\"logout.do?\">Log out</a>" + menuHtml;
+			 
 			    $("#"+crumbElem).html(menuHtml + html);
 		 }});
 	 }else

@@ -5,7 +5,7 @@
 <body style="background-color:#fff;">
 <script type="text/javascript">
 	var crumbs = [{"Home":"http://libraries.ucsd.edu"}, {"Digital Library Collections":"/curator"},{"DAMS Manager":""}];
-	drawBreadcrumbNMenu(crumbs, "tdr_crumbs_content", true);
+	drawBreadcrumbNMenu(crumbs, "tdr_crumbs_content", true, true);
 </script>
 <jsp:include flush="true" page="/jsp/libanner.jsp" />
 <table align="center" cellspacing="0px" cellpadding="0px" class="bodytable">
