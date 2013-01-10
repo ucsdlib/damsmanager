@@ -82,6 +82,7 @@
     	</web-resource-collection>
     	<auth-constraint>
         	<role-name>4708</role-name>
+        	<role-name>ITD</role-name>
       	</auth-constraint>
         <user-data-constraint>
             <transport-guarantee>CONFIDENTIAL</transport-guarantee>
@@ -100,6 +101,7 @@
     	</web-resource-collection>
     	<auth-constraint>
         	<role-name>32</role-name>
+        	<role-name>ITD</role-name>
       	</auth-constraint>
         <user-data-constraint>
             <transport-guarantee>CONFIDENTIAL</transport-guarantee>
@@ -112,6 +114,10 @@
 	   
 	<security-role>
 		<role-name>4708</role-name>
+	</security-role>	
+
+	<security-role>
+		<role-name>ITD</role-name>
 	</security-role>	
 
 </web-app>
