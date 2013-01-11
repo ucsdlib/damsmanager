@@ -764,10 +764,9 @@ public class DAMSClient {
 		HttpGet req = new HttpGet(url);
 		DFile dfile = null;
 		try {
-			JSONObject result = getJSONResult(req);
-			JSONArray dfiles = (JSONArray) result.get("files");
-			if (dfiles.size() > 0)
-				dfile = DFile.toDFile((JSONObject)dfiles.get(0));
+			JSONObject mData = (JSONObject)getJSONResult(req).get("characterization");
+			if (mData != null)
+				dfile = DFile.toDFile(mData);
 		} finally {
 			req.reset();
 		}

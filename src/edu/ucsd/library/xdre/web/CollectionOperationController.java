@@ -42,6 +42,7 @@ import edu.ucsd.library.xdre.collection.CollectionHandler;
 import edu.ucsd.library.xdre.collection.DerivativeHandler;
 import edu.ucsd.library.xdre.collection.FileCountValidaionHandler;
 import edu.ucsd.library.xdre.collection.FileIngestionHandler;
+import edu.ucsd.library.xdre.collection.JhoveReportHandler;
 import edu.ucsd.library.xdre.collection.SOLRIndexHandler;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
@@ -649,35 +650,19 @@ public class CollectionOperationController implements Controller {
 					 ((RDFMetadaExportHandler)handler).setNamespaces(nsInputs);
 					 ((RDFMetadaExportHandler)handler).setComponentsIncluded(componentsIncluded);
 			     }
-			 }else if (i == 19){
+			 }*/else if (i == 19){
 				 session.setAttribute("status", opMessage + "Jhove report ...");
 				 boolean bytestreamFilesOnly = getParameter(paramsMap, "bsJhoveReport") != null;
-				 boolean formatUpdate = getParameter(paramsMap, "bsJhoveUpdate") != null;
-				 handler = new JhoveReportHandler(collectionId, bytestreamFilesOnly);
-				 
-				 //xxx 
-				 //bytestream only support
-				 if(bytestreamFilesOnly){
-					 ((LocalStoreJhoveReportHandler)handler).setUpdateFormat(formatUpdate);
-					 if(collectionId==null || collectionId.length()==0){
-						 BindingIterator bit = null;
-						 String sparql = TripleStoreConstants.LOOKUP_BYTESTREAM_FILE_SPARCQL;
-						 List<String> items = new ArrayList<String>();
-						 try{
-							 bit = tsUtils.twinqlSelect(sparql);
-							 while(bit.hasNext()){
-								 items.add(TripleStoreUtils.getSubjectIdFromUrl(bit.nextBinding().get("subject")));
-							 }
-						 }finally{
-							 if(bit != null){
-								 bit.close();
-								 bit = null;
-							 }
-						 }
-						 handler.setItems(items);
-					 }	 
+				 boolean updateFormat = getParameter(paramsMap, "bsJhoveUpdate") != null;
+				 handler = new JhoveReportHandler(damsClient, collectionId, updateFormat);
+				 if(bytestreamFilesOnly && (collectionId == null || collectionId.length() == 0)){
+					 // Report all bytestream format files in DAMS
+					 List<String> items = handler.listAllItems();
+					 handler.setItems(items);
 				 }
-			 }*/else 	
+				 ((JhoveReportHandler)handler).setBytestreamFormatOnly(bytestreamFilesOnly);
+
+			 }else 	
 		          throw new ServletException("Unhandle operation index: " + i);
 			 
 		   	if(handler != null){
@@ -699,12 +684,12 @@ public class CollectionOperationController implements Controller {
 	 				exeInfo += "\n" + e.getMessage();
 	 				e.printStackTrace();
 				}finally{
-					handler.release();
 					String collectionName = handler.getCollectionId();
 					if(collectionName != null && collectionName.length() >0 && logLink.indexOf("&category=")<0)
 						logLink += "&category=" + collectionName.replace(" ", "");
 					handler.setExeResult(successful);
 					exeInfo += handler.getExeInfo();
+					handler.release();
 				} 
 		   	}
 		 }else

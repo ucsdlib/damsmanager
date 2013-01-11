@@ -13,6 +13,7 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -74,6 +75,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 
 	protected String collectionTitle = null;
 	protected Map<String, String> collectionsMap = null;
+	protected Map<String, String> reposMap = null;
 	protected int itemsCount = 0; //Total number of items in the collection/batch
 
 	/**
@@ -119,16 +121,20 @@ public abstract class CollectionHandler implements ProcessHandler {
 	protected void init() throws Exception {
 		exeReport = new StringBuilder();
 		collectionsMap = new HashMap<String, String>();
+		reposMap = damsClient.listRepositories();
 		Map<String, String> colls = damsClient.listCollections();
 		Entry<String, String> ent = null;
+		
+		colls.putAll(reposMap);
 		for (Iterator<Entry<String, String>> it=colls.entrySet().iterator(); it.hasNext();){
 			ent = (Entry<String, String>) it.next();
 			String colId = ent.getValue();
 			String colTitle = ent.getKey();
 			collectionsMap.put(colId, colTitle);
 		}
+
 		if (collectionId != null && collectionId.length() > 0) {
-			items = listItems(collectionId, damsClient);
+			items = listItems(collectionId);
 			//collectionData = damsClient.getMetadata(collectionId, null);
 			itemsCount = items.size();
 			collectionTitle = collectionsMap.get(collectionId);
@@ -581,8 +587,32 @@ public abstract class CollectionHandler implements ProcessHandler {
 		}
 	}
 	
-	public static List<String> listItems(String collectionId, DAMSClient damsClient) throws Exception{
-		return damsClient.listObjects(collectionId);
+	/**
+	 * List items in a collection/repository 
+	 * @param collectionId
+	 * @return
+	 * @throws Exception
+	 */
+	public List<String> listItems(String categoryId) throws Exception{
+		if(reposMap.containsValue(categoryId))
+			return damsClient.listRepoObjects(categoryId);
+		else
+			return damsClient.listObjects(categoryId);
+	}
+	
+	/**
+	 * List all items in DAMS
+	 * @return
+	 * @throws Exception 
+	 */
+	public List<String> listAllItems() throws Exception{
+		String repoId = null;
+		List<String> items = new ArrayList<String>();
+		for(Iterator<String> it=reposMap.values().iterator();it.hasNext();){
+			repoId = it.next();
+			items.addAll(damsClient.listRepoObjects(repoId));
+		}
+		return items; 
 	}
 
 	/**

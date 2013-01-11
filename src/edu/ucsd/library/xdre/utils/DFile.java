@@ -26,6 +26,8 @@ public class DFile {
 	private String preservationLevel = "full";
 	private String objectCategory  = "file";
 	private String compositionLevel = "0";
+	private String quality = null;
+	private String status = null;
 
 	
 	/**
@@ -44,7 +46,7 @@ public class DFile {
 	 * @param sha1Checksum
 	 */
 	public DFile(String id, String object, String use, String sourceFilename, String sourcePath, String dateCreated, 
-			String size, String formatName, String formatVersion, String mimeType, String crc32checksum, 
+			String size, String formatName, String formatVersion, String mimeType, String quality, String crc32checksum, 
 			String md5checksum, String sha1checksum){
 		this.id = id;
 		this.object = object;
@@ -56,6 +58,7 @@ public class DFile {
 		this.formatName = formatName;
 		this.formatVersion = formatVersion;
 		this.mimeType = mimeType;
+		this.quality = quality;
 		this.crc32checksum = crc32checksum;
 		this.md5checksum = md5checksum;
 		this.sha1checksum = sha1checksum;
@@ -82,11 +85,11 @@ public class DFile {
 	 * @param compositionLevel
 	 */
 	public DFile(String id, String object, String use, String sourceFilename, String sourcePath, String dateCreated, 
-			String size, String formatName, String formatVersion, String mimeType, String crc32checksum, 
+			String size, String formatName, String formatVersion, String mimeType, String quality, String crc32checksum, 
 			String md5checksum, String sha1checksum, String sha256checksum, String sha512checksum, 
 			String preservationLevel, String objectCategory, String compositionLevel) {
 
-		this(id, object, use, sourceFilename, sourcePath, dateCreated, size, formatName, formatVersion, mimeType,
+		this(id, object, use, sourceFilename, sourcePath, dateCreated, size, formatName, formatVersion, mimeType, quality, 
 				crc32checksum, md5checksum, sha1checksum);
 		this.sha256checksum = sha256checksum;
 		this.sha512checksum = sha512checksum;
@@ -230,6 +233,22 @@ public class DFile {
 		this.sha512checksum = sha512checksum;
 	}
 
+	public String getQuality() {
+		return quality;
+	}
+
+	public void setQuality(String quality) {
+		this.quality = quality;
+	}
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
 	public String getObject() {
 		return object;
 	}
@@ -240,9 +259,10 @@ public class DFile {
 
 	public static DFile toDFile(JSONObject jsonObject){
 		DFile dFile = new DFile((String)jsonObject.get("id"), (String)jsonObject.get("object"), (String)jsonObject.get("use"), (String)jsonObject.get("sourceFileName"), (String)jsonObject.get("sourcePath"), (String)jsonObject.get("dateCreated"), 
-				(String)jsonObject.get("size"), (String)jsonObject.get("formatName"),(String)jsonObject.get("formatVersion"), (String)jsonObject.get("mimeType"), (String)jsonObject.get("crc32checksum"), 
+				(String)jsonObject.get("size"), (String)jsonObject.get("formatName"),(String)jsonObject.get("formatVersion"), (String)jsonObject.get("mimeType"), (String)jsonObject.get("quality"), (String)jsonObject.get("crc32checksum"), 
 						(String)jsonObject.get("md5checksum"), (String)jsonObject.get("sha1checksum"), (String)jsonObject.get("sha256checksum"), (String)jsonObject.get("sha512checksum"), 
 								(String)jsonObject.get("preservationLevel"), (String)jsonObject.get("objectCategory"), (String)jsonObject.get("compositionLevel"));
+		dFile.setStatus((String)jsonObject.get("status"));
 		return dFile;
 	}
 }

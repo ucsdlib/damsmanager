@@ -126,7 +126,7 @@ public class SOLRIndexHandler extends CollectionHandler{
 				int solrCount = solrItems.size();
 				int count = 0;
 				if(collections.length > 1)
-					colItems = listItems(collections[i], damsClient);
+					colItems = listItems(collections[i]);
 				else
 					colItems = items;
 				
