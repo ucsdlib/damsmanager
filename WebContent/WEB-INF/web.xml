@@ -101,7 +101,7 @@
     	</web-resource-collection>
     	<auth-constraint>
         	<role-name>32</role-name>
-        	<role-name>ITD</role-name>
+        	<role-name>LIB-Users</role-name>
       	</auth-constraint>
         <user-data-constraint>
             <transport-guarantee>CONFIDENTIAL</transport-guarantee>
