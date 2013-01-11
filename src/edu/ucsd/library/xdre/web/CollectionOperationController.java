@@ -146,7 +146,7 @@ public class CollectionOperationController implements Controller {
 			forwardTo = "/solrDump.do?" + (fileStore!=null?"&fs=" + fileStore:"");
 		forwardTo += "&activeButton=" + activeButton; 
 
-		String email = "";
+		String[] emails = null;
 		String user = request.getRemoteUser();
 		if(( !(isBSJhoveReport || isDevUpload) && getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "dataConvert") == null )&& 
 				(collectionId == null || (collectionId=collectionId.trim()).length() == 0)){
@@ -169,7 +169,11 @@ public class CollectionOperationController implements Controller {
 				//user = getUserName(request);
 				//email = getUserEmail(request);
 				DAMSClient damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
-				email = (String)damsClient.getUserInfo(user).get("mail");
+				JSONArray mailArr = (JSONArray)damsClient.getUserInfo(user).get("mail");
+				if(mailArr != null && mailArr.size() > 0){
+					emails = new String[mailArr.size()];
+					mailArr.toArray(emails);
+				}
 				message = handleProcesses(paramsMap, request.getSession());
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -198,12 +202,14 @@ public class CollectionOperationController implements Controller {
 		//send email
 		try {
 			String sender = Constants.MAILSENDER_DAMSSUPPORT;
-			if(email == null && user != null)
-				email = user + "@ucsd.edu";
-			if(email == null)
+			if(emails == null && user != null){
+				emails = new String[1];
+				emails[0] = user + "@ucsd.edu";
+			}
+			if(emails == null)
 				Mail.sendMail(sender, new String[] {"lsitu@ucsd.edu"}, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
 			else
-				Mail.sendMail(sender, new String[] {email}, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
+				Mail.sendMail(sender, emails, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
 		} catch (AddressException e) {
 			e.printStackTrace();
 		} catch (MessagingException e) {
