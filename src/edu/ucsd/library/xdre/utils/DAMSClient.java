@@ -224,6 +224,18 @@ public class DAMSClient {
 	}
 
 	/**
+	 * Retrieve the user information
+	 * @param clientId
+	 * @return
+	 * @throws Exception
+	 */
+	public JSONObject getUserInfo(String user) throws Exception{
+		String url = getDAMSFunctionURL("client", "info", "json") + (user!=null&&user.length()>0?"&user=" + user:"");
+		HttpGet get = new HttpGet(url);
+		return getJSONResult(get);
+	}
+	
+	/**
 	 * Retrieve the Repositories in DAMS
 	 * /api/repositories
 	 * @return
