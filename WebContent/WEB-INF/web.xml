@@ -82,7 +82,7 @@
     	</web-resource-collection>
     	<auth-constraint>
         	<role-name>4708</role-name>
-        	<role-name>ITD</role-name>
+        	<role-name>Administrative_Curator</role-name>
       	</auth-constraint>
         <user-data-constraint>
             <transport-guarantee>CONFIDENTIAL</transport-guarantee>
@@ -117,7 +117,7 @@
 	</security-role>	
 
 	<security-role>
-		<role-name>ITD</role-name>
+		<role-name>Administrative_Curator</role-name>
 	</security-role>	
 
 </web-app>
