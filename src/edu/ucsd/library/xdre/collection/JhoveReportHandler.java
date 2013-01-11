@@ -197,8 +197,8 @@ public class JhoveReportHandler extends CollectionHandler{
 	 * Execution result message
 	 */
 	public String getExeInfo() {
-		String iMessage = "Number of objects found: " + itemsCount + " \nTotal files processed: " + count + " \nTotal Files reported: " + filesReported + (updateFormat?"; \nTotal Files updated: "+filesReported:"");
-        String mHeader = "\nJhove report " + ((collectionId!=null&&collectionId.length()==10)?"for "+collectionTitle:"");
+		String iMessage = "Number of objects found: " + itemsCount + " \nTotal master/service files processed: " + count + " \nTotal master/service Files reported: " + filesReported + (updateFormat?"; \nTotal Files updated: "+filesReported:"");
+        String mHeader = "\nFile characterize/Jhove report " + ((collectionId!=null&&collectionId.length()==10)?"for "+collectionTitle:"");
 		if(exeResult)
 			exeReport.append(mHeader + " succeeded: \n" + iMessage + "\n");
 		else{
@@ -207,7 +207,7 @@ public class JhoveReportHandler extends CollectionHandler{
 		
 		if(updateFormat && filesNotUpdated.length()>0){
 			log("log", "\n*************************************************************************************************************************************");
-			log("log", "\nThe following " + (filesReported-filesUpdated)+ " BYSTREAM format files haven't being fixed by XDRE Manager: \n");
+			log("log", "\nThe following " + (filesReported-filesUpdated)+ " BYTESTREAM format files haven't be fixed: \n");
 			log("log", "\n*************************************************************************************************************************************");
 			log("log", filesNotUpdated.toString());
 		}
