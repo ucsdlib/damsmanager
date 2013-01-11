@@ -224,6 +224,18 @@ public class DAMSClient {
 	}
 
 	/**
+	 * Retrieve the user information
+	 * @param clientId
+	 * @return
+	 * @throws Exception
+	 */
+	public JSONObject getUserInfo(String user) throws Exception{
+		String url = getDAMSFunctionURL("client", "info", "json") + (user!=null&&user.length()>0?"&user=" + user:"");
+		HttpGet get = new HttpGet(url);
+		return getJSONResult(get);
+	}
+	
+	/**
 	 * Retrieve the Repositories in DAMS
 	 * /api/repositories
 	 * @return
@@ -764,10 +776,9 @@ public class DAMSClient {
 		HttpGet req = new HttpGet(url);
 		DFile dfile = null;
 		try {
-			JSONObject result = getJSONResult(req);
-			JSONArray dfiles = (JSONArray) result.get("files");
-			if (dfiles.size() > 0)
-				dfile = DFile.toDFile((JSONObject)dfiles.get(0));
+			JSONObject mData = (JSONObject)getJSONResult(req).get("characterization");
+			if (mData != null)
+				dfile = DFile.toDFile(mData);
 		} finally {
 			req.reset();
 		}

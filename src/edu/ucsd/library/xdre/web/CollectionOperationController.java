@@ -16,14 +16,10 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import javax.sql.DataSource;
 
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemFactory;
@@ -37,11 +33,11 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import edu.ucsd.library.shared.Mail;
-import edu.ucsd.library.util.sql.EmployeeInfo;
 import edu.ucsd.library.xdre.collection.CollectionHandler;
 import edu.ucsd.library.xdre.collection.DerivativeHandler;
 import edu.ucsd.library.xdre.collection.FileCountValidaionHandler;
 import edu.ucsd.library.xdre.collection.FileIngestionHandler;
+import edu.ucsd.library.xdre.collection.JhoveReportHandler;
 import edu.ucsd.library.xdre.collection.SOLRIndexHandler;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
@@ -150,8 +146,8 @@ public class CollectionOperationController implements Controller {
 			forwardTo = "/solrDump.do?" + (fileStore!=null?"&fs=" + fileStore:"");
 		forwardTo += "&activeButton=" + activeButton; 
 
-		String user = "";
 		String email = "";
+		String user = request.getRemoteUser();
 		if(( !(isBSJhoveReport || isDevUpload) && getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "dataConvert") == null )&& 
 				(collectionId == null || (collectionId=collectionId.trim()).length() == 0)){
 			message = "Please choose a collection ...";
@@ -169,9 +165,11 @@ public class CollectionOperationController implements Controller {
 			}
 			
 			session.setAttribute("status", "Processing request ...");
-			try {				
-				user = getUserName(request);
-				email = getUserEmail(request);
+			try {
+				//user = getUserName(request);
+				//email = getUserEmail(request);
+				DAMSClient damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
+				email = (String)damsClient.getUserInfo(user).get("mail");
 				message = handleProcesses(paramsMap, request.getSession());
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -200,19 +198,12 @@ public class CollectionOperationController implements Controller {
 		//send email
 		try {
 			String sender = Constants.MAILSENDER_DAMSSUPPORT;
-			if(user != null){
-				if(sender.indexOf(user) == 0)
-					email = null;
-				else{
-					if((email == null || email.length() == 0)){				
-						email = user + "@ucsd.edu";
-					}
-				}
-			}
-			if(email == null || email.equals("lsitu@ucsd.edu"))
-				Mail.sendMail(sender, new String[] {"lsitu@ucsd.edu"}, "XDER Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
+			if(email == null && user != null)
+				email = user + "@ucsd.edu";
+			if(email == null)
+				Mail.sendMail(sender, new String[] {"lsitu@ucsd.edu"}, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
 			else
-				Mail.sendMail(sender, new String[] {"lsitu@ucsd.edu", email}, "XDER Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
+				Mail.sendMail(sender, new String[] {email}, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
 		} catch (AddressException e) {
 			e.printStackTrace();
 		} catch (MessagingException e) {
@@ -649,35 +640,19 @@ public class CollectionOperationController implements Controller {
 					 ((RDFMetadaExportHandler)handler).setNamespaces(nsInputs);
 					 ((RDFMetadaExportHandler)handler).setComponentsIncluded(componentsIncluded);
 			     }
-			 }else if (i == 19){
+			 }*/else if (i == 19){
 				 session.setAttribute("status", opMessage + "Jhove report ...");
 				 boolean bytestreamFilesOnly = getParameter(paramsMap, "bsJhoveReport") != null;
-				 boolean formatUpdate = getParameter(paramsMap, "bsJhoveUpdate") != null;
-				 handler = new JhoveReportHandler(collectionId, bytestreamFilesOnly);
-				 
-				 //xxx 
-				 //bytestream only support
-				 if(bytestreamFilesOnly){
-					 ((LocalStoreJhoveReportHandler)handler).setUpdateFormat(formatUpdate);
-					 if(collectionId==null || collectionId.length()==0){
-						 BindingIterator bit = null;
-						 String sparql = TripleStoreConstants.LOOKUP_BYTESTREAM_FILE_SPARCQL;
-						 List<String> items = new ArrayList<String>();
-						 try{
-							 bit = tsUtils.twinqlSelect(sparql);
-							 while(bit.hasNext()){
-								 items.add(TripleStoreUtils.getSubjectIdFromUrl(bit.nextBinding().get("subject")));
-							 }
-						 }finally{
-							 if(bit != null){
-								 bit.close();
-								 bit = null;
-							 }
-						 }
-						 handler.setItems(items);
-					 }	 
+				 boolean updateFormat = getParameter(paramsMap, "bsJhoveUpdate") != null;
+				 handler = new JhoveReportHandler(damsClient, collectionId, updateFormat);
+				 if(bytestreamFilesOnly && (collectionId == null || collectionId.length() == 0)){
+					 // Report all bytestream format files in DAMS
+					 List<String> items = handler.listAllItems();
+					 handler.setItems(items);
 				 }
-			 }*/else 	
+				 ((JhoveReportHandler)handler).setBytestreamFormatOnly(bytestreamFilesOnly);
+
+			 }else 	
 		          throw new ServletException("Unhandle operation index: " + i);
 			 
 		   	if(handler != null){
@@ -699,12 +674,12 @@ public class CollectionOperationController implements Controller {
 	 				exeInfo += "\n" + e.getMessage();
 	 				e.printStackTrace();
 				}finally{
-					handler.release();
 					String collectionName = handler.getCollectionId();
 					if(collectionName != null && collectionName.length() >0 && logLink.indexOf("&category=")<0)
 						logLink += "&category=" + collectionName.replace(" ", "");
 					handler.setExeResult(successful);
 					exeInfo += handler.getExeInfo();
+					handler.release();
 				} 
 		   	}
 		 }else
@@ -742,39 +717,6 @@ public class CollectionOperationController implements Controller {
 	returnMessage +=  "<br />" + logMessage;
 	RequestOrganizer.addResultMessage(session, "<br />" + logMessage);
 	return returnMessage;
-	}
-	
-	public static String getUserEmail(HttpServletRequest request){
-		DataSource dsSourceAuth;
-		EmployeeInfo emp;
-		String email = "";
-		try {
-			Context initCtx = new InitialContext();
-			dsSourceAuth = (DataSource)initCtx.lookup("java:comp/env/jdbc/authzt");
-			emp = EmployeeInfo.lookup( dsSourceAuth, request.getRemoteUser() );
-			email = emp.getEmail();
-		} catch (NamingException e) {
-			e.printStackTrace();
-		}
-		return email;
-	}
-	
-	public static String getUserName(HttpServletRequest request){
-		DataSource dsSourceAuth;
-		EmployeeInfo emp;
-		String userName = (String) request.getAttribute("user");
-		if(userName == null){
-			try {
-				Context initCtx = new InitialContext();
-				dsSourceAuth = (DataSource)initCtx.lookup("java:comp/env/jdbc/authzt");
-				emp = EmployeeInfo.lookup( dsSourceAuth, request.getRemoteUser() );
-				userName = emp.getUsername();
-				request.setAttribute("user", userName);
-			} catch (NamingException e) {
-				e.printStackTrace();
-			}
-		}
-		return userName;
 	}
 	
 	public static String getParameter(Map<String, String[]> paramsMap, String paramName){

@@ -8,10 +8,10 @@
 	<meta name="ORGANIZATION" content="University of California, San Diego" />
 
 	<!-- STYLESHEETS -->
-	<link href="/_resources/campus-design-2009/images/common/favicon.gif" rel="icon" type="image/gif"/>
-	<link href="/_resources/campus-design-2009/css/campus/identity.css" media="all" rel="stylesheet" type="text/css"/>
-	<link href="/_resources/campus-design-2009/css/campus/print.css" media="print" rel="stylesheet" type="text/css"/>
-	<link href="/_resources/campus-design-2009/css/libraries.css" media="all" rel="stylesheet" type="text/css"/>
+	<link href="//libraries.ucsd.edu/_resources/campus-design-2009/images/common/favicon.gif" rel="icon" type="image/gif"/>
+	<link href="//libraries.ucsd.edu/_resources/campus-design-2009/css/campus/identity.css" media="all" rel="stylesheet" type="text/css"/>
+	<link href="//libraries.ucsd.edu/_resources/campus-design-2009/css/campus/print.css" media="print" rel="stylesheet" type="text/css"/>
+	<link href="//libraries.ucsd.edu/_resources/campus-design-2009/css/libraries.css" media="all" rel="stylesheet" type="text/css"/>
 	
 	<script type="text/javascript" src="/_files/site/js/draw-menu.js"></script>		
 

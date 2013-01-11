@@ -89,13 +89,13 @@
 					</div>
 				    <div id="fileCountDiv" class="processlayout">
 						<span title="Generate Jhove Report" class="menuText">
-							<input disabled class="pcheckbox" type="checkbox" name="jhoveReport" id="jhoveReport" onClick="checkSelections(this);">
+							<input class="pcheckbox" type="checkbox" name="jhoveReport" id="jhoveReport" onClick="checkSelections(this);">
 							<span class="text-special">Jhove Report</span>
 						</span><br />
-						<div title="Check this checkbox to generate Jhove report for the BYTESTREAM files only." class="specialmenuText"><input disabled type="checkbox" id="bsJhoveReport" name="bsJhoveReport" class="pmcheckbox" onClick="confirmSelection(this, 'Jhove report for BYTESTREAM files only', 'jhoveReport');">
+						<div title="Check this checkbox to generate Jhove report for the BYTESTREAM files only." class="specialmenuText"><input type="checkbox" id="bsJhoveReport" name="bsJhoveReport" class="pmcheckbox" onClick="confirmSelection(this, 'Jhove report for BYTESTREAM files only', 'jhoveReport');">
 							<span class="text-special">Jhove report for BYTESTREAM files only.</span>
 						</div>
-						<div title="Check this checkbox to update the format when it's validated by Jhove." class="specialmenuText"><input disabled type="checkbox" id="bsJhoveUpdate" name="bsJhoveUpdate" class="pmcheckbox" onClick="confirmSelection(this, 'Correct format metadata', 'jhoveUpdate');">
+						<div title="Check this checkbox to update the format when it's validated by Jhove." class="specialmenuText"><input type="checkbox" id="bsJhoveUpdate" name="bsJhoveUpdate" class="pmcheckbox" onClick="confirmSelection(this, 'Correct format metadata', 'jhoveUpdate');">
 							<span class="text-special">Correct format metadata if validated by Jhove.</span>
 						</div>	
 					</div>
