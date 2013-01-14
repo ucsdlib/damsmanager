@@ -1,10 +1,17 @@
 package edu.ucsd.library.xdre.utils;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Node;
+import org.dom4j.io.SAXReader;
 import org.json.simple.JSONObject;
 
 /**
@@ -311,5 +318,62 @@ public class DFile {
 				);
 		dFile.setStatus((String)jsonObject.get("status"));
 		return dFile;
+	}
+	
+	/**
+	 * Parse RDF XML String for a DFile object.
+	 * @param rdfXml
+	 * @return
+	 * @throws DocumentException
+	 */
+	public static DFile toDFile(String rdfXml) throws DocumentException{
+		DFile dFile = null;
+		Document doc = null;
+		InputStream in = null;
+		SAXReader saxReader = new SAXReader();
+		in = new ByteArrayInputStream(rdfXml.getBytes());
+		try {
+			doc = saxReader.read(in);
+			Node node = doc.getRootElement();
+			dFile = new DFile(
+					getNodeText(node, "dams:id"), 
+					getNodeText(node, "dams:object"), 
+					getNodeText(node, "use"), 
+					getNodeText(node, "sourceFileName"), 
+					getNodeText(node, "sourcePath"), 
+					getNodeText(node, "dateCreated"), 
+					getNodeText(node, "size"), 
+					getNodeText(node, "formatName"),
+					getNodeText(node, "formatVersion"), 
+					getNodeText(node, "mimeType"), 
+					getNodeText(node, "quality"), 
+					getNodeText(node, "crc32checksum"), 
+					getNodeText(node, "md5checksum"),
+					getNodeText(node, "sha1checksum"), 
+					getNodeText(node, "sha256checksum"), 
+					getNodeText(node, "sha512checksum"), 
+					getNodeText(node, "preservationLevel"), 
+					getNodeText(node, "objectCategory"), 
+					getNodeText(node, "compositionLevel")
+					);
+			dFile.setStatus(getNodeText(node, "status"));
+		}finally{
+			if(in != null){
+				try {
+					in.close();
+				} catch (IOException e) {}
+				in = null;
+			}
+		}
+		return dFile;
+	}
+	
+	public static String getNodeText(Node node, String nodeName){
+		String value = null;
+		Node n = node.selectSingleNode(nodeName);
+		if(n != null){
+			value = n.getText();
+		}
+		return value;
 	}
 }
