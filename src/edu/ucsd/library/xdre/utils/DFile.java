@@ -1,5 +1,10 @@
 package edu.ucsd.library.xdre.utils;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
 import org.json.simple.JSONObject;
 
 /**
@@ -11,7 +16,7 @@ public class DFile {
 	private String id = null; //ID property
 	private String object = null; //ID property
 	private String use = null;
-	private String sourceFilename = null;
+	private String sourceFileName = null;
 	private String sourcePath = null;
 	private String dateCreated = null;
 	private String size = "0";
@@ -45,13 +50,13 @@ public class DFile {
 	 * @param md5Checksum
 	 * @param sha1Checksum
 	 */
-	public DFile(String id, String object, String use, String sourceFilename, String sourcePath, String dateCreated, 
+	public DFile(String id, String object, String use, String sourceFileName, String sourcePath, String dateCreated, 
 			String size, String formatName, String formatVersion, String mimeType, String quality, String crc32checksum, 
 			String md5checksum, String sha1checksum){
 		this.id = id;
 		this.object = object;
 		this.use = use;
-		this.sourceFilename = sourceFilename;
+		this.sourceFileName = sourceFileName;
 		this.sourcePath = sourcePath;
 		this.dateCreated = dateCreated;
 		this.size = size;
@@ -169,12 +174,12 @@ public class DFile {
 		this.formatVersion = formatVersion;
 	}
 
-	public String getSourceFilename() {
-		return sourceFilename;
+	public String getSourceFileName() {
+		return sourceFileName;
 	}
 
-	public void setSourceFilename(String sourceFilename) {
-		this.sourceFilename = sourceFilename;
+	public void setSourceFileName(String sourceFileName) {
+		this.sourceFileName = sourceFileName;
 	}
 
 	public String getSourcePath() {
@@ -256,12 +261,54 @@ public class DFile {
 	public void setObject(String object) {
 		this.object = object;
 	}
+	
+	public List<NameValuePair> toNameValuePairs(){
+		List<NameValuePair> props = new ArrayList<NameValuePair>();
+		props.add(new BasicNameValuePair("id", id));
+		props.add(new BasicNameValuePair("object", object));
+		props.add(new BasicNameValuePair("use", use));
+		props.add(new BasicNameValuePair("sourceFileName", sourceFileName));
+		props.add(new BasicNameValuePair("sourcePath", sourcePath));
+		props.add(new BasicNameValuePair("dateCreated", dateCreated));
+		props.add(new BasicNameValuePair("size", size));
+		props.add(new BasicNameValuePair("formatName", formatName));
+		props.add(new BasicNameValuePair("formatVersion", formatVersion));
+		props.add(new BasicNameValuePair("mimeType", mimeType));
+		props.add(new BasicNameValuePair("quality", quality));
+		props.add(new BasicNameValuePair("crc32checksum", crc32checksum));
+		props.add(new BasicNameValuePair("md5checksum", md5checksum));
+		props.add(new BasicNameValuePair("sha1checksum", sha1checksum));
+		props.add(new BasicNameValuePair("sha256checksum", sha256checksum));
+		props.add(new BasicNameValuePair("sha512checksum", sha512checksum));
+		props.add(new BasicNameValuePair("compositionLevel", compositionLevel));
+		props.add(new BasicNameValuePair("objectCategory", objectCategory));
+		props.add(new BasicNameValuePair("preservationLevel", preservationLevel));
+		props.add(new BasicNameValuePair("status", status));
+		return props;
+	}
 
 	public static DFile toDFile(JSONObject jsonObject){
-		DFile dFile = new DFile((String)jsonObject.get("id"), (String)jsonObject.get("object"), (String)jsonObject.get("use"), (String)jsonObject.get("sourceFileName"), (String)jsonObject.get("sourcePath"), (String)jsonObject.get("dateCreated"), 
-				(String)jsonObject.get("size"), (String)jsonObject.get("formatName"),(String)jsonObject.get("formatVersion"), (String)jsonObject.get("mimeType"), (String)jsonObject.get("quality"), (String)jsonObject.get("crc32checksum"), 
-						(String)jsonObject.get("md5checksum"), (String)jsonObject.get("sha1checksum"), (String)jsonObject.get("sha256checksum"), (String)jsonObject.get("sha512checksum"), 
-								(String)jsonObject.get("preservationLevel"), (String)jsonObject.get("objectCategory"), (String)jsonObject.get("compositionLevel"));
+		DFile dFile = new DFile(
+				(String)jsonObject.get("id"), 
+				(String)jsonObject.get("object"), 
+				(String)jsonObject.get("use"), 
+				(String)jsonObject.get("sourceFileName"), 
+				(String)jsonObject.get("sourcePath"), 
+				(String)jsonObject.get("dateCreated"), 
+				(String)jsonObject.get("size"), 
+				(String)jsonObject.get("formatName"),
+				(String)jsonObject.get("formatVersion"), 
+				(String)jsonObject.get("mimeType"), 
+				(String)jsonObject.get("quality"), 
+				(String)jsonObject.get("crc32checksum"), 
+				(String)jsonObject.get("md5checksum"),
+				(String)jsonObject.get("sha1checksum"), 
+				(String)jsonObject.get("sha256checksum"), 
+				(String)jsonObject.get("sha512checksum"), 
+				(String)jsonObject.get("preservationLevel"), 
+				(String)jsonObject.get("objectCategory"), 
+				(String)jsonObject.get("compositionLevel")
+				);
 		dFile.setStatus((String)jsonObject.get("status"));
 		return dFile;
 	}

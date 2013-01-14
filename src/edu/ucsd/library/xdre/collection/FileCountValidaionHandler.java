@@ -95,7 +95,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 					if(use.endsWith(Constants.SERVICE) || use.endsWith(Constants.SOURCE)){
 						masterTotal++;
 						masterExists = true;
-						List<FileURI> duFiles = DAMSClient.getFiles(filesDoc, null, dFile.getSourceFilename());
+						List<FileURI> duFiles = DAMSClient.getFiles(filesDoc, null, dFile.getSourceFileName());
 						if((duSize=duFiles.size()) > 1){
 							String[] checksums = new String[duSize];
 							for(int j=0; j<duSize; j++){

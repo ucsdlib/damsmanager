@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.http.NameValuePair;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.log4j.Logger;
 
 import edu.ucsd.library.xdre.utils.Constants;
@@ -91,14 +90,14 @@ public class JhoveReportHandler extends CollectionHandler{
 							formatName = dFile.getFormatName();
 						
 						if(!bytestreamFormatOnly || (bytestreamFormatOnly && (formatName ==null || formatName !=null&&formatName.equalsIgnoreCase("bytestream")))){
-							oSrcFileName = dFile.getSourceFilename();
+							oSrcFileName = dFile.getSourceFileName();
 							FileURI fileURI = FileURI.toParts(dFile.getId(), subjectURI);
 							dFileTmp = damsClient.extractFileCharacterize(fileURI.getObject(), fileURI.getComponent(), fileURI.getFileName());
 					    	if(updateFormat){
 					    		formatNameTmp = dFileTmp.getFormatName();
 					    		if(formatNameTmp != null && !formatNameTmp.equalsIgnoreCase("bytestream") && !formatNameTmp.equals(formatName)){
 					    			// Save Jhove
-						    		List<NameValuePair> paramsOrg = toNameValuePairs(dFile);
+						    		List<NameValuePair> paramsOrg = dFile.toNameValuePairs();
 						    		//Remove the properties for format and formatVersion
 						    		List<NameValuePair> optionalParams = new ArrayList<NameValuePair>();
 						    		for(int j=0; j<paramsOrg.size(); j++){
@@ -171,26 +170,6 @@ public class JhoveReportHandler extends CollectionHandler{
 			filesNotUpdated.append(errorMessage);
 		else
 			log("log", errorMessage);
-	}
-	
-	public List<NameValuePair> toNameValuePairs(DFile dFile){
-		List<NameValuePair> props = new ArrayList<NameValuePair>();
-		props.add(new BasicNameValuePair("compositionLevel", dFile.getCompositionLevel()));
-		props.add(new BasicNameValuePair("crc32checksum", dFile.getCrc32checksum()));
-		props.add(new BasicNameValuePair("dateCreated", dFile.getDateCreated()));
-		props.add(new BasicNameValuePair("md5checksum", dFile.getMd5checksum()));
-		props.add(new BasicNameValuePair("mimeType", dFile.getMimeType()));
-		props.add(new BasicNameValuePair("objectCategory", dFile.getObjectCategory()));
-		props.add(new BasicNameValuePair("preservationLevel", dFile.getPreservationLevel()));
-		props.add(new BasicNameValuePair("sha1checksum", dFile.getSha1checksum()));
-		props.add(new BasicNameValuePair("size", dFile.getSize()));
-		props.add(new BasicNameValuePair("sha256checksum", dFile.getSha256checksum()));
-		props.add(new BasicNameValuePair("sha512checksum", dFile.getSha512checksum()));
-		props.add(new BasicNameValuePair("sourcePath", dFile.getSourcePath()));
-		props.add(new BasicNameValuePair("sourceFileName", dFile.getSourceFilename()));
-		props.add(new BasicNameValuePair("use", dFile.getUse()));
-		props.add(new BasicNameValuePair("quality", dFile.getQuality()));
-		return props;
 	}
 
 	/**
