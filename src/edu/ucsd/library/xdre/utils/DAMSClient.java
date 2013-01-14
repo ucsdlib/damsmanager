@@ -717,17 +717,18 @@ public class DAMSClient {
 			List<NameValuePair> optionalParams) throws Exception {
 		String format = null;
 		String url = getFilesURL(object, compId, fileName, "characterize", format);
-		HttpPost post = new HttpPost(url);
-		post.setEntity(new UrlEncodedFormEntity(optionalParams));
+		HttpPost req = new HttpPost(url);
+		//post.setEntity(new UrlEncodedFormEntity(optionalParams));
+		req.setEntity(toMultiPartEntity(optionalParams));
 		int status = -1;
 		boolean success = false;
 		try {
-			status = execute(post);
+			status = execute(req);
 			success= (status == 200 || status == 201);
 			if (!success)
 				handleError(format);
 		} finally {
-			post.reset();
+			req.reset();
 		}
 
 		return success;
@@ -749,7 +750,8 @@ public class DAMSClient {
 		String format = null;
 		String url = getFilesURL(object, compId, fileName, "characterize", format);
 		HttpPut req = new HttpPut(url);
-		req.setEntity(new UrlEncodedFormEntity(optionalParams));
+		//req.setEntity(new UrlEncodedFormEntity(optionalParams));
+		req.setEntity(toMultiPartEntity(optionalParams));
 		int status = -1;
 		boolean success = false;
 		try {
@@ -1602,9 +1604,15 @@ public class DAMSClient {
 		File file = new File(srcFile);
 		MultipartEntity ent = new MultipartEntity();
 		ent.addPart("sourcePath", new StringBody(file.getParent()));
-		String contentType = new FileDataSource(srcFile).getContentType();
-		FileBody fileBody = new FileBody(file, contentType);
-		ent.addPart("file", fileBody);
+		int idx = srcFile.indexOf(Constants.DAMS_STAGING);
+		if(idx == 0){
+			System.out.println("Ingest from local " + srcFile);
+			ent.addPart("local", new StringBody(srcFile.substring(idx+Constants.DAMS_STAGING.length())));
+		}else{
+			String contentType = new FileDataSource(srcFile).getContentType();
+			FileBody fileBody = new FileBody(file, contentType);
+			ent.addPart("file", fileBody);
+		}
 		return ent;
 	}
 	
@@ -1618,6 +1626,22 @@ public class DAMSClient {
 		InputStreamBody inputBody = new InputStreamBody(in, contentType);
 		MultipartEntity ent = new MultipartEntity();
 		ent.addPart("file", inputBody);
+		return ent;
+	}
+	
+	/**
+	 * Create MultipartEntity
+	 * @param pros
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 */
+	public static MultipartEntity toMultiPartEntity(List<NameValuePair> pros) throws UnsupportedEncodingException{
+		NameValuePair n = null;
+		MultipartEntity ent = new MultipartEntity();
+		for(Iterator<NameValuePair> it=pros.iterator(); it.hasNext();){
+			n = it.next();
+			ent.addPart(n.getName(), new StringBody(n.getValue()));
+		}
 		return ent;
 	}
 	
