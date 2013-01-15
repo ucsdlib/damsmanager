@@ -44,6 +44,10 @@ public class FileURI {
 		return component != null && component.length()>0;
 	}
 	
+	public boolean isFileURI(){
+		return object != null && object.length()>0 && fileName!=null && fileName.indexOf(".")>0;
+	}
+	
 	public String toString(){
 		return (object!=null&&object.length()>0?object+"/":"") + (component!=null&&component.length()>0?component+"/":"")+fileName;
 	}
@@ -53,36 +57,38 @@ public class FileURI {
 	 * @param fileURI
 	 * @param object
 	 * @return
+	 * @throws Exception 
 	 */
-	public static FileURI toParts(String fileURI, String object){
+	public static FileURI toParts(String fileURI, String object) throws Exception{
 		String component = null;
 		String fileName = null;
-		if(object != null && object.length() > 0 && fileURI.indexOf(object) == 0){
+		int idx = -1;
+		if(object != null && object.length() > 0 && fileURI.indexOf(object) == 0 && fileURI.length() > object.length()){
 			fileURI = fileURI.substring(object.length()+1);
-			int idx = fileURI.indexOf("/");
+			idx = fileURI.indexOf("/");
 			if(idx > 0){
 				component = fileURI.substring(0, idx);
 				fileName = fileURI.substring(idx + 1);
 			} else
 				fileName = fileURI;
-		} else {
+		} else if ((idx=fileURI.indexOf("/ark:/")) > 0){
+			fileURI = fileURI.substring(idx+7);
 			String[] tmp = fileURI.split("/");
 			int len = tmp.length;
-			if(len > 2){
-				try {
-					Integer.parseInt(tmp[len - 2]);
-					object = fileURI.substring(0, fileURI.indexOf(tmp[len-2])-1);
-					component = tmp[len-2];
-					fileName = tmp[len-1];
-				}catch(NumberFormatException ne){
-					object = fileURI.substring(0, fileURI.indexOf(tmp[len-1])-1);
-					fileName = tmp[len-1];
-				}
+			if(len == 4){
+				object = tmp[1];
+				component = tmp[2];
+				fileName = tmp[3];
+			}else if(len == 3){
+				object = tmp[1];
+				fileName = tmp[2];
+			}else if(len == 2){
+				object = tmp[1];
 			}else{
 				object = fileURI.substring(0, fileURI.indexOf(tmp[len-1])-1);
-				fileName = tmp[len-1];
 			}
-		}
+		}else
+			throw new Exception("Unhandled object/file URL format: " + fileURI);
 		return new FileURI(object, component, fileName);
 	}
 }

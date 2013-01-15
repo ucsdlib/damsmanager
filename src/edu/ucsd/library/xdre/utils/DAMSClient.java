@@ -718,7 +718,6 @@ public class DAMSClient {
 		String format = null;
 		String url = getFilesURL(object, compId, fileName, "characterize", format);
 		HttpPost req = new HttpPost(url);
-		//post.setEntity(new UrlEncodedFormEntity(optionalParams));
 		req.setEntity(toMultiPartEntity(optionalParams));
 		int status = -1;
 		boolean success = false;
@@ -967,10 +966,6 @@ public class DAMSClient {
 			ent.addPart("dateCreated", new StringBody(damsDateFormat.format(file.lastModified())));
 			if(use != null && use.length() > 0)
 				ent.addPart("use", new StringBody(use));
-			int idx = srcFile.indexOf(Constants.DAMS_STAGING);
-			if(idx == 0){
-				ent.addPart("local", new StringBody(srcFile.substring(idx+Constants.DAMS_STAGING.length())));
-			}
 			
 			req.setEntity(ent);
 			status = execute(req);
@@ -1089,7 +1084,7 @@ public class DAMSClient {
 			MultipartEntity ent = new MultipartEntity();
 			ent.addPart("subject", new StringBody(object));
 			ent.addPart("adds", new StringBody(toJSONString(stmts)));
-			ent.addPart("mode", new StringBody("add"));
+			ent.addPart("mode", new StringBody(Constants.IMPORT_MODE_ADD));
 			req.setEntity(ent);
 			status = execute(req);
 			success= (status == 200 || status == 201);
@@ -1463,7 +1458,9 @@ public class DAMSClient {
 		log.info( reqInfo + ": " + respContent);
 		if (status == 403) {  
 			
-			if(respContent.indexOf(" exists ") > 0)
+			if(respContent.indexOf("already exists") > 0)
+				throw new IOException(reqInfo + ": " + respContent);
+			else if(respContent.indexOf("exists") > 0)
 				throw new FileNotFoundException(reqInfo + ": " + respContent);
 			else
 				throw new LoginException(reqInfo + ": " + respContent);
@@ -1604,10 +1601,13 @@ public class DAMSClient {
 		File file = new File(srcFile);
 		MultipartEntity ent = new MultipartEntity();
 		ent.addPart("sourcePath", new StringBody(file.getParent()));
-		int idx = srcFile.indexOf(Constants.DAMS_STAGING);
+		String srcAbsPath = file.getAbsolutePath();
+		String stagingAbsPath = new File(Constants.DAMS_STAGING).getAbsolutePath();
+		int idx = srcAbsPath.indexOf(stagingAbsPath);
 		if(idx == 0){
-			System.out.println("Ingest from local " + srcFile);
-			ent.addPart("local", new StringBody(srcFile.substring(idx+Constants.DAMS_STAGING.length())));
+			ent.addPart("local", new StringBody(srcAbsPath.substring(idx+stagingAbsPath.length())));
+			// Add field sourceFileName
+			ent.addPart("sourceFileName", new StringBody(file.getName()));
 		}else{
 			String contentType = new FileDataSource(srcFile).getContentType();
 			FileBody fileBody = new FileBody(file, contentType);
@@ -1638,9 +1638,12 @@ public class DAMSClient {
 	public static MultipartEntity toMultiPartEntity(List<NameValuePair> pros) throws UnsupportedEncodingException{
 		NameValuePair n = null;
 		MultipartEntity ent = new MultipartEntity();
+		String value = null;
 		for(Iterator<NameValuePair> it=pros.iterator(); it.hasNext();){
 			n = it.next();
-			ent.addPart(n.getName(), new StringBody(n.getValue()));
+			value = n.getValue();
+			if(value != null)
+				ent.addPart(n.getName(), new StringBody(value));
 		}
 		return ent;
 	}
@@ -1742,8 +1745,9 @@ public class DAMSClient {
 	 * @param srcPath
 	 * @param srcFileName
 	 * @return
+	 * @throws Exception 
 	 */
-	public static List<FileURI> getFiles(Document doc, String srcPath, String srcFileName){
+	public static List<FileURI> getFiles(Document doc, String srcPath, String srcFileName) throws Exception{
 		List<FileURI> fileURIs = new ArrayList<FileURI>();
 		List<Node> idNodes = doc.selectNodes(DOCUMENT_RESPONSE_ROOT_PATH + "/files/value[sourceFileName='" + srcFileName.replace("'", "&quot;") + "']");
 		if(idNodes != null){
