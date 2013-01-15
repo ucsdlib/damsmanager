@@ -24,6 +24,7 @@ public class JhoveReportHandler extends CollectionHandler{
 	protected int failedCount = 0;
 	protected int filesReported = 0;
 	protected int filesUpdated = 0;
+	protected int masterCount = 0;
 	protected boolean bytestreamFormatOnly = false;
 	protected boolean updateFormat = false;
 	private StringBuilder filesNotUpdated = new StringBuilder();
@@ -85,6 +86,7 @@ public class JhoveReportHandler extends CollectionHandler{
 					dFile = it.next();
 					use = dFile.getUse();
 					if(use != null && use.endsWith(Constants.SERVICE) || use.endsWith(Constants.SOURCE)){
+						masterCount++;
 						// Jhove report for bytestream format files only
 						if(bytestreamFormatOnly) 
 							formatName = dFile.getFormatName();
@@ -176,12 +178,12 @@ public class JhoveReportHandler extends CollectionHandler{
 	 * Execution result message
 	 */
 	public String getExeInfo() {
-		String iMessage = "Number of objects found: " + itemsCount + " \nTotal master/service files processed: " + count + " \nTotal master/service Files reported: " + filesReported + (updateFormat?"; \nTotal Files updated: "+filesReported:"");
+		String iMessage = "Number of objects found: " + itemsCount + " \nTotal master/service files processed: " + masterCount + " \nTotal master/service Files reported: " + filesReported + (updateFormat?"; \nTotal Files updated: "+filesReported:"");
         String mHeader = "\nFile characterize/Jhove report " + ((collectionId!=null&&collectionId.length()==10)?"for "+collectionTitle:"");
 		if(exeResult)
 			exeReport.append(mHeader + " succeeded: \n" + iMessage + "\n");
 		else{
-			exeReport.append(mHeader + failedCount + " of " + itemsCount + " failed: " + iMessage + "\n" );
+			exeReport.append(mHeader + failedCount + " of " + count + " failed: \n" + iMessage + "\n" );
 		}
 		
 		if(updateFormat && filesNotUpdated.length()>0){
