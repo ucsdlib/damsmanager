@@ -1485,25 +1485,26 @@ public class DAMSClient {
 		}
 		//200 - OK: Success, object/file exists
 		//201 - Created: File/object created successfully
-			
-		//403 - Forbidden: Deleting non-existing file, using POST to update or PUT to create
+					
 		String reqInfo = request.getMethod() + " " + request.getURI();
 		log.info( reqInfo + ": " + respContent);
-		if (status == 403) {  
+		//401 - unauthorized access
+		if (status == 401) {  
+			throw new LoginException(reqInfo + ": " + respContent);
 			
-			if(respContent.indexOf("already exists") > 0)
-				throw new IOException(reqInfo + ": " + respContent);
-			else if(respContent.indexOf("exists") > 0)
+		//403 - Forbidden: Deleting non-existing file, using POST to update or PUT to create
+		} else if (status == 403) {  
+			if(respContent.indexOf("not exists") > 0)
 				throw new FileNotFoundException(reqInfo + ": " + respContent);
-			else
-				throw new LoginException(reqInfo + ": " + respContent);
+			else 
+				throw new IOException(reqInfo + ": " + respContent);
 			
 		//404 - Not Found: Object/file does not exist 
 		} else if (status == 404) { 
 			throw new FileNotFoundException(reqInfo + ": " + respContent);
 			
 		//500 - Internal Error: Other errors
-		}  else if (status == 500) {  
+		} else if (status == 500) {  
 			throw new IOException(reqInfo + ": " + respContent);
 			
 		//502 - Unavailable: Too many uploads 
