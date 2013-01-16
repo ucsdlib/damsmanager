@@ -40,8 +40,14 @@ public class FileURI {
 		this.fileName = fileName;
 	}
 	
-	public boolean isComponentFile(){
-		return component != null && component.length()>0;
+	public boolean isComponentURI(){
+		if(component != null && component.length()>0){
+			try{
+				Integer.parseInt(component);
+				return true;
+			}catch(NumberFormatException ne){}
+		}
+		return false;
 	}
 	
 	public boolean isFileURI(){
@@ -69,6 +75,8 @@ public class FileURI {
 			if(idx > 0){
 				component = fileURI.substring(0, idx);
 				fileName = fileURI.substring(idx + 1);
+			} else if(fileURI.indexOf(".")<=0){
+				component = fileURI;
 			} else
 				fileName = fileURI;
 		} else if ((idx=fileURI.indexOf("/ark:/")) > 0){
@@ -81,11 +89,14 @@ public class FileURI {
 				fileName = tmp[3];
 			}else if(len == 3){
 				object = tmp[1];
-				fileName = tmp[2];
+				if(tmp[2].indexOf('.') < 0)
+					component = tmp[2];
+				else
+					fileName = tmp[2];
 			}else if(len == 2){
 				object = tmp[1];
 			}else{
-				object = fileURI.substring(0, fileURI.indexOf(tmp[len-1])-1);
+				throw new Exception("Unknown object/file URL format: " + fileURI);
 			}
 		}else
 			throw new Exception("Unhandled object/file URL format: " + fileURI);
