@@ -1115,6 +1115,40 @@ public class DAMSClient {
 	}
 
 	/**
+	 * Perform selective predicates deletion
+	 * @param object
+	 * @param compId
+	 * @param predicates
+	 * @return
+	 * @throws ClientProtocolException
+	 * @throws LoginException
+	 * @throws IOException
+	 * @throws IllegalStateException
+	 * @throws DocumentException
+	 */
+	public boolean selectiveMetadataDelete(String object, String compId, List<String> predicates) throws ClientProtocolException, LoginException, IOException, IllegalStateException, DocumentException{
+		String format = null;
+		String url = null;
+		HttpDelete del = null;
+		url = getObjectsURL(object, compId, "selective", format);
+		String params = url.indexOf("?")>0?"&":"?";
+		for(Iterator<String> it=predicates.iterator();it.hasNext();)
+			params += "predicate=" + it.next() + "&";
+		del = new HttpDelete(url+params.substring(0, params.length()-1));
+		int status = -1;
+		boolean success = false;
+		try {
+			status = execute(del);
+			success= (status == 200 || status == 201);
+			if(!success)
+				handleError(format);
+		}finally{
+			del.reset();
+		}
+		return success;
+	}
+	
+	/**
 	 * Delete an object or a file.
 	 * 
 	 * @param object
@@ -1143,7 +1177,6 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		} finally {
-			del.releaseConnection();
 			del.reset();
 		}
 		return success;
