@@ -106,9 +106,9 @@ public class JhoveReportHandler extends CollectionHandler{
 						    			NameValuePair optParam = paramsOrg.get(j);
 						    			String paramName = optParam.getName();
 						    			if(!(paramName.equals("formatName") || paramName.equals("formatVersion")))
-						    				optionalParams.add(paramsOrg.get(j));
+						    				optionalParams.add(paramsOrg.get(j));		
 						    		}
-						    		damsClient.saveFileCharacterize(fileURI.getObject(), fileURI.getComponent(), fileURI.getFileName(), optionalParams);
+						    		damsClient.updateFileCharacterize(fileURI.getObject(), fileURI.getComponent(), fileURI.getFileName(), optionalParams);
 						    		log("log", dFile.getId() + "\t" + dFileTmp.getFormatName() + " " + dFileTmp.getFormatVersion() + "\t" + dFileTmp.getSize() + "\t" + dFileTmp.getCrc32checksum() + "\t" + dFileTmp.getDateCreated() + "\t" + dFileTmp.getStatus() + "\t" + (oSrcFileName==null?" ":oSrcFileName));
 						    		filesUpdated++;
 					    		}else{
