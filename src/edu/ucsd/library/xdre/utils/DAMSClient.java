@@ -1722,8 +1722,9 @@ public class DAMSClient {
 	 * @return
 	 */
 	public static String getMimeType(String filename){
-		MimetypesFileTypeMap mimeTypes = new MimetypesFileTypeMap();
-		String mimeType = mimeTypes.getContentType(filename);
+		FileDataSource fileDataSource = new FileDataSource(filename);
+		//MimetypesFileTypeMap mimeTypes = new MimetypesFileTypeMap();
+		String mimeType = fileDataSource.getContentType();
 		return mimeType;
 	}
 	
