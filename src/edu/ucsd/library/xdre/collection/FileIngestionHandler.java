@@ -343,8 +343,8 @@ public class FileIngestionHandler extends CollectionHandler {
 									String fileId = uploadHandler.getFileId();
 									String mimeType = DAMSClient.getMimeType(fileId);
 									String use = uploadHandler.getUse();
-									if((mimeType.startsWith("image") || mimeType.endsWith("pdf") || mimeType.toLowerCase().endsWith("tiff")) 
-											&& ((use == null && fileId.startsWith("1.")) || use.endsWith("service"))){
+									if((mimeType.startsWith("image") || mimeType.endsWith("pdf") || fileId.toLowerCase().endsWith(".tif") || fileId.toLowerCase().endsWith(".pdf")) 
+											&& ((use == null || use.endsWith("service")) && fileId.startsWith("1."))){
 										successful = damsClient.createDerivatives(uploadHandler.getSubjectId(), uploadHandler.getCompId(), fileId, null);
 										if(successful){
 											String iMessage = "Created derivatives for " + damsClient.getRequestURL();
