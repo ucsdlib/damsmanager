@@ -68,36 +68,39 @@ public class FileURI {
 	public static FileURI toParts(String fileURI, String object) throws Exception{
 		String component = null;
 		String fileName = null;
+		String idString = null;
 		int idx = -1;
 		if(object != null && object.length() > 0 && fileURI.indexOf(object) == 0 && fileURI.length() > object.length()){
-			fileURI = fileURI.substring(object.length()+1);
-			idx = fileURI.indexOf("/");
+			idString = fileURI.substring(object.length()+1);
+			idx = idString.indexOf("/");
 			if(idx > 0){
-				component = fileURI.substring(0, idx);
-				fileName = fileURI.substring(idx + 1);
-			} else if(fileURI.indexOf(".")<=0){
-				component = fileURI;
-			} else
-				fileName = fileURI;
+				component = idString.substring(0, idx);
+				fileName = idString.substring(idx + 1);
+			} else {
+				try{
+					Integer.parseInt(idString);
+					component = idString;
+				}catch (NumberFormatException ne){
+					fileName = idString;
+				}
+			}
 		} else if ((idx=fileURI.indexOf("/ark:/")) > 0){
-			fileURI = fileURI.substring(idx+7);
-			String[] tmp = fileURI.split("/");
+			idString = fileURI.substring(idx+7);
+			String[] tmp = idString.split("/");
 			int len = tmp.length;
+			object = fileURI.substring(0, fileURI.indexOf(tmp[1]))+tmp[1];
 			if(len == 4){
-				object = tmp[1];
 				component = tmp[2];
 				fileName = tmp[3];
 			}else if(len == 3){
-				object = tmp[1];
-				if(tmp[2].indexOf('.') < 0)
+				try{
+					Integer.parseInt(tmp[2]);
 					component = tmp[2];
-				else
+				}catch (NumberFormatException ne){
 					fileName = tmp[2];
-			}else if(len == 2){
-				object = tmp[1];
-			}else{
+				}
+			}else if(len != 2)
 				throw new Exception("Unknown object/file URL format: " + fileURI);
-			}
 		}else
 			throw new Exception("Unhandled object/file URL format: " + fileURI);
 		return new FileURI(object, component, fileName);
