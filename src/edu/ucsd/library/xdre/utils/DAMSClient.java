@@ -992,7 +992,6 @@ public class DAMSClient {
 		HttpEntityEnclosingRequestBase req = null;
 		String format = null;
 		String url = getFilesURL(object, compId, fileName, null, format);
-		String contentType = new FileDataSource(fileName).getContentType();
 		int status = -1;
 		boolean success = false;
 		try {
@@ -1002,7 +1001,7 @@ public class DAMSClient {
 			} else {
 				req = new HttpPost(url);
 			}
-			req.setEntity(toMultiPartEntity( in, contentType));
+			req.setEntity(toMultiPartEntity(in, fileName));
 			status = execute(req);
 			success = (status == 200 || status == 201);
 			if(!success)
@@ -1038,7 +1037,7 @@ public class DAMSClient {
 		boolean success = false;
 		try {
 			in = new ByteArrayInputStream(xml.getBytes());
-			MultipartEntity ent = toMultiPartEntity(in, "text/xml");
+			MultipartEntity ent = toMultiPartEntity(in, "rdf.xml");
 			if(mode != null)
 				ent.addPart("mode", new StringBody(mode));
 			req.setEntity(ent);
@@ -1656,8 +1655,9 @@ public class DAMSClient {
 	 * @param contentType
 	 * @return
 	 */
-	public static MultipartEntity toMultiPartEntity(InputStream in, String contentType){
-		InputStreamBody inputBody = new InputStreamBody(in, contentType);
+	public static MultipartEntity toMultiPartEntity(InputStream in, String fileName){
+		FileDataSource fileDataSource = new FileDataSource(fileName);
+		InputStreamBody inputBody = new InputStreamBody(in, fileDataSource.getContentType(), fileName);
 		MultipartEntity ent = new MultipartEntity();
 		ent.addPart("file", inputBody);
 		return ent;
