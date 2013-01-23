@@ -41,6 +41,7 @@ public class FileIngestionHandler extends CollectionHandler {
 	private String fileFilter = null;
 	private String coDelimiter = null; // Delimiter for complex object ordering
 	private String[] fileOrderSuffixes = null;
+	private String[] fileUses = null;
 	private PreferedOrder preferedOrder = null;
 	private String masterContent = "-1";
 
@@ -92,6 +93,10 @@ public class FileIngestionHandler extends CollectionHandler {
 		} else
 			this.preferedOrder = null;
 	}
+	
+	public void setFileUses(String[] fileUses){
+		this.fileUses = fileUses;
+	}
 
 	@Override
 	public boolean execute() throws Exception {
@@ -128,6 +133,7 @@ public class FileIngestionHandler extends CollectionHandler {
 				String subjectId = null;
 				String contentId = null;
 				String fileName = null;
+				String fileUse = null;
 				for (int i = 0; i < batchSize && !interrupted; i++) {
 					uploadFile = objBatch.get(i);
 					fileName = uploadFile.getValue();
@@ -139,12 +145,13 @@ public class FileIngestionHandler extends CollectionHandler {
 					uploadHandler = new DAMSUploadTaskHandler(contentId,
 							fileName, collectionId, damsClient);
 					uploadHandler.setRepositoryId(repository);
-
+					
 					if (uploadType == UploadTaskOrganizer.PAIR_LOADING) {
+						// Default file use properties for master/master-edited pair file upload
 						if(i == 0 && batchSize > 1)
-							 uploadHandler.setUse(fileUse(fileName, "source"));
+							 fileUse = fileUse(fileName, "source");
 						else
-							uploadHandler.setUse(fileUse(fileName, "service"));
+							fileUse = fileUse(fileName, "service");
 
 					} else if (uploadType == UploadTaskOrganizer.SHARE_ARK_LOADING) {
 						if (batchSize == 1 && !contentId.endsWith(masterContent)) {
@@ -157,9 +164,7 @@ public class FileIngestionHandler extends CollectionHandler {
 							log("log", iMessagePrefix + eMessage);
 							log.error(iMessagePrefix + eMessage);
 							continue;
-						} 
-						if (i == 0 && batchSize > 1)
-							uploadHandler.setUse(fileUse(fileName, "source"));
+						}
 
 							
 					} else if (uploadType == UploadTaskOrganizer.MIX_CO_SHARE_ARK_LOADING
@@ -178,19 +183,35 @@ public class FileIngestionHandler extends CollectionHandler {
 								continue;
 							}
 						}
+						
 						PreferedOrder preferedOrder = upLoadTask.getPreferOrder();
 						if(preferedOrder != null && preferedOrder.equals(PreferedOrder.PDFANDPDF)){
+							// Default file use for high resolution PDF and low resolution PDF upload 
 							if(i == 0 && batchSize > 1)
-								uploadHandler.setUse(fileUse(fileName, "source"));
+								fileUse = fileUse(fileName, "source");
 							else if (i == 1 && fileName.endsWith(".pdf"))
-								uploadHandler.setUse(fileUse(fileName, "service"));
-								
+								fileUse = fileUse(fileName, "service");
 						}
 					}
+					
+					// Apply user submitted file use properties
+					if(fileUses != null && fileUses.length > 0){
+						if(uploadType == UploadTaskOrganizer.COMPLEXOBJECT_LOADING){
+							// Set file use properties for components
+							String[] fileParts = contentId.split("-");
+							int compId = Integer.parseInt(fileParts[0]);
+							if(fileUses.length >= compId)
+								fileUse = fileUses[compId - 1];
+						}else if (fileUses.length > i){
+							// Set file use properties for master file and derivatives
+							fileUse = fileUses[i];
+						}
+					}
+					uploadHandler.setUse(fileUse);
 
 					// Check for duplications and complex objects reloading
 					try {
-
+						
 						List<FileURI> filesLoaded = fileLoaded(uploadFile.getValue());
 						if(filesLoaded.size() > 1){
 							exeResult = false;
@@ -322,7 +343,7 @@ public class FileIngestionHandler extends CollectionHandler {
 									String fileId = uploadHandler.getFileId();
 									String mimeType = DAMSClient.getMimeType(fileId);
 									String use = uploadHandler.getUse();
-									if((mimeType.startsWith("image") || mimeType.endsWith("pdf")) 
+									if((mimeType.startsWith("image") || mimeType.endsWith("pdf") || mimeType.toLowerCase().endsWith("tiff")) 
 											&& ((use == null && fileId.startsWith("1.")) || use.endsWith("service"))){
 										successful = damsClient.createDerivatives(uploadHandler.getSubjectId(), uploadHandler.getCompId(), fileId, null);
 										if(successful){
