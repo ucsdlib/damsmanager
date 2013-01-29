@@ -66,10 +66,10 @@ public class DerivativeHandler extends CollectionHandler{
 		        for(Iterator<DFile> it=dFiles.iterator(); it.hasNext();){
 		        	dFile = it.next();
 		        	String use = dFile.getUse();
-		        	//Check for derivative created for service files
+		        	//Check for derivative created for source and service files
     				String sizs2create = "";
     				String sizs2replace = "";
-		        	if(use != null && use.endsWith("-service")){
+		        	if(use != null && (use.endsWith("-source") || use.endsWith("-service"))){
 			        	totalFiles += 1;
 			        	FileURI fileURI = FileURI.toParts(dFile.getId(), dFile.getObject());
 		        		String derId = null;
