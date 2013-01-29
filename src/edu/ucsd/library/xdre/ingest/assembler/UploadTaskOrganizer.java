@@ -591,89 +591,79 @@ public class UploadTaskOrganizer{
 	public void orderComponents(Map<String, Object> components, PreferedOrder preferedOrder){
 
 		if(preferedOrder != null){
-		if(preferedOrder.equals(PreferedOrder.PDFANDPDF) || preferedOrder.equals(PreferedOrder.PDFANDXML)){
-			int order = 0;
-			int fPosition = -1;
-			String fileExt = ".pdf";
-			Object[] keys = (Object[])components.keySet().toArray();
-			String tmpKey = (String)keys[order];
-			//The first order for the high resolution rdf
-			if(!tmpKey.toLowerCase().endsWith(fileExt)){
-				for(int i=0; i<keys.length; i++){
-					tmpKey = (String)keys[i];
-					if(tmpKey.toLowerCase().endsWith(fileExt)){
-						fPosition = i;
-						components.put("#0" + tmpKey, components.remove(tmpKey));
-						break;
-					}
-				}
-			}else{
-				fPosition = 0;
-				components.put("#0" + tmpKey, components.remove(tmpKey));
-			}
-			
-			//The second order for access rdf or proquest xml
-			order = 1;
-			if(preferedOrder.equals(PreferedOrder.PDFANDXML))
-				fileExt = ".xml";
-			tmpKey = (String)keys[order];
-			if(fPosition == order || !tmpKey.toLowerCase().endsWith(fileExt)){
-				for(int i=0; i<keys.length; i++){
-					if(i!=fPosition){
-						tmpKey = (String)keys[i];
-						if(tmpKey.toLowerCase().endsWith(fileExt)){
-							components.put("#1" + tmpKey, components.remove(tmpKey));
-							break;
-						}
-					}
-				}
-			}
-		}else if(preferedOrder.equals(PreferedOrder.SUFFIX) && fileOrderSuffixes != null){
-			String fileExt = null;
-			String tmpKey = null;
-			
-			//Remove the manifest file for RCI ingestion
-			boolean manifestNeeded = false;
-			String manifestFile = "manifest.txt";
-			Object[] keys = (Object[])components.keySet().toArray();
-			for(int i=0; i<fileOrderSuffixes.length; i++){
-				tmpKey = (String)fileOrderSuffixes[i];
-				if(tmpKey.toLowerCase().endsWith(manifestFile)){
-					manifestNeeded = true;
-					break;
-				}
-			}
-
-			if(!manifestNeeded){
-				for(int i=0; i<keys.length; i++){
-					tmpKey = (String)keys[i];
-					if(tmpKey.toLowerCase().endsWith(manifestFile)){
-						components.remove(tmpKey);
-						break;
-					}
-				}
-			}
-			
-			keys = (Object[])components.keySet().toArray();
-			for (int n=0; n<fileOrderSuffixes.length; n++){
-				int order = n;
-				fileExt = fileOrderSuffixes[order];
-				
-				tmpKey = (String)keys[order];
-				if(tmpKey.toLowerCase().endsWith(fileExt)){
-					components.put("#" + n + tmpKey, components.remove(tmpKey));
-				}else{
+			if(preferedOrder.equals(PreferedOrder.PDFANDPDF) || preferedOrder.equals(PreferedOrder.PDFANDXML)){
+				int order = 0;
+				int fPosition = -1;
+				String fileExt = ".pdf";
+				Object[] keys = (Object[])components.keySet().toArray();
+				String tmpKey = (String)keys[order];
+				//The first order for the high resolution rdf
+				if(!tmpKey.toLowerCase().endsWith(fileExt)){
 					for(int i=0; i<keys.length; i++){
 						tmpKey = (String)keys[i];
 						if(tmpKey.toLowerCase().endsWith(fileExt)){
-							components.put("#" + n + tmpKey, components.remove(tmpKey));
+							fPosition = i;
+							components.put("#0" + tmpKey, components.remove(tmpKey));
 							break;
 						}
 					}
+				}else{
+					fPosition = 0;
+					components.put("#0" + tmpKey, components.remove(tmpKey));
 				}
+				
+				//The second order for access rdf or proquest xml
+				order = 1;
+				if(preferedOrder.equals(PreferedOrder.PDFANDXML))
+					fileExt = ".xml";
+				tmpKey = (String)keys[order];
+				if(fPosition == order || !tmpKey.toLowerCase().endsWith(fileExt)){
+					for(int i=0; i<keys.length; i++){
+						if(i!=fPosition){
+							tmpKey = (String)keys[i];
+							if(tmpKey.toLowerCase().endsWith(fileExt)){
+								components.put("#1" + tmpKey, components.remove(tmpKey));
+								break;
+							}
+						}
+					}
+				}
+			}else if(preferedOrder.equals(PreferedOrder.SUFFIX) && fileOrderSuffixes != null){
+				String fileExt = null;
+				String tmpKey = null;
+				
+				Object[] keys = (Object[])components.keySet().toArray();
+				int filesLength = keys.length;
+				int filesOrderLength = fileOrderSuffixes.length;
+				for (int n=0; n<filesOrderLength; n++){
+					int order = n;
+					fileExt = fileOrderSuffixes[order];
+					
+					tmpKey = (String)keys[order];
+					if(tmpKey.toLowerCase().endsWith(fileExt)){
+						components.put("#" + n + tmpKey, components.remove(tmpKey));
+					}else{
+						for(int i=0; i<filesLength; i++){
+							tmpKey = (String)keys[i];
+							if(tmpKey.toLowerCase().endsWith(fileExt)){
+								components.put("#" + n + tmpKey, components.remove(tmpKey));
+								break;
+							}
+						}
+					}
+				}
+				
+				//Remove other files that haven't included in the suffix list, such as the manifest file and the validation file
+				if(filesLength > filesOrderLength){
+					keys = (Object[])components.keySet().toArray();
+					for(int n=0; n<filesLength; n++){
+						tmpKey = (String)keys[n];
+						if(n > filesOrderLength || !tmpKey.endsWith(fileOrderSuffixes[n]))
+							components.remove(tmpKey);
+					}
+				}
+	
 			}
-
-		}
 		}
 	}
 	
