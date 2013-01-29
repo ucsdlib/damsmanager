@@ -9,8 +9,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.log4j.Logger;
 
 import com.hp.hpl.jena.rdf.model.Statement;
@@ -134,7 +132,9 @@ public class FileIngestionHandler extends CollectionHandler {
 				String contentId = null;
 				String fileName = null;
 				String fileUse = null;
+				boolean derivatives = true;
 				for (int i = 0; i < batchSize && !interrupted; i++) {
+					derivatives = true;
 					uploadFile = objBatch.get(i);
 					fileName = uploadFile.getValue();
 					contentId = uploadFile.getKey();
@@ -148,10 +148,13 @@ public class FileIngestionHandler extends CollectionHandler {
 					
 					if (uploadType == UploadTaskOrganizer.PAIR_LOADING) {
 						// Default file use properties for master/master-edited pair file upload
-						if(i == 0 && batchSize > 1)
+						if(i == 0){
 							 fileUse = fileUse(fileName, "source");
-						else
-							fileUse = fileUse(fileName, "service");
+							 // Use the alternate file for derivative creation if there's one exists.
+							 if(batchSize > 1)
+								 derivatives = false;
+						}else
+							fileUse = fileUse(fileName, "alternate");
 
 					} else if (uploadType == UploadTaskOrganizer.SHARE_ARK_LOADING) {
 						if (batchSize == 1 && !contentId.endsWith(masterContent)) {
@@ -187,10 +190,13 @@ public class FileIngestionHandler extends CollectionHandler {
 						PreferedOrder preferedOrder = upLoadTask.getPreferOrder();
 						if(preferedOrder != null && preferedOrder.equals(PreferedOrder.PDFANDPDF)){
 							// Default file use for high resolution PDF and low resolution PDF upload 
-							if(i == 0 && batchSize > 1)
+							if(i == 0){
 								fileUse = fileUse(fileName, "source");
-							else if (i == 1 && fileName.endsWith(".pdf"))
+							}else if (i == 1 && fileName.endsWith(".pdf")){
 								fileUse = fileUse(fileName, "service");
+								// Skip derivative creation
+								derivatives = false;
+							}
 						}
 					}
 					
@@ -343,8 +349,8 @@ public class FileIngestionHandler extends CollectionHandler {
 									String fileId = uploadHandler.getFileId();
 									String mimeType = DAMSClient.getMimeType(fileId);
 									String use = uploadHandler.getUse();
-									if((mimeType.startsWith("image") || mimeType.endsWith("pdf") || fileId.toLowerCase().endsWith(".tif") || fileId.toLowerCase().endsWith(".pdf")) 
-											&& ((use == null || use.endsWith("source") ||use.endsWith("service")) && fileId.startsWith("1."))){
+									if(derivatives && (mimeType.indexOf("image")>=0 || mimeType.indexOf("pdf")>=0 || fileId.toLowerCase().endsWith(".tif") || fileId.toLowerCase().endsWith(".pdf")) 
+											&& (use == null || use.endsWith("source") || use.endsWith("service") || use.endsWith("alternate"))){
 										successful = damsClient.createDerivatives(uploadHandler.getSubjectId(), uploadHandler.getCompId(), fileId, null);
 										if(successful){
 											String iMessage = "Created derivatives for " + damsClient.getRequestURL();
