@@ -29,8 +29,10 @@ public class IngestController implements Controller {
 		
 		String filePath = null;
 		String fileFilter = null;
-		String arkSetting = null;
 		String preferedOrder = null;
+		String arkSetting = null;
+		String fileSuffixes = null;
+		String fileUse = null;
 		
 		String ds = request.getParameter("ts");
 		String collectionId =  request.getParameter("category");
@@ -48,27 +50,27 @@ public class IngestController implements Controller {
 			
 			damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
 			damsClient.setTripleStore(ds);
-			if(collectionId == null){
-				if(reset != null){
-					filePath = "";
-					fileStore = "";
-					session.removeAttribute("filePath");
-					session.removeAttribute("fileFilter");
-					session.removeAttribute("collectionId");
-					session.removeAttribute("arkSetting");
-					session.removeAttribute("preferedOrder");
-					session.removeAttribute("fileStore");
-					session.removeAttribute("repo");
-				}else{
-					filePath = (String) session.getAttribute("filePath");
-					fileFilter = (String) session.getAttribute("fileFilter");
-					collectionId = (String) session.getAttribute("collectionId");
-					arkSetting = (String) session.getAttribute("arkSetting");
-					preferedOrder = (String) session.getAttribute("preferedOrder");
-					fileStore = (String) session.getAttribute("fileStore");
-					repo = (String) session.getAttribute("repo");
-				}
+			if(collectionId == null && reset != null){
+				filePath = "";
+				fileStore = "";
+				session.removeAttribute("filePath");
+				session.removeAttribute("fileFilter");
+				session.removeAttribute("collectionId");
+				session.removeAttribute("arkSetting");
+				session.removeAttribute("preferedOrder");
+				session.removeAttribute("fileStore");
+				session.removeAttribute("repo");
+			 	session.removeAttribute("fileSuffixes");
+			 	session.removeAttribute("fileUse");
+			}else{
+				filePath = (String) session.getAttribute("filePath");
+				fileFilter = (String) session.getAttribute("fileFilter");
+				arkSetting = (String) session.getAttribute("arkSetting");
+				preferedOrder = (String) session.getAttribute("preferedOrder");
+				fileSuffixes = (String) session.getAttribute("fileSuffixes");
+				fileUse = (String) session.getAttribute("fileUse");
 			}
+				
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -97,7 +99,9 @@ public class IngestController implements Controller {
 		dataMap.put("filestores", fsSrcs);
 		dataMap.put("filestore", fileStore);
 		dataMap.put("filestoreDefault", fsDefault);
-		dataMap.put("preferedOrder", preferedOrder);
+		dataMap.put("fileSuffixes", fileSuffixes);
+		dataMap.put("fileUse", fileUse);
+		
 		return new ModelAndView("ingest", "model", dataMap);
 	}
 	

@@ -244,8 +244,8 @@
 	  </div>
 	  <div class="specialmenuText" style="margin-left:15px;">
 		  <fieldset class="groupbox_jetlOptions"><legend class="slegandText"> Constraint Options </legend>
-		  	<div class="specialmenuText"><div>Files ordered by suffixes (delimited by comma): <input type="text" name="fileSuffixes" id="fileSuffixes" value="" size="30"></div></div>
-		  	<div class="specialmenuText"><div style="margin-top:3px;">File Use properties applied (delimited by comma): <input type="text" name="fileUse" id="fileUse" value="" size="29"></div></div>
+		  	<div class="specialmenuText"><div>Files ordered by suffixes (delimited by comma): <input type="text" name="fileSuffixes" id="fileSuffixes" value="${model.fileSuffixes}" size="30"></div></div>
+		  	<div class="specialmenuText"><div style="margin-top:3px;">File Use properties applied (delimited by comma): <input type="text" name="fileUse" id="fileUse" value="${model.fileUse}" size="29"></div></div>
 		  </fieldset>
 	  </div>
 	  </td>

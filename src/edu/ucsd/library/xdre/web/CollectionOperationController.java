@@ -581,6 +581,8 @@ public class CollectionOperationController implements Controller {
 				 	session.setAttribute("filePath", filePath);
 				 	session.setAttribute("fileFilter", fileFilter);
 				 	session.setAttribute("preferedOrder", preferedOrder);
+				 	session.setAttribute("fileSuffixes", fileSuffixes);
+				 	session.setAttribute("fileUse", fileUse);
 				 	
 				 	List<String> fileList = new ArrayList<String>();
 				 	fileList.add(Constants.DAMS_STAGING + filePath);
