@@ -344,7 +344,7 @@ public class FileIngestionHandler extends CollectionHandler {
 									String mimeType = DAMSClient.getMimeType(fileId);
 									String use = uploadHandler.getUse();
 									if((mimeType.startsWith("image") || mimeType.endsWith("pdf") || fileId.toLowerCase().endsWith(".tif") || fileId.toLowerCase().endsWith(".pdf")) 
-											&& ((use == null || use.endsWith("service")) && fileId.startsWith("1."))){
+											&& ((use == null || use.endsWith("source") ||use.endsWith("service")) && fileId.startsWith("1."))){
 										successful = damsClient.createDerivatives(uploadHandler.getSubjectId(), uploadHandler.getCompId(), fileId, null);
 										if(successful){
 											String iMessage = "Created derivatives for " + damsClient.getRequestURL();
@@ -500,10 +500,16 @@ public class FileIngestionHandler extends CollectionHandler {
 	}
 	
 	public String fileUse (String filename, String useSuffix){
-		String mimeType = DAMSClient.getMimeType(filename);
-		if(mimeType.toLowerCase().endsWith("pdf"))
-			return "document-" + useSuffix;
-		return mimeType.substring(0, mimeType.indexOf("/"))+ "-" + useSuffix;
+		String fileUse = null;
+		String fname = filename.toLowerCase();
+		if(fname.endsWith(".tif") || fname.endsWith(".jpg")){
+			fileUse = "visual-" + useSuffix;
+		}else{
+			String mimeType = DAMSClient.getMimeType(filename);
+			if(mimeType.toLowerCase().endsWith("pdf"))
+				fileUse = "document-" + useSuffix;
+		}
+		return fileUse;
 	}
 
 	public String getRepository() {
