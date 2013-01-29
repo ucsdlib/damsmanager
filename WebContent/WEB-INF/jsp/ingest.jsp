@@ -9,13 +9,14 @@
 <html>
 <jsp:include flush="true" page="/jsp/libhtmlheader.jsp" />
 <body onLoad="load('ingest')" style="background-color:#fff;">
-<script type="text/javascript">	
+<script type="text/javascript">
 	function confirmIngest(){
 		var dsIdx = document.mainForm.ts.selectedIndex;
 		var ds = document.mainForm.ts.options[dsIdx].value;
 		var collectionIndex = document.mainForm.category.selectedIndex;
-	    if(collectionIndex == 0){
-	    	alert("Please select a collection.");
+		var repoIndex = document.mainForm.repo.selectedIndex;
+	    if(repoIndex == 0){
+	    	alert("Please select a repository.");
 			return false;
 	    }
 	    
@@ -51,7 +52,25 @@
 	    	}
 	    }
 	    
-	    var exeConfirm = confirm("Are you sure to ingest files from the Staging Area?");
+	    var fileUses = trim(document.mainForm.fileUse.value);
+	    if(fileUses.length > 0){
+	    	var invalidFileUses = [];
+	    	fileUses = fileUses.split(',');
+	    	for(var i=0; i<fileUses.length; i++){
+	    		var fileUse = fileUses[i];
+	    		if(fileUse != null && fileUse.length > 0 && fileUseArr.indexOf(fileUse)==-1)
+	    			invalidFileUses.push(fileUse);
+	    	}
+	    	if(invalidFileUses.length > 0){
+	    		alert("Invalid file use: " + invalidFileUses.join(', ') + ". \nPlease enter the following values: " + fileUseArr.join(', '));
+				return false;
+	    	}
+	    }
+	    var message = "Are you sure to ingest files from the Staging Area " + stagingAreaPath + "?";
+	    if(collectionIndex == 0){
+	    	message = "No collection is selected for staging ingest! \nShall I just go ahead and ingest the files in " + stagingAreaPath + " anyway?";
+	    }
+	    var exeConfirm = confirm(message);
 	    if(!exeConfirm)
 	    	return false;
 	    
@@ -224,8 +243,9 @@
 				 -->
 	  </div>
 	  <div class="specialmenuText" style="margin-left:15px;">
-		  <fieldset class="groupbox_jetlOptions"><legend class="slegandText"> Option </legend>
+		  <fieldset class="groupbox_jetlOptions"><legend class="slegandText"> Constraint Options </legend>
 		  	<div class="specialmenuText"><div>Files ordered by suffixes (delimited by comma): <input type="text" name="fileSuffixes" id="fileSuffixes" value="" size="30"></div></div>
+		  	<div class="specialmenuText"><div style="margin-top:3px;">File Use properties applied (delimited by comma): <input type="text" name="fileUse" id="fileUse" value="" size="29"></div></div>
 		  </fieldset>
 	  </div>
 	  </td>
