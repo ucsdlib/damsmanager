@@ -138,7 +138,7 @@ public class CollectionOperationController implements Controller {
 		if(dataConvert)
 			forwardTo = "/pathMapping.do?ts=" + ds + (fileStore!=null?"&fs=" + fileStore:"");
 		else if(isIngest){
-			String repo = getParameter(paramsMap, "repository");
+			String repo = getParameter(paramsMap, "repo");
 			forwardTo = "/ingest.do?ts=" + ds + (fileStore!=null?"&fs=" + fileStore:"") + (repo!=null?"&repo=" + repo:"");
 		}else if(isDevUpload)
 			forwardTo = "/devUpload.do?" + (fileStore!=null?"&fs=" + fileStore:"");
