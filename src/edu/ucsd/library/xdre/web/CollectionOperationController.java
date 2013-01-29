@@ -540,8 +540,8 @@ public class CollectionOperationController implements Controller {
 				 	String filePath = getParameter(paramsMap, "filePath").trim();
 				 	String fileFilter = getParameter(paramsMap, "fileFilter").trim();
 				 	String preferedOrder = getParameter(paramsMap, "preferedOrder");
-				 	//String fileSuffixes = getParameter(paramsMap, "suffixes").trim();
 				 	String fileSuffixes = getParameter(paramsMap, "fileSuffixes");
+				 	String fileUse = getParameter(paramsMap, "fileUse");
 			 		if(fileSuffixes != null && fileSuffixes.length() > 0)
 			 			fileSuffixes = fileSuffixes.trim();
 			 		
@@ -565,6 +565,15 @@ public class CollectionOperationController implements Controller {
 				 	if((filePath.startsWith("/") || filePath.startsWith("\\")) && (Constants.DAMS_STAGING.endsWith("/") 
 				 			|| Constants.DAMS_STAGING.endsWith("\\")))
 				 		filePath = filePath.substring(1);
+				 	
+				 	String[] fileUses = null;
+				 	if(fileUse != null && (fileUse=fileUse.trim()).length() > 0){
+				 		fileUses = fileUse.split(",");
+				 		for(int j=0; j<fileUses.length; j++){
+				 			if(fileUses[j] != null)
+				 				fileUses[j] = fileUses[j].trim();
+				 		}
+				 	}
 
 				 	session.setAttribute("category", collectionId);
 				 	session.setAttribute("repo", repo);
@@ -580,6 +589,7 @@ public class CollectionOperationController implements Controller {
 		            ((FileIngestionHandler)handler).setFileOrderSuffixes(fileOrderSuffixes);
 		            ((FileIngestionHandler)handler).setPreferedOrder(preferedOrder);
 		            ((FileIngestionHandler)handler).setRepository(repo);
+		            ((FileIngestionHandler)handler).setFileUses(fileUses);
 	    
 			 }/* else if (i == 15){	
 				 session.setAttribute("status", opMessage + "Moving files from dev to LocalStore ...");
