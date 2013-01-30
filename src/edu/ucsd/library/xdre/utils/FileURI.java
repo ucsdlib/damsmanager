@@ -55,7 +55,7 @@ public class FileURI {
 	}
 	
 	public String toString(){
-		return (object!=null&&object.length()>0?object+"/":"") + (component!=null&&component.length()>0?component+"/":"")+fileName;
+		return (object!=null&&object.length()>0?object:"") + (component!=null&&component.length()>0?"/"+component:"") + (fileName!=null?"/" + fileName:"");
 	}
 	
 	/**
