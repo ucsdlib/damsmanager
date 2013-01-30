@@ -104,6 +104,7 @@ public class FileIngestionHandler extends CollectionHandler {
 		UploadTaskOrganizer taskOrganizer = null;
 		Pair uploadFile = null;
 		UploadTask upLoadTask = null;
+		PreferedOrder preferedOrder = null;
 
 		fileStoreLog = getFileStoreLog(collectionId!=null?collectionId:repository!=null?repository:"dams");
 		taskOrganizer = new UploadTaskOrganizer(fileList, uploadType,
@@ -122,6 +123,7 @@ public class FileIngestionHandler extends CollectionHandler {
 				// reset ark
 				ark = null;
 				upLoadTask = taskOrganizer.next();
+				preferedOrder = upLoadTask.getPreferOrder();
 				List<Pair> objBatch = upLoadTask.generateTasks();
 				String subjectURI = null;
 
@@ -187,7 +189,6 @@ public class FileIngestionHandler extends CollectionHandler {
 							}
 						}
 						
-						PreferedOrder preferedOrder = upLoadTask.getPreferOrder();
 						if(preferedOrder != null && preferedOrder.equals(PreferedOrder.PDFANDPDF)){
 							// Default file use for high resolution PDF and low resolution PDF upload 
 							if(i == 0){
@@ -201,15 +202,32 @@ public class FileIngestionHandler extends CollectionHandler {
 					}
 					
 					// Apply user submitted file use properties
-					if(fileUses != null && fileUses.length > 0){
-						if(uploadType == UploadTaskOrganizer.COMPLEXOBJECT_LOADING){
-							// Set file use properties for components
-							String[] fileParts = contentId.split("-");
-							int compId = Integer.parseInt(fileParts[0]);
-							if(fileUses.length >= compId)
+					int fUseSize = 0;
+					if(fileUses != null && (fUseSize=fileUses.length) > 0){
+						String[] fileParts = contentId.split("-");
+						int compId = Integer.parseInt(fileParts[0]);
+						int fn = Integer.parseInt(fileParts.length==1?fileParts[0]:fileParts[1]);
+						
+						// Complex Object: component files and their derivatives or files for other uses
+						if(uploadType == UploadTaskOrganizer.COMPLEXOBJECT_LOADING
+								|| uploadType == UploadTaskOrganizer.MIX_CO_SHARE_ARK_LOADING){
+							
+							if(preferedOrder != null && fUseSize >= compId){
+								// Set file use properties for components files
 								fileUse = fileUses[compId - 1];
-						}else if (fileUses.length > i){
-							// Set file use properties for master file and derivatives
+							}else {
+								// Component file and its derivatives or files for other uses
+								if (fn == 1){
+									// Master components files
+									fileUse = fileUses[0];
+								}else if (fn > 1 && fn <= fUseSize){
+									// Derivatives or files for other uses
+									fileUse = fileUses[fn - 1];
+								}
+							}
+								
+						}else if (fUseSize > i){
+							// Simple object: master file and its derivatives or files for other uses
 							fileUse = fileUses[i];
 						}
 					}
