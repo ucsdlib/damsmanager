@@ -1276,7 +1276,7 @@ public class DAMSClient {
 	 * @return
 	 */
 	public String getObjectsURL(String object, String compId, String function, String format){
-		String[] parts = {"objects", object, function};
+		String[] parts = {"objects", object, compId, function};
 		return toDAMSURL(parts, format);
 	}
 	
