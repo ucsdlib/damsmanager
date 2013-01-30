@@ -654,7 +654,7 @@ public class UploadTaskOrganizer{
 				}
 				
 				//Remove other files that haven't included in the suffix list. 
-				//Files removed from the ingest list include the manifest file and the validation file etc.
+				//Files removed from the ingest list include the manifest file and the validation file etc. 
 				if(filesLength > filesOrderLength){
 					keys = (Object[])components.keySet().toArray();
 					for(int n=0; n<filesLength; n++){
