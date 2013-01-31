@@ -5,12 +5,12 @@ package edu.ucsd.library.xdre.utils;
  * @author lsitu
  *
  */
-public class FileURI {
+public class DamsURI {
 	private String object = null;
 	private String component = null;
 	private String fileName = null;
 	
-	public FileURI(String object, String component, String fileName){
+	public DamsURI(String object, String component, String fileName){
 		this.object = object;
 		this.component = component;
 		this.fileName = fileName;
@@ -65,7 +65,7 @@ public class FileURI {
 	 * @return
 	 * @throws Exception 
 	 */
-	public static FileURI toParts(String fileURI, String object) throws Exception{
+	public static DamsURI toParts(String fileURI, String object) throws Exception{
 		String component = null;
 		String fileName = null;
 		String idString = null;
@@ -103,6 +103,6 @@ public class FileURI {
 				throw new Exception("Unknown object/file URL format: " + fileURI);
 		}else
 			throw new Exception("Unhandled object/file URL format: " + fileURI);
-		return new FileURI(object, component, fileName);
+		return new DamsURI(object, component, fileName);
 	}
 }

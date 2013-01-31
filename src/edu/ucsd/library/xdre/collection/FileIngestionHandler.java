@@ -20,7 +20,7 @@ import edu.ucsd.library.xdre.ingest.assembler.UploadTaskOrganizer;
 import edu.ucsd.library.xdre.ingest.assembler.UploadTaskOrganizer.PreferedOrder;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
-import edu.ucsd.library.xdre.utils.FileURI;
+import edu.ucsd.library.xdre.utils.DamsURI;
 import edu.ucsd.library.xdre.utils.RDFStore;
 
 /**
@@ -236,12 +236,12 @@ public class FileIngestionHandler extends CollectionHandler {
 					// Check for duplications and complex objects reloading
 					try {
 						
-						List<FileURI> filesLoaded = fileLoaded(uploadFile.getValue());
+						List<DamsURI> filesLoaded = fileLoaded(uploadFile.getValue());
 						if(filesLoaded.size() > 1){
 							exeResult = false;
 							eMessage = "File " + uploadFile.getValue()
 									+ " was loaded in dams with ";
-							for(Iterator<FileURI> it=filesLoaded.iterator();it.hasNext();){
+							for(Iterator<DamsURI> it=filesLoaded.iterator();it.hasNext();){
 								eMessage += it.next().toString() + " ";
 							}
 							String iMessagePrefix = "File upload failed. ";
@@ -253,8 +253,8 @@ public class FileIngestionHandler extends CollectionHandler {
 						}
 						
 						if (filesLoaded.size() > 0) {
-							FileURI fileURI = filesLoaded.get(0);
-							subjectURI = fileURI.getObject();
+							DamsURI damsURI = filesLoaded.get(0);
+							subjectURI = damsURI.getObject();
 
 							String tmpArk = subjectURI;
 							if (ark == null)
@@ -552,7 +552,7 @@ public class FileIngestionHandler extends CollectionHandler {
 		this.fileOrderSuffixes = fileOrderSuffixes;
 	}
 	
-	public List<FileURI> fileLoaded(String sourceFile) throws Exception{
+	public List<DamsURI> fileLoaded(String sourceFile) throws Exception{
 		File srcFile = new File(sourceFile);
 		return damsClient.retrieveFileURI(srcFile.getName(), srcFile.getParent(), collectionId, repository);
 	}

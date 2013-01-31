@@ -7,7 +7,7 @@ import org.apache.log4j.Logger;
 
 import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.DFile;
-import edu.ucsd.library.xdre.utils.FileURI;
+import edu.ucsd.library.xdre.utils.DamsURI;
 
 /**
  * 
@@ -72,8 +72,8 @@ public class ChecksumsHandler extends CollectionHandler{
 				for(Iterator<DFile> it=files.iterator(); it.hasNext();){
 					totalFiles++;
 					dFile = it.next();
-					FileURI fileURI = FileURI.toParts(dFile.getId(), subjectURI);
-					boolean suceeded = damsClient.checksum(fileURI.getObject(), fileURI.getFileName(), fileURI.getFileName());
+					DamsURI damsURI = DamsURI.toParts(dFile.getId(), subjectURI);
+					boolean suceeded = damsClient.checksum(damsURI.getObject(), damsURI.getFileName(), damsURI.getFileName());
 					if(!suceeded){
 						failedCount++;
 						exeResult = false;

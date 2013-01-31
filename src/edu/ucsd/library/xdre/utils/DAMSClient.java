@@ -431,9 +431,9 @@ public class DAMSClient {
 	 * @return
 	 * @throws Exception 
 	 */
-	public List<FileURI> retrieveFileURI(String srcFileName, String srcPath, String collectionId, String repoId) throws Exception{
+	public List<DamsURI> retrieveFileURI(String srcFileName, String srcPath, String collectionId, String repoId) throws Exception{
 		HttpGet req = null;
-		List<FileURI> fileURIs = null;
+		List<DamsURI> fileURIs = null;
 		String url = "";
 		if(collectionId == null && repoId == null){
 			// Retrieve object from SOLR
@@ -1782,8 +1782,8 @@ public class DAMSClient {
 	 * @return
 	 * @throws Exception 
 	 */
-	public static List<FileURI> getFiles(Document doc, String srcPath, String srcFileName) throws Exception{
-		List<FileURI> fileURIs = new ArrayList<FileURI>();
+	public static List<DamsURI> getFiles(Document doc, String srcPath, String srcFileName) throws Exception{
+		List<DamsURI> fileURIs = new ArrayList<DamsURI>();
 		List<Node> idNodes = doc.selectNodes(DOCUMENT_RESPONSE_ROOT_PATH + "/files/value[sourceFileName='" + srcFileName.replace("'", "&quot;") + "']");
 		if(idNodes != null){
 			String id = null;
@@ -1799,10 +1799,10 @@ public class DAMSClient {
 				if(srcPath != null && srcPath.length() > 0){
 					filePath = idNode.selectSingleNode("sourcePath").getText();
 					if(srcPath.equalsIgnoreCase(filePath)){
-						fileURIs.add(FileURI.toParts(id, object));
+						fileURIs.add(DamsURI.toParts(id, object));
 					}
 				} else {
-					fileURIs.add(FileURI.toParts(id, object));
+					fileURIs.add(DamsURI.toParts(id, object));
 				}
 			}
 		}

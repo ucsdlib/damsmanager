@@ -10,7 +10,7 @@ import org.dom4j.Node;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.DFile;
-import edu.ucsd.library.xdre.utils.FileURI;
+import edu.ucsd.library.xdre.utils.DamsURI;
 
 /**
  * 
@@ -60,7 +60,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 		String eMessage = "";
 		String subjectId = null;
 		String fileId = null;
-		FileURI fileURI = null;
+		DamsURI DamsURI = null;
 		String use = null;
 		for(int i=0; i<itemsCount; i++){
 
@@ -80,9 +80,9 @@ public class FileCountValidaionHandler extends CollectionHandler{
 					
 					// Check file existence
 					fileId = dFile.getId();
-					fileURI = FileURI.toParts(fileId, subjectId);
+					DamsURI = DamsURI.toParts(fileId, subjectId);
 
-					if(!damsClient.exists(fileURI.getObject(), fileURI.getComponent(), fileURI.getFileName())){
+					if(!damsClient.exists(DamsURI.getObject(), DamsURI.getComponent(), DamsURI.getFileName())){
 						missingFilesCount++;
 						missing = true;
 						exeResult = false;
@@ -95,7 +95,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 					if(use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE)){
 						masterTotal++;
 						masterExists = true;
-						List<FileURI> duFiles = DAMSClient.getFiles(filesDoc, null, dFile.getSourceFileName());
+						List<DamsURI> duFiles = DAMSClient.getFiles(filesDoc, null, dFile.getSourceFileName());
 						if((duSize=duFiles.size()) > 1){
 							String[] checksums = new String[duSize];
 							for(int j=0; j<duSize; j++){
@@ -161,9 +161,9 @@ public class FileCountValidaionHandler extends CollectionHandler{
 		return exeResult;
 	}
 	
-	private String getChecksum(FileURI fileURI){
+	private String getChecksum(DamsURI damsURI){
 		String checksum = "";
-		String checkSumXPath = DAMSClient.DOCUMENT_RESPONSE_ROOT_PATH + "/files/value[id='" + fileURI.toString() + "']/crc32checksum";
+		String checkSumXPath = DAMSClient.DOCUMENT_RESPONSE_ROOT_PATH + "/files/value[id='" + damsURI.toString() + "']/crc32checksum";
 		Node checksumNode = filesDoc.selectSingleNode(checkSumXPath);
 		if(checksumNode != null)
 			checksum = checksumNode.getText();

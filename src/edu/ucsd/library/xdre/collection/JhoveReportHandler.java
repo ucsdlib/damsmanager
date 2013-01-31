@@ -10,7 +10,7 @@ import org.apache.log4j.Logger;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.DFile;
-import edu.ucsd.library.xdre.utils.FileURI;
+import edu.ucsd.library.xdre.utils.DamsURI;
 
 /**
  * 
@@ -93,7 +93,7 @@ public class JhoveReportHandler extends CollectionHandler{
 						
 						if(!bytestreamFormatOnly || (bytestreamFormatOnly && (formatName ==null || formatName !=null&&formatName.equalsIgnoreCase("bytestream")))){
 							oSrcFileName = dFile.getSourceFileName();
-							FileURI fileURI = FileURI.toParts(dFile.getId(), subjectURI);
+							DamsURI fileURI = DamsURI.toParts(dFile.getId(), subjectURI);
 							dFileTmp = damsClient.extractFileCharacterize(fileURI.getObject(), fileURI.getComponent(), fileURI.getFileName());
 					    	if(updateFormat){
 					    		formatNameTmp = dFileTmp.getFormatName();
