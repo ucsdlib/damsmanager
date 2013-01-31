@@ -13,7 +13,7 @@
 	<link href="//libraries.ucsd.edu/_resources/campus-design-2009/css/campus/print.css" media="print" rel="stylesheet" type="text/css"/>
 	<link href="//libraries.ucsd.edu/_resources/campus-design-2009/css/libraries.css" media="all" rel="stylesheet" type="text/css"/>
 	
-	<script type="text/javascript" src="/_files/site/js/draw-menu.js"></script>		
+	<script type="text/javascript" src="//libraries.ucsd.edu/_files/site/js/draw-menu.js"></script>		
 
 	<link href="/damsmanager/css/damsmanager.css" rel="stylesheet"/>
 	<link href="/damsmanager/css/jsonobj.css" rel="stylesheet"/>
