@@ -32,7 +32,6 @@ import org.json.simple.JSONValue;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import edu.ucsd.library.shared.Mail;
 import edu.ucsd.library.xdre.collection.CollectionHandler;
 import edu.ucsd.library.xdre.collection.DerivativeHandler;
 import edu.ucsd.library.xdre.collection.FileCountValidaionHandler;
@@ -207,9 +206,9 @@ public class CollectionOperationController implements Controller {
 				emails[0] = user + "@ucsd.edu";
 			}
 			if(emails == null)
-				Mail.sendMail(sender, new String[] {"lsitu@ucsd.edu"}, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
+				DAMSClient.sendMail(sender, new String[] {"lsitu@ucsd.edu"}, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
 			else
-				Mail.sendMail(sender, emails, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
+				DAMSClient.sendMail(sender, emails, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
 		} catch (AddressException e) {
 			e.printStackTrace();
 		} catch (MessagingException e) {

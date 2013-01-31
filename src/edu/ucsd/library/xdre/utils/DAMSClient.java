@@ -23,7 +23,12 @@ import java.util.Properties;
 import java.util.TreeMap;
 
 import javax.activation.FileDataSource;
-import javax.activation.MimetypesFileTypeMap;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 import javax.security.auth.login.LoginException;
 
 import org.apache.http.Header;
@@ -1807,6 +1812,44 @@ public class DAMSClient {
 			}
 		}
 		return fileURIs;
+	}
+	
+	/**
+	 * Static method to send mail
+	 * @param from
+	 * @param to
+	 * @param subject
+	 * @param content
+	 * @param contenType
+	 * @param smtp
+	 * @throws MessagingException
+	 */
+	public static void sendMail(String from, String [] to, String subject, 
+			String content, String contenType, String smtp) throws MessagingException{
+		// Create mail session
+		Properties props = new Properties();
+		props.put("mail.smtp.host", smtp);
+		Session session = Session.getInstance(props,null);
+
+		// Create destination address
+		InternetAddress dests[] = new InternetAddress[to.length];
+		for(int i = 0; i < to.length; i++) {
+			dests[i] = new InternetAddress(to[i]);	
+		}
+
+		// Default content type
+		if(contenType == null || contenType.length() == 0)
+			contenType = "text/plain";
+		
+		// Create message
+		Message message = new MimeMessage(session);
+		message.setFrom(new InternetAddress(from));
+		message.setRecipients(Message.RecipientType.TO, dests);
+		message.setSubject(subject);
+		message.setContent(content, contenType);
+
+		// Send the mail
+		Transport.send(message);
 	}
 	
 	/**
