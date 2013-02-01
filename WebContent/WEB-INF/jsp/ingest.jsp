@@ -217,7 +217,7 @@
 					<input type="radio" name="preferedOrder" value="cofDelimiter" <c:if test="${model.preferedOrder == null || fn:length(model.preferedOrder)== 0 || model.preferedOrder == 'cofDelimiter'}">checked</c:if>/><span>Alphabetic order. [Optional] Order delimited by: <input type="text" name="cofDelimiter" id="cofDelimiter" value="" size="10"></span><br />
 					<input type="radio" name="preferedOrder" value="pdfAndPdf" <c:if test="${model.preferedOrder == 'pdfAndPdf'}">checked</c:if> /><span>A PDF following a low resolution PDF for access.</span><br />
 					<input type="radio" name="preferedOrder" value="pdfAndXml" <c:if test="${model.preferedOrder == 'pdfAndXml'}">checked</c:if> /><span>A PDF following a proquest xml file.</span><br />
-					<input type="radio" name="preferedOrder" value="suffix" <c:if test="${model.preferedOrder == 'suffix'}">checked</c:if> /><span>Components ordered by their suffixes provided.</span>
+					<input type="radio" name="preferedOrder" value="suffix" <c:if test="${model.preferedOrder == 'suffix'}">checked</c:if> /><span>Components ordered by their suffixes provided while ignoring other files.</span>
 				</fieldset>
 	 </div>
 	 <div title="Assign one ARK to the files with the same prefix ending with letter 'p' and an order number" class="specialmenuText">

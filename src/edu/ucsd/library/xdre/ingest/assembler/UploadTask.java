@@ -15,6 +15,7 @@ public abstract class UploadTask{
 	protected boolean damsRestImpl = true;
 	protected List<String> fileList = null;
 	protected PreferedOrder preferOrder = null;
+	protected String[] fileOrderSuffixes = null;
 	
 	public UploadTask(){}
 	public UploadTask(List<String> fileList){

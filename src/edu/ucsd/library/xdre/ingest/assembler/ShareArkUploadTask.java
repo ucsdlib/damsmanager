@@ -8,7 +8,6 @@ import java.util.List;
  * @author Longshou Situ
  */
 public class ShareArkUploadTask extends UploadTask{
-	protected String[] fileOrderSuffixes = null;
 	
 	public ShareArkUploadTask(){}
 	public ShareArkUploadTask(List fileList) {

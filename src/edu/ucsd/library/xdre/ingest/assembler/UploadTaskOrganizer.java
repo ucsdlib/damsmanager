@@ -234,7 +234,7 @@ public class UploadTaskOrganizer{
 				//taskList = uploadList.get(currIndex++);
 				if(taskList.size() > 1){
 					if(fileOrderSuffixes == null || (preferedOrder!=null && preferedOrder.equals(PreferedOrder.SUFFIX)))
-						uploadTask = new ComplexObjectUploadTask(taskList);
+						uploadTask = new ComplexObjectUploadTask(taskList, fileOrderSuffixes);
 					else
 						uploadTask = new COShareArkUploadTask(taskList, fileOrderSuffixes);
 				}else if(taskList.size() == 1){
