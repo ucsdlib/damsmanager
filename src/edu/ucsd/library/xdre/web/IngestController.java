@@ -70,8 +70,34 @@ public class IngestController implements Controller {
 				fileSuffixes = (String) session.getAttribute("fileSuffixes");
 				fileUse = (String) session.getAttribute("fileUse");
 			}
-				
-			
+
+
+			Map<String, String> collectionMap = damsClient.listCollections();
+			Map<String, String> repoMap = damsClient.listRepositories();
+			List<String> tsSrcs = damsClient.listTripleStores();
+			List<String> fsSrcs = damsClient.listFileStores();
+			String fsDefault = damsClient.defaultFilestore();
+			if(fileStore == null || fileStore.length() == 0)
+				fileStore = fsDefault;
+			Map dataMap = new HashMap();
+			dataMap.put("categories", collectionMap);
+			dataMap.put("category", collectionId);
+			dataMap.put("repos", repoMap);
+			dataMap.put("repo", repo);
+			dataMap.put("stagingArea", Constants.DAMS_STAGING);
+			dataMap.put("filePath", filePath);
+			dataMap.put("fileFilter", fileFilter);
+			dataMap.put("arkSetting", arkSetting);
+			dataMap.put("message", message);
+			dataMap.put("triplestore", ds);
+			dataMap.put("triplestores", tsSrcs);
+			dataMap.put("filestores", fsSrcs);
+			dataMap.put("filestore", fileStore);
+			dataMap.put("filestoreDefault", fsDefault);
+			dataMap.put("fileSuffixes", fileSuffixes);
+			dataMap.put("fileUse", fileUse);
+		
+		
 		} catch (Exception e) {
 			e.printStackTrace();
 			message += e.getMessage();
@@ -79,32 +105,6 @@ public class IngestController implements Controller {
 			if(damsClient != null)
 				damsClient.close();
 		}
-
-		Map<String, String> collectionMap = damsClient.listCollections();
-		Map<String, String> repoMap = damsClient.listRepositories();
-		List<String> tsSrcs = damsClient.listTripleStores();
-		List<String> fsSrcs = damsClient.listFileStores();
-		String fsDefault = damsClient.defaultFilestore();
-		if(fileStore == null || fileStore.length() == 0)
-			fileStore = fsDefault;
-		Map dataMap = new HashMap();
-		dataMap.put("categories", collectionMap);
-		dataMap.put("category", collectionId);
-		dataMap.put("repos", repoMap);
-		dataMap.put("repo", repo);
-		dataMap.put("stagingArea", Constants.DAMS_STAGING);
-		dataMap.put("filePath", filePath);
-		dataMap.put("fileFilter", fileFilter);
-		dataMap.put("arkSetting", arkSetting);
-		dataMap.put("message", message);
-		dataMap.put("triplestore", ds);
-		dataMap.put("triplestores", tsSrcs);
-		dataMap.put("filestores", fsSrcs);
-		dataMap.put("filestore", fileStore);
-		dataMap.put("filestoreDefault", fsDefault);
-		dataMap.put("fileSuffixes", fileSuffixes);
-		dataMap.put("fileUse", fileUse);
-		
 		return new ModelAndView("ingest", "model", dataMap);
 	}
 	

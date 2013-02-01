@@ -164,10 +164,11 @@ public class CollectionOperationController implements Controller {
 			}
 			
 			session.setAttribute("status", "Processing request ...");
+			DAMSClient damsClient = null;
 			try {
 				//user = getUserName(request);
 				//email = getUserEmail(request);
-				DAMSClient damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
+				damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
 				JSONArray mailArr = (JSONArray)damsClient.getUserInfo(user).get("mail");
 				if(mailArr != null && mailArr.size() > 0){
 					emails = new String[mailArr.size()];
@@ -178,6 +179,9 @@ public class CollectionOperationController implements Controller {
 				e.printStackTrace();
 				//throw new ServletException(e.getMessage());
 				message += "<br />Internal Error: " + e.getMessage();
+			}finally{
+				if(damsClient != null)
+					damsClient.close();
 			}
 		}
 		System.out.println("XDRE Manager execution for " + request.getRemoteUser() + " from IP " + request.getRemoteAddr() + ": ");
