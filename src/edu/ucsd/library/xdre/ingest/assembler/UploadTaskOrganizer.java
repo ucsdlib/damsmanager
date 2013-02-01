@@ -345,14 +345,15 @@ public class UploadTaskOrganizer{
 		}else if(tmpFile.isFile() && !tmpFile.isHidden()){
 			boolean addFile = isFileValid(tmpFile, fileFilter);
 			if (addFile) {			
+				String key = null;
 				String filePath = getFilePathValue(tmpFile);
 				
 				String fName = tmpFile.getName();			
 				complexObjectMap = filesPoolMap.get(filePath);
-				String key = null;
 				if(withDerivative){
-					int dIndex = fName.lastIndexOf('.');
-					key = fName.substring(0, (dIndex>0?dIndex:fName.length()));
+					//int dIndex = fName.lastIndexOf('.');
+					//key = fName.substring(0, (dIndex>0?dIndex:fName.length()));
+					key = getGroupKey(fName);
 					if(complexObjectMap == null){
 						complexObjectMap = new TreeMap<String, Object>();
 						filesPoolMap.put(filePath, complexObjectMap);
@@ -363,9 +364,10 @@ public class UploadTaskOrganizer{
 						fList = new ArrayList<String>();
 						complexObjectMap.put(key, fList);
 					}
-					fList.add(tmpFile.getAbsolutePath());							
+					fList.add(tmpFile.getAbsolutePath());	
 				}else{
 					key = fName;
+					
 					if(complexObjectMap == null){
 						complexObjectMap = new TreeMap<String, Object>();
 						filesPoolMap.put(filePath, complexObjectMap);
@@ -437,29 +439,7 @@ public class UploadTaskOrganizer{
 		}else if(tmpFile.isFile() && !tmpFile.isHidden()){
 			boolean addFile = isFileValid(tmpFile, fileFilter);
 			if (addFile) {	
-				String fName = tmpFile.getName();
-				int dIndex = -1;
-				int matchIndex = -1;
-				if(fileOrderSuffixes != null && fileOrderSuffixes.length > 0){
-					String tmp = null;
-					
-					for(int i=0; i< fileOrderSuffixes.length; i++){
-						tmp = fileOrderSuffixes[i];
-						if((fName.endsWith(tmp))){
-							//Handle the matching like xxx.tif, .tif. with longest matching
-							if(	matchIndex >= 0 ){
-								if(tmp.length() > fileOrderSuffixes[matchIndex].length())
-									matchIndex = i;							
-							}else
-								matchIndex = i;
-						}
-					}
-				}
-				if(matchIndex >= 0){
-					dIndex = fName.lastIndexOf(fileOrderSuffixes[matchIndex]);
-				}else
-					dIndex = fName.lastIndexOf(".");
-				String key = fName.substring(0, (dIndex>0?dIndex:fName.length()));
+				String key = getGroupKey(tmpFile.getName());
 				
 				String filePath = tmpFile.getAbsolutePath();
 				shareArkObjectMap = filesPoolMap.get(key);
@@ -470,6 +450,31 @@ public class UploadTaskOrganizer{
 				shareArkObjectMap.put(filePath, filePath);
 			}
 		}
+	}
+	
+	private String getGroupKey(String fileName){
+		int dIndex = -1;
+		int matchIndex = -1;
+		if(fileOrderSuffixes != null && fileOrderSuffixes.length > 0){
+			String tmp = null;
+			
+			for(int i=0; i< fileOrderSuffixes.length; i++){
+				tmp = fileOrderSuffixes[i];
+				if((fileName.endsWith(tmp))){
+					//Handle the matching like xxx.tif, .tif. with longest matching
+					if(	matchIndex >= 0 ){
+						if(tmp.length() > fileOrderSuffixes[matchIndex].length())
+							matchIndex = i;							
+					}else
+						matchIndex = i;
+				}
+			}
+		}
+		if(matchIndex >= 0){
+			dIndex = fileName.lastIndexOf(fileOrderSuffixes[matchIndex]);
+		}else
+			dIndex = fileName.lastIndexOf(".");
+		return fileName.substring(0, (dIndex>0?dIndex:fileName.length()));
 	}
 	
 	private Iterator handleOrdering(Map tmpMap, String delimiter){
@@ -641,12 +646,12 @@ public class UploadTaskOrganizer{
 					
 					tmpKey = (String)keys[order];
 					if(tmpKey.toLowerCase().endsWith(fileExt)){
-						components.put("#" + n + tmpKey, components.remove(tmpKey));
+						components.put("#" + n + ":" + tmpKey, components.remove(tmpKey));
 					}else{
 						for(int i=0; i<filesLength; i++){
 							tmpKey = (String)keys[i];
 							if(tmpKey.toLowerCase().endsWith(fileExt)){
-								components.put("#" + n + tmpKey, components.remove(tmpKey));
+								components.put("#" + n + ":" + tmpKey, components.remove(tmpKey));
 								break;
 							}
 						}
@@ -659,8 +664,18 @@ public class UploadTaskOrganizer{
 					keys = (Object[])components.keySet().toArray();
 					for(int n=0; n<filesLength; n++){
 						tmpKey = (String)keys[n];
-						if(n >= filesOrderLength || !tmpKey.endsWith(fileOrderSuffixes[n]))
-							components.remove(tmpKey);
+						if(n >= filesOrderLength || !tmpKey.endsWith(fileOrderSuffixes[n])){
+							// Check for files that are not in the suffixes list for removal
+							boolean found = false;
+							for(int m=0; m<fileOrderSuffixes.length; m++){
+								if(tmpKey.endsWith(fileOrderSuffixes[m])){
+									found = true;
+									break;
+								}
+							}
+							if(!found)
+								components.remove(tmpKey);
+						}
 					}
 				}
 	

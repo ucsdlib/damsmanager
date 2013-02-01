@@ -92,6 +92,10 @@ public class FileIngestionHandler extends CollectionHandler {
 			this.preferedOrder = null;
 	}
 	
+	public PreferedOrder getPreferedOrder(){
+		return preferedOrder;
+	}
+	
 	public void setFileUses(String[] fileUses){
 		this.fileUses = fileUses;
 	}
@@ -104,7 +108,6 @@ public class FileIngestionHandler extends CollectionHandler {
 		UploadTaskOrganizer taskOrganizer = null;
 		Pair uploadFile = null;
 		UploadTask upLoadTask = null;
-		PreferedOrder preferedOrder = null;
 
 		fileStoreLog = getFileStoreLog(collectionId!=null?collectionId:repository!=null?repository:"dams");
 		taskOrganizer = new UploadTaskOrganizer(fileList, uploadType,
@@ -202,8 +205,8 @@ public class FileIngestionHandler extends CollectionHandler {
 					}
 					
 					// Apply user submitted file use properties
-					int fUseSize = 0;
-					if(fileUses != null && (fUseSize=fileUses.length) > 0){
+					if(fileUses != null && fileUses.length > 0){
+						int fUseSize = fileUses.length;
 						String[] fileParts = contentId.split("-");
 						int compId = Integer.parseInt(fileParts[0]);
 						int fn = Integer.parseInt(fileParts.length==1?fileParts[0]:fileParts[1]);
