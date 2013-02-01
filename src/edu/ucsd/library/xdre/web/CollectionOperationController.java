@@ -591,7 +591,7 @@ public class CollectionOperationController implements Controller {
 		            ((FileIngestionHandler)handler).setPreferedOrder(preferedOrder);
 		            ((FileIngestionHandler)handler).setRepository(repo);
 		            ((FileIngestionHandler)handler).setFileUses(fileUses);
-	    
+		    	    
 			 }/* else if (i == 15){	
 				 session.setAttribute("status", opMessage + "Moving files from dev to LocalStore ...");
 				 //localStore = getLocalFileStore();
@@ -714,6 +714,9 @@ public class CollectionOperationController implements Controller {
 	}catch (Exception e) {
 		e.printStackTrace();
 		returnMessage += e.getMessage();
+	}finally{
+		if(damsClient != null)
+			damsClient.close();
 	}
 	}else
 		returnMessage = message;

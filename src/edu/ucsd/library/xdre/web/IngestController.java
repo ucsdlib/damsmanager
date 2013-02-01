@@ -75,6 +75,9 @@ public class IngestController implements Controller {
 		} catch (Exception e) {
 			e.printStackTrace();
 			message += e.getMessage();
+		}finally{
+			if(damsClient != null)
+				damsClient.close();
 		}
 
 		Map<String, String> collectionMap = damsClient.listCollections();

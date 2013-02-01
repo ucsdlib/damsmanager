@@ -1762,6 +1762,10 @@ public class DAMSClient {
 		return rows+start < numFound; 
 	}
 	
+	public void close(){
+		client.getConnectionManager().shutdown();
+	}
+	
 	/**
 	 * Construct SOLR query
 	 * @param repository

@@ -89,6 +89,9 @@ public class CollectionManagementController implements Controller {
 			e.printStackTrace();
 			String eMessage = e.getMessage();
 			throw new ServletException(eMessage);
+		}finally{
+			if(damsClient != null)
+				damsClient.close();
 		}
 		return new ModelAndView("controlPanel", "model", dataMap);
 	}
