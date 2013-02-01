@@ -43,6 +43,7 @@ public class IngestController implements Controller {
 
 		HttpSession session = request.getSession();	
 		DAMSClient damsClient = null;
+		Map dataMap = new HashMap();
 		try{
 			if(ds == null)
 				ds = Constants.DEFAULT_TRIPLESTORE;
@@ -79,7 +80,7 @@ public class IngestController implements Controller {
 			String fsDefault = damsClient.defaultFilestore();
 			if(fileStore == null || fileStore.length() == 0)
 				fileStore = fsDefault;
-			Map dataMap = new HashMap();
+			
 			dataMap.put("categories", collectionMap);
 			dataMap.put("category", collectionId);
 			dataMap.put("repos", repoMap);
