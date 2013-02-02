@@ -48,7 +48,7 @@ public class ChecksumsHandler extends CollectionHandler{
 	 * @param chechsumDate
 	 * @throws Exception
 	 */
-	public ChecksumsHandler(DAMSClient damsClient, String collectionId, String chechsumDate) throws Exception{
+	public ChecksumsHandler(DAMSClient damsClient, String collectionId, String checksumDate) throws Exception{
 		super(damsClient, collectionId);
 		this.checksumDate = checksumDate;
 	}
@@ -66,7 +66,6 @@ public class ChecksumsHandler extends CollectionHandler{
 			subjectURI = items.get(i);
 			try{
 				setStatus("Processing checksums validation for subject " + subjectURI  + " (" + (i+1) + " of " + itemsCount + ") ... " ); 
-				String message = "";
 				DFile dFile = null;
 				List<DFile> files = damsClient.listObjectFiles(subjectURI);
 				for(Iterator<DFile> it=files.iterator(); it.hasNext();){
@@ -76,27 +75,15 @@ public class ChecksumsHandler extends CollectionHandler{
 					boolean suceeded = damsClient.checksum(damsURI.getObject(), damsURI.getFileName(), damsURI.getFileName());
 					if(!suceeded){
 						failedCount++;
-						exeResult = false;
-						String iMessage = "Checksums validation for subject " + subjectURI  + " failed ";
-						iMessage += "(" + (i+1) + " of " + itemsCount + "): ";
-						setStatus( iMessage + message.replace("\n", "<br/>")); 
-						log("log", iMessage + message);
-						log.info(iMessage + message);
+						logError("Checksums validation for subject " + subjectURI  + " failed (" + (i+1) + " of " + itemsCount + "). ");
 					}else{
-						String iMessage = "Checksums validation for subject " + subjectURI  + " succeeded (" + (i+1) + " of " + itemsCount + "): ";
-						setStatus( iMessage + message.replace("\n", "<br/>")); 
-						log("log", iMessage + message);
-						log.info(iMessage + message);
+						logMessage("Checksums validation for subject " + subjectURI  + " succeeded (" + (i+1) + " of " + itemsCount + "). ");
 					}
 				}
 			} catch (Exception e) {
 				failedCount++;
 				e.printStackTrace();
-				exeResult = false;
-				eMessage = "Checksums validation failed: " + e.getMessage();
-				setStatus( eMessage  + "(" +(i+1)+ " of " + itemsCount + ")"); 
-				log("log", eMessage );
-				log.info(eMessage );
+				logError("Checksums validation failed (" +(i+1)+ " of " + itemsCount + "): " + e.getMessage());
 			}
 			setProgressPercentage( ((i + 1) * 100) / itemsCount);
 			
@@ -104,12 +91,9 @@ public class ChecksumsHandler extends CollectionHandler{
 				Thread.sleep(10);
 			} catch (InterruptedException e1) {
 				failedCount++;
-        		exeResult = false;
-    			eMessage = "Checksums validation interrupted for subject " + subjectURI  + ". \n Error: " + e1.getMessage() + "\n";
+    			logError("Checksums validation interrupted for subject " + subjectURI  + ". Error: " + e1.getMessage());
 				setStatus("Canceled");
 				clearSession();
-				log("log", eMessage.replace("\n", ""));
-				log.info(eMessage, e1);
 				break;
 			}
 		}

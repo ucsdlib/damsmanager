@@ -113,14 +113,10 @@ public class DerivativeHandler extends CollectionHandler{
 	        		Thread.sleep(10);
 	        	} catch (InterruptedException e1) {
 	        		interrupted = true;
-	        		setExeResult(false);
-	    			String eMessage = "Derivative creation canceled on " + itemLink + " ( " + (i + 1) + " of " + itemsCount + ").";
-	    			String iMessagePrefix = "Derivative creation interrupted with ";
-					System.out.println(iMessagePrefix + eMessage);
+					logError("Derivative creation canceled on " + itemLink + " ( " + (i + 1) + " of " + itemsCount + ").");
 					setStatus("Canceled");
 					clearSession();
-					log("log", iMessagePrefix + eMessage);
-					log.info(iMessagePrefix + eMessage, e1);
+					break;
 				}
 			}
 

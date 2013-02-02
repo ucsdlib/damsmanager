@@ -85,11 +85,8 @@ public class FileCountValidaionHandler extends CollectionHandler{
 					if(!damsClient.exists(DamsURI.getObject(), DamsURI.getComponent(), DamsURI.getFileName())){
 						missingFilesCount++;
 						missing = true;
-						exeResult = false;
 						missingFiles.append(fileId + "\t" + (missingFilesCount%10==0?"\n":""));
-						eMessage = "File " + fileId + " doesn't exists.";
-						log("log", eMessage );
-						log.info(eMessage );
+						logError("File " + fileId + " doesn't exists.");
 					}
 					// Check source and alternate master files 
 					if(use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE)){
@@ -115,10 +112,8 @@ public class FileCountValidaionHandler extends CollectionHandler{
 							}
 							if(duplicated){
 								failedCount++;
-								exeResult = false;
 								duplicatedFiles.append(duItems.substring(0, duItems.length()-2) + "\n");
-								eMessage = "Duplicated files found: " + duItems;
-								log("log", eMessage );
+								logError("Duplicated files found: " + duItems);
 							}
 						}
 					}
@@ -127,20 +122,14 @@ public class FileCountValidaionHandler extends CollectionHandler{
 					failedCount++;
 					if(!masterExists){
 						missingObjectsCount++;
-						exeResult = false;
 						missingObjects.append(subjectId + "\t" + (missingObjectsCount%10==0?"\n":""));
-						eMessage = "No master files exist: " + subjectId;
-						log("log", eMessage );
-						log.info(eMessage );
+						logError("No master files exist: " + subjectId);
 					}
 				}
 			} catch (Exception e) {
 				failedCount++;
 				e.printStackTrace();
-				exeResult = false;
-				eMessage = "File count validation failed: " + e.getMessage();
-				log("log", eMessage );
-				log.info(eMessage );
+				logError("File count validation failed: " + e.getMessage());
 			}
 			setProgressPercentage( ((i + 1) * 100) / itemsCount);
 			
@@ -148,12 +137,9 @@ public class FileCountValidaionHandler extends CollectionHandler{
 				Thread.sleep(10);
 			} catch (InterruptedException e1) {
 				failedCount++;
-        		exeResult = false;
-    			eMessage = "File count validation interrupted for subject " + subjectId  + ". \n Error: " + e1.getMessage() + "\n";
+    			logError("File count validation interrupted for subject " + subjectId  + ". Error: " + e1.getMessage() + ".");
 				setStatus("Canceled");
 				clearSession();
-				log("log", eMessage.replace("\n", ""));
-				log.info(eMessage, e1);
 				break;
 			}
 		}

@@ -140,10 +140,10 @@ public class JhoveReportHandler extends CollectionHandler{
 				failedCount++;
         		exeResult = false;
     			eMessage = "Jhove report interrupted for subject " + subjectURI  + ". \n Error: " + e1.getMessage() + "\n";
-				setStatus("Canceled");
-				clearSession();
 				jhoveErrorReport(subjectURI + "\t \t \t \t \tError" + eMessage + "\t ");
 				log.info(eMessage, e1);
+				setStatus("Canceled");
+				clearSession();
 				break;
 			}
 		}

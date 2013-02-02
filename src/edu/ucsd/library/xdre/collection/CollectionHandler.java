@@ -204,6 +204,17 @@ public abstract class CollectionHandler implements ProcessHandler {
 			}
 		}
 	}
+	
+	public void logError(String message){
+		exeResult = false;
+		log.error(message);
+		logMessage(message);
+	}
+	
+	public void logMessage(String message){
+		setStatus(message);
+		log("log", message);
+	}
 
 	public void log(String key, String message) {
 		if (session != null) {
