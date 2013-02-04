@@ -46,8 +46,9 @@ public class DAMSUploadTaskHandler{
 		this.damsClient = damsClient;
 		String[] fileParts = contentId.split("-");
 		compId = fileParts.length == 1 || fileParts[0].equals("0")?"":fileParts[0];
-		int idx = sourceFile.lastIndexOf(".");
-		fileId = (fileParts.length == 1?fileParts[0]:fileParts[1]) + (idx>0?sourceFile.substring(idx):"");
+		String fName = new File(sourceFile).getName();
+		int idx = fName.indexOf(".");
+		fileId = (fileParts.length == 1?fileParts[0]:fileParts[1]) + (idx>0?fName.substring(idx):"");
 	}
 	
 	/**
