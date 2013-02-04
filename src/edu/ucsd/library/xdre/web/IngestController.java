@@ -97,6 +97,7 @@ public class IngestController implements Controller {
 			dataMap.put("filestoreDefault", fsDefault);
 			dataMap.put("fileSuffixes", fileSuffixes);
 			dataMap.put("fileUse", fileUse);
+			dataMap.put("preferedOrder", preferedOrder);
 		
 		
 		} catch (Exception e) {
