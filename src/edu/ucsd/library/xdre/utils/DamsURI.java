@@ -41,7 +41,7 @@ public class DamsURI {
 	}
 	
 	public boolean isComponentURI(){
-		if(component != null && component.length()>0){
+		if(!isFileURI() && component != null && component.length()>0){
 			try{
 				Integer.parseInt(component);
 				return true;
