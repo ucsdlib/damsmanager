@@ -701,10 +701,10 @@ public class DAMSClient {
 			status = execute(req);
 			if (status != 200)
 				handleError(format);
+			return EntityUtils.toString(response.getEntity());
 		} finally {
 			req.reset();
 		}
-		return EntityUtils.toString(response.getEntity());
 	}
 
 	/**
