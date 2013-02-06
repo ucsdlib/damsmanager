@@ -371,7 +371,7 @@ public class FileIngestionHandler extends CollectionHandler {
 								for (int j = 1; j < batchSize; j++) {
 									if (uploadTasks[j] != null){
 										filesFailed.append(uploadTasks[j].getSourceFile() + "\n");
-										logError("File upload aborted due to first file failed: " + subjectId + " (" + fileName + "). ");
+										logError("File upload aborted due to first file failed: " + subjectId + " (" + uploadTasks[j].getSourceFile() + "). ");
 									}
 								}
 								break;
@@ -383,7 +383,7 @@ public class FileIngestionHandler extends CollectionHandler {
 						Thread.sleep(10);
 					} catch (InterruptedException e) {
 						interrupted = true;
-						logError("File upload interrupted with " + subjectId + " (" + fileName + "). Error: " + e.getMessage());
+						logError("File upload canceled on " + subjectId + " (" + fileName + ").");
 						setStatus("Canceled");
 						clearSession();
 					}
