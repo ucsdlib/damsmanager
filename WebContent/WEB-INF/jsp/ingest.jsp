@@ -111,6 +111,19 @@
 		document.location.href="/damsmanager/ingest.do?ts=" + ds;
 	}
 	
+	function selectRepo(repoOpt){
+		var repoName = repoOpt.options[repoOpt.selectedIndex].text;
+		if(repoName == "rci" || repoName == "RCI"){
+			var fsOpts = document.mainForm.fs.options;
+			for(var i=0; i<fsOpts.length; i++){
+				if(fsOpts[i].text == "openStack"){
+					fsOpts[i].selected = true;
+					break;
+				}
+			}
+		}
+	}
+	
 	var crumbs = [{"Home":"http://libraries.ucsd.edu"}, {"Digital Library Collections":"/curator"},{"DAMS Manager":"/damsmanager/"}, {"Staging Ingest":""}];
 	drawBreadcrumbNMenu(crumbs, "tdr_crumbs_content", true);
 </script>
@@ -175,7 +188,7 @@
 			<td height="25px">
 				<span class="submenuText"><b>Repository: </b></span>
 				</td><td>
-					<select id="repo" name="repo" class="inputText">
+					<select id="repo" name="repo" class="inputText" onChange="selectRepo(this);">
 						<option value=""> -- repositories -- </option>
 						<c:forEach var="entry" items="${model.repos}">
 							<option value="${entry.value}" <c:if test="${model.repo == entry.value}">selected</c:if>>
