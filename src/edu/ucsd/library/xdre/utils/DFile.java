@@ -39,6 +39,7 @@ public class DFile {
 	private String objectCategory  = "file";
 	private String compositionLevel = "0";
 	private String quality = null;
+	private String duration = null;
 	private String status = null;
 
 	
@@ -253,6 +254,14 @@ public class DFile {
 		this.quality = quality;
 	}
 
+	public String getDuration() {
+		return duration;
+	}
+
+	public void setDuration(String duration) {
+		this.duration = duration;
+	}
+
 	public String getStatus() {
 		return status;
 	}
@@ -290,6 +299,8 @@ public class DFile {
 		value += "preservationLevel\":\"" + preservationLevel +"\", "; 
 		value += "objectCategory\":\"" + objectCategory +"\", "; 
 		value += "compositionLevel\":\"" + compositionLevel +"\" ";
+		value += "duration\":\"" + duration +"\", ";
+		value += "status\":\"" + status +"\", ";
 		value += "}";
 		return value;
 		
@@ -338,6 +349,8 @@ public class DFile {
 			objectCategory = dFile.objectCategory;
 		if(dFile.preservationLevel != null)
 			preservationLevel = dFile.preservationLevel;
+		if(dFile.duration != null)
+			duration = dFile.duration;
 		if(dFile.status != null)
 			status = dFile.status;
 		
@@ -368,6 +381,7 @@ public class DFile {
 		props.add(new BasicNameValuePair("compositionLevel", compositionLevel));
 		props.add(new BasicNameValuePair("objectCategory", objectCategory));
 		props.add(new BasicNameValuePair("preservationLevel", preservationLevel));
+		props.add(new BasicNameValuePair("duration", duration));
 		props.add(new BasicNameValuePair("status", status));
 		return props;
 	}
@@ -399,6 +413,7 @@ public class DFile {
 				(String)jsonObject.get("objectCategory"), 
 				(String)jsonObject.get("compositionLevel")
 				);
+		dFile.setDuration((String)jsonObject.get("duration"));
 		dFile.setStatus((String)jsonObject.get("status"));
 		return dFile;
 	}
@@ -439,6 +454,7 @@ public class DFile {
 					getNodeText(node, "//dams:objectCategory"), 
 					getNodeText(node, "//dams:compositionLevel")
 					);
+			dFile.setDuration(getNodeText(node, "//dams:duration"));
 			dFile.setStatus(getNodeText(node, "status"));
 		}finally{
 			if(in != null){

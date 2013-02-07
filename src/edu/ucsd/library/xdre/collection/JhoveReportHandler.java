@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.log4j.Logger;
 
 import edu.ucsd.library.xdre.utils.Constants;
@@ -27,6 +28,7 @@ public class JhoveReportHandler extends CollectionHandler{
 	protected int masterCount = 0;
 	protected boolean bytestreamFormatOnly = false;
 	protected boolean updateFormat = false;
+	private String jhoveUpdate = null;
 	private StringBuilder filesNotUpdated = new StringBuilder();
 	
 	/**
@@ -68,7 +70,7 @@ public class JhoveReportHandler extends CollectionHandler{
 		String eMessage;
 		String subjectURI = null;
 		
-    	log("log", "ARK_ID\tFormat&Version\tSize(bytes)\tCheckSum_CRC32\tDate_Modified\tStatus\tSource_File");
+    	log("log", "ARK_ID\tFormat&Version\tSize(bytes)\tCheckSum_CRC32\tDate_Modified\tDuration\tStatus\tSource_File");
 		for(int i=0; i<itemsCount; i++){
 			count++;
 			subjectURI = items.get(i);
@@ -79,13 +81,15 @@ public class JhoveReportHandler extends CollectionHandler{
 				DFile dFileTmp = null;
 				String formatName = null;
 				String formatNameTmp = null;
+				String duration = null;
+				String durationTmp = null;
 				String oSrcFileName = null;
 				String use = null;
 				List<DFile> files = damsClient.listObjectFiles(subjectURI);
 				for(Iterator<DFile> it=files.iterator(); it.hasNext();){
 					dFile = it.next();
 					use = dFile.getUse();
-					if(use != null && use.endsWith(Constants.SERVICE) || use.endsWith(Constants.SOURCE)){
+					if(use != null && (use.endsWith(Constants.SERVICE) || use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE))){
 						masterCount++;
 						// Jhove report for bytestream format files only
 						if(bytestreamFormatOnly) 
@@ -93,30 +97,57 @@ public class JhoveReportHandler extends CollectionHandler{
 						
 						if(!bytestreamFormatOnly || (bytestreamFormatOnly && (formatName ==null || formatName !=null&&formatName.equalsIgnoreCase("bytestream")))){
 							oSrcFileName = dFile.getSourceFileName();
+							duration = dFile.getDuration();
 							DamsURI fileURI = DamsURI.toParts(dFile.getId(), subjectURI);
 							dFileTmp = damsClient.extractFileCharacterize(fileURI.getObject(), fileURI.getComponent(), fileURI.getFileName());
-					    	if(updateFormat){
+			    			// Save Jhove
+					    	if(jhoveUpdate != null && jhoveUpdate.length() > 0){
+					    		boolean updateJhove = false;
+					    		boolean addDuration = true;
+					    		List<NameValuePair> paramsOrg = dFile.toNameValuePairs();
+					    		List<NameValuePair> optionalParams = new ArrayList<NameValuePair>();
 					    		formatNameTmp = dFileTmp.getFormatName();
-					    		if(formatNameTmp != null && !formatNameTmp.equalsIgnoreCase("bytestream") && !formatNameTmp.equals(formatName)){
-					    			// Save Jhove
-						    		List<NameValuePair> paramsOrg = dFile.toNameValuePairs();
-						    		//Remove the properties for format and formatVersion
-						    		List<NameValuePair> optionalParams = new ArrayList<NameValuePair>();
-						    		for(int j=0; j<paramsOrg.size(); j++){
-						    			NameValuePair optParam = paramsOrg.get(j);
-						    			String paramName = optParam.getName();
-						    			if(!(paramName.equals("formatName") || paramName.equals("formatVersion")))
-						    				optionalParams.add(paramsOrg.get(j));		
+					    		durationTmp = dFileTmp.getDuration();
+					    		for(int j=0; j<paramsOrg.size(); j++){
+					    			NameValuePair optParam = paramsOrg.get(j);
+					    			String paramName = optParam.getName();
+						    		
+						    		if(jhoveUpdate.equalsIgnoreCase("ByteStream") && formatNameTmp != null && !formatNameTmp.equalsIgnoreCase("bytestream") 
+						    				&& !formatNameTmp.equals(formatName) && (paramName.equals("formatName") || paramName.equals("formatVersion"))){
+							    		// Format and formatVersion extracted from Jhove	
+						    			if(paramName.equals("formatName")){
+						    				addProperty(optionalParams, paramName, formatNameTmp);
+						    				addProperty(optionalParams, "formatVersion", dFileTmp.getFormatVersion());
+						    			}
+							    		updateJhove = true;
+						    		}else if(jhoveUpdate.equalsIgnoreCase("Duration") && paramName.equals("duration")){
+						    			addDuration = false;
+						    			if(durationTmp != null)
+						    				addProperty(optionalParams, paramName, durationTmp);
+						    			if(duration == null || !durationTmp.equals(duration))
+						    				updateJhove = true;
+									}else{
+										// Overwrite other properties that don't need update. 
+										optionalParams.add(paramsOrg.get(j));
 						    		}
+					    		}
+					    		
+					    		// Duration that need to be extracted and save
+					    		if(jhoveUpdate.equalsIgnoreCase("Duration") && durationTmp != null && addDuration){
+					    			addProperty(optionalParams, "duration", durationTmp);
+					    			updateJhove = true;
+					    		}
+					    		
+					    		// Save Jhove
+					    		if(updateJhove){
 						    		damsClient.updateFileCharacterize(fileURI.getObject(), fileURI.getComponent(), fileURI.getFileName(), optionalParams);
-						    		log("log", dFile.getId() + "\t" + dFileTmp.getFormatName() + " " + dFileTmp.getFormatVersion() + "\t" + dFileTmp.getSize() + "\t" + dFileTmp.getCrc32checksum() + "\t" + dFileTmp.getDateCreated() + "\t" + dFileTmp.getStatus() + "\t" + (oSrcFileName==null?" ":oSrcFileName));
+						    		log("log", dFile.getId() + "\t" + dFileTmp.getFormatName() + " " + dFileTmp.getFormatVersion() + "\t" + dFileTmp.getSize() + "\t" + dFileTmp.getCrc32checksum() + "\t" + dFileTmp.getDateCreated() + "\t" + dFileTmp.getDuration() + "\t" + dFileTmp.getStatus() + "\t" + (oSrcFileName==null?" ":oSrcFileName));
 						    		filesUpdated++;
 					    		}else{
-					    			filesNotUpdated.append(dFileTmp.getId() + "\t" + dFileTmp.getFormatName() + " " + dFileTmp.getFormatVersion() + "\t" + dFileTmp.getSize() + "\t" + dFileTmp.getCrc32checksum() + "\t" + dFileTmp.getDateCreated() + "\t" + dFileTmp.getStatus() + "\t" + (oSrcFileName==null?" ":oSrcFileName));
+					    			filesNotUpdated.append(dFileTmp.getId() + "\t" + dFileTmp.getFormatName() + " " + dFileTmp.getFormatVersion() + "\t" + dFileTmp.getSize() + "\t" + dFileTmp.getCrc32checksum() + "\t" + dFileTmp.getDateCreated() + "\t" + dFileTmp.getDuration() + "\t" + dFileTmp.getStatus() + "\t" + (oSrcFileName==null?" ":oSrcFileName));
 					    		}
-					    			
 					    	}else
-								log("log", dFile.getId() + "\t" + dFileTmp.getFormatName() + " " + dFileTmp.getFormatVersion() + "\t" + dFileTmp.getSize() + "\t" + dFileTmp.getCrc32checksum() + "\t" + dFileTmp.getDateCreated() + "\t" + dFileTmp.getStatus() + "\t" + (oSrcFileName==null?" ":oSrcFileName));
+								log("log", dFile.getId() + "\t" + dFileTmp.getFormatName() + " " + dFileTmp.getFormatVersion() + "\t" + dFileTmp.getSize() + "\t" + dFileTmp.getCrc32checksum() + "\t" + dFileTmp.getDateCreated() + "\t" + dFileTmp.getDuration() + "\t" + dFileTmp.getStatus() + "\t" + (oSrcFileName==null?" ":oSrcFileName));
 							
 							filesReported++;
 						}
@@ -129,7 +160,7 @@ public class JhoveReportHandler extends CollectionHandler{
 				exeResult = false;
 				eMessage = "Jhove report failed: " + e.getMessage();
 				setStatus( eMessage  + "(" +(i+1)+ " of " + itemsCount + ")"); 
-				jhoveErrorReport(subjectURI + "\t \t \t \t \tError" + eMessage + "\t ");
+				jhoveErrorReport(subjectURI + "\t \t \t \t \t \tError" + eMessage + "\t ");
 				log.info(eMessage );
 			}
 			setProgressPercentage( ((i + 1) * 100) / itemsCount);
@@ -139,8 +170,8 @@ public class JhoveReportHandler extends CollectionHandler{
 			} catch (InterruptedException e1) {
 				failedCount++;
         		exeResult = false;
-    			eMessage = "Jhove report interrupted for subject " + subjectURI  + ". \n Error: " + e1.getMessage() + "\n";
-				jhoveErrorReport(subjectURI + "\t \t \t \t \tError" + eMessage + "\t ");
+    			eMessage = "Jhove report canceled on subject " + subjectURI  + ".";
+				jhoveErrorReport(subjectURI + "\t \t \t \t \t \tError" + eMessage + "\t ");
 				log.info(eMessage, e1);
 				setStatus("Canceled");
 				clearSession();
@@ -149,6 +180,11 @@ public class JhoveReportHandler extends CollectionHandler{
 		}
 		
 		return exeResult;
+	}
+	
+	public void addProperty(List<NameValuePair> params, String propName, String propValue){
+		if(propValue != null)
+			params.add(new BasicNameValuePair(propName, propValue));
 	}
 
 	public boolean isBytestreamFormatOnly() {
@@ -165,6 +201,14 @@ public class JhoveReportHandler extends CollectionHandler{
 
 	public void setUpdateFormat(boolean updateFormat) {
 		this.updateFormat = updateFormat;
+	}
+
+	public String getJhoveUpdate() {
+		return jhoveUpdate;
+	}
+
+	public void setJhoveUpdate(String jhoveUpdate) {
+		this.jhoveUpdate = jhoveUpdate;
 	}
 
 	public void jhoveErrorReport(String errorMessage){
