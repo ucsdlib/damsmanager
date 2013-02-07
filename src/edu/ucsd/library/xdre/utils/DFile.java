@@ -269,6 +269,84 @@ public class DFile {
 		this.object = object;
 	}
 	
+	public String toString(){
+		String value = "{";
+		value += "id\":\"" + id +"\", ";
+		value += "object\":\"" + object +"\", ";
+		value += "use\":\"" + use +"\", "; 
+		value += "sourceFileName\":\"" + sourceFileName +"\", "; 
+		value += "sourcePath\":\"" + sourcePath +"\", "; 
+		value += "dateCreated\":\"" + dateCreated +"\", "; 
+		value += "size\":\"" + size +"\", "; 
+		value += "formatName\":\"" + formatName +"\", ";
+		value += "formatVersion\":\"" + formatVersion +"\", "; 
+		value += "mimeType\":\"" + mimeType +"\", "; 
+		value += "quality\":\"" + quality +"\", "; 
+		value += "crc32checksum\":\"" + crc32checksum +"\", "; 
+		value += "md5checksum\":\"" + md5checksum +"\", ";
+		value += "sha1checksum\":\"" + sha1checksum +"\", "; 
+		value += "sha256checksum\":\"" + sha256checksum +"\", "; 
+		value += "sha512checksum\":\"" + sha512checksum +"\", "; 
+		value += "preservationLevel\":\"" + preservationLevel +"\", "; 
+		value += "objectCategory\":\"" + objectCategory +"\", "; 
+		value += "compositionLevel\":\"" + compositionLevel +"\" ";
+		value += "}";
+		return value;
+		
+	}
+	
+	/**
+	 * Update the properties
+	 * @param dFile
+	 */
+	public void updateValues(DFile dFile){
+		if(dFile.id != null)
+			id = dFile.id;
+		if(dFile.object != null)
+			object = dFile.object;
+		if(dFile.use != null)
+			use = dFile.use;
+		if(dFile.sourceFileName != null)
+			sourceFileName = dFile.sourceFileName;
+		if(dFile.sourcePath != null)
+			sourcePath = dFile.sourcePath;
+		if(dFile.dateCreated != null)
+			dateCreated = dFile.dateCreated;
+		if(dFile.size != null)
+			size = dFile.size;
+		if(dFile.formatName != null)
+			formatName = dFile.formatName;
+		if(dFile.formatVersion != null)
+			formatVersion = dFile.formatVersion;
+		if(dFile.mimeType != null)
+			mimeType = dFile.mimeType;
+		if(dFile.quality != null)
+			quality = dFile.quality;
+		if(dFile.crc32checksum != null)
+			crc32checksum = dFile.crc32checksum;
+		if(dFile.md5checksum != null)
+			md5checksum = dFile.md5checksum;
+		if(dFile.sha1checksum != null)
+			sha1checksum = dFile.sha1checksum;
+		if(dFile.sha256checksum != null)
+			sha256checksum = dFile.sha256checksum;
+		if(dFile.sha512checksum != null)
+			sha512checksum = dFile.sha512checksum;
+		if(dFile.compositionLevel != null)
+			compositionLevel = dFile.compositionLevel;
+		if(dFile.objectCategory != null)
+			objectCategory = dFile.objectCategory;
+		if(dFile.preservationLevel != null)
+			preservationLevel = dFile.preservationLevel;
+		if(dFile.status != null)
+			status = dFile.status;
+		
+	}
+	
+	/**
+	 * Convert properties to NameValue pairs
+	 * @return
+	 */
 	public List<NameValuePair> toNameValuePairs(){
 		List<NameValuePair> props = new ArrayList<NameValuePair>();
 		props.add(new BasicNameValuePair("id", id));
@@ -294,6 +372,11 @@ public class DFile {
 		return props;
 	}
 
+	/**
+	 * Construct a DFile object
+	 * @param jsonObject
+	 * @return
+	 */
 	public static DFile toDFile(JSONObject jsonObject){
 		DFile dFile = new DFile(
 				(String)jsonObject.get("id"), 
@@ -336,25 +419,25 @@ public class DFile {
 			doc = saxReader.read(in);
 			Node node = doc.getRootElement();
 			dFile = new DFile(
-					getNodeText(node, "dams:id"), 
-					getNodeText(node, "dams:object"), 
-					getNodeText(node, "use"), 
-					getNodeText(node, "sourceFileName"), 
-					getNodeText(node, "sourcePath"), 
-					getNodeText(node, "dateCreated"), 
-					getNodeText(node, "size"), 
-					getNodeText(node, "formatName"),
-					getNodeText(node, "formatVersion"), 
-					getNodeText(node, "mimeType"), 
-					getNodeText(node, "quality"), 
-					getNodeText(node, "crc32checksum"), 
-					getNodeText(node, "md5checksum"),
-					getNodeText(node, "sha1checksum"), 
-					getNodeText(node, "sha256checksum"), 
-					getNodeText(node, "sha512checksum"), 
-					getNodeText(node, "preservationLevel"), 
-					getNodeText(node, "objectCategory"), 
-					getNodeText(node, "compositionLevel")
+					getNodeText(node, "//dams:id"), 
+					getNodeText(node, "//dams:object"), 
+					getNodeText(node, "//dams:use"), 
+					getNodeText(node, "//dams:sourceFileName"), 
+					getNodeText(node, "//dams:sourcePath"), 
+					getNodeText(node, "//dams:dateCreated"), 
+					getNodeText(node, "//dams:size"), 
+					getNodeText(node, "//dams:formatName"),
+					getNodeText(node, "//dams:formatVersion"), 
+					getNodeText(node, "//dams:mimeType"), 
+					getNodeText(node, "//dams:quality"), 
+					getNodeText(node, "//dams:crc32checksum"), 
+					getNodeText(node, "//dams:md5checksum"),
+					getNodeText(node, "//dams:sha1checksum"), 
+					getNodeText(node, "//dams:sha256checksum"), 
+					getNodeText(node, "//dams:sha512checksum"), 
+					getNodeText(node, "//dams:preservationLevel"), 
+					getNodeText(node, "//dams:objectCategory"), 
+					getNodeText(node, "//dams:compositionLevel")
 					);
 			dFile.setStatus(getNodeText(node, "status"));
 		}finally{
