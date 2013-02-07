@@ -373,7 +373,7 @@ public class FileIngestionHandler extends CollectionHandler {
 									if (uploadTasks[j] != null){
 										filesFailed.append(uploadTasks[j].getSourceFile() + "\n");
 										compId = uploadTasks[j].getCompId();
-										logError("File upload aborted due to first file failed: " + uploadTasks[j].getSubjectId() + "/" + (compId!=null&&compId.length()>0?"/"+compId:"") + uploadTasks[j].getFileId() + " (" + uploadTasks[j].getSourceFile() + "). ");
+										logError("File upload aborted due to first file failed: " + subjectId + "/" + (compId!=null&&compId.length()>0?compId+"/":"") + uploadTasks[j].getFileId() + " (" + uploadTasks[j].getSourceFile() + "). ");
 									}
 								}
 								break;

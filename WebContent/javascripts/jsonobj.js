@@ -46,8 +46,9 @@ function renderObject(obj, element, depth) {
 	    		pathName = parent.getAttribute("title"); 
 	    	}   	
 	    }
-	    paths = "/" + paths;
-	    document.getElementById("dir").value = paths;
+	    paths = "/" + paths;	
+	    //document.getElementById("dir").value = dirValues;
+	    addDir(paths);
 	 };
      return;
   } else {
@@ -166,7 +167,8 @@ function createToggleElement(obj, target, label, depth) {
     	}   	
     }
     paths = "/" + paths;
-    document.getElementById("dir").value = paths;
+    addDir(paths);
+    //document.getElementById("dir").value = paths;
    // }
   };
   wrapper.appendChild(toggle);
@@ -202,6 +204,48 @@ function toJSON(obj) {
     }
     return '{'+out.join(',')+'}';
   }
+}
+
+function addDir(directory){
+    var dirValues = document.getElementById("dir").value;
+    var dirArr = dirValues.split(";");
+    var toAdd = true;
+    for(var i=0; i<dirArr.length; i++){
+    	var iDir = dirArr[i];
+    	if(iDir != null &&  iDir == directory){
+    		// Remove it when click on the folder again
+    		dirArr[i] = "";
+    		toAdd = false;
+    		break;
+    	}else if(iDir.indexOf(directory) == 0){
+    		// Choose parent directory need clear all child directory
+    		if(toAdd){
+    			dirArr[i] = directory;
+    			toAdd = false;
+    		}else
+    			dirArr[i] = "";
+
+    	}else if(directory.indexOf(iDir) == 0){
+    		// Choose child directory, replace it
+    		dirArr[i] = directory;
+    		toAdd = false;
+    		break;
+    	}
+    }
+    if(toAdd)
+    	dirValues += directory + ";";
+    else {
+		dirValues = ""; 
+    	// Re-assemble the path string.
+    	for(var i=0; i<dirArr.length; i++){
+    		var iDir = dirArr[i];
+    		if(iDir != null && iDir.length > 0){
+    			dirValues += iDir + ";"; 
+    		}
+    	}
+    }
+    	
+    document.getElementById("dir").value = dirValues;
 }
 
 DebuggableObject.prototype = {

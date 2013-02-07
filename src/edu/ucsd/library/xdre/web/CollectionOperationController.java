@@ -565,9 +565,6 @@ public class CollectionOperationController implements Controller {
 				 	String[] fileOrderSuffixes = null;
 				 	if(fileSuffixes != null && fileSuffixes.length() > 0)
 				 		fileOrderSuffixes = fileSuffixes.split(",");
-				 	if((filePath.startsWith("/") || filePath.startsWith("\\")) && (Constants.DAMS_STAGING.endsWith("/") 
-				 			|| Constants.DAMS_STAGING.endsWith("\\")))
-				 		filePath = filePath.substring(1);
 				 	
 				 	String[] fileUses = null;
 				 	if(fileUse != null && (fileUse=fileUse.trim()).length() > 0){
@@ -587,8 +584,18 @@ public class CollectionOperationController implements Controller {
 				 	session.setAttribute("fileSuffixes", fileSuffixes);
 				 	session.setAttribute("fileUse", fileUse);
 				 	
+				 	String[] dirArr = filePath.split(";");
 				 	List<String> fileList = new ArrayList<String>();
-				 	fileList.add(Constants.DAMS_STAGING + filePath);
+				 	String dir = null;
+				 	for (int j=0; j<dirArr.length; j++){
+				 		dir = dirArr[j];
+				 		if(dir != null && (dir=dir.trim()).length()>0){
+						 	if((dir.startsWith("/") || dir.startsWith("\\")) && (Constants.DAMS_STAGING.endsWith("/") 
+						 			|| Constants.DAMS_STAGING.endsWith("\\")))
+						 		dir = dir.substring(1);
+				 			fileList.add(Constants.DAMS_STAGING + dir);
+				 		}
+				 	}
 
 		            handler = new FileIngestionHandler(damsClient, fileList, Integer.parseInt(arkSetting), collectionId, fileFilter, coDelimiter);
 		            ((FileIngestionHandler)handler).setFileOrderSuffixes(fileOrderSuffixes);

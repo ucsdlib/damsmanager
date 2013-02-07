@@ -24,6 +24,21 @@
 	    if(stagingAreaPath == null || stagingAreaPath.length == 0){
 	    	alert("Please enter the file location in the Staging Area.");
 			return false;
+	    }else{
+	    	// Check values for duplication, parent/child confliction
+	    	var dirs = stagingAreaPath.split(";");
+	    	for(var i=0; i<dirs.length; i++){
+	    		var dir = dirs[i];
+	    		if(dir != null && (dir=trim(dir)).lenght > 0){
+		    		for(var j=i+1; j<dirs.length; j++){
+		    			// Duplicated sumission or conflicting parent/child directories
+		    			if(dirs[j] != null && (dir == dirs[j] || dir.indexOf(dirs[j]) == 0 || dirs[j].indexOf(dir) == 0)){
+		    				alert("Conflicting directories chosen for ingestion: \n" + dir + " and " + dirs[j] + ".");
+		    				return false;
+		    			}
+		    		}
+	    		}
+	    	}
 	    }
 	    
 	    var arkSetting = "0";
