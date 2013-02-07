@@ -81,9 +81,9 @@
 				return false;
 	    	}
 	    }
-	    var message = "Are you sure to ingest files from the Staging Area " + stagingAreaPath + "?";
+	    var message = "Are you sure to ingest files in the following path/paths from the Staging Area? \n" + stagingAreaPath;
 	    if(collectionIndex == 0){
-	    	message = "No collection is selected for staging ingest! \nShall I just go ahead and ingest the files in " + stagingAreaPath + " anyway?";
+	    	message = "No collection is selected for staging ingest! \nAre you sure to go ahead and ingest the files from the Staging Area (" + stagingAreaPath + ")?";
 	    }
 	    var exeConfirm = confirm(message);
 	    if(!exeConfirm)
