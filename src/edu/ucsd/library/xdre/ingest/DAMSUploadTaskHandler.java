@@ -17,7 +17,7 @@ public class DAMSUploadTaskHandler{
 	public static String filePaths = "";
 
 	private String collectionId = null;
-	private String repositoryId = null;
+	private String unitId = null;
 	private String subjectId = null;
 	private String compId = null;
 	private String fileId = null;
@@ -135,11 +135,11 @@ public class DAMSUploadTaskHandler{
 		this.arkOrg = arkOrg;
 	}
 
-	public String getRepositoryId() {
-		return repositoryId;
+	public String getUnitId() {
+		return unitId;
 	}
 
-	public void setRepositoryId(String repositoryId) {
-		this.repositoryId = repositoryId;
+	public void setUnitId(String unitId) {
+		this.unitId = unitId;
 	}
 }

@@ -75,7 +75,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 
 	protected String collectionTitle = null;
 	protected Map<String, String> collectionsMap = null;
-	protected Map<String, String> reposMap = null;
+	protected Map<String, String> unitsMap = null;
 	protected int itemsCount = 0; //Total number of items in the collection/batch
 
 	/**
@@ -121,11 +121,11 @@ public abstract class CollectionHandler implements ProcessHandler {
 	protected void init() throws Exception {
 		exeReport = new StringBuilder();
 		collectionsMap = new HashMap<String, String>();
-		reposMap = damsClient.listRepositories();
+		unitsMap = damsClient.listUnits();
 		Map<String, String> colls = damsClient.listCollections();
 		Entry<String, String> ent = null;
 		
-		colls.putAll(reposMap);
+		colls.putAll(unitsMap);
 		for (Iterator<Entry<String, String>> it=colls.entrySet().iterator(); it.hasNext();){
 			ent = (Entry<String, String>) it.next();
 			String colId = ent.getValue();
@@ -599,14 +599,14 @@ public abstract class CollectionHandler implements ProcessHandler {
 	}
 	
 	/**
-	 * List items in a collection/repository 
+	 * List items in a collection/units 
 	 * @param collectionId
 	 * @return
 	 * @throws Exception
 	 */
 	public List<String> listItems(String categoryId) throws Exception{
-		if(reposMap.containsValue(categoryId))
-			return damsClient.listRepoObjects(categoryId);
+		if(unitsMap.containsValue(categoryId))
+			return damsClient.listUnitObjects(categoryId);
 		else
 			return damsClient.listObjects(categoryId);
 	}
@@ -617,11 +617,11 @@ public abstract class CollectionHandler implements ProcessHandler {
 	 * @throws Exception 
 	 */
 	public List<String> listAllItems() throws Exception{
-		String repoId = null;
+		String unitId = null;
 		List<String> items = new ArrayList<String>();
-		for(Iterator<String> it=reposMap.values().iterator();it.hasNext();){
-			repoId = it.next();
-			items.addAll(damsClient.listRepoObjects(repoId));
+		for(Iterator<String> it=unitsMap.values().iterator();it.hasNext();){
+			unitId = it.next();
+			items.addAll(damsClient.listUnitObjects(unitId));
 		}
 		return items; 
 	}

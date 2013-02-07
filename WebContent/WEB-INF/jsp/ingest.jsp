@@ -14,9 +14,9 @@
 		var dsIdx = document.mainForm.ts.selectedIndex;
 		var ds = document.mainForm.ts.options[dsIdx].value;
 		var collectionIndex = document.mainForm.category.selectedIndex;
-		var repoIndex = document.mainForm.repo.selectedIndex;
-	    if(repoIndex == 0){
-	    	alert("Please select a repository.");
+		var unitIndex = document.mainForm.unit.selectedIndex;
+	    if(unitIndex == 0){
+	    	alert("Please select an administration unit.");
 			return false;
 	    }
 	    
@@ -126,9 +126,9 @@
 		document.location.href="/damsmanager/ingest.do?ts=" + ds;
 	}
 	
-	function selectRepo(repoOpt){
-		var repoName = repoOpt.options[repoOpt.selectedIndex].text;
-		if(repoName == "rci" || repoName == "RCI"){
+	function selectUnit(unitOpt){
+		var unitName = unitOpt.options[unitOpt.selectedIndex].text;
+		if(unitName == "rci" || unitName == "RCI"){
 			var fsOpts = document.mainForm.fs.options;
 			for(var i=0; i<fsOpts.length; i++){
 				if(fsOpts[i].text == "openStack"){
@@ -201,12 +201,12 @@
 		</tr>
 		<tr align ="left">
 			<td height="25px">
-				<span class="submenuText"><b>Repository: </b></span>
+				<span class="submenuText"><b>Admin Unit: </b></span>
 				</td><td>
-					<select id="repo" name="repo" class="inputText" onChange="selectRepo(this);">
-						<option value=""> -- repositories -- </option>
-						<c:forEach var="entry" items="${model.repos}">
-							<option value="${entry.value}" <c:if test="${model.repo == entry.value}">selected</c:if>>
+					<select id="unit" name="unit" class="inputText" onChange="selectUnit(this);">
+						<option value=""> -- units -- </option>
+						<c:forEach var="entry" items="${model.units}">
+							<option value="${entry.value}" <c:if test="${model.unit == entry.value}">selected</c:if>>
                        			<c:out value="${entry.key}" />
                         	</option>
 						</c:forEach>

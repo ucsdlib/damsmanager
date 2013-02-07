@@ -241,35 +241,35 @@ public class DAMSClient {
 	}
 	
 	/**
-	 * Retrieve the Repositories in DAMS
-	 * /api/repositories
+	 * Retrieve the units in DAMS
+	 * /api/units
 	 * @return
 	 * @throws Exception 
 	 */
-	public Map<String, String> listRepositories() throws Exception{
+	public Map<String, String> listUnits() throws Exception{
 		Map<String, String> map = null;
-		String url = getRepositoriesURL(null, null, "json");
+		String url = getUnitsURL(null, null, "json");
 		HttpGet get = new HttpGet(url);
 		JSONObject resObj = getJSONResult(get);
-		JSONArray colArr = (JSONArray) resObj.get("repositories");
+		JSONArray colArr = (JSONArray) resObj.get("units");
 		JSONObject col = null;
 		map = new TreeMap<String, String>();
 		for(Iterator it= colArr.iterator(); it.hasNext();){
 			col = (JSONObject)it.next();
-			// Repo title, repo URL
-			map.put((String)col.get("name"), (String)col.get("repository"));
+			// unit title, unit URL
+			map.put((String)col.get("name"), (String)col.get("unit"));
 		}
 
 		return map;
 	}
 	
 	/**
-	 * Get a list of objects in a repository.
-	 * /api/repositories/repoId
+	 * Get a list of objects in a unit.
+	 * /api/units/unitId
 	 * @throws Exception 
 	 **/
-	public List<String> listRepoObjects(String repoId) throws Exception {
-		String url = getRepositoriesURL(repoId, null, "xml");
+	public List<String> listUnitObjects(String unitId) throws Exception {
+		String url = getUnitsURL(unitId, null, "xml");
 		HttpGet get = new HttpGet(url);
 		Document doc = getXMLResult(get);
 		List<Node> objectNodes = doc.selectNodes(DOCUMENT_RESPONSE_ROOT_PATH + "/objects/value/obj");
@@ -283,13 +283,13 @@ public class DAMSClient {
 	}
 	
 	/**
-	 * Get a list of files in a repository.
-	 * /api/repositories/repoId/files 
+	 * Get a list of files in a unit.
+	 * /api/units/unitId/files 
 	 * @throws Exception 
 	 **/
-	public List<DFile> listRepoFiles(String repoId) throws Exception {
+	public List<DFile> listUnitFiles(String unitId) throws Exception {
 		JSONObject resObj = null;
-		String url = getRepositoriesURL(repoId, "files", "json");
+		String url = getUnitsURL(unitId, "files", "json");
 		HttpGet get = new HttpGet(url);
 		resObj = getJSONResult(get);
 		JSONArray jsonArr = (JSONArray) resObj.get("files");
@@ -300,13 +300,13 @@ public class DAMSClient {
 	}
 	
 	/**
-	 * Get the files in a repository.
-	 * /api/repositories/repoId/files 
+	 * Get the files in a unit.
+	 * /api/units/unitId/files 
 	 * @throws Exception 
 	 **/
-	public Document getRepoFiles(String repoId) throws Exception {
+	public Document getUnitFiles(String unitId) throws Exception {
 		Document doc = null;
-		String url = getRepositoriesURL(repoId, "files", "xml");
+		String url = getUnitsURL(unitId, "files", "xml");
 		HttpGet get = new HttpGet(url);
 		doc = getXMLResult(get);
 		return doc;
@@ -436,17 +436,17 @@ public class DAMSClient {
 	 * @return
 	 * @throws Exception 
 	 */
-	public List<DamsURI> retrieveFileURI(String srcFileName, String srcPath, String collectionId, String repoId) throws Exception{
+	public List<DamsURI> retrieveFileURI(String srcFileName, String srcPath, String collectionId, String unitId) throws Exception{
 		HttpGet req = null;
 		List<DamsURI> fileURIs = null;
 		String url = "";
-		if(collectionId == null && repoId == null){
+		if(collectionId == null && unitId == null){
 			// Retrieve object from SOLR
 		}else{
 			if(collectionId != null)
 				url = getCollectionsURL(collectionId, "files", "xml");
 			else
-				url = getRepositoriesURL(repoId, "files", "xml");
+				url = getUnitsURL(unitId, "files", "xml");
 		}
 
 		try{
@@ -637,20 +637,20 @@ public class DAMSClient {
 	}
 	
 	/**
-	 * List objects for items in a repository and/or collection
-	 * @param repository
+	 * List objects for items in a unit and/or collection
+	 * @param unit
 	 * @param collection
 	 * @return
 	 * @throws Exception
 	 */
-	public List<String> solrListObjects(String repoTitle, String collectionTitle) throws Exception {
+	public List<String> solrListObjects(String unitTitle, String collectionTitle) throws Exception {
 		int rows = 1000;
 		int start = 0;
 		boolean hasMore = false;
 		List<String> items = new ArrayList<String>();
 		//Retrieve objects in SOLR recursively
 		do{
-			hasMore = appendSOLRItems(items, repoTitle, collectionTitle, start, rows);
+			hasMore = appendSOLRItems(items, unitTitle, collectionTitle, start, rows);
 			start = rows + start;
 		}while(hasMore );
 		
@@ -1249,19 +1249,19 @@ public class DAMSClient {
 	}
 	
 	/**
-	 * Construct REST URL for repositories, collections
+	 * Construct REST URL for administration unit
 	 * @param collection
 	 * @param function
 	 * @param format
 	 * @return
 	 */
-	public String getRepositoriesURL(String repository, String function, String format){
-		String[] parts = {"repositories", repository, function};
+	public String getUnitsURL(String unit, String function, String format){
+		String[] parts = {"units", unit, function};
 		return toDAMSURL(parts, format);
 	}
 	
 	/**
-	 * Construct REST URL for repositories, collections
+	 * Construct REST URL for collections
 	 * @param collection
 	 * @param function
 	 * @param format
@@ -1736,15 +1736,15 @@ public class DAMSClient {
 	/**
 	 * Append items found in SOLR
 	 * @param items
-	 * @param repository
+	 * @param unit
 	 * @param collection
 	 * @param start
 	 * @param rows
 	 * @return
 	 * @throws Exception
 	 */
-	public boolean appendSOLRItems(List<String> items, String repoTitle, String collectionTitle, int start, int rows) throws Exception{
-		String solrQuery = toSolrQuery(repoTitle, collectionTitle);
+	public boolean appendSOLRItems(List<String> items, String unitTitle, String collectionTitle, int start, int rows) throws Exception{
+		String solrQuery = toSolrQuery(unitTitle, collectionTitle);
 		String solrParams = solrQuery + "&rows=" + rows + "&start=" + start + "&fl=id&wt=xml";
 		
 		String url = getIndexURL(null);
@@ -1768,13 +1768,13 @@ public class DAMSClient {
 	
 	/**
 	 * Construct SOLR query
-	 * @param repository
+	 * @param unit
 	 * @param collection
 	 * @return
 	 * @throws UnsupportedEncodingException 
 	 */
-	public static String toSolrQuery(String repository, String collection) throws UnsupportedEncodingException{
-		String solrParams = (repository==null?"":"repository:\""+repository + "\"");
+	public static String toSolrQuery(String unit, String collection) throws UnsupportedEncodingException{
+		String solrParams = (unit==null?"":"unit:\""+unit + "\"");
 		solrParams += (collection!=null&&solrParams.length()>0?" AND ":"") + (collection!=null?"collection:"+collection:"");
 		if(solrParams.length() > 0)
 			solrParams = solrParams.replace(" ", "+");

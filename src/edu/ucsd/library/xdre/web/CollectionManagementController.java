@@ -24,7 +24,7 @@ import edu.ucsd.library.xdre.utils.DAMSClient;
 
 
  /**
- * Class CollectionManagementController, the model of the collection/repositories management
+ * Class CollectionManagementController, the model of the collection/units management
  * home page
  *
  * @author lsitu@ucsd.edu

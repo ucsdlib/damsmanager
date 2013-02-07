@@ -36,7 +36,7 @@ public class IngestController implements Controller {
 		
 		String ds = request.getParameter("ts");
 		String collectionId =  request.getParameter("category");
-		String repo =  request.getParameter("repo");
+		String unit =  request.getParameter("unit");
 		String reset = request.getParameter("reset");
 		String message = request.getParameter("message");
 		String fileStore = request.getParameter("fs");
@@ -60,7 +60,7 @@ public class IngestController implements Controller {
 				session.removeAttribute("arkSetting");
 				session.removeAttribute("preferedOrder");
 				session.removeAttribute("fileStore");
-				session.removeAttribute("repo");
+				session.removeAttribute("unit");
 			 	session.removeAttribute("fileSuffixes");
 			 	session.removeAttribute("fileUse");
 			}else{
@@ -74,7 +74,7 @@ public class IngestController implements Controller {
 
 
 			Map<String, String> collectionMap = damsClient.listCollections();
-			Map<String, String> repoMap = damsClient.listRepositories();
+			Map<String, String> unitsMap = damsClient.listUnits();
 			List<String> tsSrcs = damsClient.listTripleStores();
 			List<String> fsSrcs = damsClient.listFileStores();
 			String fsDefault = damsClient.defaultFilestore();
@@ -83,8 +83,8 @@ public class IngestController implements Controller {
 			
 			dataMap.put("categories", collectionMap);
 			dataMap.put("category", collectionId);
-			dataMap.put("repos", repoMap);
-			dataMap.put("repo", repo);
+			dataMap.put("units", unitsMap);
+			dataMap.put("unit", unit);
 			dataMap.put("stagingArea", Constants.DAMS_STAGING);
 			dataMap.put("filePath", filePath);
 			dataMap.put("fileFilter", fileFilter);

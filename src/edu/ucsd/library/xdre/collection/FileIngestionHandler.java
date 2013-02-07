@@ -34,7 +34,7 @@ public class FileIngestionHandler extends CollectionHandler {
 
 	private static Map<String, FileWriter> fileStoreLogs = null;
 
-	private String repository = null;
+	private String unit = null;
 	private List<String> fileList = null;
 	private String fileFilter = null;
 	private String coDelimiter = null; // Delimiter for complex object ordering
@@ -109,7 +109,7 @@ public class FileIngestionHandler extends CollectionHandler {
 		Pair uploadFile = null;
 		UploadTask upLoadTask = null;
 
-		fileStoreLog = getFileStoreLog(collectionId!=null?collectionId:repository!=null?repository:"dams");
+		fileStoreLog = getFileStoreLog(collectionId!=null?collectionId:unit!=null?unit:"dams");
 		taskOrganizer = new UploadTaskOrganizer(fileList, uploadType,
 				fileFilter, fileOrderSuffixes, coDelimiter, preferedOrder);
 
@@ -149,7 +149,7 @@ public class FileIngestionHandler extends CollectionHandler {
 					System.out.println("Batch size: " + batchSize + " -> " + fileName + " " + contentId);
 					uploadHandler = new DAMSUploadTaskHandler(contentId,
 							fileName, collectionId, damsClient);
-					uploadHandler.setRepositoryId(repository);
+					uploadHandler.setUnitId(unit);
 					
 					if (uploadType == UploadTaskOrganizer.PAIR_LOADING) {
 						// Default file use properties for master/master-edited pair file upload
@@ -313,14 +313,14 @@ public class FileIngestionHandler extends CollectionHandler {
 									List<Statement> stmts = new ArrayList<Statement>();
 									if(collectionId != null && collectionId.length() > 0)
 										stmts.add(rdfStore.createStatement(subjectId, "dams:collection", collectionId, true));
-									if(repository != null && repository.length() > 0)
-										stmts.add(rdfStore.createStatement(subjectId, "dams:repository", repository, true));
+									if(unit != null && unit.length() > 0)
+										stmts.add(rdfStore.createStatement(subjectId, "dams:unit", unit, true));
 									if(stmts.size() > 0){
 										try {
 											damsClient.addMetadata(subjectId, stmts);
 										} catch (Exception e) {
 											e.printStackTrace();
-											logError("Failed to add repository/collection links for " + subjectId + " (" + fileName + ").");
+											logError("Failed to add unit/collection links for " + subjectId + " (" + fileName + ").");
 										}
 									}
 								}
@@ -427,7 +427,7 @@ public class FileIngestionHandler extends CollectionHandler {
 		exeReport.append("For records, please download the <a href=\""
 				+ Constants.CLUSTER_HOST_NAME
 				+ "/damsmanager/downloadLog.do?log=ingest&category="
-				+ DAMSClient.stripID(collectionId!=null?collectionId:repository!=null?repository:"dams") + "\">Ingestion log</a>");
+				+ DAMSClient.stripID(collectionId!=null?collectionId:unit!=null?unit:"dams") + "\">Ingestion log</a>");
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
 		return exeInfo;
@@ -464,12 +464,12 @@ public class FileIngestionHandler extends CollectionHandler {
 		return fileUse;
 	}
 
-	public String getRepository() {
-		return repository;
+	public String getUnit() {
+		return unit;
 	}
 
-	public void setRepository(String repository) {
-		this.repository = repository;
+	public void setUnit(String unit) {
+		this.unit = unit;
 	}
 
 	public String[] getFileOrderSuffixes() {
@@ -482,7 +482,7 @@ public class FileIngestionHandler extends CollectionHandler {
 	
 	public List<DamsURI> fileLoaded(String sourceFile) throws Exception{
 		File srcFile = new File(sourceFile);
-		return damsClient.retrieveFileURI(srcFile.getName(), srcFile.getParent(), collectionId, repository);
+		return damsClient.retrieveFileURI(srcFile.getName(), srcFile.getParent(), collectionId, unit);
 	}
 
 	public static synchronized FileWriter getFileStoreLog(String collectionId)

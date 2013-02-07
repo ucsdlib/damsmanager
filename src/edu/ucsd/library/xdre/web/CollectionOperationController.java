@@ -137,8 +137,8 @@ public class CollectionOperationController implements Controller {
 		if(dataConvert)
 			forwardTo = "/pathMapping.do?ts=" + ds + (fileStore!=null?"&fs=" + fileStore:"");
 		else if(isIngest){
-			String repo = getParameter(paramsMap, "repo");
-			forwardTo = "/ingest.do?ts=" + ds + (fileStore!=null?"&fs=" + fileStore:"") + (repo!=null?"&repo=" + repo:"");
+			String unit = getParameter(paramsMap, "unit");
+			forwardTo = "/ingest.do?ts=" + ds + (fileStore!=null?"&fs=" + fileStore:"") + (unit!=null?"&unit=" + unit:"");
 		}else if(isDevUpload)
 			forwardTo = "/devUpload.do?" + (fileStore!=null?"&fs=" + fileStore:"");
 		else if(isSolrDump)
@@ -538,7 +538,7 @@ public class CollectionOperationController implements Controller {
 			 }*/else if (i == 10){	
 				    session.setAttribute("status", opMessage + "Stage Ingesting ...");
 				    
-					String repo = getParameter(paramsMap, "repo");
+					String unit = getParameter(paramsMap, "unit");
 				    String arkSetting = getParameter(paramsMap, "arkSetting").trim();
 				 	String filePath = getParameter(paramsMap, "filePath").trim();
 				 	String fileFilter = getParameter(paramsMap, "fileFilter").trim();
@@ -576,7 +576,7 @@ public class CollectionOperationController implements Controller {
 				 	}
 
 				 	session.setAttribute("category", collectionId);
-				 	session.setAttribute("repo", repo);
+				 	session.setAttribute("unit", unit);
 				 	session.setAttribute("arkSetting", arkSetting);
 				 	session.setAttribute("filePath", filePath);
 				 	session.setAttribute("fileFilter", fileFilter);
@@ -600,7 +600,7 @@ public class CollectionOperationController implements Controller {
 		            handler = new FileIngestionHandler(damsClient, fileList, Integer.parseInt(arkSetting), collectionId, fileFilter, coDelimiter);
 		            ((FileIngestionHandler)handler).setFileOrderSuffixes(fileOrderSuffixes);
 		            ((FileIngestionHandler)handler).setPreferedOrder(preferedOrder);
-		            ((FileIngestionHandler)handler).setRepository(repo);
+		            ((FileIngestionHandler)handler).setUnit(unit);
 		            ((FileIngestionHandler)handler).setFileUses(fileUses);
 		    	    
 			 }/* else if (i == 15){	
