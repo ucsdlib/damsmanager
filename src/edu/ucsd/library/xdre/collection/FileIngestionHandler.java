@@ -367,11 +367,13 @@ public class FileIngestionHandler extends CollectionHandler {
 								interrupted = true;
 							}
 							if (i == 0) {
+								String compId = null;
 								// If the first component failed, then skip ingesting the complex object
 								for (int j = 1; j < batchSize; j++) {
 									if (uploadTasks[j] != null){
 										filesFailed.append(uploadTasks[j].getSourceFile() + "\n");
-										logError("File upload aborted due to first file failed: " + subjectId + " (" + uploadTasks[j].getSourceFile() + "). ");
+										compId = uploadTasks[j].getCompId();
+										logError("File upload aborted due to first file failed: " + uploadTasks[j].getSubjectId() + "/" + (compId!=null&&compId.length()>0?"/"+compId:"") + uploadTasks[j].getFileId() + " (" + uploadTasks[j].getSourceFile() + "). ");
 									}
 								}
 								break;
