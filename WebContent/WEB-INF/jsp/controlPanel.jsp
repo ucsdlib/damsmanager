@@ -95,9 +95,19 @@
 						<div title="Check this checkbox to generate Jhove report for the BYTESTREAM files only." class="specialmenuText"><input type="checkbox" id="bsJhoveReport" name="bsJhoveReport" class="pmcheckbox" onClick="confirmSelection(this, 'Jhove report for BYTESTREAM files only', 'jhoveReport');">
 							<span class="text-special">Jhove report for BYTESTREAM files only.</span>
 						</div>
-						<div title="Check this checkbox to update the format when it's validated by Jhove." class="specialmenuText"><input type="checkbox" id="bsJhoveUpdate" name="bsJhoveUpdate" class="pmcheckbox" onClick="confirmSelection(this, 'Correct format metadata', 'jhoveUpdate');">
-							<span class="text-special">Correct format metadata if validated by Jhove.</span>
-						</div>	
+						<div title="Check this checkbox to update the format when it's validated by Jhove." class="specialmenuText"><input type="checkbox" id="bsJhoveUpdate" name="bsJhoveUpdate" class="pmcheckbox" onClick="confirmSelection(this, 'Update technical metadata metadata', 'jhoveReport');">
+							<span class="text-special">Update technical metadata:</span>
+						</div>
+						<div>
+							<fieldset class="groupbox_rdf"><legend class="slegandText" style="padding-left:8px;padding-right:8px;">Update Options</legend>
+								<span title="Check this checkbox to update the format when it's validated by Jhove." class="submenuText" >&nbsp;<input type="radio" name="jhoveUpdate" value="ByteStream" checked>
+									Correct format and format version.
+								</span><br />
+								<span title="Check this checkbox to update duration when it's available." class="submenuText">&nbsp;<input type="radio" name="jhoveUpdate" value="Duration">
+									Update duration for audio/video.
+								</span>
+							</fieldset>
+						</div>
 					</div>
 					<div id="checksumDiv" class="processlayout">
 						<span title="Validate checksum or revalidate if checksum date before the date entered." class="menuText">

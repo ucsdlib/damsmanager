@@ -671,14 +671,10 @@ public class CollectionOperationController implements Controller {
 			 }*/else if (i == 19){
 				 session.setAttribute("status", opMessage + "Jhove report ...");
 				 boolean bytestreamFilesOnly = getParameter(paramsMap, "bsJhoveReport") != null;
-				 boolean updateFormat = getParameter(paramsMap, "bsJhoveUpdate") != null;
-				 handler = new JhoveReportHandler(damsClient, collectionId, updateFormat);
-				 if(bytestreamFilesOnly && (collectionId == null || collectionId.length() == 0)){
-					 // Report all bytestream format files in DAMS
-					 List<String> items = handler.listAllItems();
-					 handler.setItems(items);
-				 }
-				 ((JhoveReportHandler)handler).setBytestreamFormatOnly(bytestreamFilesOnly);
+				 boolean update = getParameter(paramsMap, "bsJhoveUpdate") != null;
+				 handler = new JhoveReportHandler(damsClient, collectionId, bytestreamFilesOnly);
+				 if(update)
+					 ((JhoveReportHandler)handler).setJhoveUpdate(getParameter(paramsMap, "jhoveUpdate"));
 
 			 }else 	
 		          throw new ServletException("Unhandle operation index: " + i);

@@ -26,8 +26,7 @@ public class JhoveReportHandler extends CollectionHandler{
 	protected int filesReported = 0;
 	protected int filesUpdated = 0;
 	protected int masterCount = 0;
-	protected boolean bytestreamFormatOnly = false;
-	protected boolean updateFormat = false;
+	protected boolean bytestreamFilesOnly = false;
 	private String jhoveUpdate = null;
 	private StringBuilder filesNotUpdated = new StringBuilder();
 	
@@ -57,9 +56,13 @@ public class JhoveReportHandler extends CollectionHandler{
 	 * @param updateFormat
 	 * @throws Exception
 	 */
-	public JhoveReportHandler(DAMSClient damsClient, String collectionId, boolean updateFormat) throws Exception{
+	public JhoveReportHandler(DAMSClient damsClient, String collectionId, boolean bytestreamFilesOnly) throws Exception{
 		super(damsClient, collectionId);
-		this.updateFormat = updateFormat;
+		this.bytestreamFilesOnly = bytestreamFilesOnly;
+		 if(bytestreamFilesOnly && (collectionId == null || collectionId.length() == 0)){
+			 // Report all bytestream format files in DAMS
+			 items = listAllItems();
+		 }
 	}
 
 	/**
@@ -92,15 +95,15 @@ public class JhoveReportHandler extends CollectionHandler{
 					if(use != null && (use.endsWith(Constants.SERVICE) || use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE))){
 						masterCount++;
 						// Jhove report for bytestream format files only
-						if(bytestreamFormatOnly) 
+						if(bytestreamFilesOnly) 
 							formatName = dFile.getFormatName();
 						
-						if(!bytestreamFormatOnly || (bytestreamFormatOnly && (formatName ==null || formatName !=null&&formatName.equalsIgnoreCase("bytestream")))){
+						if(!bytestreamFilesOnly || (bytestreamFilesOnly && (formatName ==null || formatName !=null&&formatName.equalsIgnoreCase("bytestream")))){
 							oSrcFileName = dFile.getSourceFileName();
 							duration = dFile.getDuration();
 							DamsURI fileURI = DamsURI.toParts(dFile.getId(), subjectURI);
 							dFileTmp = damsClient.extractFileCharacterize(fileURI.getObject(), fileURI.getComponent(), fileURI.getFileName());
-			    			// Save Jhove
+			    			// Update Jhove
 					    	if(jhoveUpdate != null && jhoveUpdate.length() > 0){
 					    		boolean updateJhove = false;
 					    		boolean addDuration = true;
@@ -187,22 +190,6 @@ public class JhoveReportHandler extends CollectionHandler{
 			params.add(new BasicNameValuePair(propName, propValue));
 	}
 
-	public boolean isBytestreamFormatOnly() {
-		return bytestreamFormatOnly;
-	}
-
-	public void setBytestreamFormatOnly(boolean bytestreamFormatOnly) {
-		this.bytestreamFormatOnly = bytestreamFormatOnly;
-	}
-	
-	public boolean isUpdateFormat() {
-		return updateFormat;
-	}
-
-	public void setUpdateFormat(boolean updateFormat) {
-		this.updateFormat = updateFormat;
-	}
-
 	public String getJhoveUpdate() {
 		return jhoveUpdate;
 	}
@@ -212,7 +199,7 @@ public class JhoveReportHandler extends CollectionHandler{
 	}
 
 	public void jhoveErrorReport(String errorMessage){
-		if(updateFormat)
+		if(jhoveUpdate != null && jhoveUpdate.length() > 0)
 			filesNotUpdated.append(errorMessage);
 		else
 			log("log", errorMessage);
@@ -222,7 +209,7 @@ public class JhoveReportHandler extends CollectionHandler{
 	 * Execution result message
 	 */
 	public String getExeInfo() {
-		String iMessage = "Number of objects found: " + itemsCount + " \nTotal master/service files processed: " + masterCount + " \nTotal master/service Files reported: " + filesReported + (updateFormat?"; \nTotal Files updated: "+filesReported:"");
+		String iMessage = "Number of objects found: " + itemsCount + " \nTotal master files (source and alternate) processed: " + masterCount + " \nTotal master/service Files reported: " + filesReported + (jhoveUpdate!=null&&jhoveUpdate.length()>0?" \nTotal Files updated: "+filesUpdated:"");
         String mHeader = "\nFile characterize/Jhove report " + ((collectionId!=null&&collectionId.length()==10)?"for "+collectionTitle:"");
 		if(exeResult)
 			exeReport.append(mHeader + " succeeded: \n" + iMessage + "\n");
@@ -230,9 +217,9 @@ public class JhoveReportHandler extends CollectionHandler{
 			exeReport.append(mHeader + failedCount + " of " + count + " failed: \n" + iMessage + "\n" );
 		}
 		
-		if(updateFormat && filesNotUpdated.length()>0){
+		if(jhoveUpdate != null && jhoveUpdate.length() > 0 && filesNotUpdated.length()>0){
 			log("log", "\n*************************************************************************************************************************************");
-			log("log", "\nThe following " + (filesReported-filesUpdated)+ " BYTESTREAM format files haven't be fixed: \n");
+			log("log", "\n" + jhoveUpdate + " for the following " + (filesReported-filesUpdated)+ " files haven't being updated by XDRE Manager: \n");
 			log("log", "\n*************************************************************************************************************************************");
 			log("log", filesNotUpdated.toString());
 		}
