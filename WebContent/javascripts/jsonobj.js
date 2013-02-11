@@ -207,6 +207,8 @@ function toJSON(obj) {
 }
 
 function addDir(directory){
+	if(directory == "/darry" || directory == "darry")
+		return;
     var dirValues = document.getElementById("dir").value;
     var dirArr = dirValues.split(";");
     var toAdd = true;
@@ -217,7 +219,7 @@ function addDir(directory){
     		dirArr[i] = "";
     		toAdd = false;
     		break;
-    	}else if(iDir.indexOf(directory) == 0){
+    	}else if(iDir.indexOf(directory + "/") == 0){
     		// Choose parent directory need clear all child directory
     		if(toAdd){
     			dirArr[i] = directory;
@@ -225,7 +227,7 @@ function addDir(directory){
     		}else
     			dirArr[i] = "";
 
-    	}else if(directory.indexOf(iDir) == 0){
+    	}else if(directory.indexOf(iDir + "/") == 0){
     		// Choose child directory, replace it
     		dirArr[i] = directory;
     		toAdd = false;

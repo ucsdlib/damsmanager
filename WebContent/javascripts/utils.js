@@ -129,7 +129,15 @@
 
   function showFilePicker(id, event){
 	  gField = id;
-	  var popwin = window.open("/damsmanager/directory.do", "dirPicker", "toolbar=0,scrollbars=1,location=0,statusbar=0,menubar=0,resizable=0,width=450,height=300,left=400,top=184");
+	  var dirFilter = trim(document.getElementById(id).value);
+	  if(dirFilter.length > 0){
+		  if(dirFilter.split(";").length > 1){
+			  alert("Invalid directory filter: " + dirFilter);
+			  return false;
+		  }
+		  dirFilter = "?filter=" + dirFilter;
+	  }
+	  var popwin = window.open("/damsmanager/directory.do"+dirFilter, "dirPicker", "toolbar=0,scrollbars=1,location=0,statusbar=0,menubar=0,resizable=0,width=450,height=300,left=400,top=184");
 	  popwin.focus();
   }
   
