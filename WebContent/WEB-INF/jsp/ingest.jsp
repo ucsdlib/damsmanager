@@ -95,6 +95,7 @@
 		displayProgressBar(0);
 	}
 	
+	var fsDefault = "${model.filestoreDefault}";
 	function selectCollection(selectObj){
 		var dsIdx = document.mainForm.ts.selectedIndex;
 		var ds = document.mainForm.ts.options[dsIdx].value;
@@ -128,13 +129,14 @@
 	
 	function selectUnit(unitOpt){
 		var unitName = unitOpt.options[unitOpt.selectedIndex].text;
-		if(unitName == "rci" || unitName == "RCI"){
-			var fsOpts = document.mainForm.fs.options;
-			for(var i=0; i<fsOpts.length; i++){
-				if(fsOpts[i].text == "openStack"){
-					fsOpts[i].selected = true;
-					break;
-				}
+		var fsOpts = document.mainForm.fs.options;
+		var fsSelected = fsDefault;
+		if(unitName == "rci" || unitName == "RCI")
+			fsSelected = "openStack";
+		for(var i=0; i<fsOpts.length; i++){
+			if(fsOpts[i].value == fsSelected){
+				fsOpts[i].selected = true;
+				break;
 			}
 		}
 	}
@@ -240,7 +242,7 @@
 	 <div title="Assign one ARK to files in the same directory" class="specialmenuText">
 				<input type="radio" name="arkSetting" value="1" class="pmcheckbox" <c:if test="${model.arkSetting == '1'}">checked</c:if>>
 				<span class="text-special">One ARK to files in the same directory</span>
-				<fieldset class="groupbox_compOrder">
+				<fieldset class="groupbox_compOrder" style="padding-left:10px;">
 				 	<legend class="slegandText">Components Ordering</legend>
 					<input type="radio" name="preferedOrder" value="cofDelimiter" <c:if test="${model.preferedOrder == null || fn:length(model.preferedOrder)== 0 || model.preferedOrder == 'cofDelimiter'}">checked</c:if>/><span>Alphabetic order. [Optional] Order delimited by: <input type="text" name="cofDelimiter" id="cofDelimiter" value="" size="10"></span><br />
 					<input type="radio" name="preferedOrder" value="pdfAndPdf" <c:if test="${model.preferedOrder == 'pdfAndPdf'}">checked</c:if> /><span>A PDF following a low resolution PDF for access.</span><br />
