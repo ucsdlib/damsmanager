@@ -36,16 +36,19 @@ public class DirectoryController implements Controller {
 		String[] saFiles = null;
 		// With wildcard filtering
 		if(dirFilter != null && (dirFilter=dirFilter.trim()).length() > 0){
+			List<String> filteredFiles = new ArrayList<String>();
 			damsStaging += "/" + dirFilter;
 			saFile = new File(damsStaging);
 			final String dirName = saFile.getName();
 			saFile = saFile.getParentFile();
-			FilenameFilter filter = new FilenameFilter(){
-				public boolean accept(File dir, String name) {
-					return FilenameUtils.wildcardMatchOnSystem(name.toLowerCase(), dirName);
-				}
-			};
-			saFiles = saFile.list(filter);
+			String[] lFiles = saFile.list();
+			int len = lFiles.length;
+			for(int i=0; i<len; i++){
+				if(FilenameUtils.wildcardMatchOnSystem(lFiles[i].toLowerCase(), dirName))
+					filteredFiles.add(lFiles[i]);
+			}
+			
+			saFiles = filteredFiles.toArray(new String[filteredFiles.size()]);
 		}else{
 			saFile = new File(damsStaging);
 			saFiles = saFile.list();
@@ -57,6 +60,7 @@ public class DirectoryController implements Controller {
 		String rootMessage = "[Staging Area]";
 		if(saFiles == null || saFiles.length == 0)
 			rootMessage = "[No results: " + saFile.getAbsolutePath() + "]";
+		saObj.put(rootMessage, dirsArr);
 		
 		File sDir = new File(Constants.DAMS_STAGING);
 		File pFile = saFile;
@@ -66,15 +70,17 @@ public class DirectoryController implements Controller {
 				folders.add(0, pFile.getName());
 				pFile = pFile.getParentFile();
 			}while(pFile.compareTo(sDir) > 0);
+			
+			String curFolder = null;
 			for(int i=0; i<folders.size(); i++){
-				tmpFile = new File(pFile.getPath() + File.separatorChar + folders.get(i));
+				curFolder = folders.get(i);
+				tmpFile = new File(pFile.getPath() + File.separatorChar + curFolder);
 				appendFolder(dirsArr, tmpFile, false);
-				dirsArr = (JSONArray) ((JSONObject)dirsArr.get(0)).get(folders.get(i));
+				dirsArr = (JSONArray) ((JSONObject)dirsArr.get(0)).get(curFolder);
 				pFile = tmpFile;
 			}
 		}
 		
-		saObj.put(rootMessage, dirsArr);
 		if(saFiles != null){
 			Arrays.sort(saFiles);
 			for(int i = 0; i<saFiles.length; i++){
