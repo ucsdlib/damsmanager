@@ -150,7 +150,7 @@ public class FileIngestionHandler extends CollectionHandler {
 					uploadHandler = new DAMSUploadTaskHandler(contentId,
 							fileName, collectionId, damsClient);
 					uploadHandler.setUnitId(unit);
-					
+						
 					if (uploadType == UploadTaskOrganizer.PAIR_LOADING) {
 						// Default file use properties for master/master-edited pair file upload
 						if(i == 0){
@@ -161,24 +161,17 @@ public class FileIngestionHandler extends CollectionHandler {
 						}else
 							fileUse = fileUse(fileName, "alternate");
 
-					} else if (uploadType == UploadTaskOrganizer.SHARE_ARK_LOADING) {
-						if (batchSize == 1 && !contentId.endsWith(masterContent)) {
-							logError("File Loading failed. Content files group with object "
-									+ uploadFile.getValue()
-									+ " have no master file.");
-							continue;
-						}
-
-							
-					} else if (uploadType == UploadTaskOrganizer.MIX_CO_SHARE_ARK_LOADING
+					} else if (uploadType == UploadTaskOrganizer.SHARE_ARK_LOADING
+							|| uploadType == UploadTaskOrganizer.MIX_CO_SHARE_ARK_LOADING
 							|| uploadType == UploadTaskOrganizer.COMPLEXOBJECT_LOADING) {
-						// Master file with derivatives
-						if (upLoadTask.getComponentsCount() == 1) {
-							if (batchSize == 1 && !contentId.endsWith(masterContent)) {
-								logError("File Loading failed. Content files group with object "
-										+ uploadFile.getValue()
-										+ " have no master file.");
-								continue;
+						// Reject ingest the file group if the first file is not in place.
+						if(i == 0){
+							String cId = uploadHandler.getCompId();
+							String fileId = uploadHandler.getFileId();
+							if((cId != null && cId.length()>0) && cId.compareTo("1") > 0 || !fileId.startsWith("1.")){
+								logError("File Loading failed. The first file for files group with object "
+										+ fileName + " is missing. Fist content file order is " + contentId + ".");
+								break;
 							}
 						}
 						
