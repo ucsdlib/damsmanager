@@ -392,7 +392,7 @@ public class FileIngestionHandler extends CollectionHandler {
 					Thread.sleep(10);
 				} catch (InterruptedException e) {
 					interrupted = true;
-					logError("File upload interrupted with " + subjectId + " (" + fileName + "). Error: " + e.getMessage());
+					logError("File upload canceled on " + subjectId + " (" + fileName + ").");
 					setStatus("Canceled");
 					clearSession();
 				}
@@ -415,13 +415,13 @@ public class FileIngestionHandler extends CollectionHandler {
 			exeReport.append("Number of files skip: " + skipCount + "\n");
 		if (failedCount > 0) {
 			exeReport.append("Number of files failed: " + failedCount + "\n");
-			exeReport.append("Files failed to be loaded or aborted: "
+			exeReport.append("Files aborted or failed to be loaded: "
 					+ filesFailed.toString() + "\n");
 		}
 		exeReport.append("For records, please download the <a href=\""
 				+ Constants.CLUSTER_HOST_NAME
 				+ "/damsmanager/downloadLog.do?log=ingest&category="
-				+ DAMSClient.stripID(collectionId!=null?collectionId:unit!=null?unit:"dams") + "\">Ingestion log</a>");
+				+ DAMSClient.stripID(collectionId!=null?collectionId:unit!=null?unit:"dams") + "\">Ingest log</a>");
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
 		return exeInfo;
@@ -430,7 +430,7 @@ public class FileIngestionHandler extends CollectionHandler {
 	private synchronized void logFile(DAMSUploadTaskHandler uploadTask)
 			throws IOException {
 		try {
-			fileStoreLog.write(uploadTask.getSubjectId() + "\t"
+			fileStoreLog.write(DAMSClient.stripID(uploadTask.getSubjectId()) + "\t"
 					+ uploadTask.getSourceFile() + "\t"
 					+ damsClient.getRequestURL() + "\n");
 		} catch (IOException e) {
