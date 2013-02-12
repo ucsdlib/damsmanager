@@ -361,12 +361,13 @@ public class FileIngestionHandler extends CollectionHandler {
 							}
 							if (i == 0) {
 								String compId = null;
-								// If the first component failed, then skip ingesting the complex object
+								// If the first component failed, then skip ingesting the whole file group
 								for (int j = 1; j < batchSize; j++) {
 									if (uploadTasks[j] != null){
+										failedCount++;
 										filesFailed.append(uploadTasks[j].getSourceFile() + "\n");
 										compId = uploadTasks[j].getCompId();
-										logError("File upload aborted due to first file failed: " + subjectId + "/" + (compId!=null&&compId.length()>0?compId+"/":"") + uploadTasks[j].getFileId() + " (" + uploadTasks[j].getSourceFile() + "). ");
+										logError("File upload aborted for " + subjectId + "/" + (compId!=null&&compId.length()>0?compId+"/":"") + uploadTasks[j].getFileId() + " (" + uploadTasks[j].getSourceFile() + "). ");
 									}
 								}
 								break;
@@ -414,7 +415,7 @@ public class FileIngestionHandler extends CollectionHandler {
 			exeReport.append("Number of files skip: " + skipCount + "\n");
 		if (failedCount > 0) {
 			exeReport.append("Number of files failed: " + failedCount + "\n");
-			exeReport.append("Files failed to be loaded: "
+			exeReport.append("Files failed to be loaded or aborted: "
 					+ filesFailed.toString() + "\n");
 		}
 		exeReport.append("For records, please download the <a href=\""
