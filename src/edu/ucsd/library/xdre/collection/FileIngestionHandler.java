@@ -277,7 +277,6 @@ public class FileIngestionHandler extends CollectionHandler {
 						fileName = uploadHandler.getSourceFile();
 						if (ark == null) {
 							ark = damsClient.mintArk(null);
-							subjectId = ark;
 							String message = "Assigning ark " + ark
 									+ " for file " + fileName + " in collection " + collectionTitle
 									+ " (" + (objCounter + 1) + " of " + taskOrganizer.getSize() + ")";
@@ -285,7 +284,8 @@ public class FileIngestionHandler extends CollectionHandler {
 							System.out.println(message);
 						}
 
-						// Set the subjecct ID for the file to be loaded
+						subjectId = ark;
+						// Set the subject ID for the file to be loaded
 						uploadHandler.setSubjectId( subjectId );
 						setStatus("Loading " + uploadHandler.getSubjectId()
 								+ " for file " + fileName + " (" + (objCounter + 1) + " of "
