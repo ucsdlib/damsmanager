@@ -239,9 +239,9 @@
      status = message;
      
      if(status == "Done" || status == "Error" || status == "Canceled" || status == "Busy"){
-         displayMainDiv("statusDiv");
          resetForm("mainForm"); 
          document.getElementById('tdr_crumbs').style.display='inline';
+         displayMainDiv("statusDiv");
       }else{
      	document.getElementById('tdr_crumbs').style.display='none';
         setDispStyle("main", "none");
@@ -342,10 +342,10 @@
         setTimeout('getSid()', 2000);
         document.getElementById("tdr_crumbs").style.display='inline';
         if(document.getElementById("statusDiv") != null){
-           displayMainDiv("statusDiv");
            var preMessage = getInnerHTML("message");
            preMessage = truncateMessage(preMessage);
            displayMessage("message", preMessage + logMessage);
+           displayMainDiv("statusDiv");
          }
       }
   }
@@ -428,6 +428,7 @@
   function displayMainDiv(divId){
       setDispStyle(divId, "none");
       setDispStyle("main", "inline");
+      drawBreadcrumbNMenu(crumbs, "tdr_crumbs_content", true);
   }
   
   function cfailed(resp){
