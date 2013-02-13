@@ -73,7 +73,7 @@ public class ChecksumsHandler extends CollectionHandler{
 					totalFiles++;
 					dFile = it.next();
 					DamsURI damsURI = DamsURI.toParts(dFile.getId(), subjectURI);
-					boolean suceeded = damsClient.checksum(damsURI.getObject(), damsURI.getFileName(), damsURI.getFileName());
+					boolean suceeded = damsClient.checksum(damsURI.getObject(), damsURI.getComponent(), damsURI.getFileName());
 					if(!suceeded){
 						failedCount++;
 						logError("Checksums validation for subject " + subjectURI  + " failed (" + (i+1) + " of " + itemsCount + "). ");
