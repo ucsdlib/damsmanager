@@ -89,7 +89,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 						logError("File " + fileId + " doesn't exists.");
 					}
 					// Check source and alternate master files 
-					if(use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE)){
+					if(use.endsWith(Constants.SOURCE) || use.endsWith(Constants.SERVICE) || use.endsWith(Constants.ALTERNATE)){
 						masterTotal++;
 						masterExists = true;
 						List<DamsURI> duFiles = DAMSClient.getFiles(filesDoc, null, dFile.getSourceFileName());
@@ -165,8 +165,8 @@ public class FileCountValidaionHandler extends CollectionHandler{
 		if(exeResult)
 			exeReport.append("File count validation succeeded. \n ");
 		else
-			exeReport.append("File count validation (" + failedCount + " of " + itemsCount + " failed" + (missingObjectsCount>0?", " + missingObjectsCount + missingObjectsMessage:"") + (missingFilesCount>0?", " + missingFilesCount + missingFilesMessage:"") + "): \n ");	
-		exeReport.append("Total files found " + filesTotal + ". \nNumber of objects found " + itemsCount + ". \nNumber of objects processed " + count  + ". \nNumber of source and alternate master files detected " + masterTotal + ".\n");
+			exeReport.append("File count validation (" + failedCount + " of " + masterTotal + " failed" + (missingObjectsCount>0?", " + missingObjectsCount + missingObjectsMessage:"") + (missingFilesCount>0?", " + missingFilesCount + missingFilesMessage:"") + "): \n ");	
+		exeReport.append("Total files found " + filesTotal + ". \nNumber of objects found " + itemsCount + ". \nNumber of objects processed " + count  + ". \nNumber of source, serice and alternate master files detected " + masterTotal + ".\n");
 		if(duplicatedFiles.length() > 0)
 			exeReport.append("\nThe following files are duplicated: \n" + duplicatedFiles.toString());
 		
