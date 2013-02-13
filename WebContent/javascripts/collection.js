@@ -62,8 +62,8 @@
       }
       
       if(validateChecksums == true){
-         if(!validateDate(formObj.checksumDate))
-             return false;
+        // if(!validateDate(formObj.checksumDate))
+        //     return false;
 
           operations += "- Validate checksum \n";
        }

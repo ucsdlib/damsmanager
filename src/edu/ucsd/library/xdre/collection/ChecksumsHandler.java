@@ -1,5 +1,6 @@
 package edu.ucsd.library.xdre.collection;
 
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -20,7 +21,7 @@ public class ChecksumsHandler extends CollectionHandler{
 	private int count = 0;
 	private int failedCount = 0;
 	private int totalFiles = 0;
-	private String checksumDate = null;
+	private Date checksumDate = null;
 	
 	/**
 	 * Constructor for ChecksumsHandler
@@ -48,7 +49,7 @@ public class ChecksumsHandler extends CollectionHandler{
 	 * @param chechsumDate
 	 * @throws Exception
 	 */
-	public ChecksumsHandler(DAMSClient damsClient, String collectionId, String checksumDate) throws Exception{
+	public ChecksumsHandler(DAMSClient damsClient, String collectionId, Date checksumDate) throws Exception{
 		super(damsClient, collectionId);
 		this.checksumDate = checksumDate;
 	}

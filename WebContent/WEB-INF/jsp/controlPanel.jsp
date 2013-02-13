@@ -111,7 +111,7 @@
 					</div>
 					<div id="checksumDiv" class="processlayout">
 						<span title="Validate checksum or revalidate if checksum date before the date entered." class="menuText">
-				              <input disabled class="pcheckbox" type="checkbox" id="validateChecksums" name="validateChecksums" onClick="checkSelections(this);">
+				              <input class="pcheckbox" type="checkbox" id="validateChecksums" name="validateChecksums" onClick="checkSelections(this);">
 									<span class="text-special">Checksum Validation</span></span><br/>								   
 						<span class="submenuText" style="padding-left:26px;">Revalidate if validated before:&nbsp;<input disabled type="text" name="checksumDate" size="12" class="inputText">&nbsp;(mm/dd/yyyy)</span>
 					

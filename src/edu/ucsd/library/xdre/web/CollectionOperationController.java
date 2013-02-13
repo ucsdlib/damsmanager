@@ -4,10 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -27,11 +24,11 @@ import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
+import edu.ucsd.library.xdre.collection.ChecksumsHandler;
 import edu.ucsd.library.xdre.collection.CollectionHandler;
 import edu.ucsd.library.xdre.collection.DerivativeHandler;
 import edu.ucsd.library.xdre.collection.FileCountValidaionHandler;
@@ -44,8 +41,7 @@ import edu.ucsd.library.xdre.utils.RequestOrganizer;
 
 
  /**
- * Class LocalStoreCollectionManagementController handles operations
- * with no user files submited to the server
+ * Class CollectionOperationController handles the operations for collection development 
  *
  * @author lsitu@ucsd.edu
  */
@@ -296,7 +292,7 @@ public class CollectionOperationController implements Controller {
 		damsClient.setTripleStore(ds);
 		damsClient.setFileStore(fileStore);
 
-		Date ckDate = null;
+		/*Date ckDate = null;
 		if(operations[1]){
 			String checksumDate = getParameter(paramsMap, "checksumDate");
 			if(checksumDate == null || (checksumDate = checksumDate.trim()).length() == 0)
@@ -306,79 +302,7 @@ public class CollectionOperationController implements Controller {
 			}catch (ParseException e){
 				message += "Please enter a Date in valid format(mm/dd/yyyy): " + checksumDate + ".<br>";
 			}
-		}
-		
-		String rdfXml = null;	
-		int metadataOperationId = -1;
-	    /*if(operations[2]){
-			String rdfFileOption = null;
-			String tsOperation = null;
-			if(getParameter(paramsMap, "tsRepopulateOnly") != null)
-				tsOperation = "tsRepopulateOnly";
-			else if(getParameter(paramsMap, "tsRepopulation") != null)
-				tsOperation = "tsRepopulation";
-			else if(getParameter(paramsMap, "samePredicatesReplacement") != null)
-				tsOperation = "samePredicatesReplacement";
-			else if(getParameter(paramsMap, "tsRenew") != null){
-				tsOperation = "tsRenew";
-				if(collectionId == null || collectionId.length() == 0)
-					message += "Please select a Collection to start a new round of triplestore population. \n";				
-			 }
-				
-		   if(tsOperation == null)
-			   tsOperation = "tsNew";
-		   metadataOperationId = MetadataImportController.getOperationId(tsOperation);
-		   rdfFileOption = getParameter(paramsMap, "fileToIngest");
-		   if(rdfFileOption.equalsIgnoreCase("rdfUrl")){
-			   rdfXml = getParameter(paramsMap, "rdfUrl");
-			  if(rdfXml == null || (rdfXml=rdfXml.trim()).length() == 0)
-				 message += "Please enter a URL for the RDF file.<br>";
-			  else{
-				  rdfXml = damsClient.getContentBodyAsString(rdfXml);
-				  if(rdfXml.indexOf("<rdf:RDF ") < 0 ){
-					   int infoSize = rdfXml.length()< 1024?rdfXml.length():1024;
-					   String vString = rdfXml.substring(0, infoSize);
-					   System.out.println("Invalid file format: <br />" + vString);
-					   message += "Invalid file format: <br />" + vString;
-					}
-			  }
-	       }else
-	    	   rdfXml = uploadData;
-	    }*/
-	    
-	    JSONObject jsonToUpdate = null;
-	    String subjectId = null;
-	    if(operations[16]){
-	    	 String jsonString = null;
-			 String jsonFileOption = null;
-			 jsonFileOption = getParameter(paramsMap, "fileToUpdate");
-			 if(jsonFileOption.equalsIgnoreCase("jsonUrl")){
-				jsonString = getParameter(paramsMap, "jsonUrl");
-			  if(jsonString == null || (jsonString=jsonString.trim()).length() == 0)
-				 message += "Please enter a URL for the JSON file.<br>";
-			  else{
-				  jsonString = damsClient.getContentBodyAsString(jsonString);
-				  try {
-					  jsonToUpdate = (JSONObject)JSONValue.parse(jsonString);
-					}catch (Exception e){
-						message += "Invalid JSON format: <br />" + jsonString;
-					}
-			  }
-	       }else
-	    	   jsonToUpdate = (JSONObject)JSONValue.parse(getParameter(paramsMap, "data"));
-			 
-			 if(jsonToUpdate != null && jsonToUpdate.size() > 0){
-				 subjectId = (String) jsonToUpdate.remove("arkId");
-				 if(subjectId == null || (subjectId=subjectId.trim()).length() == 0)
-					 message += "Missing subject: <br />" + jsonToUpdate;
-				 else
-					 subjectId = subjectId.replaceFirst("20775/", "");
-				 ds = (String) jsonToUpdate.remove("ds");
-				 if(ds == null || (ds=ds.trim()).length() == 0)
-					 message += "Triplestore data source is missing: <br />" + jsonToUpdate;
-			 }else
-				 message += "No JSON data provided: <br />" + jsonToUpdate;
-	    }
+		}*/
 
 		
 		JSONArray filesJsonArr = null;
@@ -408,10 +332,7 @@ public class CollectionOperationController implements Controller {
 	 
 	 
 	try {
-
-		
-
-	 
+ 
 	 boolean successful = true;
 	 for(int i=0; i<operations.length; i++){
 		 handler = null;
@@ -425,15 +346,15 @@ public class CollectionOperationController implements Controller {
 			 if(i == 0){
 				 session.setAttribute("status", opMessage + "File Count Validation for FileStore " + fileStore + " ...");
 				 handler = new FileCountValidaionHandler(damsClient, collectionId);
-			 }else /*if (i == 1){
+			 }else if (i == 1){
 				   session.setAttribute("status", opMessage + "Checksum Validation for FileStore " + fileStore + " ...");
-				   handler = new ChecksumHandler(damsClient, collectionId, ckDate);
-			 }else if (i == 2){	
+				   handler = new ChecksumsHandler(damsClient, collectionId, null);
+			 }/*else if (i == 2){	
 				  session.setAttribute("status", opMessage + "Importing metadata ...");
 				  String dataFormat = getParameter(paramsMap, "dataFormat");
 				  String importMode = getParameter(paramsMap, "importMode");
 				  handler = new MetadataImportHandler(damsClient, collectionId, getParameter(paramsMap, "data"), dataFormat, importMode);
-			 }else */if (i == 3){
+			 }*/else if (i == 3){
 				 session.setAttribute("status", opMessage + "Derivatives Creation ...");
 				 boolean derReplace = getParameter(paramsMap, "derReplace")==null?false:true;
 				 
