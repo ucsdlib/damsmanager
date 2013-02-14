@@ -7,14 +7,19 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.text.Normalizer;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.hp.hpl.jena.rdf.model.AnonId;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
+import com.hp.hpl.jena.shared.PrefixMapping;
 
 /**
  * JENA RDFStore
@@ -22,6 +27,9 @@ import com.hp.hpl.jena.rdf.model.Statement;
  *
  */
 public class RDFStore {
+	public static final String RDFXML_FORMAT = "RDF/XML";
+	public static final String RDFXML_ABBREV_FORMAT = "RDF/XML-ABBREV";
+	public static final String NTRIPLE_FORMAT = "N-TRIPLE";
 	private Model rdfModel = null;
 	public RDFStore(){
 		rdfModel = ModelFactory.createDefaultModel();
@@ -61,11 +69,29 @@ public class RDFStore {
 		return res;
 	}
 	
+	/**
+	 * Create Property
+	 * @param prop
+	 * @return
+	 */
+	public Property createProperty( String prop ) {
+		if(prop == null)
+			return null;
+		return rdfModel.createProperty(prop);
+	}
+	
+	/**
+	 * Load RDF string into the RDF store
+	 * @param rdfXml
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 * @throws IOException
+	 */
 	public Model loadRDFXML(String rdfXml) throws UnsupportedEncodingException, IOException{
 		InputStream in = null;
 		try{
 			in = toInputStream (Normalizer.normalize(rdfXml, Normalizer.Form.NFC));
-			return load(in, "RDF/XML");
+			return load(in, RDFXML_FORMAT);
 		}finally{
 			if(in != null){
 				in.close();
@@ -74,11 +100,18 @@ public class RDFStore {
 		}
 	}
 	
+	/**
+	 * Load NTriples into the RDFStore
+	 * @param nTriples
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 * @throws IOException
+	 */
 	public Model loadNTriples(String nTriples) throws UnsupportedEncodingException, IOException{
 		InputStream in = null;
 		try{
 			in = toInputStream (nTriples);
-			return load(in, "N-TRIPLE");
+			return load(in, NTRIPLE_FORMAT);
 		}finally{
 			if(in != null){
 				in.close();
@@ -87,12 +120,19 @@ public class RDFStore {
 		}
 	}
 	
-	public InputStream toInputStream (String rdf) throws UnsupportedEncodingException, IOException{
+	/**
+	 * Construct an InputStream 
+	 * @param rdf
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 * @throws IOException
+	 */
+	public InputStream toInputStream (String data) throws UnsupportedEncodingException, IOException{
 		InputStream in = null;
 		OutputStream out = null;
 		try{
 			out = new ByteArrayOutputStream();
-			out.write(rdf.getBytes("UTF-8"));
+			out.write(data.getBytes("UTF-8"));
 			in = new ByteArrayInputStream(((ByteArrayOutputStream)out).toByteArray());
 		}finally{
 			if(out != null){
@@ -103,7 +143,99 @@ public class RDFStore {
 		return in;
 	}
 	
+	/**
+	 * Load RDF from an InputStream
+	 * @param in
+	 * @param format
+	 * @return
+	 */
 	public Model load(InputStream in, String format){
 		return 	rdfModel.read(in, null, format);
+	}
+	
+	/**
+	 * List all URL subjects
+	 * @return
+	 */
+	public List<String> listURISubjects(){
+		List<String> subjects = new ArrayList<String>();
+		ResIterator resIt = rdfModel.listSubjects();
+		while(resIt.hasNext()){
+			Resource res = resIt.next();
+			if(res.isURIResource()){
+				subjects.add(res.getURI());
+			}
+		}
+		
+		return subjects;
+	}
+	
+	/**
+	 * List all URL subjects
+	 * @return
+	 */
+	public List<Resource> listURIResources(){
+		List<Resource> subjects = new ArrayList<Resource>();
+		ResIterator resIt = rdfModel.listSubjects();
+		while(resIt.hasNext()){
+			Resource res = resIt.next();
+			if(res.isURIResource()){
+				subjects.add(res);
+			}
+		}
+		
+		return subjects;
+	}
+	
+	/**
+	 * Export a RDF subject
+	 * @param subjectURI
+	 * @param format
+	 * @return
+	 */
+	public String exportSubject(String subjectURI, String format ){
+		Model resultModel = querySubject(subjectURI);
+		//System.out.println(subjectURI + ":\n");
+		//resultModel.write(System.out);
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		resultModel.write(out, format);
+		return out.toString();
+	}
+	
+	/**
+	 * Query a subject
+	 * @param objId
+	 * @return
+	 */
+	public Model querySubject(String objId){
+		Resource res = rdfModel.createResource(objId);
+		return res.getModel();
+	}
+	
+	/**
+	 * Retrieve the predicates a subject contains in prefix format like dams:collection
+	 * @param subject
+	 * @return
+	 */
+	public List<String> listPredicates(String subject){
+		List<String> pres = new ArrayList<String>();
+		String sid = null;
+		String ns = null;
+		Statement stmt = null;
+		Resource res = null;
+		StmtIterator stmtIt = rdfModel.listStatements();
+		PrefixMapping prefixMap = rdfModel.lock();
+		
+		while (stmtIt.hasNext()){
+			stmt = stmtIt.next();
+			sid = stmt.getSubject().toString();
+			if(sid.equals(subject)){
+				res = stmt.getPredicate();
+				ns = prefixMap.getNsURIPrefix(res.getNameSpace()) + ":" + res.getLocalName();
+				if(pres.indexOf(ns) < 0)
+					pres.add(ns);
+			}
+		}
+		return pres;
 	}
 }
