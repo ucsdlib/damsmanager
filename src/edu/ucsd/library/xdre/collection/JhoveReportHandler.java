@@ -21,6 +21,9 @@ import edu.ucsd.library.xdre.utils.DamsURI;
 public class JhoveReportHandler extends CollectionHandler{
 	protected static Logger log = Logger.getLogger(JhoveReportHandler.class);
 
+	public static final String BYTESTREAM = "bytestream";
+	public static final String DURATION = "duration";
+	
 	protected int count = 0;
 	protected int failedCount = 0;
 	protected int filesReported = 0;
@@ -98,7 +101,7 @@ public class JhoveReportHandler extends CollectionHandler{
 						if(bytestreamFilesOnly) 
 							formatName = dFile.getFormatName();
 						
-						if(!bytestreamFilesOnly || (bytestreamFilesOnly && (formatName ==null || formatName !=null&&formatName.equalsIgnoreCase("bytestream")))){
+						if(!bytestreamFilesOnly || (bytestreamFilesOnly && (formatName ==null || formatName !=null&&formatName.equalsIgnoreCase(BYTESTREAM)))){
 							oSrcFileName = dFile.getSourceFileName();
 							duration = dFile.getDuration();
 							DamsURI fileURI = DamsURI.toParts(dFile.getId(), subjectURI);
@@ -115,15 +118,15 @@ public class JhoveReportHandler extends CollectionHandler{
 					    			NameValuePair optParam = paramsOrg.get(j);
 					    			String paramName = optParam.getName();
 						    		
-						    		if(jhoveUpdate.equalsIgnoreCase("ByteStream") && formatNameTmp != null && !formatNameTmp.equalsIgnoreCase("bytestream") 
-						    				&& !formatNameTmp.equals(formatName) && (paramName.equals("formatName") || paramName.equals("formatVersion"))){
+						    		if(jhoveUpdate.equalsIgnoreCase(BYTESTREAM) && formatNameTmp != null && !formatNameTmp.equalsIgnoreCase(BYTESTREAM) 
+						    				&& !formatNameTmp.equals(formatName) && (paramName.equals(DFile.FORMAT_NAME) || paramName.equals(DFile.FORMAT_VERSION))){
 							    		// Format and formatVersion extracted from Jhove	
-						    			if(paramName.equals("formatName")){
+						    			if(paramName.equals(DFile.FORMAT_NAME)){
 						    				addProperty(optionalParams, paramName, formatNameTmp);
-						    				addProperty(optionalParams, "formatVersion", dFileTmp.getFormatVersion());
+						    				addProperty(optionalParams, DFile.FORMAT_VERSION, dFileTmp.getFormatVersion());
 						    			}
 							    		updateJhove = true;
-						    		}else if(jhoveUpdate.equalsIgnoreCase("Duration") && paramName.equals("duration")){
+						    		}else if(jhoveUpdate.equalsIgnoreCase(DURATION) && paramName.equals(DFile.DURATION)){
 						    			addDuration = false;
 						    			if(durationTmp != null)
 						    				addProperty(optionalParams, paramName, durationTmp);
@@ -136,8 +139,8 @@ public class JhoveReportHandler extends CollectionHandler{
 					    		}
 					    		
 					    		// Duration that need to be extracted and save
-					    		if(jhoveUpdate.equalsIgnoreCase("Duration") && durationTmp != null && addDuration){
-					    			addProperty(optionalParams, "duration", durationTmp);
+					    		if(jhoveUpdate.equalsIgnoreCase(DURATION) && durationTmp != null && addDuration){
+					    			addProperty(optionalParams, DFile.DURATION, durationTmp);
 					    			updateJhove = true;
 					    		}
 					    		

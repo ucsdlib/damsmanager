@@ -20,6 +20,28 @@ import org.json.simple.JSONObject;
  *
  */
 public class DFile {
+	public static final String ID = "id";
+	public static final String OBJECT = "object";
+	public static final String USE = "use";
+	public static final String SOURCE_FILE_NAME = "sourceFileName";
+	public static final String SOURCE_PATH = "sourcePath";
+	public static final String DATE_CREATED = "dateCreated";
+	public static final String SIZE = "size";
+	public static final String FORMAT_NAME = "formatName";
+	public static final String FORMAT_VERSION = "formatVersion";
+	public static final String MIME_TYPE = "mimeType";
+	public static final String CRC32CHECKSUM = "crc32checksum";
+	public static final String MD5CHECKSUM = "md5checksum";
+	public static final String SHA1CHECKSUM = "sha1checksum";
+	public static final String SHA256CHECKSUM = "sha256checksum";
+	public static final String SHA512CHECKSUM = "sha512checksum";
+	public static final String PRESERVATION_LEVEL = "preservationLevel";
+	public static final String OBJECT_CATEGORY = "objectCategory";
+	public static final String COMPOSITION_LEVEL = "compositionLevel";
+	public static final String QUALITY = "quality";
+	public static final String DURATION = "duration";
+	public static final String STATUS = "status";
+	
 	private String id = null; //ID property
 	private String object = null; //ID property
 	private String use = null;
@@ -280,27 +302,27 @@ public class DFile {
 	
 	public String toString(){
 		String value = "{";
-		value += "id\":\"" + id +"\", ";
-		value += "object\":\"" + object +"\", ";
-		value += "use\":\"" + use +"\", "; 
-		value += "sourceFileName\":\"" + sourceFileName +"\", "; 
-		value += "sourcePath\":\"" + sourcePath +"\", "; 
-		value += "dateCreated\":\"" + dateCreated +"\", "; 
-		value += "size\":\"" + size +"\", "; 
-		value += "formatName\":\"" + formatName +"\", ";
-		value += "formatVersion\":\"" + formatVersion +"\", "; 
-		value += "mimeType\":\"" + mimeType +"\", "; 
-		value += "quality\":\"" + quality +"\", "; 
-		value += "crc32checksum\":\"" + crc32checksum +"\", "; 
-		value += "md5checksum\":\"" + md5checksum +"\", ";
-		value += "sha1checksum\":\"" + sha1checksum +"\", "; 
-		value += "sha256checksum\":\"" + sha256checksum +"\", "; 
-		value += "sha512checksum\":\"" + sha512checksum +"\", "; 
-		value += "preservationLevel\":\"" + preservationLevel +"\", "; 
-		value += "objectCategory\":\"" + objectCategory +"\", "; 
-		value += "compositionLevel\":\"" + compositionLevel +"\" ";
-		value += "duration\":\"" + duration +"\", ";
-		value += "status\":\"" + status +"\", ";
+		value += "\"" + ID + "\":\"" + id +"\", ";
+		value += "\"" + OBJECT + "\":\"" + object +"\", ";
+		value += "\"" + USE + "\":\"" + use +"\", "; 
+		value += "\"" + SOURCE_FILE_NAME + "\":\"" + sourceFileName +"\", "; 
+		value += "\"" + SOURCE_PATH + "\":\"" + sourcePath +"\", "; 
+		value += "\"" + DATE_CREATED + "\":\"" + dateCreated +"\", "; 
+		value += "\"" + SIZE + "\":\"" + size +"\", "; 
+		value += "\"" + FORMAT_NAME + "\":\"" + formatName +"\", ";
+		value += "\"" + FORMAT_VERSION + "\":\"" + formatVersion +"\", "; 
+		value += "\"" + MIME_TYPE + "\":\"" + mimeType +"\", "; 
+		value += "\"" + QUALITY + "\":\"" + quality +"\", "; 
+		value += "\"" + CRC32CHECKSUM + "\":\"" + crc32checksum +"\", "; 
+		value += "\"" + MD5CHECKSUM + "\":\"" + md5checksum +"\", ";
+		value += "\"" + SHA1CHECKSUM + "\":\"" + sha1checksum +"\", "; 
+		value += "\"" + SHA256CHECKSUM + "\":\"" + sha256checksum +"\", "; 
+		value += "\"" + SHA512CHECKSUM + "\":\"" + sha512checksum +"\", "; 
+		value += "\"" + PRESERVATION_LEVEL + "\":\"" + preservationLevel +"\", "; 
+		value += "\"" + OBJECT_CATEGORY + "\":\"" + objectCategory +"\", "; 
+		value += "\"" + COMPOSITION_LEVEL + "\":\"" + compositionLevel +"\" ";
+		value += "\"" + DURATION + "\":\"" + duration +"\", ";
+		value += "\"" + STATUS + "\":\"" + status +"\"";
 		value += "}";
 		return value;
 		
@@ -362,27 +384,27 @@ public class DFile {
 	 */
 	public List<NameValuePair> toNameValuePairs(){
 		List<NameValuePair> props = new ArrayList<NameValuePair>();
-		props.add(new BasicNameValuePair("id", id));
-		props.add(new BasicNameValuePair("object", object));
-		props.add(new BasicNameValuePair("use", use));
-		props.add(new BasicNameValuePair("sourceFileName", sourceFileName));
-		props.add(new BasicNameValuePair("sourcePath", sourcePath));
-		props.add(new BasicNameValuePair("dateCreated", dateCreated));
-		props.add(new BasicNameValuePair("size", size));
-		props.add(new BasicNameValuePair("formatName", formatName));
-		props.add(new BasicNameValuePair("formatVersion", formatVersion));
-		props.add(new BasicNameValuePair("mimeType", mimeType));
-		props.add(new BasicNameValuePair("quality", quality));
-		props.add(new BasicNameValuePair("crc32checksum", crc32checksum));
-		props.add(new BasicNameValuePair("md5checksum", md5checksum));
-		props.add(new BasicNameValuePair("sha1checksum", sha1checksum));
-		props.add(new BasicNameValuePair("sha256checksum", sha256checksum));
-		props.add(new BasicNameValuePair("sha512checksum", sha512checksum));
-		props.add(new BasicNameValuePair("compositionLevel", compositionLevel));
-		props.add(new BasicNameValuePair("objectCategory", objectCategory));
-		props.add(new BasicNameValuePair("preservationLevel", preservationLevel));
-		props.add(new BasicNameValuePair("duration", duration));
-		props.add(new BasicNameValuePair("status", status));
+		props.add(new BasicNameValuePair(ID, id));
+		props.add(new BasicNameValuePair(OBJECT, object));
+		props.add(new BasicNameValuePair(USE, use));
+		props.add(new BasicNameValuePair(SOURCE_FILE_NAME, sourceFileName));
+		props.add(new BasicNameValuePair(SOURCE_PATH, sourcePath));
+		props.add(new BasicNameValuePair(DATE_CREATED, dateCreated));
+		props.add(new BasicNameValuePair(SIZE, size));
+		props.add(new BasicNameValuePair(FORMAT_NAME, formatName));
+		props.add(new BasicNameValuePair(FORMAT_VERSION, formatVersion));
+		props.add(new BasicNameValuePair(MIME_TYPE, mimeType));
+		props.add(new BasicNameValuePair(QUALITY, quality));
+		props.add(new BasicNameValuePair(CRC32CHECKSUM, crc32checksum));
+		props.add(new BasicNameValuePair(MD5CHECKSUM, md5checksum));
+		props.add(new BasicNameValuePair(SHA1CHECKSUM, sha1checksum));
+		props.add(new BasicNameValuePair(SHA256CHECKSUM, sha256checksum));
+		props.add(new BasicNameValuePair(SHA512CHECKSUM, sha512checksum));
+		props.add(new BasicNameValuePair(COMPOSITION_LEVEL, compositionLevel));
+		props.add(new BasicNameValuePair(OBJECT_CATEGORY, objectCategory));
+		props.add(new BasicNameValuePair(PRESERVATION_LEVEL, preservationLevel));
+		props.add(new BasicNameValuePair(DURATION, duration));
+		props.add(new BasicNameValuePair(STATUS, status));
 		return props;
 	}
 
@@ -393,28 +415,28 @@ public class DFile {
 	 */
 	public static DFile toDFile(JSONObject jsonObject){
 		DFile dFile = new DFile(
-				(String)jsonObject.get("id"), 
-				(String)jsonObject.get("object"), 
-				(String)jsonObject.get("use"), 
-				(String)jsonObject.get("sourceFileName"), 
-				(String)jsonObject.get("sourcePath"), 
-				(String)jsonObject.get("dateCreated"), 
-				(String)jsonObject.get("size"), 
-				(String)jsonObject.get("formatName"),
-				(String)jsonObject.get("formatVersion"), 
-				(String)jsonObject.get("mimeType"), 
-				(String)jsonObject.get("quality"), 
-				(String)jsonObject.get("crc32checksum"), 
-				(String)jsonObject.get("md5checksum"),
-				(String)jsonObject.get("sha1checksum"), 
-				(String)jsonObject.get("sha256checksum"), 
-				(String)jsonObject.get("sha512checksum"), 
-				(String)jsonObject.get("preservationLevel"), 
-				(String)jsonObject.get("objectCategory"), 
-				(String)jsonObject.get("compositionLevel")
+				(String)jsonObject.get(ID), 
+				(String)jsonObject.get(OBJECT), 
+				(String)jsonObject.get(USE), 
+				(String)jsonObject.get(SOURCE_FILE_NAME), 
+				(String)jsonObject.get(SOURCE_PATH), 
+				(String)jsonObject.get(DATE_CREATED), 
+				(String)jsonObject.get(SIZE), 
+				(String)jsonObject.get(FORMAT_NAME),
+				(String)jsonObject.get(FORMAT_VERSION), 
+				(String)jsonObject.get(MIME_TYPE), 
+				(String)jsonObject.get(QUALITY), 
+				(String)jsonObject.get(CRC32CHECKSUM), 
+				(String)jsonObject.get(MD5CHECKSUM),
+				(String)jsonObject.get(SHA1CHECKSUM), 
+				(String)jsonObject.get(SHA256CHECKSUM), 
+				(String)jsonObject.get(SHA512CHECKSUM), 
+				(String)jsonObject.get(PRESERVATION_LEVEL), 
+				(String)jsonObject.get(OBJECT_CATEGORY), 
+				(String)jsonObject.get(COMPOSITION_LEVEL)
 				);
-		dFile.setDuration((String)jsonObject.get("duration"));
-		dFile.setStatus((String)jsonObject.get("status"));
+		dFile.setDuration((String)jsonObject.get(DURATION));
+		dFile.setStatus((String)jsonObject.get(STATUS));
 		return dFile;
 	}
 	
@@ -434,28 +456,28 @@ public class DFile {
 			doc = saxReader.read(in);
 			Node node = doc.getRootElement();
 			dFile = new DFile(
-					getNodeText(node, "//dams:id"), 
-					getNodeText(node, "//dams:object"), 
-					getNodeText(node, "//dams:use"), 
-					getNodeText(node, "//dams:sourceFileName"), 
-					getNodeText(node, "//dams:sourcePath"), 
-					getNodeText(node, "//dams:dateCreated"), 
-					getNodeText(node, "//dams:size"), 
-					getNodeText(node, "//dams:formatName"),
-					getNodeText(node, "//dams:formatVersion"), 
-					getNodeText(node, "//dams:mimeType"), 
-					getNodeText(node, "//dams:quality"), 
-					getNodeText(node, "//dams:crc32checksum"), 
-					getNodeText(node, "//dams:md5checksum"),
-					getNodeText(node, "//dams:sha1checksum"), 
-					getNodeText(node, "//dams:sha256checksum"), 
-					getNodeText(node, "//dams:sha512checksum"), 
-					getNodeText(node, "//dams:preservationLevel"), 
-					getNodeText(node, "//dams:objectCategory"), 
-					getNodeText(node, "//dams:compositionLevel")
+					getNodeText(node, "//dams:" + ID), 
+					getNodeText(node, "//dams:" + OBJECT), 
+					getNodeText(node, "//dams:" + USE), 
+					getNodeText(node, "//dams:" + SOURCE_FILE_NAME), 
+					getNodeText(node, "//dams:" + SOURCE_PATH), 
+					getNodeText(node, "//dams:" + DATE_CREATED), 
+					getNodeText(node, "//dams:" + SIZE), 
+					getNodeText(node, "//dams:" + FORMAT_NAME),
+					getNodeText(node, "//dams:" + FORMAT_VERSION), 
+					getNodeText(node, "//dams:" + MIME_TYPE), 
+					getNodeText(node, "//dams:" + QUALITY), 
+					getNodeText(node, "//dams:" + CRC32CHECKSUM), 
+					getNodeText(node, "//dams:" + MD5CHECKSUM),
+					getNodeText(node, "//dams:" + SHA1CHECKSUM), 
+					getNodeText(node, "//dams:" + SHA256CHECKSUM), 
+					getNodeText(node, "//dams:" + SHA512CHECKSUM), 
+					getNodeText(node, "//dams:" + PRESERVATION_LEVEL), 
+					getNodeText(node, "//dams:" + OBJECT_CATEGORY), 
+					getNodeText(node, "//dams:" + COMPOSITION_LEVEL)
 					);
-			dFile.setDuration(getNodeText(node, "//dams:duration"));
-			dFile.setStatus(getNodeText(node, "status"));
+			dFile.setDuration(getNodeText(node, "//dams:" + DURATION));
+			dFile.setStatus(getNodeText(node, STATUS));
 		}finally{
 			if(in != null){
 				try {
