@@ -2,6 +2,8 @@ package edu.ucsd.library.xdre.collection;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.Iterator;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.dom4j.DocumentException;
@@ -98,7 +100,31 @@ public class MetadataImportHandler extends CollectionHandler{
 				DamsURI objURI = DamsURI.toParts(subjectId, null);
 				String rdfXml = rdfStore.exportSubject(subjectId, RDFStore.RDFXML_FORMAT);
 				if(importMode != null){
-					if(importMode.equals(Constants.IMPORT_MODE_ALL)){
+					if(importMode.equals(Constants.IMPORT_MODE_SAMEPREDICATES)){
+						if(objURI.isFileURI()){
+							//Properties replacement for files. Need to regenerate it with fileCharacterize
+							dFile = DFile.toDFile(rdfXml);
+							List<DFile> dFiles = damsClient.listObjectFiles(objURI.getObject());
+							DFile dFileTmp = null;
+							for(Iterator<DFile> it=dFiles.iterator(); it.hasNext();){
+								dFileTmp = it.next();
+								if(subjectId.equals(dFileTmp)){
+									//Update the properties that need replace.
+									dFileTmp.updateValues(dFile);
+									dFile = dFileTmp;
+									break;
+								}
+							}
+							succeeded = damsClient.updateFileCharacterize(objURI.getObject(), objURI.getComponent(), objURI.getFileName(), dFile.toNameValuePairs());
+						}else{
+							// Perform same predicates replacement
+							List<String> preds = rdfStore.listPredicates(subjectId);
+							succeeded = damsClient.selectiveMetadataDelete(objURI.getObject(), objURI.getComponent(), preds);
+							if(succeeded)
+								succeeded = damsClient.updateObject(objURI.getObject(), rdfXml, Constants.IMPORT_MODE_ADD);
+						}
+						
+					}else if(importMode.equals(Constants.IMPORT_MODE_ALL)){
 						DamsURI damsURI = DamsURI.toParts(subjectId, null);
 						
 						if(damsURI.isFileURI()){

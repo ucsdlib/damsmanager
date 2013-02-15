@@ -168,9 +168,9 @@
 									<input type="radio" id="importMode" name="importMode" value="all">
 									 <span class="text-special">Replace subject with the metadata submitted</span>
 						  </div>
-						  <div title="Check this checkbox for the same predicates replacement with the triples included in the submitted RDF." class="specialmenuText">
-									<input disabled type="radio" id="importMode" name="importMode" value="samePredicates">
-									 <span class="text-special">Same predicates replacement with the metadata submitted</span>
+						  <div title="Check this checkbox for same predicates replacement with the triples included in the submitted RDF." class="specialmenuText">
+									<input type="radio" id="importMode" name="importMode" value="samePredicates">
+									 <span class="text-special">Same predicates replacement with metadata submitted</span>
 						  </div>
 						  </fieldset>
 						  </div>
