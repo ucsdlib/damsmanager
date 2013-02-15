@@ -6,7 +6,7 @@
    var currServletId;
    var url = "/damsmanager/operationHandler.do";
    var progressUrl = "/damsmanager/progressHandler.do";
-   var fileUseArr = ["visual-source", "visual-service", "visual-thumbnail", "visual-alternate", "document-source", "document-service", "document-alternate", "audio-source", "audio-service", "audio-alternate", "data-source", "data-service", "data-alternate"];
+   var fileUseArr = ["image-source", "image-service", "image-preview", "image-thumbnail", "image-icon", "image-alternate", "video-source", "video-service", "video-preview", "video-thumbnail", "video-icon", "video-alternate", "document-source", "document-service", "document-alternate", "audio-source", "audio-service", "audio-alternate", "data-source", "data-service", "data-alternate"];
    var progressBarWidth = 500;
    var progress = {
 	 success: dispMessage,
