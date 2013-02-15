@@ -150,7 +150,7 @@
 											<span class="submenuText"><input type="radio" name="dataFormat" value="N-TRIPLE"><span class="text-special">N-Triples</span></span><br>
 									</div>
 									<div id="fileLocation" style="padding-top:5px;">	
-											<span class="submenuText"><strong>Choose File: </strong></span><input disabled type="file" name="dataFile" size="40" /><br>
+											<span class="submenuText"><strong>Choose File: </strong></span><input type="file" name="dataFile" size="40" /><br>
 									</div>
 							</fieldset>
 						 </div>
