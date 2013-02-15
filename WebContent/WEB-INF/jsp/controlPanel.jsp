@@ -139,15 +139,15 @@
 				</div>
 				<div id="sipButtonDiv" <c:if test="${model.activeButton != 'sipButton'}">style="display:none;"</c:if>>
 					<div id="populationDiv" class="processlayout">
-						<div title="Populate the triple store with RDF." class="menuText"><input disabled class="pcheckbox" type="checkbox" id="rdfImport" name="rdfImport" onClick="checkSelections(this);">
+						<div title="Populate the triple store with RDF." class="menuText"><input class="pcheckbox" type="checkbox" id="rdfImport" name="rdfImport" onClick="checkSelections(this);">
 									  <span class="text-special">Metadata Import</span>
 						</div>
 						<div>
 							<fieldset class="groupbox_ts"><legend class="slegandText">File</legend>
 									<div id="fileFormat">
 											<span class="submenuText"><strong>Choose File Format: </strong></span><br/>
-											<span class="submenuText"><input type="radio" name="dataFormat" value="rdf" checked><span class="text-special">RDF XML</span></span>
-											<span class="submenuText"><input type="radio" name="dataFormat" value="msclXml"><span class="text-special">N-Triples</span></span><br>
+											<span class="submenuText"><input type="radio" name="dataFormat" value="RDF/XML" checked><span class="text-special">RDF XML</span></span>
+											<span class="submenuText"><input type="radio" name="dataFormat" value="N-TRIPLE"><span class="text-special">N-Triples</span></span><br>
 									</div>
 									<div id="fileLocation" style="padding-top:5px;">	
 											<span class="submenuText"><strong>Choose File: </strong></span><input disabled type="file" name="dataFile" size="40" /><br>
