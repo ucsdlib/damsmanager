@@ -34,6 +34,7 @@ import edu.ucsd.library.xdre.collection.DerivativeHandler;
 import edu.ucsd.library.xdre.collection.FileCountValidaionHandler;
 import edu.ucsd.library.xdre.collection.FileIngestionHandler;
 import edu.ucsd.library.xdre.collection.JhoveReportHandler;
+import edu.ucsd.library.xdre.collection.MetadataImportHandler;
 import edu.ucsd.library.xdre.collection.SOLRIndexHandler;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
@@ -349,12 +350,12 @@ public class CollectionOperationController implements Controller {
 			 }else if (i == 1){
 				   session.setAttribute("status", opMessage + "Checksum Validation for FileStore " + fileStore + " ...");
 				   handler = new ChecksumsHandler(damsClient, collectionId, null);
-			 }/*else if (i == 2){	
+			 }else if (i == 2){	
 				  session.setAttribute("status", opMessage + "Importing metadata ...");
 				  String dataFormat = getParameter(paramsMap, "dataFormat");
 				  String importMode = getParameter(paramsMap, "importMode");
 				  handler = new MetadataImportHandler(damsClient, collectionId, getParameter(paramsMap, "data"), dataFormat, importMode);
-			 }*/else if (i == 3){
+			 }else if (i == 3){
 				 session.setAttribute("status", opMessage + "Derivatives Creation ...");
 				 boolean derReplace = getParameter(paramsMap, "derReplace")==null?false:true;
 				 

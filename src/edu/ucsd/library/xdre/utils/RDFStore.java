@@ -8,7 +8,9 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import com.hp.hpl.jena.rdf.model.AnonId;
 import com.hp.hpl.jena.rdf.model.Model;
@@ -237,5 +239,83 @@ public class RDFStore {
 			}
 		}
 		return pres;
+	}
+	
+	
+	/**
+	 * Remove the triples for components
+	 * @throws Exception
+	 */
+	public void excludeComponents() throws Exception{
+		DamsURI damsURI = null;
+		String subId = null;
+		ResIterator resIt = rdfModel.listSubjects();;
+		while(resIt.hasNext()){
+			Resource res = resIt.next();
+			if(res.isURIResource()){
+				subId = res.getURI();
+				damsURI = DamsURI.toParts(subId, null);
+				if(damsURI.isComponentURI()){
+					rdfModel.remove(querySubject(subId));
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Remove the elements that is not in the predicates list
+	 * @param preds
+	 */
+	public void trimStatements(List<String> preds){
+		String prep = null;
+		Statement stmt = null;
+		Property prop = null;
+		RDFNode rdfNode = null;
+		boolean keep = false;
+		List<Statement> stmts = rdfModel.listStatements().toList();
+		for(int i=0; i<stmts.size(); i++){
+			stmt = stmts.get(i);
+			if(stmt.getSubject().isURIResource()){
+				keep = false;
+				prop = stmt.getPredicate();
+				prep = rdfModel.getNsURIPrefix(prop.getNameSpace()) + ":" + prop.getLocalName();
+				for(Iterator<String> pIt=preds.iterator(); pIt.hasNext();){
+					if(prep.indexOf(pIt.next()) >= 0){
+						keep = true;
+						break;
+					}
+				}
+				
+				if(!keep){
+					rdfModel.remove(stmt);
+					rdfNode = stmt.getObject();
+					if(rdfNode.isAnon()){
+						rdfModel.remove(rdfNode.getModel());
+					}
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Merge two graphs
+	 * @param rdfStore
+	 * @return
+	 */
+	public Model mergeObjects(RDFStore iStore){
+		rdfModel = rdfModel.union(iStore.rdfModel);
+		Map<String, String> nsPrefixMap = rdfModel.getNsPrefixMap();
+		nsPrefixMap.putAll(iStore.rdfModel.getNsPrefixMap());
+		rdfModel.setNsPrefixes(nsPrefixMap);
+		return rdfModel;
+	}
+	
+	/**
+	 * Output the graph
+	 * @param out
+	 * @param format
+	 */
+	public void write(OutputStream out, String format){
+		rdfModel.write(out, format);
 	}
 }

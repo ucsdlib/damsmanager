@@ -146,9 +146,8 @@
 							<fieldset class="groupbox_ts"><legend class="slegandText">File</legend>
 									<div id="fileFormat">
 											<span class="submenuText"><strong>Choose File Format: </strong></span><br/>
-											<span class="submenuText"><input disabled type="radio" name="dataFormat" value="rdf" checked><a title="View sample format" href="/damsmanager/files/sampleRdf.xml" target="_blank"><span class="text-special">RDF XML</span></a></span>
-											<span class="submenuText"><input disabled type="radio" name="dataFormat" value="msclXml"><a title="View sample format" href="/damsmanager/files/sampleMscl.xml" target="_blank"><span class="text-special">N-Triples</span></a></span>
-											<span class="submenuText"><input type="radio" name="dataFormat" value="json" disabled><span class="text-special">JSON</span></span><br>
+											<span class="submenuText"><input type="radio" name="dataFormat" value="rdf" checked><span class="text-special">RDF XML</span></span>
+											<span class="submenuText"><input type="radio" name="dataFormat" value="msclXml"><span class="text-special">N-Triples</span></span><br>
 									</div>
 									<div id="fileLocation" style="padding-top:5px;">	
 											<span class="submenuText"><strong>Choose File: </strong></span><input disabled type="file" name="dataFile" size="40" /><br>
@@ -158,7 +157,7 @@
 						 <div>
 						 <fieldset class="groupbox_ingestOpts"><legend class="slegandText">Special Options</legend>
 						 <div title="Check this checkbox to start a new round of TripleStore population." class="specialmenuText">
-									<input disabled type="radio" id="importMode" name="importMode" value="add">
+									<input type="radio" id="importMode" name="importMode" value="add">
 									 <span class="text-special">Add metadata</span>
 						 </div>
 						 <div title="Check this checkbox to repopulate metadata but keep file characterize metadata for all the subjects included in the file submitted." class="specialmenuText">
@@ -166,7 +165,7 @@
 									 <span class="text-special">Repopulate subjects but keep file characterize metadata</span>
 						  </div>
 						 <div title="Check this checkbox to replace the subject with the subjects included in the submitted RDF." class="specialmenuText">
-									<input disabled type="radio" id="importMode" name="importMode" value="all">
+									<input type="radio" id="importMode" name="importMode" value="all">
 									 <span class="text-special">Replace subject with the metadata submitted</span>
 						  </div>
 						  <div title="Check this checkbox for the same predicates replacement with the triples included in the submitted RDF." class="specialmenuText">
