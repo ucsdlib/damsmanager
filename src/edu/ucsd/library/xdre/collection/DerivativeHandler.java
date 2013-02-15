@@ -1,6 +1,5 @@
 package edu.ucsd.library.xdre.collection;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -69,7 +68,7 @@ public class DerivativeHandler extends CollectionHandler{
 		        	//Check for derivative created for source and service files
     				String sizs2create = "";
     				String sizs2replace = "";
-		        	if(use != null && (use.endsWith("-source") || use.endsWith("-service"))){
+		        	if(use != null && (use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE) || (use.endsWith(Constants.SERVICE) && !use.startsWith(Constants.IMAGE)))){
 			        	totalFiles += 1;
 			        	DamsURI fileURI = DamsURI.toParts(dFile.getId(), dFile.getObject());
 		        		String derId = null;

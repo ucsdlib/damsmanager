@@ -89,7 +89,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 						logError("File " + fileId + " doesn't exists.");
 					}
 					// Check source and alternate master files 
-					if(use.endsWith(Constants.SOURCE) || use.endsWith(Constants.SERVICE) || use.endsWith(Constants.ALTERNATE)){
+					if(use.endsWith(Constants.SOURCE) || (use.endsWith(Constants.SERVICE) && !use.startsWith(Constants.IMAGE)) || use.endsWith(Constants.ALTERNATE)){
 						masterTotal++;
 						masterExists = true;
 						List<DamsURI> duFiles = DAMSClient.getFiles(filesDoc, null, dFile.getSourceFileName());

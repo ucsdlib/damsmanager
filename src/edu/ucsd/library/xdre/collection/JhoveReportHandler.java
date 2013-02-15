@@ -95,7 +95,7 @@ public class JhoveReportHandler extends CollectionHandler{
 				for(Iterator<DFile> it=files.iterator(); it.hasNext();){
 					dFile = it.next();
 					use = dFile.getUse();
-					if(use != null && (use.endsWith(Constants.SERVICE) || use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE))){
+					if(use != null && ((use.endsWith(Constants.SERVICE) && !use.startsWith(Constants.IMAGE)) || use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE))){
 						masterCount++;
 						// Jhove report for bytestream format files only
 						if(bytestreamFilesOnly) 

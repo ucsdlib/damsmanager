@@ -17,6 +17,7 @@ public class Constants {
 	public static final String SERVICE = "service";
 	public static final String SOURCE = "source";
 	public static final String ALTERNATE = "alternate";
+	public static final String IMAGE = "image";
 	
 	public static final String ARK_DAMS_TITLE = "bb3652744n"; //ARK for dams:title
 
