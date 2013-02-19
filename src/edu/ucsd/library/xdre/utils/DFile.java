@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.http.NameValuePair;
@@ -13,6 +14,8 @@ import org.dom4j.DocumentException;
 import org.dom4j.Node;
 import org.dom4j.io.SAXReader;
 import org.json.simple.JSONObject;
+
+import com.hp.hpl.jena.rdf.model.Statement;
 
 /**
  * Class to construct a DAMS File object
@@ -64,7 +67,6 @@ public class DFile {
 	private String duration = null;
 	private String status = null;
 
-	
 	/**
 	 * Constructor
 	 * @param id
@@ -329,53 +331,58 @@ public class DFile {
 	}
 	
 	/**
-	 * Update the properties
-	 * @param dFile
+	 * Update File properties
+	 * @param props
 	 */
-	public void updateValues(DFile dFile){
-		if(dFile.id != null)
-			id = dFile.id;
-		if(dFile.object != null)
-			object = dFile.object;
-		if(dFile.use != null)
-			use = dFile.use;
-		if(dFile.sourceFileName != null)
-			sourceFileName = dFile.sourceFileName;
-		if(dFile.sourcePath != null)
-			sourcePath = dFile.sourcePath;
-		if(dFile.dateCreated != null)
-			dateCreated = dFile.dateCreated;
-		if(dFile.size != null)
-			size = dFile.size;
-		if(dFile.formatName != null)
-			formatName = dFile.formatName;
-		if(dFile.formatVersion != null)
-			formatVersion = dFile.formatVersion;
-		if(dFile.mimeType != null)
-			mimeType = dFile.mimeType;
-		if(dFile.quality != null)
-			quality = dFile.quality;
-		if(dFile.crc32checksum != null)
-			crc32checksum = dFile.crc32checksum;
-		if(dFile.md5checksum != null)
-			md5checksum = dFile.md5checksum;
-		if(dFile.sha1checksum != null)
-			sha1checksum = dFile.sha1checksum;
-		if(dFile.sha256checksum != null)
-			sha256checksum = dFile.sha256checksum;
-		if(dFile.sha512checksum != null)
-			sha512checksum = dFile.sha512checksum;
-		if(dFile.compositionLevel != null)
-			compositionLevel = dFile.compositionLevel;
-		if(dFile.objectCategory != null)
-			objectCategory = dFile.objectCategory;
-		if(dFile.preservationLevel != null)
-			preservationLevel = dFile.preservationLevel;
-		if(dFile.duration != null)
-			duration = dFile.duration;
-		if(dFile.status != null)
-			status = dFile.status;
-		
+	public void updateProperties(JSONObject props){
+		String prop = null;
+		String value = null;
+		for(Iterator<String> it=props.keySet().iterator(); it.hasNext();){
+			prop = it.next();
+			value = (String)props.get(prop);
+		if(prop.equals(ID))
+			id = value;
+		else if(prop.equals(OBJECT))
+			object = value;
+		else if(prop.equals(USE))
+			use = value;
+		else if(prop.equals(SOURCE_FILE_NAME))
+			sourceFileName = value;
+		else if(prop.equals(SOURCE_PATH))
+			sourcePath = value;
+		else if(prop.equals(DATE_CREATED))
+			dateCreated = value;
+		else if(prop.equals(SIZE))
+			size = value;
+		else if(prop.equals(FORMAT_NAME))
+			formatName = value;
+		else if(prop.equals(FORMAT_VERSION))
+			formatVersion = value;
+		else if(prop.equals(MIME_TYPE))
+			mimeType = value;
+		else if(prop.equals(QUALITY))
+			quality = value;
+		else if(prop.equals(CRC32CHECKSUM))
+			crc32checksum = value;
+		else if(prop.equals(MD5CHECKSUM))
+			md5checksum = value;
+		else if(prop.equals(SHA1CHECKSUM))
+			sha1checksum = value;
+		else if(prop.equals(SHA256CHECKSUM))
+			sha256checksum = value;
+		else if(prop.equals(SHA512CHECKSUM))
+			sha512checksum = value;
+		else if(prop.equals(COMPOSITION_LEVEL))
+			compositionLevel = value;
+		else if(prop.equals(OBJECT_CATEGORY))
+			objectCategory = value;
+		else if(prop.equals(PRESERVATION_LEVEL))
+			preservationLevel = value;
+		else if(prop.equals(DURATION))
+			duration = value;
+		else if(prop.equals(STATUS))
+			status = value;
+		}
 	}
 	
 	/**
@@ -438,6 +445,21 @@ public class DFile {
 		dFile.setDuration((String)jsonObject.get(DURATION));
 		dFile.setStatus((String)jsonObject.get(STATUS));
 		return dFile;
+	}
+	
+	/**
+	 * Construct a DFile object with a list of Statements
+	 * @param jsonObject
+	 * @return
+	 */
+	public static DFile toDFile(List<Statement> stmts){
+		Statement stmt = null;
+		JSONObject jsonObj = new JSONObject();
+		for(Iterator<Statement> it=stmts.iterator(); it.hasNext();){
+			stmt = it.next();
+			jsonObj.put(stmt.getPredicate().getLocalName(), stmt.getLiteral().getString());
+		}
+		return toDFile(jsonObj);
 	}
 	
 	/**
