@@ -9,8 +9,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.json.simple.JSONObject;
 
 import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
+import com.hp.hpl.jena.shared.PrefixMapping;
 
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
@@ -114,11 +119,10 @@ public class MetadataImportHandler extends CollectionHandler{
 
 		String eMessage;
 		String subjectId = null;
-		DFile dFile = null;
 		DamsURI objURI = null;
 		List<DamsURI> objURIs = null;
 		Model rdf = null;
-		String rdfXml = null;
+		Statement stmt = null;
 		for(int i=0; i<itemsCount; i++){
 			count++;
 			subjectId = items.get(i);
@@ -127,77 +131,89 @@ public class MetadataImportHandler extends CollectionHandler{
 				String message = "";
 				boolean succeeded = false;
 				objURIs = objects.get(subjectId);
-				//DamsURI objURI = DamsURI.toParts(subjectId, null);
 
-				if (importMode != null){
-					RDFStore graph = new RDFStore();
-					for(int j=0; j<objURIs.size(); j++){
-						objURI = objURIs.get(j);
-						rdf = rdfStore.querySubject(objURI.toString());
-						if(importMode.equals(Constants.IMPORT_MODE_SAMEPREDICATES)){
-							//objURI = objURIs.get(j);
-							rdfXml = new RDFStore(rdf).export(RDFStore.RDFXML_FORMAT);
-							if(objURI.isFileURI()){
-								//Properties replacement for files. Need to regenerate it with fileCharacterize
-								dFile = DFile.toDFile(rdfXml);
-								List<DFile> dFiles = damsClient.listObjectFiles(objURI.getObject());
-								DFile dFileTmp = null;
-								for(Iterator<DFile> it=dFiles.iterator(); it.hasNext();){
-									dFileTmp = it.next();
-									if(subjectId.equals(dFileTmp)){
-										//Update the properties that need replace.
-										dFileTmp.updateValues(dFile);
-										dFile = dFileTmp;
-										break;
-									}
-								}
-								succeeded = damsClient.updateFileCharacterize(objURI.getObject(), objURI.getComponent(), objURI.getFileName(), dFile.toNameValuePairs());
-							}else{
-								// Perform same predicates replacement
-								List<String> preds = rdfStore.listPredicates(subjectId);
-								succeeded = damsClient.selectiveMetadataDelete(objURI.getObject(), objURI.getComponent(), preds);
-								if(succeeded)
-									succeeded = damsClient.updateObject(objURI.getObject(), rdfXml, Constants.IMPORT_MODE_ADD);
+				Resource res = null;
+				RDFStore rdfStoreOrgin = null;
+				PrefixMapping prefixMap = null;
+				if(importMode.equals(Constants.IMPORT_MODE_SAMEPREDICATES) || importMode.equals(Constants.IMPORT_MODE_DESCRIPTIVE)){
+					rdfStoreOrgin = new RDFStore();
+					rdfStoreOrgin.loadRDFXML(damsClient.getMetadata(subjectId, "xml"));
+				}
+				
+				RDFStore graph = new RDFStore();
+				for(int j=0; j<objURIs.size(); j++){
+					objURI = objURIs.get(j);
+					rdf = rdfStore.querySubject(objURI.toString());
+					if(importMode.equals(Constants.IMPORT_MODE_SAMEPREDICATES)){
+						List<String> preds = rdfStore.listPredicates(objURI.toString());
+						if(objURI.isFileURI()){
+							//Properties replacement for files.
+							Model iModel = rdfStoreOrgin.querySubject(objURI.toString());
+							DFile dFileOrig = DFile.toDFile(iModel.listStatements().toList());
+							StmtIterator sIt = rdf.listStatements();
+							JSONObject props = new JSONObject();
+							while(sIt.hasNext()){
+								stmt = sIt.next();
+								props.put(stmt.getPredicate().getLocalName(), stmt.getLiteral().getString());
 							}
-							
-						} else if(importMode.equals(Constants.IMPORT_MODE_DESCRIPTIVE)){
-							DamsURI damsURI = null;
-							if(objURI.isFileURI())
-								throw new Exception("File characterize are not allowed for descriptive metadata import: " + subjectId);
-							// XXX
-							// Replace descriptive metadata, need to regenerate the technical metadata for files ???
-							List<DFile> dFiles = damsClient.listObjectFiles(subjectId);
-							succeeded = damsClient.updateObject(subjectId, rdfXml, Constants.IMPORT_MODE_ALL);
-							// regenerate the technical metadata for files
-							if(succeeded){							
-								for(Iterator<DFile> it=dFiles.iterator(); succeeded && it.hasNext();){
-									dFile = it.next();
-									damsURI = DamsURI.toParts(dFile.getId(), subjectId);
-									succeeded = damsClient.updateFileCharacterize(damsURI.getObject(), damsURI.getComponent(), damsURI.getFileName(), dFile.toNameValuePairs());
-								}
-							}
-						} else if(importMode.equals(Constants.IMPORT_MODE_ALL)){
-							String objId = objURI.getObject();
-							
-							// Object replacement: Need object metadata.
-							if(objURIs.get(0).toString().equals(objId)){
-								graph.merge(rdf);
-							}else{
-								message += "Unsupported metadata update mode all for subject " + objURI + ". Please use add or same predicate replacement instead."; 
+							dFileOrig.updateProperties(props);
+							succeeded = damsClient.updateFileCharacterize(objURI.getObject(), objURI.getComponent(), objURI.getFileName(), dFileOrig.toNameValuePairs());
+							if(!succeeded){
+								message += "Failed to update file properties for subject " + objURI + ".\n"; 
 								break;
 							}
-							if(j == objURIs.size()-1){
-								succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), importMode);
+						}else{
+							// Perform selective delete for same predicates replacement								
+							succeeded = damsClient.selectiveMetadataDelete(objURI.getObject(), objURI.getComponent(), preds);
+							if(succeeded){
+								graph.merge(rdf);
+							}else{
+								message += "Failed to perform selective delete for subject " + objURI + ".\n"; 
+								break;
+							}	
+						}
+						
+					} else if(importMode.equals(Constants.IMPORT_MODE_DESCRIPTIVE)){
+						// Add subject
+						graph.merge(rdf);
+						if(j == objURIs.size() - 1){
+							// Adding the file properties
+							List<String> subjects = rdfStoreOrgin.listURISubjects();
+							for(Iterator<String> it=subjects.iterator(); it.hasNext();){
+								objURI = DamsURI.toParts(it.next(), subjectId);
+								if(objURI.isFileURI()){
+									graph.merge(rdfStoreOrgin.querySubject(objURI.toString()));
+								}
 							}
-						} else if(importMode.equals(Constants.IMPORT_MODE_ADD)) {
+						}
+					} else if(importMode.equals(Constants.IMPORT_MODE_ALL)){
+						String objId = objURI.getObject();
+						
+						// Need object metadata for object replacement.
+						if(objURIs.get(0).toString().equals(objId)){
 							graph.merge(rdf);
-							if(j == objURIs.size()-1)
-								succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), importMode);
-						} else 
-							throw new Exception ("Unhandled import mode for metadata import: " + importMode + ".");
-					}
-				}else
-					throw new Exception ("Import mode is required.");
+						}else{
+							message += "Unsupported metadata update mode all for subject " + objURI + ". Please use add or same predicate replacement instead.\n"; 
+							break;
+						}
+
+					} else if(importMode.equals(Constants.IMPORT_MODE_ADD)) {
+						// Add subject
+						graph.merge(rdf);
+					} else 
+						throw new Exception ("Unhandled import mode for metadata import: " + importMode + ".");
+				}
+				
+				
+				// Update object
+				if( message.length() == 0 ){
+					if(importMode.equals(Constants.IMPORT_MODE_SAMEPREDICATES))
+						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), Constants.IMPORT_MODE_ADD);
+					else if(importMode.equals(Constants.IMPORT_MODE_DESCRIPTIVE))
+						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), Constants.IMPORT_MODE_ALL);
+					else
+						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), importMode);
+				}
 					
 				if(!succeeded){
 					failedCount++;
