@@ -15,6 +15,7 @@ import org.dom4j.Node;
 import org.dom4j.io.SAXReader;
 import org.json.simple.JSONObject;
 
+import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Statement;
 
 /**
@@ -453,11 +454,20 @@ public class DFile {
 	 * @return
 	 */
 	public static DFile toDFile(List<Statement> stmts){
+		Literal value = null;
+		String propName = null;
 		Statement stmt = null;
 		JSONObject jsonObj = new JSONObject();
 		for(Iterator<Statement> it=stmts.iterator(); it.hasNext();){
 			stmt = it.next();
-			jsonObj.put(stmt.getPredicate().getLocalName(), stmt.getLiteral().getString());
+			if(stmt.getObject() == null){
+				value= stmt.getLiteral();
+				propName = stmt.getPredicate().getLocalName();
+				if(value != null)
+					jsonObj.put(propName, value.getString());
+				else
+					jsonObj.put(propName, null);
+			}
 		}
 		return toDFile(jsonObj);
 	}
