@@ -8,10 +8,14 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.hp.hpl.jena.query.Query;
+import com.hp.hpl.jena.query.QueryExecutionFactory;
+import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.rdf.model.AnonId;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
@@ -35,6 +39,10 @@ public class RDFStore {
 	private Model rdfModel = null;
 	public RDFStore(){
 		rdfModel = ModelFactory.createDefaultModel();
+	}
+	
+	public RDFStore(Model rdfModel){
+		this.rdfModel  = rdfModel;
 	}
 	
 	/**
@@ -168,7 +176,6 @@ public class RDFStore {
 				subjects.add(res.getURI());
 			}
 		}
-		
 		return subjects;
 	}
 	
@@ -185,7 +192,6 @@ public class RDFStore {
 				subjects.add(res);
 			}
 		}
-		
 		return subjects;
 	}
 	
@@ -196,12 +202,8 @@ public class RDFStore {
 	 * @return
 	 */
 	public String exportSubject(String subjectURI, String format ){
-		Model resultModel = querySubject(subjectURI);
-		//System.out.println(subjectURI + ":\n");
-		//resultModel.write(System.out);
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		resultModel.write(out, format);
-		return out.toString();
+		Model resModel = querySubject(subjectURI);
+		return new RDFStore(resModel).export(format);
 	}
 	
 	/**
@@ -210,8 +212,8 @@ public class RDFStore {
 	 * @return
 	 */
 	public Model querySubject(String objId){
-		Resource res = rdfModel.createResource(objId);
-		return res.getModel();
+		Query query = QueryFactory.create("DESCRIBE <" + objId + ">") ;
+		return QueryExecutionFactory.create(query, rdfModel).execDescribe() ;
 	}
 	
 	/**
@@ -303,9 +305,18 @@ public class RDFStore {
 	 * @return
 	 */
 	public Model mergeObjects(RDFStore iStore){
-		rdfModel = rdfModel.union(iStore.rdfModel);
+		return merge(iStore.rdfModel);
+	}
+	
+	/**
+	 * Merge two graphs
+	 * @param iModel
+	 * @return
+	 */
+	public Model merge(Model iModel){
+		rdfModel = rdfModel.union(iModel);
 		Map<String, String> nsPrefixMap = rdfModel.getNsPrefixMap();
-		nsPrefixMap.putAll(iStore.rdfModel.getNsPrefixMap());
+		nsPrefixMap.putAll(iModel.getNsPrefixMap());
 		rdfModel.setNsPrefixes(nsPrefixMap);
 		return rdfModel;
 	}
@@ -317,5 +328,16 @@ public class RDFStore {
 	 */
 	public void write(OutputStream out, String format){
 		rdfModel.write(out, format);
+	}
+	
+	/**
+	 * Output the graph
+	 * @param format
+	 * @return
+	 */
+	public String export(String format){
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		write(out, format);
+		return out.toString();
 	}
 }
