@@ -90,6 +90,23 @@ public class RDFStore {
 		return rdfModel.createProperty(prop);
 	}
 	
+	
+	/**
+	 * Add Statement
+	 * @param stmt
+	 */
+	public void addStatement(Statement stmt){
+		rdfModel.add(stmt);
+	}
+	
+	/**
+	 * Add list of Statements
+	 * @param stmts
+	 */
+	public void addStatements(List<Statement> stmts){
+		rdfModel.add(stmts);
+	}
+	
 	/**
 	 * Load RDF string into the RDF store
 	 * @param rdfXml
