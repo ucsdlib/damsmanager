@@ -460,7 +460,7 @@ public class DFile {
 		JSONObject jsonObj = new JSONObject();
 		for(Iterator<Statement> it=stmts.iterator(); it.hasNext();){
 			stmt = it.next();
-			if(stmt.getObject() == null){
+			if(stmt.getObject().isLiteral()){
 				value= stmt.getLiteral();
 				propName = stmt.getPredicate().getLocalName();
 				if(value != null)

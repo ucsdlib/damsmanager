@@ -132,9 +132,7 @@ public class MetadataImportHandler extends CollectionHandler{
 				boolean succeeded = false;
 				objURIs = objects.get(subjectId);
 
-				Resource res = null;
 				RDFStore rdfStoreOrgin = null;
-				PrefixMapping prefixMap = null;
 				if(importMode.equals(Constants.IMPORT_MODE_SAMEPREDICATES) || importMode.equals(Constants.IMPORT_MODE_DESCRIPTIVE)){
 					rdfStoreOrgin = new RDFStore();
 					rdfStoreOrgin.loadRDFXML(damsClient.getMetadata(subjectId, "xml"));
@@ -213,7 +211,8 @@ public class MetadataImportHandler extends CollectionHandler{
 						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), Constants.IMPORT_MODE_ALL);
 					else
 						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), importMode);
-				}
+				}else
+					succeeded = false;
 					
 				if(!succeeded){
 					failedCount++;
