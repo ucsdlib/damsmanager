@@ -11,6 +11,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;
 
+import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
@@ -152,7 +153,9 @@ public class MetadataImportHandler extends CollectionHandler{
 							JSONObject props = new JSONObject();
 							while(sIt.hasNext()){
 								stmt = sIt.next();
-								props.put(stmt.getPredicate().getLocalName(), stmt.getLiteral().getString());
+								// Properties for update
+								if(stmt.getObject().isLiteral())
+									props.put(stmt.getPredicate().getLocalName(), stmt.getLiteral().getString());
 							}
 							dFileOrig.updateProperties(props);
 							succeeded = damsClient.updateFileCharacterize(objURI.getObject(), objURI.getComponent(), objURI.getFileName(), dFileOrig.toNameValuePairs());
