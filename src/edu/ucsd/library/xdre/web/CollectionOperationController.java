@@ -1,8 +1,11 @@
 package edu.ucsd.library.xdre.web;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,6 +37,7 @@ import edu.ucsd.library.xdre.collection.DerivativeHandler;
 import edu.ucsd.library.xdre.collection.FileCountValidaionHandler;
 import edu.ucsd.library.xdre.collection.FileIngestionHandler;
 import edu.ucsd.library.xdre.collection.JhoveReportHandler;
+import edu.ucsd.library.xdre.collection.MetadataExportHandler;
 import edu.ucsd.library.xdre.collection.MetadataImportHandler;
 import edu.ucsd.library.xdre.collection.SOLRIndexHandler;
 import edu.ucsd.library.xdre.utils.Constants;
@@ -270,7 +274,7 @@ public class CollectionOperationController implements Controller {
 		operations[15] = getParameter(paramsMap, "devUpload") != null;
 		operations[16] = getParameter(paramsMap, "jsonDiffUpdate") != null;
 		operations[17] = getParameter(paramsMap, "validateManifest") != null;
-		operations[18] = getParameter(paramsMap, "exportRdf") != null;
+		operations[18] = getParameter(paramsMap, "metadataExport") != null;
 		operations[19] = getParameter(paramsMap, "jhoveReport") != null;
 
 		int submissionId = (int)System.currentTimeMillis();
@@ -330,6 +334,7 @@ public class CollectionOperationController implements Controller {
 	 }
 	 
 	 CollectionHandler handler = null;
+	 OutputStream fileOut = null;
 	 
 	 
 	try {
@@ -548,7 +553,7 @@ public class CollectionOperationController implements Controller {
 				 }else
 					 session.setAttribute("status", opMessage + "Manifest Valification ...");
 			     handler = new LocalStoreManifestHandler(tsUtils, collectionId, validateManifest, writeManifest);
-			 } else if (i == 18){
+			 }*/ else if (i == 18){
 				 String exFormat = getParameter(paramsMap, "exportFormat");
 				 String xslSource = getParameter(paramsMap, "xsl");
 				 if(xslSource == null || (xslSource=xslSource.trim()).length() == 0){
@@ -556,41 +561,23 @@ public class CollectionOperationController implements Controller {
 					 if(!new File(xslSource).exists())
 						 xslSource = Constants.CLUSTER_HOST_NAME + "glossary/xsl/dams/convertToCSV.xsl";
 				 }
-				 session.setAttribute("status", opMessage + (exFormat.equalsIgnoreCase("csv")?"CSV":exFormat.equalsIgnoreCase("ntriples")?"NTriples":"RDF") + " Metadata Export ...");
-				 File outputFile = new File(Constants.TMP_FILE_DIR, "export-" + collectionId + "-" +System.currentTimeMillis() + "-rdf.xml");
-				 boolean translated = getParameter(paramsMap, "translated")!= null;
+				 session.setAttribute("status", opMessage + (exFormat.equalsIgnoreCase("csv")?"CSV":exFormat.equalsIgnoreCase("N-TRIPLE")?"N-TRIPLE":"RDF XML ") + " Metadata Export ...");
+				 File outputFile = new File(Constants.TMP_FILE_DIR, "export-" + DAMSClient.stripID(collectionId) + "-" +System.currentTimeMillis() + "-rdf.xml");
 			     String nsInput = getParameter(paramsMap, "nsInput");
 			     List<String> nsInputs = new ArrayList<String>();
 			     boolean componentsIncluded = true;
 			     if(nsInput != null && (nsInput=nsInput.trim()).length() > 0){
 			    	 String[] nsInputArr = nsInput.split(",");
 			    	 for(int j=0; j<nsInputArr.length; j++){
-			    		 componentsIncluded = false;
 			    		 if(nsInputArr[j]!= null && (nsInputArr[j]=nsInputArr[j].trim()).length()>0)
 			    			 nsInputs.add(nsInputArr[j]);
 			    	 }
 			     }
-			     
-			     if(exFormat.equalsIgnoreCase("csv")){
-			    	 translated = true;
-			    	 handler = new CSVMetadataExportHandler(damsClient, collectionId, outputFile, xslSource);
-					 ((CSVMetadataExportHandler)handler).setTranslated(translated);
-					 ((CSVMetadataExportHandler)handler).setNamespaces(nsInputs);
-					 ((CSVMetadataExportHandler)handler).setComponentsIncluded(componentsIncluded);
-			     }else if(exFormat.equalsIgnoreCase("ntriples")){
-			    	 translated = false;
-			    	 outputFile = new File(Constants.TMP_FILE_DIR, "export-" + collectionId + "-" +System.currentTimeMillis() + "-ntriples.txt");
-			    	 handler = new NTriplesMetadataExportHandler(damsClient, collectionId, outputFile);
-					 ((NTriplesMetadataExportHandler)handler).setTranslated(translated);
-					 ((NTriplesMetadataExportHandler)handler).setNamespaces(nsInputs);
-					 ((NTriplesMetadataExportHandler)handler).setComponentsIncluded(componentsIncluded);
-			     }else{
-					 handler = new RDFMetadaExportHandler(damsClient, collectionId, outputFile);
-					 ((RDFMetadaExportHandler)handler).setTranslated(translated);
-					 ((RDFMetadaExportHandler)handler).setNamespaces(nsInputs);
-					 ((RDFMetadaExportHandler)handler).setComponentsIncluded(componentsIncluded);
-			     }
-			 }*/else if (i == 19){
+			     fileOut = new FileOutputStream(outputFile);
+				 handler = new MetadataExportHandler(damsClient, collectionId, nsInputs, componentsIncluded, exFormat, fileOut);
+				 ((MetadataExportHandler)handler).setFileUri(logLink + "&file=" + outputFile.getName());
+			    
+			 }else if (i == 19){
 				 session.setAttribute("status", opMessage + "Jhove report ...");
 				 boolean bytestreamFilesOnly = getParameter(paramsMap, "bsJhoveReport") != null;
 				 boolean update = getParameter(paramsMap, "bsJhoveUpdate") != null;
@@ -626,6 +613,10 @@ public class CollectionOperationController implements Controller {
 					handler.setExeResult(successful);
 					exeInfo += handler.getExeInfo();
 					handler.release();
+					if(fileOut != null){
+						CollectionHandler.close(fileOut);
+						fileOut = null;
+					}
 				} 
 		   	}
 		 }else
@@ -646,6 +637,10 @@ public class CollectionOperationController implements Controller {
 	}finally{
 		if(damsClient != null)
 			damsClient.close();
+		if(fileOut != null){
+			CollectionHandler.close(fileOut);
+			fileOut = null;
+		}
 	}
 	}else
 		returnMessage = message;

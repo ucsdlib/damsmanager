@@ -212,17 +212,14 @@
 				</div>
 				<div id="cdlButtonDiv" <c:if test="${model.activeButton != 'cdlButton'}">style="display:none;"</c:if>>
 					<div id="metadataExportDiv" class="processlayout">
-						<div class="menuText"><input disabled class="pcheckbox" type="checkbox" id="exportRdf" name="exportRdf" onClick="checkSelections(this);"><span class="text-special"><strong>Metadata Export: </strong></span><br />
+						<div class="menuText"><input class="pcheckbox" type="checkbox" id="metadataExport" name="metadataExport" onClick="checkSelections(this, 'metadataExport');"><span class="text-special"><strong>Metadata Export: </strong></span><br />
 						    <div style="padding-left:18px;">
-						    	<div title="Export metadata with namespaces limitation." class="specialmenuText">
-								    <span class="text-special">&nbsp;Export triples in namespace(s): <input disabled type="text" name="nsInput" size="30" class="inputText" />&nbsp; (<span style="color:red;font-size:12px;">*</span>delimited by comma)</span> 
+							    <div title="Export metadata with namespaces limitation." class="specialmenuText">
+								    <span class="text-special">&nbsp;In Namespace(s): <input type="text" name="nsInput" size="30" class="inputText" />&nbsp; (<span style="color:red;font-size:12px;">*</span>delimited by comma)</span> 
 								</div>
-								<div class="specialmenuText"><input disabled type="radio" name="exportFormat" value="rdf" checked><span class="text-special">RDF XML Export</span></div>
-								<div title="Check this checkbox to export RDF with literal namespaces translation." class="specialmenuText"><input disabled type="checkbox" id="translated" name="translated" class="pmcheckbox" onClick="confirmSelection(this, 'Export with literal namespaces translation', 'exportRdf');">
-									<span class="text-special">With literal namespaces translation.</span>
-								</div>
-								<div class="specialmenuText"><input disabled type="radio" name="exportFormat" value="csv"><span class="text-special">CSV Export</span></div>
-								<div class="specialmenuText"><input disabled type="radio" name="exportFormat" value="ntriples"><span class="text-special">NTriples Export</span></div>
+								<div class="specialmenuText"><input type="radio" name="exportFormat" value="RDF/XML-ABBREV" checked><span class="text-special">RDF XML</span></div>
+								<div class="specialmenuText"><input type="radio" name="exportFormat" value="N-TRIPLE"><span class="text-special">N-Triples</span></div>
+								<!-- <div class="specialmenuText"><input disabled type="radio" name="exportFormat" value="csv"><span class="text-special">CSV Export</span></div> -->
 							</div>
 						</div>
 					</div>
