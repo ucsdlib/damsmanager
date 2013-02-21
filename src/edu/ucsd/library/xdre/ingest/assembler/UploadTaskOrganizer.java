@@ -311,7 +311,8 @@ public class UploadTaskOrganizer{
 	private void addPairFileToPool(Map<String, List> pairPool, File tmpFile){
 		String fName = tmpFile.getName();
 		//String tmpFileName = tmpFile.getAbsolutePath();
-		String pairId = fName.substring(0, fName.lastIndexOf('.'));
+		int idx = fName.lastIndexOf('.');
+		String pairId = fName.substring(0, idx>0?idx:fName.length());
 		List<String> pairList = null;
 		//int eIndex = pairId.endsWith("-edited");						 
 		if(pairId.endsWith("-edited")){
@@ -473,7 +474,7 @@ public class UploadTaskOrganizer{
 		if(matchIndex >= 0){
 			dIndex = fileName.lastIndexOf(fileOrderSuffixes[matchIndex]);
 		}else
-			dIndex = fileName.lastIndexOf(".");
+			dIndex = fileName.lastIndexOf('.');
 		return fileName.substring(0, (dIndex>0?dIndex:fileName.length()));
 	}
 	

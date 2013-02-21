@@ -47,7 +47,7 @@ public class DAMSUploadTaskHandler{
 		String[] fileParts = contentId.split("-");
 		compId = fileParts.length == 1 || fileParts[0].equals("0")?"":fileParts[0];
 		String fName = new File(sourceFile).getName();
-		int idx = fName.indexOf(".");
+		int idx = fName.indexOf('.');
 		fileId = (fileParts.length == 1?fileParts[0]:fileParts[1]) + (idx>0?fName.substring(idx):"");
 	}
 	
