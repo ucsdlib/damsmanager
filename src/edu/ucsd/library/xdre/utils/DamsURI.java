@@ -45,7 +45,10 @@ public class DamsURI {
 			try{
 				Integer.parseInt(component);
 				return true;
-			}catch(NumberFormatException ne){}
+			}catch(NumberFormatException ne){
+				if(component.toLowerCase().startsWith("cid"))
+					return true;
+			}
 		}
 		return false;
 	}
@@ -84,8 +87,8 @@ public class DamsURI {
 					fileName = idString;
 				}
 			}
-		} else if ((idx=fileURI.indexOf("/ark:/")) > 0){
-			idString = fileURI.substring(idx+7);
+		} else if ((idx=fileURI.indexOf("ark:/")) >= 0){
+			idString = fileURI.substring(idx+6);
 			String[] tmp = idString.split("/");
 			int len = tmp.length;
 			object = fileURI.substring(0, fileURI.indexOf(tmp[1]))+tmp[1];
@@ -97,7 +100,10 @@ public class DamsURI {
 					Integer.parseInt(tmp[2]);
 					component = tmp[2];
 				}catch (NumberFormatException ne){
-					fileName = tmp[2];
+					if(tmp[2].toLowerCase().startsWith("cid"))
+						component = tmp[2];
+					else
+						fileName = tmp[2];
 				}
 			}else if(len != 2)
 				throw new Exception("Unknown object/file URL format: " + fileURI);
