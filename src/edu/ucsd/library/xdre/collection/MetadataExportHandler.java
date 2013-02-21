@@ -13,7 +13,7 @@ import edu.ucsd.library.xdre.utils.RDFStore;
 
 /**
  * 
- * MetadataExportHandler: export metadata for a single item or in batch 
+ * MetadataExportHandler: export metadata for a single item or in batch
  * with/without predicates limitation
  * @author lsitu@ucsd.edu
  */
@@ -92,10 +92,9 @@ public class MetadataExportHandler extends CollectionHandler{
 				setStatus("Processing metadata export for subject " + subjectId  + " (" + (i+1) + " of " + itemsCount + ") ... " ); 
 				iStore =  new RDFStore();
 				iStore.loadRDFXML(damsClient.getMetadata(subjectId, "xml"));
-				// Implement the same predicates export
+				// Same predicates export
 				if(predicates.size() > 0 || !components){
 					trimStatements(iStore);
-					//iStore.write(System.out, RDFStore.RDFXML_ABBREV_FORMAT);
 				}
 				rdfStore.mergeObjects(iStore);
 				logMessage("Exported metadata for subject " + subjectId + ".");
@@ -136,11 +135,12 @@ public class MetadataExportHandler extends CollectionHandler{
 	 * Execution result message
 	 */
 	public String getExeInfo() {
+		exeReport.append((format.startsWith("RDF/XML")?"RDF/XML":format) + " metadata export ");
 		if(exeResult)
-			exeReport.append("\n" + "RDF metadata " + (collectionId==null?"":" for " + getCollectionTitle()) + " is ready:");
+			exeReport.append((collectionId==null?"":" for " + getCollectionTitle()) + " is ready" + (fileUri!=null?" for <a href=\"" + fileUri + "\">download</a>":"") + ":\n");
 		else
-			exeReport.append("Metadata export failed (" + failedCount + " of " + count + " failed): \n ");	
-		exeReport.append("Total items found " + itemsCount + ". Number of items processed " + count + ".\n");
+			exeReport.append("failed (" + failedCount + " of " + count + " failed): \n ");	
+		exeReport.append("- Total items found " + itemsCount + ". \n- Number of items processed " + count + ".");
 		String exeInfo = exeReport.toString();
 		logMessage(exeInfo);
 		return exeInfo;
