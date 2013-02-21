@@ -150,11 +150,11 @@
 								 </div>
 								 <div title="Check this checkbox to repopulate metadata but keep file characterize metadata for all the subjects included in the file submitted." class="specialmenuText">
 											<input type="radio" id="importMode" name="importMode" value="descriptive">
-											 <span class="text-special">Replace all descriptive metadata but keep file properties</span>
+											 <span class="text-special">Replace descriptive metadata only to keep keep file properties</span>
 								  </div>
 								 <div title="Check this checkbox to replace the subject with the subjects included in the submitted RDF." class="specialmenuText">
 											<input type="radio" id="importMode" name="importMode" value="all">
-											 <span class="text-special">Replace subject with the metadata submitted</span>
+											 <span class="text-special">Replace the whole record with metadata submitted</span>
 								  </div>
 								  <div title="Check this checkbox for same predicates replacement with the triples included in the submitted RDF." class="specialmenuText">
 											<input type="radio" id="importMode" name="importMode" value="samePredicates">
