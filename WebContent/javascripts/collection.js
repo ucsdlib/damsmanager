@@ -31,6 +31,7 @@
       var collectionName = "";
       operations = "";
       
+      var rdfExport = formObj.metadataExport.checked;
       var rdfImport = formObj.rdfImport.checked;
       var jhoveReport = formObj.jhoveReport.checked;
       var urlParams = "activeButton=" + formObj.activeButton.value; 
@@ -77,11 +78,11 @@
        }
        
        if(createDerivatives == true){
-          operations += "- Create derivatives: ";
+          operations += "- Create derivatives \n";
        }
        
        if(uploadRDF == true){
-          operations += "- Upload RDF XML files ";
+          operations += "- Upload RDF XML files \n";
        }
        
        if(createMETSFiles == true){
@@ -93,9 +94,13 @@
       }
        
        if(sendToCDL == true){
-          operations += "- Send object to CDL ";
+          operations += "- Send object to CDL \n";
        }
-             
+      
+       if(rdfExport == true) {
+    	   operations += "- Metadata Export \n";
+       }
+       
      if(rdfImport == true){
     	var fileName = formObj.dataFile.value;
 	    if(fileName == null || trim(fileName).length == 0){
@@ -105,11 +110,6 @@
          operations += "- Metadata Import \n";
          formObj.enctype = "multipart/form-data";
       }
-     
-     if(operations.length == 0){
-        alert("Please choose an operation.");
-        return false;
-     }
      
       var exeConfirm = confirm("Are you sure you want to perform the following operations on the " + collectionName + " collection? \n" + operations);
        if(!exeConfirm){
