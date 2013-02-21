@@ -11,12 +11,9 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;
 
-import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
-import com.hp.hpl.jena.shared.PrefixMapping;
 
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
@@ -33,13 +30,13 @@ public class MetadataImportHandler extends CollectionHandler{
 	private static Logger log = Logger.getLogger(MetadataImportHandler.class);
 
 	//private Map subjectNSMap = null;
-	private String rdf = null;
-	private String format = null;
-	private String importMode = null;
-	private int count = 0;
-	private int failedCount = 0;
-	private RDFStore rdfStore = null;
-	private Map<String, List<DamsURI>> objects = null;
+	protected String rdf = null;
+	protected String format = null;
+	protected String importMode = null;
+	protected int count = 0;
+	protected int failedCount = 0;
+	protected RDFStore rdfStore = null;
+	protected Map<String, List<DamsURI>> objects = null;
 	
 	/**
 	 * Constructor for MetadataImportHandler
