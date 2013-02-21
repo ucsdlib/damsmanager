@@ -27,6 +27,7 @@ public class MetadataExportHandler extends CollectionHandler{
 	private int failedCount = 0;
 	private RDFStore rdfStore = null;
 	private String format = null;
+	private String fileUri = null;
 	private OutputStream out = null;
 
 	/**
@@ -67,6 +68,14 @@ public class MetadataExportHandler extends CollectionHandler{
 	
 	private void initHandler() throws DocumentException, UnsupportedEncodingException, IOException{
 		rdfStore = new RDFStore();
+	}
+
+	public String getFileUri() {
+		return fileUri;
+	}
+
+	public void setFileUri(String fileUri) {
+		this.fileUri = fileUri;
 	}
 
 	/**
