@@ -1782,12 +1782,22 @@ public class DAMSClient {
 	 * @throws Exception
 	 */
 	public Document solrLookup(String solrQuery) throws Exception{
-		//String solrParams = solrQuery + "&fl=id&fl=has_model_ssim&wt=xml";
-		String url = getIndexURL(null);
+		String url = getSolrURL();
 		url += (url.indexOf('?')>0?"&":"?") + solrQuery + "&wt=xml";
 		System.out.println("SOLR URL: " + url);
 		HttpGet req= new HttpGet(url);
 		return getXMLResult(req);
+	}
+	
+	/**
+	 * Retrieve the URL for the SOLR server
+	 * @return
+	 */
+	private String getSolrURL(){
+		if(solrURLBase == null)
+			return getIndexURL(null);
+		else
+			return solrURLBase + "select";
 	}
 	
 	public void close(){
