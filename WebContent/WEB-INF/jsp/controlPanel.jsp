@@ -95,13 +95,23 @@
 						<div title="Check this checkbox to generate Jhove report for the BYTESTREAM files only." class="specialmenuText"><input type="checkbox" id="bsJhoveReport" name="bsJhoveReport" class="pmcheckbox" onClick="confirmSelection(this, 'Jhove report for BYTESTREAM files only', 'jhoveReport');">
 							<span class="text-special">Jhove report for BYTESTREAM files only.</span>
 						</div>
-						<div title="Check this checkbox to update the format when it's validated by Jhove." class="specialmenuText"><input type="checkbox" id="bsJhoveUpdate" name="bsJhoveUpdate" class="pmcheckbox" onClick="confirmSelection(this, 'Correct format metadata', 'jhoveUpdate');">
-							<span class="text-special">Correct format metadata if validated by Jhove.</span>
-						</div>	
+						<div title="Check this checkbox to update the format when it's validated by Jhove." class="specialmenuText"><input type="checkbox" id="bsJhoveUpdate" name="bsJhoveUpdate" class="pmcheckbox" onClick="confirmSelection(this, 'Update technical metadata metadata', 'jhoveReport');">
+							<span class="text-special">Update technical metadata:</span>
+						</div>
+						<div>
+							<fieldset class="groupbox_rdf"><legend class="slegandText" style="padding-left:8px;padding-right:8px;">Update Options</legend>
+								<span title="Check this checkbox to update the format when it's validated by Jhove." class="submenuText" >&nbsp;<input type="radio" name="jhoveUpdate" value="ByteStream" checked>
+									Correct format and format version.
+								</span><br />
+								<span title="Check this checkbox to update duration when it's available." class="submenuText">&nbsp;<input type="radio" name="jhoveUpdate" value="Duration">
+									Update duration for audio/video.
+								</span>
+							</fieldset>
+						</div>
 					</div>
 					<div id="checksumDiv" class="processlayout">
 						<span title="Validate checksum or revalidate if checksum date before the date entered." class="menuText">
-				              <input disabled class="pcheckbox" type="checkbox" id="validateChecksums" name="validateChecksums" onClick="checkSelections(this);">
+				              <input class="pcheckbox" type="checkbox" id="validateChecksums" name="validateChecksums" onClick="checkSelections(this);">
 									<span class="text-special">Checksum Validation</span></span><br/>								   
 						<span class="submenuText" style="padding-left:26px;">Revalidate if validated before:&nbsp;<input disabled type="text" name="checksumDate" size="12" class="inputText">&nbsp;(mm/dd/yyyy)</span>
 					
@@ -129,46 +139,42 @@
 				</div>
 				<div id="sipButtonDiv" <c:if test="${model.activeButton != 'sipButton'}">style="display:none;"</c:if>>
 					<div id="populationDiv" class="processlayout">
-						<div title="Populate the triple store with RDF." class="menuText"><input disabled class="pcheckbox" type="checkbox" id="rdfImport" name="rdfImport" onClick="checkSelections(this);">
+						<div title="Populate the triple store with RDF." class="menuText"><input class="pcheckbox" type="checkbox" id="rdfImport" name="rdfImport" onClick="checkSelections(this);">
 									  <span class="text-special">Metadata Import</span>
 						</div>
 						<div>
-							<fieldset class="groupbox_ts"><legend class="slegandText">File</legend>
+							 <fieldset class="groupbox_ingestOpts"><legend class="slegandText">Special Options</legend>
+								 <div title="Check this checkbox to start a new round of TripleStore population." class="specialmenuText">
+											<input type="radio" id="importMode" name="importMode" value="add">
+											 <span class="text-special">Add metadata</span>
+								 </div>
+								 <div title="Check this checkbox to repopulate metadata but keep file characterize metadata for all the subjects included in the file submitted." class="specialmenuText">
+											<input type="radio" id="importMode" name="importMode" value="descriptive">
+											 <span class="text-special">Replace descriptive metadata only to keep keep file properties</span>
+								  </div>
+								 <div title="Check this checkbox to replace the subject with the subjects included in the submitted RDF." class="specialmenuText">
+											<input type="radio" id="importMode" name="importMode" value="all">
+											 <span class="text-special">Replace the whole record with metadata submitted</span>
+								  </div>
+								  <div title="Check this checkbox for same predicates replacement with the triples included in the submitted RDF." class="specialmenuText">
+											<input type="radio" id="importMode" name="importMode" value="samePredicates">
+											 <span class="text-special">Same predicates replacement with metadata submitted</span>
+								  </div>
+							  </fieldset>
+						  </div>
+						  <div>
+							   <fieldset class="groupbox_ts"><legend class="slegandText">File</legend>
 									<div id="fileFormat">
 											<span class="submenuText"><strong>Choose File Format: </strong></span><br/>
-											<span class="submenuText"><input disabled type="radio" name="dataFormat" value="rdf" checked><a title="View sample format" href="/damsmanager/files/sampleRdf.xml" target="_blank"><span class="text-special">RDF XML</span></a></span>
-											<span class="submenuText"><input disabled type="radio" name="dataFormat" value="msclXml"><a title="View sample format" href="/damsmanager/files/sampleMscl.xml" target="_blank"><span class="text-special">N-Triples</span></a></span>
-											<span class="submenuText"><input type="radio" name="dataFormat" value="json" disabled><span class="text-special">JSON</span></span><br>
+											<span class="submenuText"><input type="radio" name="dataFormat" value="RDF/XML" checked><span class="text-special">RDF XML</span></span>
+											<span class="submenuText"><input type="radio" name="dataFormat" value="N-TRIPLE"><span class="text-special">N-Triples</span></span><br>
 									</div>
 									<div id="fileLocation" style="padding-top:5px;">	
-											<span class="submenuText"><strong>Choose File: </strong></span><input disabled type="file" name="dataFile" size="40" /><br>
+											<span class="submenuText"><strong>Choose File: </strong></span><input type="file" name="dataFile" size="40" /><br>
 									</div>
-							</fieldset>
-						 </div>
-						 <div>
-						 <fieldset class="groupbox_ingestOpts"><legend class="slegandText">Special Options</legend>
-						 <div title="Check this checkbox to start a new round of TripleStore population." class="specialmenuText">
-									<input disabled type="radio" id="importMode" name="importMode" value="add">
-									 <span class="text-special">Add metadata</span>
-						 </div>
-						 <div title="Check this checkbox to repopulate metadata but keep file characterize metadata for all the subjects included in the file submitted." class="specialmenuText">
-									<input disabled type="radio" id="importMode" name="importMode" value="desciptive">
-									 <span class="text-special">Repopulate subjects but keep file characterize metadata</span>
-						  </div>
-						 <div title="Check this checkbox to replace the subject with the subjects included in the submitted RDF." class="specialmenuText">
-									<input disabled type="radio" id="importMode" name="importMode" value="all">
-									 <span class="text-special">Replace subject with the metadata submitted</span>
-						  </div>
-						  <div title="Check this checkbox for the same predicates replacement with the triples included in the submitted RDF." class="specialmenuText">
-									<input disabled type="radio" id="importMode" name="importMode" value="samePredicates">
-									 <span class="text-special">Same predicates replacement with the metadata submitted</span>
-						  </div>
-						  </fieldset>
-						  </div>
+							   </fieldset>
+						   </div>
 					</div>										
-					<div title="Custom metadata population through Metadata Converter." class="title" align="left">
-						<a href="/damsmanager/dataConverter.do"><b>Custom Metadata Converting and Exchanging</b></a>
-					</div>
 				</div>
 				<div id="metadataButtonDiv" <c:if test="${model.activeButton != 'metadataButton'}">style="display:none;"</c:if>>
 					<div id="solrIndexDiv" class="processlayout">
@@ -206,17 +212,14 @@
 				</div>
 				<div id="cdlButtonDiv" <c:if test="${model.activeButton != 'cdlButton'}">style="display:none;"</c:if>>
 					<div id="metadataExportDiv" class="processlayout">
-						<div class="menuText"><input disabled class="pcheckbox" type="checkbox" id="exportRdf" name="exportRdf" onClick="checkSelections(this);"><span class="text-special"><strong>Metadata Export: </strong></span><br />
+						<div class="menuText"><input class="pcheckbox" type="checkbox" id="metadataExport" name="metadataExport" onClick="checkSelections(this, 'metadataExport');"><span class="text-special"><strong>Metadata Export: </strong></span><br />
 						    <div style="padding-left:18px;">
-						    	<div title="Export metadata with namespaces limitation." class="specialmenuText">
-								    <span class="text-special">&nbsp;Export triples in namespace(s): <input disabled type="text" name="nsInput" size="30" class="inputText" />&nbsp; (<span style="color:red;font-size:12px;">*</span>delimited by comma)</span> 
+							    <div title="Export metadata with namespaces limitation." class="specialmenuText">
+								    <span class="text-special">&nbsp;In Namespace(s): <input type="text" name="nsInput" size="30" class="inputText" />&nbsp; (<span style="color:red;font-size:12px;">*</span>delimited by comma)</span> 
 								</div>
-								<div class="specialmenuText"><input disabled type="radio" name="exportFormat" value="rdf" checked><span class="text-special">RDF XML Export</span></div>
-								<div title="Check this checkbox to export RDF with literal namespaces translation." class="specialmenuText"><input disabled type="checkbox" id="translated" name="translated" class="pmcheckbox" onClick="confirmSelection(this, 'Export with literal namespaces translation', 'exportRdf');">
-									<span class="text-special">With literal namespaces translation.</span>
-								</div>
-								<div class="specialmenuText"><input disabled type="radio" name="exportFormat" value="csv"><span class="text-special">CSV Export</span></div>
-								<div class="specialmenuText"><input disabled type="radio" name="exportFormat" value="ntriples"><span class="text-special">NTriples Export</span></div>
+								<div class="specialmenuText"><input type="radio" name="exportFormat" value="RDF/XML-ABBREV" checked><span class="text-special">RDF XML</span></div>
+								<div class="specialmenuText"><input type="radio" name="exportFormat" value="N-TRIPLE"><span class="text-special">N-Triples</span></div>
+								<!-- <div class="specialmenuText"><input disabled type="radio" name="exportFormat" value="csv"><span class="text-special">CSV Export</span></div> -->
 							</div>
 						</div>
 					</div>

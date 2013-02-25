@@ -68,7 +68,7 @@ public class SOLRIndexHandler extends CollectionHandler{
 		String eMessage;
 		String subjectURI = null;
 		
-		for(int i=0; i<itemsCount; i++){
+		for(int i=0; i<itemsCount && !interrupted; i++){
 			count++;
 			subjectURI = items.get(i);
 			try{
@@ -76,27 +76,17 @@ public class SOLRIndexHandler extends CollectionHandler{
 				boolean suceeded = damsClient.solrUpdate(subjectURI);
 				if(!suceeded){
 					failedCount++;
-					exeResult = false;
-					String iMessage = "SOLR index for subject " + subjectURI  + " failed ";
-					iMessage += "(" + (i+1) + " of " + itemsCount + "): ";
-					setStatus( iMessage); 
-					log("log", iMessage);
-					log.info(iMessage);
+					logError("SOLR index for subject " + subjectURI  + " failed (" + (i+1) + " of " + itemsCount + "). ");
 				}else{
 					String iMessage = "SOLR index for subject " + subjectURI  + " succeeded (" + (i+1) + " of " + itemsCount + "). ";
-					setStatus( iMessage); 
-					log("log", iMessage);
 					log.info(iMessage);
+					logMessage(iMessage);
 				}
 			
 			} catch (Exception e) {
 				failedCount++;
 				e.printStackTrace();
-				exeResult = false;
-				eMessage = "SOLR index failed: " + e.getMessage();
-				setStatus( eMessage  + "(" +(i+1)+ " of " + itemsCount + ")"); 
-				log("log", eMessage );
-				log.info(eMessage );
+				logError("SOLR index failed: (" +(i+1)+ " of " + itemsCount + "): " + e.getMessage());
 			}
 			setProgressPercentage( ((i + 1) * 100) / itemsCount);
 			
@@ -104,13 +94,10 @@ public class SOLRIndexHandler extends CollectionHandler{
 				Thread.sleep(10);
 			} catch (InterruptedException e1) {
 				failedCount++;
-        		exeResult = false;
-    			eMessage = "SOLR index interrupted for subject " + subjectURI  + ". \n Error: " + e1.getMessage() + "\n";
+				interrupted = true;
+    			logError("SOLR index canceled for subject " + subjectURI  + ". Error: " + e1.getMessage() + ". ");
 				setStatus("Canceled");
 				clearSession();
-				log("log", eMessage.replace("\n", ""));
-				log.info(eMessage, e1);
-				break;
 			}
 		}
 		
@@ -160,28 +147,23 @@ public class SOLRIndexHandler extends CollectionHandler{
 								suceeded = damsClient.solrDelete(subject);
 							}
 							if(!suceeded){
-								exeResult = false;
-								String iMessage = "SOLR index cleaning up failed " + " for subject " + subject  + ".\n";
-								setStatus( iMessage.replace("\n", "<br/>")); 
-								log("log", iMessage);
+								String iMessage = "SOLR index cleaning up failed " + " for subject " + subject  + ". ";
 								log.info(iMessage);
+								logError(iMessage);
 							}else{
-								String iMessage = "SOLR index cleaning up succeedded " + " for subject " + subject  + ".\n";
-								setStatus( iMessage.replace("\n", "<br/>")); 
-								log("log", iMessage);
+								String iMessage = "SOLR index cleaning up succeedded " + " for subject " + subject  + ". ";
 								log.info(iMessage);
+								logMessage(iMessage);
 							}
 						}else
 							setStatus("Cleaning up SOLR at  " + count + " of " + solrCount + " for collection " + colTitle + "." ); 
 						try{
 							Thread.sleep(10);
 						} catch (InterruptedException e1) {
-			        		exeResult = false;
-			    			eMessage = "SOLR index cleaning up interrupted ... \n";
+							interrupted = true;
+			    			logError("SOLR index cleaning up interrupted ... ");
 							setStatus("Canceled");
 							clearSession();
-							log("log", eMessage.replace("\n", ""));
-							log.info(eMessage, e1);
 							break;
 						}
 					}

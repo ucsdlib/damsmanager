@@ -6,6 +6,7 @@
    var currServletId;
    var url = "/damsmanager/operationHandler.do";
    var progressUrl = "/damsmanager/progressHandler.do";
+   var fileUseArr = ["image-source", "image-service", "image-preview", "image-thumbnail", "image-icon", "image-alternate", "video-source", "video-service", "video-alternate", "document-source", "document-service", "document-alternate", "audio-source", "audio-service", "audio-alternate", "data-source", "data-service", "data-alternate"];
    var progressBarWidth = 500;
    var progress = {
 	 success: dispMessage,
@@ -30,6 +31,7 @@
       var collectionName = "";
       operations = "";
       
+      var rdfExport = formObj.metadataExport.checked;
       var rdfImport = formObj.rdfImport.checked;
       var jhoveReport = formObj.jhoveReport.checked;
       var urlParams = "activeButton=" + formObj.activeButton.value; 
@@ -61,8 +63,8 @@
       }
       
       if(validateChecksums == true){
-         if(!validateDate(formObj.checksumDate))
-             return false;
+        // if(!validateDate(formObj.checksumDate))
+        //     return false;
 
           operations += "- Validate checksum \n";
        }
@@ -76,11 +78,11 @@
        }
        
        if(createDerivatives == true){
-          operations += "- Create derivatives: ";
+          operations += "- Create derivatives \n";
        }
        
        if(uploadRDF == true){
-          operations += "- Upload RDF XML files ";
+          operations += "- Upload RDF XML files \n";
        }
        
        if(createMETSFiles == true){
@@ -92,9 +94,13 @@
       }
        
        if(sendToCDL == true){
-          operations += "- Send object to CDL ";
+          operations += "- Send object to CDL \n";
        }
-             
+      
+       if(rdfExport == true) {
+    	   operations += "- Metadata Export \n";
+       }
+       
      if(rdfImport == true){
     	var fileName = formObj.dataFile.value;
 	    if(fileName == null || trim(fileName).length == 0){
@@ -104,11 +110,6 @@
          operations += "- Metadata Import \n";
          formObj.enctype = "multipart/form-data";
       }
-     
-     if(operations.length == 0){
-        alert("Please choose an operation.");
-        return false;
-     }
      
       var exeConfirm = confirm("Are you sure you want to perform the following operations on the " + collectionName + " collection? \n" + operations);
        if(!exeConfirm){
@@ -238,9 +239,9 @@
      status = message;
      
      if(status == "Done" || status == "Error" || status == "Canceled" || status == "Busy"){
-         displayMainDiv("statusDiv");
          resetForm("mainForm"); 
          document.getElementById('tdr_crumbs').style.display='inline';
+         displayMainDiv("statusDiv");
       }else{
      	document.getElementById('tdr_crumbs').style.display='none';
         setDispStyle("main", "none");
@@ -341,10 +342,10 @@
         setTimeout('getSid()', 2000);
         document.getElementById("tdr_crumbs").style.display='inline';
         if(document.getElementById("statusDiv") != null){
-           displayMainDiv("statusDiv");
            var preMessage = getInnerHTML("message");
            preMessage = truncateMessage(preMessage);
            displayMessage("message", preMessage + logMessage);
+           displayMainDiv("statusDiv");
          }
       }
   }
@@ -427,6 +428,7 @@
   function displayMainDiv(divId){
       setDispStyle(divId, "none");
       setDispStyle("main", "inline");
+      drawBreadcrumbNMenu(crumbs, "tdr_crumbs_content", true);
   }
   
   function cfailed(resp){

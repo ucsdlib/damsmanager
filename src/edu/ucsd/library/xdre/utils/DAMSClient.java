@@ -23,7 +23,12 @@ import java.util.Properties;
 import java.util.TreeMap;
 
 import javax.activation.FileDataSource;
-import javax.activation.MimetypesFileTypeMap;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 import javax.security.auth.login.LoginException;
 
 import org.apache.http.Header;
@@ -236,35 +241,35 @@ public class DAMSClient {
 	}
 	
 	/**
-	 * Retrieve the Repositories in DAMS
-	 * /api/repositories
+	 * Retrieve the units in DAMS
+	 * /api/units
 	 * @return
 	 * @throws Exception 
 	 */
-	public Map<String, String> listRepositories() throws Exception{
+	public Map<String, String> listUnits() throws Exception{
 		Map<String, String> map = null;
-		String url = getRepositoriesURL(null, null, "json");
+		String url = getUnitsURL(null, null, "json");
 		HttpGet get = new HttpGet(url);
 		JSONObject resObj = getJSONResult(get);
-		JSONArray colArr = (JSONArray) resObj.get("repositories");
+		JSONArray colArr = (JSONArray) resObj.get("units");
 		JSONObject col = null;
 		map = new TreeMap<String, String>();
 		for(Iterator it= colArr.iterator(); it.hasNext();){
 			col = (JSONObject)it.next();
-			// Repo title, repo URL
-			map.put((String)col.get("name"), (String)col.get("repository"));
+			// unit title, unit URL
+			map.put((String)col.get("name"), (String)col.get("unit"));
 		}
 
 		return map;
 	}
 	
 	/**
-	 * Get a list of objects in a repository.
-	 * /api/repositories/repoId
+	 * Get a list of objects in a unit.
+	 * /api/units/unitId
 	 * @throws Exception 
 	 **/
-	public List<String> listRepoObjects(String repoId) throws Exception {
-		String url = getRepositoriesURL(repoId, null, "xml");
+	public List<String> listUnitObjects(String unitId) throws Exception {
+		String url = getUnitsURL(unitId, null, "xml");
 		HttpGet get = new HttpGet(url);
 		Document doc = getXMLResult(get);
 		List<Node> objectNodes = doc.selectNodes(DOCUMENT_RESPONSE_ROOT_PATH + "/objects/value/obj");
@@ -278,13 +283,13 @@ public class DAMSClient {
 	}
 	
 	/**
-	 * Get a list of files in a repository.
-	 * /api/repositories/repoId/files 
+	 * Get a list of files in a unit.
+	 * /api/units/unitId/files 
 	 * @throws Exception 
 	 **/
-	public List<DFile> listRepoFiles(String repoId) throws Exception {
+	public List<DFile> listUnitFiles(String unitId) throws Exception {
 		JSONObject resObj = null;
-		String url = getRepositoriesURL(repoId, "files", "json");
+		String url = getUnitsURL(unitId, "files", "json");
 		HttpGet get = new HttpGet(url);
 		resObj = getJSONResult(get);
 		JSONArray jsonArr = (JSONArray) resObj.get("files");
@@ -295,13 +300,13 @@ public class DAMSClient {
 	}
 	
 	/**
-	 * Get the files in a repository.
-	 * /api/repositories/repoId/files 
+	 * Get the files in a unit.
+	 * /api/units/unitId/files 
 	 * @throws Exception 
 	 **/
-	public Document getRepoFiles(String repoId) throws Exception {
+	public Document getUnitFiles(String unitId) throws Exception {
 		Document doc = null;
-		String url = getRepositoriesURL(repoId, "files", "xml");
+		String url = getUnitsURL(unitId, "files", "xml");
 		HttpGet get = new HttpGet(url);
 		doc = getXMLResult(get);
 		return doc;
@@ -431,17 +436,17 @@ public class DAMSClient {
 	 * @return
 	 * @throws Exception 
 	 */
-	public List<FileURI> retrieveFileURI(String srcFileName, String srcPath, String collectionId, String repoId) throws Exception{
+	public List<DamsURI> retrieveFileURI(String srcFileName, String srcPath, String collectionId, String unitId) throws Exception{
 		HttpGet req = null;
-		List<FileURI> fileURIs = null;
+		List<DamsURI> fileURIs = null;
 		String url = "";
-		if(collectionId == null && repoId == null){
+		if(collectionId == null && unitId == null){
 			// Retrieve object from SOLR
 		}else{
 			if(collectionId != null)
 				url = getCollectionsURL(collectionId, "files", "xml");
 			else
-				url = getRepositoriesURL(repoId, "files", "xml");
+				url = getUnitsURL(unitId, "files", "xml");
 		}
 
 		try{
@@ -632,20 +637,20 @@ public class DAMSClient {
 	}
 	
 	/**
-	 * List objects for items in a repository and/or collection
-	 * @param repository
+	 * List objects for items in a unit and/or collection
+	 * @param unit
 	 * @param collection
 	 * @return
 	 * @throws Exception
 	 */
-	public List<String> solrListObjects(String repoTitle, String collectionTitle) throws Exception {
+	public List<String> solrListObjects(String unitTitle, String collectionTitle) throws Exception {
 		int rows = 1000;
 		int start = 0;
 		boolean hasMore = false;
 		List<String> items = new ArrayList<String>();
 		//Retrieve objects in SOLR recursively
 		do{
-			hasMore = appendSOLRItems(items, repoTitle, collectionTitle, start, rows);
+			hasMore = appendSOLRItems(items, unitTitle, collectionTitle, start, rows);
 			start = rows + start;
 		}while(hasMore );
 		
@@ -696,10 +701,10 @@ public class DAMSClient {
 			status = execute(req);
 			if (status != 200)
 				handleError(format);
+			return EntityUtils.toString(response.getEntity());
 		} finally {
 			req.reset();
 		}
-		return EntityUtils.toString(response.getEntity());
 	}
 
 	/**
@@ -717,17 +722,17 @@ public class DAMSClient {
 			List<NameValuePair> optionalParams) throws Exception {
 		String format = null;
 		String url = getFilesURL(object, compId, fileName, "characterize", format);
-		HttpPost post = new HttpPost(url);
-		post.setEntity(new UrlEncodedFormEntity(optionalParams));
+		HttpPost req = new HttpPost(url);
+		req.setEntity(toMultiPartEntity(optionalParams));
 		int status = -1;
 		boolean success = false;
 		try {
-			status = execute(post);
+			status = execute(req);
 			success= (status == 200 || status == 201);
 			if (!success)
 				handleError(format);
 		} finally {
-			post.reset();
+			req.reset();
 		}
 
 		return success;
@@ -749,7 +754,8 @@ public class DAMSClient {
 		String format = null;
 		String url = getFilesURL(object, compId, fileName, "characterize", format);
 		HttpPut req = new HttpPut(url);
-		req.setEntity(new UrlEncodedFormEntity(optionalParams));
+		//req.setEntity(new UrlEncodedFormEntity(optionalParams));
+		req.setEntity(toMultiPartEntity(optionalParams));
 		int status = -1;
 		boolean success = false;
 		try {
@@ -965,10 +971,6 @@ public class DAMSClient {
 			ent.addPart("dateCreated", new StringBody(damsDateFormat.format(file.lastModified())));
 			if(use != null && use.length() > 0)
 				ent.addPart("use", new StringBody(use));
-			int idx = srcFile.indexOf(Constants.DAMS_STAGING);
-			if(idx == 0){
-				ent.addPart("local", new StringBody(srcFile.substring(idx+Constants.DAMS_STAGING.length())));
-			}
 			
 			req.setEntity(ent);
 			status = execute(req);
@@ -995,7 +997,6 @@ public class DAMSClient {
 		HttpEntityEnclosingRequestBase req = null;
 		String format = null;
 		String url = getFilesURL(object, compId, fileName, null, format);
-		String contentType = new FileDataSource(fileName).getContentType();
 		int status = -1;
 		boolean success = false;
 		try {
@@ -1005,7 +1006,7 @@ public class DAMSClient {
 			} else {
 				req = new HttpPost(url);
 			}
-			req.setEntity(toMultiPartEntity( in, contentType));
+			req.setEntity(toMultiPartEntity(in, fileName));
 			status = execute(req);
 			success = (status == 200 || status == 201);
 			if(!success)
@@ -1041,7 +1042,7 @@ public class DAMSClient {
 		boolean success = false;
 		try {
 			in = new ByteArrayInputStream(xml.getBytes());
-			MultipartEntity ent = toMultiPartEntity(in, "text/xml");
+			MultipartEntity ent = toMultiPartEntity(in, "rdf.xml");
 			if(mode != null)
 				ent.addPart("mode", new StringBody(mode));
 			req.setEntity(ent);
@@ -1087,7 +1088,7 @@ public class DAMSClient {
 			MultipartEntity ent = new MultipartEntity();
 			ent.addPart("subject", new StringBody(object));
 			ent.addPart("adds", new StringBody(toJSONString(stmts)));
-			ent.addPart("mode", new StringBody("add"));
+			ent.addPart("mode", new StringBody(Constants.IMPORT_MODE_ADD));
 			req.setEntity(ent);
 			status = execute(req);
 			success= (status == 200 || status == 201);
@@ -1118,6 +1119,40 @@ public class DAMSClient {
 	}
 
 	/**
+	 * Perform selective predicates deletion
+	 * @param object
+	 * @param compId
+	 * @param predicates
+	 * @return
+	 * @throws ClientProtocolException
+	 * @throws LoginException
+	 * @throws IOException
+	 * @throws IllegalStateException
+	 * @throws DocumentException
+	 */
+	public boolean selectiveMetadataDelete(String object, String compId, List<String> predicates) throws ClientProtocolException, LoginException, IOException, IllegalStateException, DocumentException{
+		String format = null;
+		String url = null;
+		HttpDelete del = null;
+		url = getObjectsURL(object, compId, "selective", format);
+		String params = url.indexOf("?")>0?"&":"?";
+		for(Iterator<String> it=predicates.iterator();it.hasNext();)
+			params += "predicate=" + it.next() + "&";
+		del = new HttpDelete(url+params.substring(0, params.length()-1));
+		int status = -1;
+		boolean success = false;
+		try {
+			status = execute(del);
+			success= (status == 200 || status == 201);
+			if(!success)
+				handleError(format);
+		}finally{
+			del.reset();
+		}
+		return success;
+	}
+	
+	/**
 	 * Delete an object or a file.
 	 * 
 	 * @param object
@@ -1146,7 +1181,6 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		} finally {
-			del.releaseConnection();
 			del.reset();
 		}
 		return success;
@@ -1215,19 +1249,19 @@ public class DAMSClient {
 	}
 	
 	/**
-	 * Construct REST URL for repositories, collections
+	 * Construct REST URL for administration unit
 	 * @param collection
 	 * @param function
 	 * @param format
 	 * @return
 	 */
-	public String getRepositoriesURL(String repository, String function, String format){
-		String[] parts = {"repositories", repository, function};
+	public String getUnitsURL(String unit, String function, String format){
+		String[] parts = {"units", unit, function};
 		return toDAMSURL(parts, format);
 	}
 	
 	/**
-	 * Construct REST URL for repositories, collections
+	 * Construct REST URL for collections
 	 * @param collection
 	 * @param function
 	 * @param format
@@ -1247,7 +1281,7 @@ public class DAMSClient {
 	 * @return
 	 */
 	public String getObjectsURL(String object, String compId, String function, String format){
-		String[] parts = {"objects", object, function};
+		String[] parts = {"objects", object, compId, function};
 		return toDAMSURL(parts, format);
 	}
 	
@@ -1455,23 +1489,26 @@ public class DAMSClient {
 		}
 		//200 - OK: Success, object/file exists
 		//201 - Created: File/object created successfully
-			
-		//403 - Forbidden: Deleting non-existing file, using POST to update or PUT to create
+					
 		String reqInfo = request.getMethod() + " " + request.getURI();
 		log.info( reqInfo + ": " + respContent);
-		if (status == 403) {  
+		//401 - unauthorized access
+		if (status == 401) {  
+			throw new LoginException(reqInfo + ": " + respContent);
 			
-			if(respContent.indexOf(" exists ") > 0)
+		//403 - Forbidden: Deleting non-existing file, using POST to update or PUT to create
+		} else if (status == 403) {  
+			if(respContent.indexOf("not exists") > 0)
 				throw new FileNotFoundException(reqInfo + ": " + respContent);
-			else
-				throw new LoginException(reqInfo + ": " + respContent);
+			else 
+				throw new IOException(reqInfo + ": " + respContent);
 			
 		//404 - Not Found: Object/file does not exist 
 		} else if (status == 404) { 
 			throw new FileNotFoundException(reqInfo + ": " + respContent);
 			
 		//500 - Internal Error: Other errors
-		}  else if (status == 500) {  
+		} else if (status == 500) {  
 			throw new IOException(reqInfo + ": " + respContent);
 			
 		//502 - Unavailable: Too many uploads 
@@ -1602,9 +1639,18 @@ public class DAMSClient {
 		File file = new File(srcFile);
 		MultipartEntity ent = new MultipartEntity();
 		ent.addPart("sourcePath", new StringBody(file.getParent()));
-		String contentType = new FileDataSource(srcFile).getContentType();
-		FileBody fileBody = new FileBody(file, contentType);
-		ent.addPart("file", fileBody);
+		String srcAbsPath = file.getAbsolutePath();
+		String stagingAbsPath = new File(Constants.DAMS_STAGING).getAbsolutePath();
+		int idx = srcAbsPath.indexOf(stagingAbsPath);
+		if(idx == 0){
+			ent.addPart("local", new StringBody(srcAbsPath.substring(idx+stagingAbsPath.length())));
+			// Add field sourceFileName
+			ent.addPart("sourceFileName", new StringBody(file.getName()));
+		}else{
+			String contentType = new FileDataSource(srcFile).getContentType();
+			FileBody fileBody = new FileBody(file, contentType);
+			ent.addPart("file", fileBody);
+		}
 		return ent;
 	}
 	
@@ -1614,10 +1660,30 @@ public class DAMSClient {
 	 * @param contentType
 	 * @return
 	 */
-	public static MultipartEntity toMultiPartEntity(InputStream in, String contentType){
-		InputStreamBody inputBody = new InputStreamBody(in, contentType);
+	public static MultipartEntity toMultiPartEntity(InputStream in, String fileName){
+		FileDataSource fileDataSource = new FileDataSource(fileName);
+		InputStreamBody inputBody = new InputStreamBody(in, fileDataSource.getContentType(), fileName);
 		MultipartEntity ent = new MultipartEntity();
 		ent.addPart("file", inputBody);
+		return ent;
+	}
+	
+	/**
+	 * Create MultipartEntity
+	 * @param pros
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 */
+	public static MultipartEntity toMultiPartEntity(List<NameValuePair> pros) throws UnsupportedEncodingException{
+		NameValuePair n = null;
+		MultipartEntity ent = new MultipartEntity();
+		String value = null;
+		for(Iterator<NameValuePair> it=pros.iterator(); it.hasNext();){
+			n = it.next();
+			value = n.getValue();
+			if(value != null)
+				ent.addPart(n.getName(), new StringBody(value));
+		}
 		return ent;
 	}
 	
@@ -1661,23 +1727,24 @@ public class DAMSClient {
 	 * @return
 	 */
 	public static String getMimeType(String filename){
-		MimetypesFileTypeMap mimeTypes = new MimetypesFileTypeMap();
-		String mimeType = mimeTypes.getContentType(filename);
+		FileDataSource fileDataSource = new FileDataSource(filename);
+		//MimetypesFileTypeMap mimeTypes = new MimetypesFileTypeMap();
+		String mimeType = fileDataSource.getContentType();
 		return mimeType;
 	}
 	
 	/**
 	 * Append items found in SOLR
 	 * @param items
-	 * @param repository
+	 * @param unit
 	 * @param collection
 	 * @param start
 	 * @param rows
 	 * @return
 	 * @throws Exception
 	 */
-	public boolean appendSOLRItems(List<String> items, String repoTitle, String collectionTitle, int start, int rows) throws Exception{
-		String solrQuery = toSolrQuery(repoTitle, collectionTitle);
+	public boolean appendSOLRItems(List<String> items, String unitTitle, String collectionTitle, int start, int rows) throws Exception{
+		String solrQuery = toSolrQuery(unitTitle, collectionTitle);
 		String solrParams = solrQuery + "&rows=" + rows + "&start=" + start + "&fl=id&wt=xml";
 		
 		String url = getIndexURL(null);
@@ -1695,15 +1762,19 @@ public class DAMSClient {
 		return rows+start < numFound; 
 	}
 	
+	public void close(){
+		client.getConnectionManager().shutdown();
+	}
+	
 	/**
 	 * Construct SOLR query
-	 * @param repository
+	 * @param unit
 	 * @param collection
 	 * @return
 	 * @throws UnsupportedEncodingException 
 	 */
-	public static String toSolrQuery(String repository, String collection) throws UnsupportedEncodingException{
-		String solrParams = (repository==null?"":"repository:\""+repository + "\"");
+	public static String toSolrQuery(String unit, String collection) throws UnsupportedEncodingException{
+		String solrParams = (unit==null?"":"unit:\""+unit + "\"");
 		solrParams += (collection!=null&&solrParams.length()>0?" AND ":"") + (collection!=null?"collection:"+collection:"");
 		if(solrParams.length() > 0)
 			solrParams = solrParams.replace(" ", "+");
@@ -1718,9 +1789,10 @@ public class DAMSClient {
 	 * @param srcPath
 	 * @param srcFileName
 	 * @return
+	 * @throws Exception 
 	 */
-	public static List<FileURI> getFiles(Document doc, String srcPath, String srcFileName){
-		List<FileURI> fileURIs = new ArrayList<FileURI>();
+	public static List<DamsURI> getFiles(Document doc, String srcPath, String srcFileName) throws Exception{
+		List<DamsURI> fileURIs = new ArrayList<DamsURI>();
 		List<Node> idNodes = doc.selectNodes(DOCUMENT_RESPONSE_ROOT_PATH + "/files/value[sourceFileName='" + srcFileName.replace("'", "&quot;") + "']");
 		if(idNodes != null){
 			String id = null;
@@ -1736,14 +1808,52 @@ public class DAMSClient {
 				if(srcPath != null && srcPath.length() > 0){
 					filePath = idNode.selectSingleNode("sourcePath").getText();
 					if(srcPath.equalsIgnoreCase(filePath)){
-						fileURIs.add(FileURI.toParts(id, object));
+						fileURIs.add(DamsURI.toParts(id, object));
 					}
 				} else {
-					fileURIs.add(FileURI.toParts(id, object));
+					fileURIs.add(DamsURI.toParts(id, object));
 				}
 			}
 		}
 		return fileURIs;
+	}
+	
+	/**
+	 * Static method to send mail
+	 * @param from
+	 * @param to
+	 * @param subject
+	 * @param content
+	 * @param contenType
+	 * @param smtp
+	 * @throws MessagingException
+	 */
+	public static void sendMail(String from, String [] to, String subject, 
+			String content, String contenType, String smtp) throws MessagingException{
+		// Create mail session
+		Properties props = new Properties();
+		props.put("mail.smtp.host", smtp);
+		Session session = Session.getInstance(props,null);
+
+		// Create destination address
+		InternetAddress dests[] = new InternetAddress[to.length];
+		for(int i = 0; i < to.length; i++) {
+			dests[i] = new InternetAddress(to[i]);	
+		}
+
+		// Default content type
+		if(contenType == null || contenType.length() == 0)
+			contenType = "text/plain";
+		
+		// Create message
+		Message message = new MimeMessage(session);
+		message.setFrom(new InternetAddress(from));
+		message.setRecipients(Message.RecipientType.TO, dests);
+		message.setSubject(subject);
+		message.setContent(content, contenType);
+
+		// Send the mail
+		Transport.send(message);
 	}
 	
 	/**

@@ -29,18 +29,21 @@ public class IngestController implements Controller {
 		
 		String filePath = null;
 		String fileFilter = null;
-		String arkSetting = null;
 		String preferedOrder = null;
+		String arkSetting = null;
+		String fileSuffixes = null;
+		String fileUse = null;
 		
 		String ds = request.getParameter("ts");
 		String collectionId =  request.getParameter("category");
-		String repo =  request.getParameter("repo");
+		String unit =  request.getParameter("unit");
 		String reset = request.getParameter("reset");
 		String message = request.getParameter("message");
 		String fileStore = request.getParameter("fs");
 
 		HttpSession session = request.getSession();	
 		DAMSClient damsClient = null;
+		Map dataMap = new HashMap();
 		try{
 			if(ds == null)
 				ds = Constants.DEFAULT_TRIPLESTORE;
@@ -48,56 +51,62 @@ public class IngestController implements Controller {
 			
 			damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
 			damsClient.setTripleStore(ds);
-			if(collectionId == null){
-				if(reset != null){
-					filePath = "";
-					fileStore = "";
-					session.removeAttribute("filePath");
-					session.removeAttribute("fileFilter");
-					session.removeAttribute("collectionId");
-					session.removeAttribute("arkSetting");
-					session.removeAttribute("preferedOrder");
-					session.removeAttribute("fileStore");
-					session.removeAttribute("repo");
-				}else{
-					filePath = (String) session.getAttribute("filePath");
-					fileFilter = (String) session.getAttribute("fileFilter");
-					collectionId = (String) session.getAttribute("collectionId");
-					arkSetting = (String) session.getAttribute("arkSetting");
-					preferedOrder = (String) session.getAttribute("preferedOrder");
-					fileStore = (String) session.getAttribute("fileStore");
-					repo = (String) session.getAttribute("repo");
-				}
+			if(collectionId == null && reset != null){
+				filePath = "";
+				fileStore = "";
+				session.removeAttribute("filePath");
+				session.removeAttribute("fileFilter");
+				session.removeAttribute("collectionId");
+				session.removeAttribute("arkSetting");
+				session.removeAttribute("preferedOrder");
+				session.removeAttribute("fileStore");
+				session.removeAttribute("unit");
+			 	session.removeAttribute("fileSuffixes");
+			 	session.removeAttribute("fileUse");
+			}else{
+				filePath = (String) session.getAttribute("filePath");
+				fileFilter = (String) session.getAttribute("fileFilter");
+				arkSetting = (String) session.getAttribute("arkSetting");
+				preferedOrder = (String) session.getAttribute("preferedOrder");
+				fileSuffixes = (String) session.getAttribute("fileSuffixes");
+				fileUse = (String) session.getAttribute("fileUse");
 			}
+
+
+			Map<String, String> collectionMap = damsClient.listCollections();
+			Map<String, String> unitsMap = damsClient.listUnits();
+			List<String> tsSrcs = damsClient.listTripleStores();
+			List<String> fsSrcs = damsClient.listFileStores();
+			String fsDefault = damsClient.defaultFilestore();
+			if(fileStore == null || fileStore.length() == 0)
+				fileStore = fsDefault;
 			
+			dataMap.put("categories", collectionMap);
+			dataMap.put("category", collectionId);
+			dataMap.put("units", unitsMap);
+			dataMap.put("unit", unit);
+			dataMap.put("stagingArea", Constants.DAMS_STAGING);
+			dataMap.put("filePath", filePath);
+			dataMap.put("fileFilter", fileFilter);
+			dataMap.put("arkSetting", arkSetting);
+			dataMap.put("message", message);
+			dataMap.put("triplestore", ds);
+			dataMap.put("triplestores", tsSrcs);
+			dataMap.put("filestores", fsSrcs);
+			dataMap.put("filestore", fileStore);
+			dataMap.put("filestoreDefault", fsDefault);
+			dataMap.put("fileSuffixes", fileSuffixes);
+			dataMap.put("fileUse", fileUse);
+			dataMap.put("preferedOrder", preferedOrder);
+		
+		
 		} catch (Exception e) {
 			e.printStackTrace();
 			message += e.getMessage();
+		}finally{
+			if(damsClient != null)
+				damsClient.close();
 		}
-
-		Map<String, String> collectionMap = damsClient.listCollections();
-		Map<String, String> repoMap = damsClient.listRepositories();
-		List<String> tsSrcs = damsClient.listTripleStores();
-		List<String> fsSrcs = damsClient.listFileStores();
-		String fsDefault = damsClient.defaultFilestore();
-		if(fileStore == null || fileStore.length() == 0)
-			fileStore = fsDefault;
-		Map dataMap = new HashMap();
-		dataMap.put("categories", collectionMap);
-		dataMap.put("category", collectionId);
-		dataMap.put("repos", repoMap);
-		dataMap.put("repo", repo);
-		dataMap.put("stagingArea", Constants.DAMS_STAGING);
-		dataMap.put("filePath", filePath);
-		dataMap.put("fileFilter", fileFilter);
-		dataMap.put("arkSetting", arkSetting);
-		dataMap.put("message", message);
-		dataMap.put("triplestore", ds);
-		dataMap.put("triplestores", tsSrcs);
-		dataMap.put("filestores", fsSrcs);
-		dataMap.put("filestore", fileStore);
-		dataMap.put("filestoreDefault", fsDefault);
-		dataMap.put("preferedOrder", preferedOrder);
 		return new ModelAndView("ingest", "model", dataMap);
 	}
 	

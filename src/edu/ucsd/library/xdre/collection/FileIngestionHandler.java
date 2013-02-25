@@ -9,8 +9,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.log4j.Logger;
 
 import com.hp.hpl.jena.rdf.model.Statement;
@@ -22,7 +20,7 @@ import edu.ucsd.library.xdre.ingest.assembler.UploadTaskOrganizer;
 import edu.ucsd.library.xdre.ingest.assembler.UploadTaskOrganizer.PreferedOrder;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
-import edu.ucsd.library.xdre.utils.FileURI;
+import edu.ucsd.library.xdre.utils.DamsURI;
 import edu.ucsd.library.xdre.utils.RDFStore;
 
 /**
@@ -36,11 +34,12 @@ public class FileIngestionHandler extends CollectionHandler {
 
 	private static Map<String, FileWriter> fileStoreLogs = null;
 
-	private String repository = null;
+	private String unit = null;
 	private List<String> fileList = null;
 	private String fileFilter = null;
 	private String coDelimiter = null; // Delimiter for complex object ordering
 	private String[] fileOrderSuffixes = null;
+	private String[] fileUses = null;
 	private PreferedOrder preferedOrder = null;
 	private String masterContent = "-1";
 
@@ -92,6 +91,14 @@ public class FileIngestionHandler extends CollectionHandler {
 		} else
 			this.preferedOrder = null;
 	}
+	
+	public PreferedOrder getPreferedOrder(){
+		return preferedOrder;
+	}
+	
+	public void setFileUses(String[] fileUses){
+		this.fileUses = fileUses;
+	}
 
 	@Override
 	public boolean execute() throws Exception {
@@ -102,7 +109,7 @@ public class FileIngestionHandler extends CollectionHandler {
 		Pair uploadFile = null;
 		UploadTask upLoadTask = null;
 
-		fileStoreLog = getFileStoreLog(collectionId!=null?collectionId:repository!=null?repository:"dams");
+		fileStoreLog = getFileStoreLog(collectionId!=null?collectionId:unit!=null?unit:"dams");
 		taskOrganizer = new UploadTaskOrganizer(fileList, uploadType,
 				fileFilter, fileOrderSuffixes, coDelimiter, preferedOrder);
 
@@ -119,6 +126,7 @@ public class FileIngestionHandler extends CollectionHandler {
 				// reset ark
 				ark = null;
 				upLoadTask = taskOrganizer.next();
+				preferedOrder = upLoadTask.getPreferOrder();
 				List<Pair> objBatch = upLoadTask.generateTasks();
 				String subjectURI = null;
 
@@ -128,7 +136,10 @@ public class FileIngestionHandler extends CollectionHandler {
 				String subjectId = null;
 				String contentId = null;
 				String fileName = null;
+				String fileUse = null;
+				boolean derivatives = true;
 				for (int i = 0; i < batchSize && !interrupted; i++) {
+					derivatives = true;
 					uploadFile = objBatch.get(i);
 					fileName = uploadFile.getValue();
 					contentId = uploadFile.getKey();
@@ -138,127 +149,123 @@ public class FileIngestionHandler extends CollectionHandler {
 					System.out.println("Batch size: " + batchSize + " -> " + fileName + " " + contentId);
 					uploadHandler = new DAMSUploadTaskHandler(contentId,
 							fileName, collectionId, damsClient);
-					uploadHandler.setRepositoryId(repository);
-
+					uploadHandler.setUnitId(unit);
+						
 					if (uploadType == UploadTaskOrganizer.PAIR_LOADING) {
-						if(i == 0 && batchSize > 1)
-							 uploadHandler.setUse(fileUse(fileName, "source"));
-						else
-							uploadHandler.setUse(fileUse(fileName, "service"));
+						// Default file use properties for master/master-edited pair file upload
+						if(i == 0){
+							 fileUse = fileUse(fileName, "source");
+							 // Use the alternate file for derivative creation if there's one exists.
+							 if(batchSize > 1)
+								 derivatives = false;
+						}else
+							fileUse = fileUse(fileName, "alternate");
 
-					} else if (uploadType == UploadTaskOrganizer.SHARE_ARK_LOADING) {
-						if (batchSize == 1 && !contentId.endsWith(masterContent)) {
-							exeResult = false;
-							eMessage = "Content files group with object "
-									+ uploadFile.getValue()
-									+ " have no master file.";
-							String iMessagePrefix = "File Loading failed. ";
-							setStatus(iMessagePrefix + eMessage);
-							log("log", iMessagePrefix + eMessage);
-							log.error(iMessagePrefix + eMessage);
-							continue;
-						} 
-						if (i == 0 && batchSize > 1)
-							uploadHandler.setUse(fileUse(fileName, "source"));
-
-							
-					} else if (uploadType == UploadTaskOrganizer.MIX_CO_SHARE_ARK_LOADING
+					} else if (uploadType == UploadTaskOrganizer.SHARE_ARK_LOADING
+							|| uploadType == UploadTaskOrganizer.MIX_CO_SHARE_ARK_LOADING
 							|| uploadType == UploadTaskOrganizer.COMPLEXOBJECT_LOADING) {
-						// Master file with derivatives
-						if (upLoadTask.getComponentsCount() == 1) {
-							if (batchSize == 1 && !contentId.endsWith(masterContent)) {
-								exeResult = false;
-								eMessage = "Content files group with object "
-										+ uploadFile.getValue()
-										+ " have no master file.";
-								String iMessagePrefix = "File Loading failed. ";
-								setStatus(iMessagePrefix + eMessage);
-								log("log", iMessagePrefix + eMessage);
-								log.error(iMessagePrefix + eMessage);
-								continue;
+						// Reject ingest the file group if the first file is not in place.
+						if(i == 0){
+							String cId = uploadHandler.getCompId();
+							String fileId = uploadHandler.getFileId();
+							if((cId != null && cId.length()>0) && cId.compareTo("1") > 0 || !fileId.startsWith("1.")){
+								logError("File Loading failed. The first file for files group with object "
+										+ fileName + " is missing. Fist content file order is " + contentId + ".");
+								break;
 							}
 						}
-						PreferedOrder preferedOrder = upLoadTask.getPreferOrder();
+						
 						if(preferedOrder != null && preferedOrder.equals(PreferedOrder.PDFANDPDF)){
-							if(i == 0 && batchSize > 1)
-								uploadHandler.setUse(fileUse(fileName, "source"));
-							else if (i == 1 && fileName.endsWith(".pdf"))
-								uploadHandler.setUse(fileUse(fileName, "service"));
-								
+							// Default file use for high resolution PDF and low resolution PDF upload 
+							if(i == 0){
+								fileUse = fileUse(fileName, "source");
+							}else if (i == 1 && fileName.endsWith(".pdf")){
+								fileUse = fileUse(fileName, "service");
+								// Skip derivative creation
+								derivatives = false;
+							}
 						}
 					}
+					
+					// Apply user submitted file use properties
+					if(fileUses != null && fileUses.length > 0){
+						int fUseSize = fileUses.length;
+						String[] fileParts = contentId.split("-");
+						int compId = Integer.parseInt(fileParts[0]);
+						int fn = Integer.parseInt(fileParts.length==1?fileParts[0]:fileParts[1]);
+						
+						// Complex Object: component files and their derivatives or files for other uses
+						if(uploadType == UploadTaskOrganizer.COMPLEXOBJECT_LOADING
+								|| uploadType == UploadTaskOrganizer.MIX_CO_SHARE_ARK_LOADING){
+							
+							if(preferedOrder != null && fUseSize >= compId){
+								// Set file use properties for components files
+								fileUse = fileUses[compId - 1];
+							}else {
+								// Component file and its derivatives or files for other uses
+								if (fn == 1){
+									// Master components files
+									fileUse = fileUses[0];
+								}else if (fn > 1 && fn <= fUseSize){
+									// Derivatives or files for other uses
+									fileUse = fileUses[fn - 1];
+								}
+							}
+								
+						}else if (fUseSize > i){
+							// Simple object: master file and its derivatives or files for other uses
+							fileUse = fileUses[i];
+						}
+					}
+					uploadHandler.setUse(fileUse);
 
 					// Check for duplications and complex objects reloading
 					try {
-
-						List<FileURI> filesLoaded = fileLoaded(uploadFile.getValue());
+						
+						List<DamsURI> filesLoaded = fileLoaded(uploadFile.getValue());
 						if(filesLoaded.size() > 1){
-							exeResult = false;
 							eMessage = "File " + uploadFile.getValue()
 									+ " was loaded in dams with ";
-							for(Iterator<FileURI> it=filesLoaded.iterator();it.hasNext();){
+							for(Iterator<DamsURI> it=filesLoaded.iterator();it.hasNext();){
 								eMessage += it.next().toString() + " ";
 							}
-							String iMessagePrefix = "File upload failed. ";
-							setStatus(iMessagePrefix + eMessage);
-							log("log", iMessagePrefix + eMessage);
-							log.error(iMessagePrefix + eMessage);
-							System.out.println(iMessagePrefix + eMessage);
+							logError("File upload failed. " + eMessage);
 							continue;
 						}
 						
 						if (filesLoaded.size() > 0) {
-							FileURI fileURI = filesLoaded.get(0);
-							subjectURI = fileURI.getObject();
+							DamsURI damsURI = filesLoaded.get(0);
+							subjectURI = damsURI.getObject();
 
 							String tmpArk = subjectURI;
 							if (ark == null)
 								ark = tmpArk;
 							else if (!tmpArk.endsWith(ark)) {
-								exeResult = false;
-								eMessage = "Content files group with object " + uploadFile.getValue()
-										+ " have being loaded in " + ark + " and " + subjectURI;
-								String iMessagePrefix = "File upload failed. ";
-								setStatus(iMessagePrefix + eMessage);
-								log("log", iMessagePrefix + eMessage);
-								log.error(iMessagePrefix + eMessage);
+								logError("File upload failed. Content files group with object " + uploadFile.getValue()
+										+ " have being loaded in " + ark + " and " + subjectURI);
 							}
 
 							if(exeResult){
 								String message = "File " + uploadFile.getValue()
 										+ " was ingested into DAMS previously with URI " + subjectURI;
-								setStatus(message);
-								log("log", message);
+								logMessage(message);
 								log.info(message);
-								System.out.println(message);
 								skipCount++;
 							}
 						} else
 							uploadTasks[i] = uploadHandler;
 					} catch (Exception e) {
 						e.printStackTrace();
-						exeResult = false;
-						eMessage = "Error processing " + fileName + ": "
-								+ e.getMessage();
-						String iMessagePrefix = "File upload failed with ";
-						setStatus(iMessagePrefix + eMessage);
-						log("log", iMessagePrefix + eMessage);
-						log.error(iMessagePrefix + eMessage, e);
+						logError("File upload failed. Error processing " + fileName + ": " + e.getMessage());
 					}
 
 					try {
 						Thread.sleep(10);
 					} catch (InterruptedException e) {
 						interrupted = true;
-						exeResult = false;
-						eMessage = "Error processing " + fileName + ": "
-								+ e.getMessage();
-						String iMessagePrefix = "File upload interrupted with ";
-						System.out.println(iMessagePrefix + eMessage);
+						logError("File upload interrupted. Error processing " + fileName + ": " + e.getMessage());
 						setStatus("Canceled");
 						clearSession();
-						log("log", iMessagePrefix + eMessage);
-						log.info(iMessagePrefix + eMessage, e);
 					}
 				}
 
@@ -270,7 +277,6 @@ public class FileIngestionHandler extends CollectionHandler {
 						fileName = uploadHandler.getSourceFile();
 						if (ark == null) {
 							ark = damsClient.mintArk(null);
-							subjectId = ark;
 							String message = "Assigning ark " + ark
 									+ " for file " + fileName + " in collection " + collectionTitle
 									+ " (" + (objCounter + 1) + " of " + taskOrganizer.getSize() + ")";
@@ -278,13 +284,15 @@ public class FileIngestionHandler extends CollectionHandler {
 							System.out.println(message);
 						}
 
-						// Set the subjecct ID for the file to be loaded
+						subjectId = ark;
+						// Set the subject ID for the file to be loaded
 						uploadHandler.setSubjectId( subjectId );
 						setStatus("Loading " + uploadHandler.getSubjectId()
 								+ " for file " + fileName + " (" + (objCounter + 1) + " of "
 								+ taskOrganizer.getSize() + " objects for " + collectionTitle + ")");
+						boolean successful = false;
 						try {
-							boolean successful = uploadHandler.execute();
+							successful = uploadHandler.execute();
 							if (successful) {
 								String message = "Loaded " + damsClient.getRequestURL()
 										+ " for file " + fileName + " successfully. \n";
@@ -298,19 +306,14 @@ public class FileIngestionHandler extends CollectionHandler {
 									List<Statement> stmts = new ArrayList<Statement>();
 									if(collectionId != null && collectionId.length() > 0)
 										stmts.add(rdfStore.createStatement(subjectId, "dams:collection", collectionId, true));
-									if(repository != null && repository.length() > 0)
-										stmts.add(rdfStore.createStatement(subjectId, "dams:repository", repository, true));
+									if(unit != null && unit.length() > 0)
+										stmts.add(rdfStore.createStatement(subjectId, "dams:unit", unit, true));
 									if(stmts.size() > 0){
 										try {
 											damsClient.addMetadata(subjectId, stmts);
 										} catch (Exception e) {
 											e.printStackTrace();
-												exeResult = false;
-												eMessage = subjectId + " (" + fileName + ").";
-												String iMessagePrefix = "Failed to add repository/collection links for  ";
-												setStatus(iMessagePrefix + eMessage);
-												log("log", iMessagePrefix + eMessage);
-												log.error(iMessagePrefix + eMessage);
+											logError("Failed to add unit/collection links for " + subjectId + " (" + fileName + ").");
 										}
 									}
 								}
@@ -322,76 +325,53 @@ public class FileIngestionHandler extends CollectionHandler {
 									String fileId = uploadHandler.getFileId();
 									String mimeType = DAMSClient.getMimeType(fileId);
 									String use = uploadHandler.getUse();
-									if((mimeType.startsWith("image") || mimeType.endsWith("pdf")) 
-											&& ((use == null && fileId.startsWith("1.")) || use.endsWith("service"))){
+									if(derivatives && (mimeType.indexOf("image")>=0 || mimeType.indexOf("pdf")>=0 || fileId.toLowerCase().endsWith(".tif") || fileId.toLowerCase().endsWith(".pdf")) 
+											&& (use == null || use.endsWith("source") || use.endsWith("service") || use.endsWith("alternate"))){
+										
 										successful = damsClient.createDerivatives(uploadHandler.getSubjectId(), uploadHandler.getCompId(), fileId, null);
 										if(successful){
-											String iMessage = "Created derivatives for " + damsClient.getRequestURL();
-											setStatus(iMessage);
-											log("log", iMessage);
+											logMessage( "Created derivatives for " + damsClient.getRequestURL());
 										} else {
-											exeResult = false;
-											eMessage = subjectId + " (" + fileName + ").";
-											String iMessagePrefix = "Failed to created derivatives for  ";
-											setStatus(iMessagePrefix + eMessage);
-											log("log", iMessagePrefix + eMessage);
-											log.error(iMessagePrefix + eMessage);
-											System.out.println(iMessagePrefix + eMessage);
+											logError("Failed to created derivatives " + damsClient.getRequestURL() + "(" + fileName + "). ");
 										}
 									}
 								} catch (Exception e) {
 									e.printStackTrace();
-									exeResult = false;
-									eMessage = subjectId + " (" + fileName + "). Error: " + e.getMessage();
-									String iMessagePrefix = "Failed to created derivatives for  ";
-									setStatus(iMessagePrefix + eMessage);
-									log("log", iMessagePrefix + eMessage);
-									log.error(iMessagePrefix + eMessage, e);
+									logError("Failed to created derivatives  " + damsClient.getRequestURL() + "(" + fileName + "). Error: " + e.getMessage() + ". ");
 								}
 							} else {
-								log.error("Failed to load " + damsClient.getRequestURL() + " for file " + fileName + ". \n");
-
-								exeResult = false;
-								eMessage = subjectId + " (" + fileName + "). ";
-								String iMessagePrefix = "File upload failed with ";
-								setStatus(iMessagePrefix + eMessage);
-								log("log", iMessagePrefix + eMessage);
-								log.error(iMessagePrefix + eMessage);
-								
-								filesFailed.append(uploadHandler.getSourceFile() + "\n");
-
-								if (failedCount++ > MAX_FAILED_ALLOWED) {
-									String iMessage = "File upload failed: Maximum " + MAX_FAILED_ALLOWED + " failed reached.";
-									log("log", iMessage);
-									log.info(iMessage);
-									interrupted = true;
-								}
-								if (i == 0) {
-									// If the first component failed, then skip ingesting the complex object
-									for (int j = 1; j < batchSize; j++) {
-										if (uploadTasks[j] != null)
-											filesFailed.append(uploadTasks[j].getSourceFile() + "\n");
-									}
-									break;
-								}
+								logError("File upload failed: " + damsClient.getRequestURL() + " (" + fileName + "). ");
 							}
 
 						} catch (Exception e) {
 							e.printStackTrace();
-							exeResult = false;
-							eMessage = subjectId + " (" + fileName + "). Error: " + e.getMessage();
-							String iMessagePrefix = "File upload failed with ";
-							setStatus(iMessagePrefix + eMessage);
-							log("log", iMessagePrefix + eMessage);
-							log.error(iMessagePrefix + eMessage, e);
+							logError("File upload failed with " + subjectId + " (" + fileName + "). Error: " + e.getMessage());
 						} catch (IllegalAccessError e) {
 							e.printStackTrace();
-							exeResult = false;
-							eMessage = subjectId + " (" + fileName + "). Error: " + e.getMessage();
-							String iMessagePrefix = "File upload failed with ";
-							setStatus(iMessagePrefix + eMessage);
-							log("log", iMessagePrefix + eMessage);
-							log.error(iMessagePrefix + eMessage, e);
+							logError("File upload failed with " + subjectId + " (" + fileName + "). Error: " + e.getMessage());
+						}
+						
+						// Abort ingesting the batch when failing to ingest the first file.
+						if( !successful){
+							filesFailed.append(uploadHandler.getSourceFile() + "\n");
+
+							if (failedCount++ > MAX_FAILED_ALLOWED) {
+								logError("File upload failed: Maximum " + MAX_FAILED_ALLOWED + " failed reached.");
+								interrupted = true;
+							}
+							if (i == 0) {
+								String compId = null;
+								// If the first component failed, then skip ingesting the whole file group
+								for (int j = 1; j < batchSize; j++) {
+									if (uploadTasks[j] != null){
+										failedCount++;
+										filesFailed.append(uploadTasks[j].getSourceFile() + "\n");
+										compId = uploadTasks[j].getCompId();
+										logError("File upload aborted for " + subjectId + "/" + (compId!=null&&compId.length()>0?compId+"/":"") + uploadTasks[j].getFileId() + " (" + uploadTasks[j].getSourceFile() + "). ");
+									}
+								}
+								break;
+							}
 						}
 					}
 					
@@ -399,19 +379,12 @@ public class FileIngestionHandler extends CollectionHandler {
 						Thread.sleep(10);
 					} catch (InterruptedException e) {
 						interrupted = true;
-						exeResult = false;
-						eMessage = subjectId + " (" + fileName + "). Error: "
-								+ e.getMessage();
-						String iMessagePrefix = "File upload interrupted with ";
-						System.out.println(iMessagePrefix + eMessage);
+						logError("File upload canceled on " + subjectId + " (" + fileName + ").");
 						setStatus("Canceled");
 						clearSession();
-						log("log", iMessagePrefix + eMessage);
-						log.info(iMessagePrefix + eMessage, e);
 					}
 				}
-				setProgressPercentage(((objCounter + 1) * 100)
-						/ taskOrganizer.getSize());
+				setProgressPercentage(((objCounter + 1) * 100)/ taskOrganizer.getSize());
 
 				objCounter++;
 
@@ -419,15 +392,9 @@ public class FileIngestionHandler extends CollectionHandler {
 					Thread.sleep(10);
 				} catch (InterruptedException e) {
 					interrupted = true;
-					exeResult = false;
-					eMessage = subjectId + " (" + fileName + "). Error: "
-							+ e.getMessage();
-					String iMessagePrefix = "File upload interrupted with ";
-					System.out.println(iMessagePrefix + eMessage);
+					logError("File upload canceled on " + subjectId + " (" + fileName + ").");
 					setStatus("Canceled");
 					clearSession();
-					log("log", iMessagePrefix + eMessage);
-					log.info(iMessagePrefix + eMessage, e);
 				}
 			}
 		} finally {
@@ -448,13 +415,13 @@ public class FileIngestionHandler extends CollectionHandler {
 			exeReport.append("Number of files skip: " + skipCount + "\n");
 		if (failedCount > 0) {
 			exeReport.append("Number of files failed: " + failedCount + "\n");
-			exeReport.append("Files failed to be loaded: "
+			exeReport.append("Files aborted or failed to be loaded: "
 					+ filesFailed.toString() + "\n");
 		}
 		exeReport.append("For records, please download the <a href=\""
 				+ Constants.CLUSTER_HOST_NAME
 				+ "/damsmanager/downloadLog.do?log=ingest&category="
-				+ DAMSClient.stripID(collectionId!=null?collectionId:repository!=null?repository:"dams") + "\">Ingestion log</a>");
+				+ DAMSClient.stripID(collectionId!=null?collectionId:unit!=null?unit:"dams") + "\">Ingest log</a>");
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
 		return exeInfo;
@@ -463,7 +430,7 @@ public class FileIngestionHandler extends CollectionHandler {
 	private synchronized void logFile(DAMSUploadTaskHandler uploadTask)
 			throws IOException {
 		try {
-			fileStoreLog.write(uploadTask.getSubjectId() + "\t"
+			fileStoreLog.write(DAMSClient.stripID(uploadTask.getSubjectId()) + "\t"
 					+ uploadTask.getSourceFile() + "\t"
 					+ damsClient.getRequestURL() + "\n");
 		} catch (IOException e) {
@@ -479,18 +446,24 @@ public class FileIngestionHandler extends CollectionHandler {
 	}
 	
 	public String fileUse (String filename, String useSuffix){
-		String mimeType = DAMSClient.getMimeType(filename);
-		if(mimeType.toLowerCase().endsWith("pdf"))
-			return "document-" + useSuffix;
-		return mimeType.substring(0, mimeType.indexOf("/"))+ "-" + useSuffix;
+		String fileUse = null;
+		String fname = filename.toLowerCase();
+		if(fname.endsWith(".tif") || fname.endsWith(".jpg")){
+			fileUse = "visual-" + useSuffix;
+		}else{
+			String mimeType = DAMSClient.getMimeType(filename);
+			if(mimeType.toLowerCase().endsWith("pdf"))
+				fileUse = "document-" + useSuffix;
+		}
+		return fileUse;
 	}
 
-	public String getRepository() {
-		return repository;
+	public String getUnit() {
+		return unit;
 	}
 
-	public void setRepository(String repository) {
-		this.repository = repository;
+	public void setUnit(String unit) {
+		this.unit = unit;
 	}
 
 	public String[] getFileOrderSuffixes() {
@@ -501,9 +474,9 @@ public class FileIngestionHandler extends CollectionHandler {
 		this.fileOrderSuffixes = fileOrderSuffixes;
 	}
 	
-	public List<FileURI> fileLoaded(String sourceFile) throws Exception{
+	public List<DamsURI> fileLoaded(String sourceFile) throws Exception{
 		File srcFile = new File(sourceFile);
-		return damsClient.retrieveFileURI(srcFile.getName(), srcFile.getParent(), collectionId, repository);
+		return damsClient.retrieveFileURI(srcFile.getName(), srcFile.getParent(), collectionId, unit);
 	}
 
 	public static synchronized FileWriter getFileStoreLog(String collectionId)

@@ -9,10 +9,10 @@
 	<LINK href="/damsmanager/css/jsonobj.css" rel="stylesheet"/>
 	<script type="text/javascript" src="/damsmanager/javascripts/jsonobj.js"></script>
 	<script type="text/javascript">
-	function loadPicker(){
+	function loadPicker(parent){
 		var dirobj = ${model.dirPaths};
 		var dbo = new DebuggableObject(dirobj);
-		var output = document.getElementById('dirPanel');
+		var output = document.getElementById(parent);
 		dbo.render(output);
 	}
 		
@@ -23,7 +23,7 @@
 	}
 	</script>
 </HEAD>
-<body onload="loadPicker()" style="margin: 0px;">
+<body onload="loadPicker('dirPanel')" style="margin: 0px;">
 <div style="padding:5px;background:#DDDDDD;"><span class="menuText"><b>Path:&nbsp;&nbsp;</b></span><span class="menuText">[Staging Area] <input id="dir" name="dir" type="text" size="40" value=""/></span></div>
 <div style="padding-left:20px;padding-top:3px;padding-bottom:3px;background:#F8F8F8;color:#336699;"><span class="menuText"><b>Please click to select:</b></span></div>
 <table cellspacing=0 cellpadding=0 border=0><tr><td>

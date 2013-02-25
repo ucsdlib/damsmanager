@@ -234,7 +234,7 @@ public class UploadTaskOrganizer{
 				//taskList = uploadList.get(currIndex++);
 				if(taskList.size() > 1){
 					if(fileOrderSuffixes == null || (preferedOrder!=null && preferedOrder.equals(PreferedOrder.SUFFIX)))
-						uploadTask = new ComplexObjectUploadTask(taskList);
+						uploadTask = new ComplexObjectUploadTask(taskList, fileOrderSuffixes);
 					else
 						uploadTask = new COShareArkUploadTask(taskList, fileOrderSuffixes);
 				}else if(taskList.size() == 1){
@@ -345,14 +345,15 @@ public class UploadTaskOrganizer{
 		}else if(tmpFile.isFile() && !tmpFile.isHidden()){
 			boolean addFile = isFileValid(tmpFile, fileFilter);
 			if (addFile) {			
+				String key = null;
 				String filePath = getFilePathValue(tmpFile);
 				
 				String fName = tmpFile.getName();			
 				complexObjectMap = filesPoolMap.get(filePath);
-				String key = null;
 				if(withDerivative){
-					int dIndex = fName.lastIndexOf('.');
-					key = fName.substring(0, (dIndex>0?dIndex:fName.length()));
+					//int dIndex = fName.lastIndexOf('.');
+					//key = fName.substring(0, (dIndex>0?dIndex:fName.length()));
+					key = getGroupKey(fName);
 					if(complexObjectMap == null){
 						complexObjectMap = new TreeMap<String, Object>();
 						filesPoolMap.put(filePath, complexObjectMap);
@@ -363,9 +364,10 @@ public class UploadTaskOrganizer{
 						fList = new ArrayList<String>();
 						complexObjectMap.put(key, fList);
 					}
-					fList.add(tmpFile.getAbsolutePath());							
+					fList.add(tmpFile.getAbsolutePath());	
 				}else{
 					key = fName;
+					
 					if(complexObjectMap == null){
 						complexObjectMap = new TreeMap<String, Object>();
 						filesPoolMap.put(filePath, complexObjectMap);
@@ -437,29 +439,7 @@ public class UploadTaskOrganizer{
 		}else if(tmpFile.isFile() && !tmpFile.isHidden()){
 			boolean addFile = isFileValid(tmpFile, fileFilter);
 			if (addFile) {	
-				String fName = tmpFile.getName();
-				int dIndex = -1;
-				int matchIndex = -1;
-				if(fileOrderSuffixes != null && fileOrderSuffixes.length > 0){
-					String tmp = null;
-					
-					for(int i=0; i< fileOrderSuffixes.length; i++){
-						tmp = fileOrderSuffixes[i];
-						if((fName.endsWith(tmp))){
-							//Handle the matching like xxx.tif, .tif. with longest matching
-							if(	matchIndex >= 0 ){
-								if(tmp.length() > fileOrderSuffixes[matchIndex].length())
-									matchIndex = i;							
-							}else
-								matchIndex = i;
-						}
-					}
-				}
-				if(matchIndex >= 0){
-					dIndex = fName.lastIndexOf(fileOrderSuffixes[matchIndex]);
-				}else
-					dIndex = fName.lastIndexOf(".");
-				String key = fName.substring(0, (dIndex>0?dIndex:fName.length()));
+				String key = getGroupKey(tmpFile.getName());
 				
 				String filePath = tmpFile.getAbsolutePath();
 				shareArkObjectMap = filesPoolMap.get(key);
@@ -470,6 +450,31 @@ public class UploadTaskOrganizer{
 				shareArkObjectMap.put(filePath, filePath);
 			}
 		}
+	}
+	
+	private String getGroupKey(String fileName){
+		int dIndex = -1;
+		int matchIndex = -1;
+		if(fileOrderSuffixes != null && fileOrderSuffixes.length > 0){
+			String tmp = null;
+			
+			for(int i=0; i< fileOrderSuffixes.length; i++){
+				tmp = fileOrderSuffixes[i];
+				if((fileName.endsWith(tmp))){
+					//Handle the matching like xxx.tif, .tif. with longest matching
+					if(	matchIndex >= 0 ){
+						if(tmp.length() > fileOrderSuffixes[matchIndex].length())
+							matchIndex = i;							
+					}else
+						matchIndex = i;
+				}
+			}
+		}
+		if(matchIndex >= 0){
+			dIndex = fileName.lastIndexOf(fileOrderSuffixes[matchIndex]);
+		}else
+			dIndex = fileName.lastIndexOf(".");
+		return fileName.substring(0, (dIndex>0?dIndex:fileName.length()));
 	}
 	
 	private Iterator handleOrdering(Map tmpMap, String delimiter){
@@ -591,89 +596,90 @@ public class UploadTaskOrganizer{
 	public void orderComponents(Map<String, Object> components, PreferedOrder preferedOrder){
 
 		if(preferedOrder != null){
-		if(preferedOrder.equals(PreferedOrder.PDFANDPDF) || preferedOrder.equals(PreferedOrder.PDFANDXML)){
-			int order = 0;
-			int fPosition = -1;
-			String fileExt = ".pdf";
-			Object[] keys = (Object[])components.keySet().toArray();
-			String tmpKey = (String)keys[order];
-			//The first order for the high resolution rdf
-			if(!tmpKey.toLowerCase().endsWith(fileExt)){
-				for(int i=0; i<keys.length; i++){
-					tmpKey = (String)keys[i];
-					if(tmpKey.toLowerCase().endsWith(fileExt)){
-						fPosition = i;
-						components.put("#0" + tmpKey, components.remove(tmpKey));
-						break;
-					}
-				}
-			}else{
-				fPosition = 0;
-				components.put("#0" + tmpKey, components.remove(tmpKey));
-			}
-			
-			//The second order for access rdf or proquest xml
-			order = 1;
-			if(preferedOrder.equals(PreferedOrder.PDFANDXML))
-				fileExt = ".xml";
-			tmpKey = (String)keys[order];
-			if(fPosition == order || !tmpKey.toLowerCase().endsWith(fileExt)){
-				for(int i=0; i<keys.length; i++){
-					if(i!=fPosition){
-						tmpKey = (String)keys[i];
-						if(tmpKey.toLowerCase().endsWith(fileExt)){
-							components.put("#1" + tmpKey, components.remove(tmpKey));
-							break;
-						}
-					}
-				}
-			}
-		}else if(preferedOrder.equals(PreferedOrder.SUFFIX) && fileOrderSuffixes != null){
-			String fileExt = null;
-			String tmpKey = null;
-			
-			//Remove the manifest file for RCI ingestion
-			boolean manifestNeeded = false;
-			String manifestFile = "manifest.txt";
-			Object[] keys = (Object[])components.keySet().toArray();
-			for(int i=0; i<fileOrderSuffixes.length; i++){
-				tmpKey = (String)fileOrderSuffixes[i];
-				if(tmpKey.toLowerCase().endsWith(manifestFile)){
-					manifestNeeded = true;
-					break;
-				}
-			}
-
-			if(!manifestNeeded){
-				for(int i=0; i<keys.length; i++){
-					tmpKey = (String)keys[i];
-					if(tmpKey.toLowerCase().endsWith(manifestFile)){
-						components.remove(tmpKey);
-						break;
-					}
-				}
-			}
-			
-			keys = (Object[])components.keySet().toArray();
-			for (int n=0; n<fileOrderSuffixes.length; n++){
-				int order = n;
-				fileExt = fileOrderSuffixes[order];
-				
-				tmpKey = (String)keys[order];
-				if(tmpKey.toLowerCase().endsWith(fileExt)){
-					components.put("#" + n + tmpKey, components.remove(tmpKey));
-				}else{
+			if(preferedOrder.equals(PreferedOrder.PDFANDPDF) || preferedOrder.equals(PreferedOrder.PDFANDXML)){
+				int order = 0;
+				int fPosition = -1;
+				String fileExt = ".pdf";
+				Object[] keys = (Object[])components.keySet().toArray();
+				String tmpKey = (String)keys[order];
+				//The first order for the high resolution rdf
+				if(!tmpKey.toLowerCase().endsWith(fileExt)){
 					for(int i=0; i<keys.length; i++){
 						tmpKey = (String)keys[i];
 						if(tmpKey.toLowerCase().endsWith(fileExt)){
-							components.put("#" + n + tmpKey, components.remove(tmpKey));
+							fPosition = i;
+							components.put("#0" + tmpKey, components.remove(tmpKey));
 							break;
 						}
 					}
+				}else{
+					fPosition = 0;
+					components.put("#0" + tmpKey, components.remove(tmpKey));
 				}
+				
+				//The second order for access rdf or proquest xml
+				order = 1;
+				if(preferedOrder.equals(PreferedOrder.PDFANDXML))
+					fileExt = ".xml";
+				tmpKey = (String)keys[order];
+				if(fPosition == order || !tmpKey.toLowerCase().endsWith(fileExt)){
+					for(int i=0; i<keys.length; i++){
+						if(i!=fPosition){
+							tmpKey = (String)keys[i];
+							if(tmpKey.toLowerCase().endsWith(fileExt)){
+								components.put("#1" + tmpKey, components.remove(tmpKey));
+								break;
+							}
+						}
+					}
+				}
+			}else if(preferedOrder.equals(PreferedOrder.SUFFIX) && fileOrderSuffixes != null){
+				String fileExt = null;
+				String tmpKey = null;
+				
+				Object[] keys = (Object[])components.keySet().toArray();
+				int filesLength = keys.length;
+				int filesOrderLength = fileOrderSuffixes.length;
+				for (int n=0; n<filesOrderLength; n++){
+					int order = n;
+					fileExt = fileOrderSuffixes[order];
+					
+					tmpKey = (String)keys[order];
+					if(tmpKey.toLowerCase().endsWith(fileExt)){
+						components.put("#" + n + ":" + tmpKey, components.remove(tmpKey));
+					}else{
+						for(int i=0; i<filesLength; i++){
+							tmpKey = (String)keys[i];
+							if(tmpKey.toLowerCase().endsWith(fileExt)){
+								components.put("#" + n + ":" + tmpKey, components.remove(tmpKey));
+								break;
+							}
+						}
+					}
+				}
+				
+				//Remove other files that haven't included in the suffix list. 
+				//Files removed from the ingest list include the manifest file and the validation file etc. 
+				if(filesLength > filesOrderLength){
+					keys = (Object[])components.keySet().toArray();
+					for(int n=0; n<filesLength; n++){
+						tmpKey = (String)keys[n];
+						if(n >= filesOrderLength || !tmpKey.endsWith(fileOrderSuffixes[n])){
+							// Check for files that are not in the suffixes list for removal
+							boolean found = false;
+							for(int m=0; m<fileOrderSuffixes.length; m++){
+								if(tmpKey.endsWith(fileOrderSuffixes[m])){
+									found = true;
+									break;
+								}
+							}
+							if(!found)
+								components.remove(tmpKey);
+						}
+					}
+				}
+	
 			}
-
-		}
 		}
 	}
 	

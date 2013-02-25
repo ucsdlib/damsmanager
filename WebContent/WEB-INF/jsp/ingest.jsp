@@ -9,13 +9,14 @@
 <html>
 <jsp:include flush="true" page="/jsp/libhtmlheader.jsp" />
 <body onLoad="load('ingest')" style="background-color:#fff;">
-<script type="text/javascript">	
+<script type="text/javascript">
 	function confirmIngest(){
 		var dsIdx = document.mainForm.ts.selectedIndex;
 		var ds = document.mainForm.ts.options[dsIdx].value;
 		var collectionIndex = document.mainForm.category.selectedIndex;
-	    if(collectionIndex == 0){
-	    	alert("Please select a collection.");
+		var unitIndex = document.mainForm.unit.selectedIndex;
+	    if(unitIndex == 0){
+	    	alert("Please select an administration unit.");
 			return false;
 	    }
 	    
@@ -23,6 +24,21 @@
 	    if(stagingAreaPath == null || stagingAreaPath.length == 0){
 	    	alert("Please enter the file location in the Staging Area.");
 			return false;
+	    }else{
+	    	// Check values for duplication, parent/child confliction
+	    	var dirs = stagingAreaPath.split(";");
+	    	for(var i=0; i<dirs.length; i++){
+	    		var dir = dirs[i];
+	    		if(dir != null && (dir=trim(dir)).lenght > 0){
+		    		for(var j=i+1; j<dirs.length; j++){
+		    			// Duplicated sumission or conflicting parent/child directories
+		    			if(dirs[j] != null && (dir == dirs[j] || dir.indexOf(dirs[j]) == 0 || dirs[j].indexOf(dir) == 0)){
+		    				alert("Conflicting directories chosen for ingestion: \n" + dir + " and " + dirs[j] + ".");
+		    				return false;
+		    			}
+		    		}
+	    		}
+	    	}
 	    }
 	    
 	    var arkSetting = "0";
@@ -51,7 +67,25 @@
 	    	}
 	    }
 	    
-	    var exeConfirm = confirm("Are you sure to ingest files from the Staging Area?");
+	    var fileUses = trim(document.mainForm.fileUse.value);
+	    if(fileUses.length > 0){
+	    	var invalidFileUses = [];
+	    	fileUses = fileUses.split(',');
+	    	for(var i=0; i<fileUses.length; i++){
+	    		var fileUse = fileUses[i];
+	    		if(fileUse != null && fileUse.length > 0 && fileUseArr.indexOf(fileUse)==-1)
+	    			invalidFileUses.push(fileUse);
+	    	}
+	    	if(invalidFileUses.length > 0){
+	    		alert("Invalid file use: " + invalidFileUses.join(', ') + ". \nPlease enter the following values: " + fileUseArr.join(', '));
+				return false;
+	    	}
+	    }
+	    var message = "Are you sure to ingest files in the following path/paths from the Staging Area? \n" + stagingAreaPath;
+	    if(collectionIndex == 0){
+	    	message = "No collections selected for staging ingest! \nAre you sure to go ahead and ingest the files from the Staging Area (" + stagingAreaPath + ")?";
+	    }
+	    var exeConfirm = confirm(message);
 	    if(!exeConfirm)
 	    	return false;
 	    
@@ -61,6 +95,7 @@
 		displayProgressBar(0);
 	}
 	
+	var fsDefault = "${model.filestoreDefault}";
 	function selectCollection(selectObj){
 		var dsIdx = document.mainForm.ts.selectedIndex;
 		var ds = document.mainForm.ts.options[dsIdx].value;
@@ -90,6 +125,20 @@
 		var dsIdx = document.mainForm.ts.selectedIndex;
 		var ds = document.mainForm.ts.options[dsIdx].value;
 		document.location.href="/damsmanager/ingest.do?ts=" + ds;
+	}
+	
+	function selectUnit(unitOpt){
+		var unitName = unitOpt.options[unitOpt.selectedIndex].text;
+		var fsOpts = document.mainForm.fs.options;
+		var fsSelected = fsDefault;
+		if(unitName == "rci" || unitName == "RCI")
+			fsSelected = "openStack";
+		for(var i=0; i<fsOpts.length; i++){
+			if(fsOpts[i].value == fsSelected){
+				fsOpts[i].selected = true;
+				break;
+			}
+		}
 	}
 	
 	var crumbs = [{"Home":"http://libraries.ucsd.edu"}, {"Digital Library Collections":"/curator"},{"DAMS Manager":"/damsmanager/"}, {"Staging Ingest":""}];
@@ -154,12 +203,12 @@
 		</tr>
 		<tr align ="left">
 			<td height="25px">
-				<span class="submenuText"><b>Repository: </b></span>
+				<span class="submenuText"><b>Admin Unit: </b></span>
 				</td><td>
-					<select id="repo" name="repo" class="inputText">
-						<option value=""> -- repositories -- </option>
-						<c:forEach var="entry" items="${model.repos}">
-							<option value="${entry.value}" <c:if test="${model.repo == entry.value}">selected</c:if>>
+					<select id="unit" name="unit" class="inputText" onChange="selectUnit(this);">
+						<option value=""> -- units -- </option>
+						<c:forEach var="entry" items="${model.units}">
+							<option value="${entry.value}" <c:if test="${model.unit == entry.value}">selected</c:if>>
                        			<c:out value="${entry.key}" />
                         	</option>
 						</c:forEach>
@@ -193,12 +242,12 @@
 	 <div title="Assign one ARK to files in the same directory" class="specialmenuText">
 				<input type="radio" name="arkSetting" value="1" class="pmcheckbox" <c:if test="${model.arkSetting == '1'}">checked</c:if>>
 				<span class="text-special">One ARK to files in the same directory</span>
-				<fieldset class="groupbox_compOrder">
+				<fieldset class="groupbox_compOrder" style="padding-left:10px;">
 				 	<legend class="slegandText">Components Ordering</legend>
 					<input type="radio" name="preferedOrder" value="cofDelimiter" <c:if test="${model.preferedOrder == null || fn:length(model.preferedOrder)== 0 || model.preferedOrder == 'cofDelimiter'}">checked</c:if>/><span>Alphabetic order. [Optional] Order delimited by: <input type="text" name="cofDelimiter" id="cofDelimiter" value="" size="10"></span><br />
 					<input type="radio" name="preferedOrder" value="pdfAndPdf" <c:if test="${model.preferedOrder == 'pdfAndPdf'}">checked</c:if> /><span>A PDF following a low resolution PDF for access.</span><br />
 					<input type="radio" name="preferedOrder" value="pdfAndXml" <c:if test="${model.preferedOrder == 'pdfAndXml'}">checked</c:if> /><span>A PDF following a proquest xml file.</span><br />
-					<input type="radio" name="preferedOrder" value="suffix" <c:if test="${model.preferedOrder == 'suffix'}">checked</c:if> /><span>Components ordered by their suffixes provided.</span>
+					<input type="radio" name="preferedOrder" value="suffix" <c:if test="${model.preferedOrder == 'suffix'}">checked</c:if> /><span>Components ordered by their suffixes provided with other files ignored.</span>
 				</fieldset>
 	 </div>
 	 <div title="Assign one ARK to the files with the same prefix ending with letter 'p' and an order number" class="specialmenuText">
@@ -224,8 +273,9 @@
 				 -->
 	  </div>
 	  <div class="specialmenuText" style="margin-left:15px;">
-		  <fieldset class="groupbox_jetlOptions"><legend class="slegandText"> Option </legend>
-		  	<div class="specialmenuText"><div>Files ordered by suffixes (delimited by comma): <input type="text" name="fileSuffixes" id="fileSuffixes" value="" size="30"></div></div>
+		  <fieldset class="groupbox_jetlOptions"><legend class="slegandText"> Constraint Options </legend>
+		  	<div class="specialmenuText"><div>Files ordered by suffixes (delimited by comma): <input type="text" name="fileSuffixes" id="fileSuffixes" value="${model.fileSuffixes}" size="30"></div></div>
+		  	<div class="specialmenuText"><div style="margin-top:3px;">File Use properties applied (delimited by comma): <input type="text" name="fileUse" id="fileUse" value="${model.fileUse}" size="29"></div></div>
 		  </fieldset>
 	  </div>
 	  </td>

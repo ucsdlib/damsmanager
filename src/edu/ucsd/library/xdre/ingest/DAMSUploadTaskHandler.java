@@ -17,7 +17,7 @@ public class DAMSUploadTaskHandler{
 	public static String filePaths = "";
 
 	private String collectionId = null;
-	private String repositoryId = null;
+	private String unitId = null;
 	private String subjectId = null;
 	private String compId = null;
 	private String fileId = null;
@@ -46,8 +46,9 @@ public class DAMSUploadTaskHandler{
 		this.damsClient = damsClient;
 		String[] fileParts = contentId.split("-");
 		compId = fileParts.length == 1 || fileParts[0].equals("0")?"":fileParts[0];
-		int idx = sourceFile.lastIndexOf(".");
-		fileId = (fileParts.length == 1?fileParts[0]:fileParts[1]) + (idx>0?sourceFile.substring(idx):"");
+		String fName = new File(sourceFile).getName();
+		int idx = fName.indexOf(".");
+		fileId = (fileParts.length == 1?fileParts[0]:fileParts[1]) + (idx>0?fName.substring(idx):"");
 	}
 	
 	/**
@@ -134,11 +135,11 @@ public class DAMSUploadTaskHandler{
 		this.arkOrg = arkOrg;
 	}
 
-	public String getRepositoryId() {
-		return repositoryId;
+	public String getUnitId() {
+		return unitId;
 	}
 
-	public void setRepositoryId(String repositoryId) {
-		this.repositoryId = repositoryId;
+	public void setUnitId(String unitId) {
+		this.unitId = unitId;
 	}
 }

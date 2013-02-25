@@ -8,7 +8,6 @@ import java.util.List;
  * @author Longshou Situ
  */
 public class ShareArkUploadTask extends UploadTask{
-	protected String[] fileOrderSuffixes = null;
 	
 	public ShareArkUploadTask(){}
 	public ShareArkUploadTask(List fileList) {
@@ -87,7 +86,7 @@ public class ShareArkUploadTask extends UploadTask{
 					fileList.add(tmp);
 			}
 			
-			for(int i=0; i<groupSize; i++){
+			for(int i=0; i<filesArr.length; i++){
 				String fileMatched = (String)filesArr[i];
 				if(fileMatched != null){
 					if(i < fileList.size())

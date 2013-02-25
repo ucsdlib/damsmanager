@@ -24,7 +24,7 @@ import edu.ucsd.library.xdre.utils.DAMSClient;
 
 
  /**
- * Class CollectionManagementController, the model of the collection/repositories management
+ * Class CollectionManagementController, the model of the collection/units management
  * home page
  *
  * @author lsitu@ucsd.edu
@@ -89,6 +89,9 @@ public class CollectionManagementController implements Controller {
 			e.printStackTrace();
 			String eMessage = e.getMessage();
 			throw new ServletException(eMessage);
+		}finally{
+			if(damsClient != null)
+				damsClient.close();
 		}
 		return new ModelAndView("controlPanel", "model", dataMap);
 	}

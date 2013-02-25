@@ -49,12 +49,14 @@ public class COShareArkUploadTask extends ShareArkUploadTask{
 				else
 					fileOrder = 1;
 				
+				if(fileOrder == 1)
+					numOfComponents++;
+				
 				if(damsRestImpl)
 					pairs.add(new Pair((n+1) + "-" + fileOrder, tmp));
 				else{
 					if(fileOrder == 1){
 						pairs.add(new Pair(versionNo + "-" + (n+1), tmp));
-						numOfComponents++;
 					}else
 						pairs.add(new Pair(versionNo  + "-" + (n+1) + "-" + fileOrder, tmp));
 				}

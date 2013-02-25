@@ -1,13 +1,13 @@
 package edu.ucsd.library.xdre.web;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URLEncoder;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -27,17 +27,18 @@ import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import edu.ucsd.library.shared.Mail;
+import edu.ucsd.library.xdre.collection.ChecksumsHandler;
 import edu.ucsd.library.xdre.collection.CollectionHandler;
 import edu.ucsd.library.xdre.collection.DerivativeHandler;
 import edu.ucsd.library.xdre.collection.FileCountValidaionHandler;
 import edu.ucsd.library.xdre.collection.FileIngestionHandler;
 import edu.ucsd.library.xdre.collection.JhoveReportHandler;
+import edu.ucsd.library.xdre.collection.MetadataExportHandler;
+import edu.ucsd.library.xdre.collection.MetadataImportHandler;
 import edu.ucsd.library.xdre.collection.SOLRIndexHandler;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
@@ -45,8 +46,7 @@ import edu.ucsd.library.xdre.utils.RequestOrganizer;
 
 
  /**
- * Class LocalStoreCollectionManagementController handles operations
- * with no user files submited to the server
+ * Class CollectionOperationController handles the operations for collection development 
  *
  * @author lsitu@ucsd.edu
  */
@@ -138,15 +138,15 @@ public class CollectionOperationController implements Controller {
 		if(dataConvert)
 			forwardTo = "/pathMapping.do?ts=" + ds + (fileStore!=null?"&fs=" + fileStore:"");
 		else if(isIngest){
-			String repo = getParameter(paramsMap, "repository");
-			forwardTo = "/ingest.do?ts=" + ds + (fileStore!=null?"&fs=" + fileStore:"") + (repo!=null?"&repo=" + repo:"");
+			String unit = getParameter(paramsMap, "unit");
+			forwardTo = "/ingest.do?ts=" + ds + (fileStore!=null?"&fs=" + fileStore:"") + (unit!=null?"&unit=" + unit:"");
 		}else if(isDevUpload)
 			forwardTo = "/devUpload.do?" + (fileStore!=null?"&fs=" + fileStore:"");
 		else if(isSolrDump)
 			forwardTo = "/solrDump.do?" + (fileStore!=null?"&fs=" + fileStore:"");
 		forwardTo += "&activeButton=" + activeButton; 
 
-		String email = "";
+		String[] emails = null;
 		String user = request.getRemoteUser();
 		if(( !(isBSJhoveReport || isDevUpload) && getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "dataConvert") == null )&& 
 				(collectionId == null || (collectionId=collectionId.trim()).length() == 0)){
@@ -165,16 +165,24 @@ public class CollectionOperationController implements Controller {
 			}
 			
 			session.setAttribute("status", "Processing request ...");
+			DAMSClient damsClient = null;
 			try {
 				//user = getUserName(request);
 				//email = getUserEmail(request);
-				DAMSClient damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
-				email = (String)damsClient.getUserInfo(user).get("mail");
+				damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
+				JSONArray mailArr = (JSONArray)damsClient.getUserInfo(user).get("mail");
+				if(mailArr != null && mailArr.size() > 0){
+					emails = new String[mailArr.size()];
+					mailArr.toArray(emails);
+				}
 				message = handleProcesses(paramsMap, request.getSession());
 			} catch (Exception e) {
 				e.printStackTrace();
 				//throw new ServletException(e.getMessage());
 				message += "<br />Internal Error: " + e.getMessage();
+			}finally{
+				if(damsClient != null)
+					damsClient.close();
 			}
 		}
 		System.out.println("XDRE Manager execution for " + request.getRemoteUser() + " from IP " + request.getRemoteAddr() + ": ");
@@ -198,12 +206,14 @@ public class CollectionOperationController implements Controller {
 		//send email
 		try {
 			String sender = Constants.MAILSENDER_DAMSSUPPORT;
-			if(email == null && user != null)
-				email = user + "@ucsd.edu";
-			if(email == null)
-				Mail.sendMail(sender, new String[] {"lsitu@ucsd.edu"}, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
+			if(emails == null && user != null){
+				emails = new String[1];
+				emails[0] = user + "@ucsd.edu";
+			}
+			if(emails == null)
+				DAMSClient.sendMail(sender, new String[] {"lsitu@ucsd.edu"}, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
 			else
-				Mail.sendMail(sender, new String[] {email}, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
+				DAMSClient.sendMail(sender, emails, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
 		} catch (AddressException e) {
 			e.printStackTrace();
 		} catch (MessagingException e) {
@@ -264,7 +274,7 @@ public class CollectionOperationController implements Controller {
 		operations[15] = getParameter(paramsMap, "devUpload") != null;
 		operations[16] = getParameter(paramsMap, "jsonDiffUpdate") != null;
 		operations[17] = getParameter(paramsMap, "validateManifest") != null;
-		operations[18] = getParameter(paramsMap, "exportRdf") != null;
+		operations[18] = getParameter(paramsMap, "metadataExport") != null;
 		operations[19] = getParameter(paramsMap, "jhoveReport") != null;
 
 		int submissionId = (int)System.currentTimeMillis();
@@ -287,7 +297,7 @@ public class CollectionOperationController implements Controller {
 		damsClient.setTripleStore(ds);
 		damsClient.setFileStore(fileStore);
 
-		Date ckDate = null;
+		/*Date ckDate = null;
 		if(operations[1]){
 			String checksumDate = getParameter(paramsMap, "checksumDate");
 			if(checksumDate == null || (checksumDate = checksumDate.trim()).length() == 0)
@@ -297,79 +307,7 @@ public class CollectionOperationController implements Controller {
 			}catch (ParseException e){
 				message += "Please enter a Date in valid format(mm/dd/yyyy): " + checksumDate + ".<br>";
 			}
-		}
-		
-		String rdfXml = null;	
-		int metadataOperationId = -1;
-	    /*if(operations[2]){
-			String rdfFileOption = null;
-			String tsOperation = null;
-			if(getParameter(paramsMap, "tsRepopulateOnly") != null)
-				tsOperation = "tsRepopulateOnly";
-			else if(getParameter(paramsMap, "tsRepopulation") != null)
-				tsOperation = "tsRepopulation";
-			else if(getParameter(paramsMap, "samePredicatesReplacement") != null)
-				tsOperation = "samePredicatesReplacement";
-			else if(getParameter(paramsMap, "tsRenew") != null){
-				tsOperation = "tsRenew";
-				if(collectionId == null || collectionId.length() == 0)
-					message += "Please select a Collection to start a new round of triplestore population. \n";				
-			 }
-				
-		   if(tsOperation == null)
-			   tsOperation = "tsNew";
-		   metadataOperationId = MetadataImportController.getOperationId(tsOperation);
-		   rdfFileOption = getParameter(paramsMap, "fileToIngest");
-		   if(rdfFileOption.equalsIgnoreCase("rdfUrl")){
-			   rdfXml = getParameter(paramsMap, "rdfUrl");
-			  if(rdfXml == null || (rdfXml=rdfXml.trim()).length() == 0)
-				 message += "Please enter a URL for the RDF file.<br>";
-			  else{
-				  rdfXml = damsClient.getContentBodyAsString(rdfXml);
-				  if(rdfXml.indexOf("<rdf:RDF ") < 0 ){
-					   int infoSize = rdfXml.length()< 1024?rdfXml.length():1024;
-					   String vString = rdfXml.substring(0, infoSize);
-					   System.out.println("Invalid file format: <br />" + vString);
-					   message += "Invalid file format: <br />" + vString;
-					}
-			  }
-	       }else
-	    	   rdfXml = uploadData;
-	    }*/
-	    
-	    JSONObject jsonToUpdate = null;
-	    String subjectId = null;
-	    if(operations[16]){
-	    	 String jsonString = null;
-			 String jsonFileOption = null;
-			 jsonFileOption = getParameter(paramsMap, "fileToUpdate");
-			 if(jsonFileOption.equalsIgnoreCase("jsonUrl")){
-				jsonString = getParameter(paramsMap, "jsonUrl");
-			  if(jsonString == null || (jsonString=jsonString.trim()).length() == 0)
-				 message += "Please enter a URL for the JSON file.<br>";
-			  else{
-				  jsonString = damsClient.getContentBodyAsString(jsonString);
-				  try {
-					  jsonToUpdate = (JSONObject)JSONValue.parse(jsonString);
-					}catch (Exception e){
-						message += "Invalid JSON format: <br />" + jsonString;
-					}
-			  }
-	       }else
-	    	   jsonToUpdate = (JSONObject)JSONValue.parse(getParameter(paramsMap, "data"));
-			 
-			 if(jsonToUpdate != null && jsonToUpdate.size() > 0){
-				 subjectId = (String) jsonToUpdate.remove("arkId");
-				 if(subjectId == null || (subjectId=subjectId.trim()).length() == 0)
-					 message += "Missing subject: <br />" + jsonToUpdate;
-				 else
-					 subjectId = subjectId.replaceFirst("20775/", "");
-				 ds = (String) jsonToUpdate.remove("ds");
-				 if(ds == null || (ds=ds.trim()).length() == 0)
-					 message += "Triplestore data source is missing: <br />" + jsonToUpdate;
-			 }else
-				 message += "No JSON data provided: <br />" + jsonToUpdate;
-	    }
+		}*/
 
 		
 		JSONArray filesJsonArr = null;
@@ -396,13 +334,11 @@ public class CollectionOperationController implements Controller {
 	 }
 	 
 	 CollectionHandler handler = null;
+	 OutputStream fileOut = null;
 	 
 	 
 	try {
-
-		
-
-	 
+ 
 	 boolean successful = true;
 	 for(int i=0; i<operations.length; i++){
 		 handler = null;
@@ -416,15 +352,15 @@ public class CollectionOperationController implements Controller {
 			 if(i == 0){
 				 session.setAttribute("status", opMessage + "File Count Validation for FileStore " + fileStore + " ...");
 				 handler = new FileCountValidaionHandler(damsClient, collectionId);
-			 }else /*if (i == 1){
+			 }else if (i == 1){
 				   session.setAttribute("status", opMessage + "Checksum Validation for FileStore " + fileStore + " ...");
-				   handler = new ChecksumHandler(damsClient, collectionId, ckDate);
+				   handler = new ChecksumsHandler(damsClient, collectionId, null);
 			 }else if (i == 2){	
 				  session.setAttribute("status", opMessage + "Importing metadata ...");
 				  String dataFormat = getParameter(paramsMap, "dataFormat");
 				  String importMode = getParameter(paramsMap, "importMode");
 				  handler = new MetadataImportHandler(damsClient, collectionId, getParameter(paramsMap, "data"), dataFormat, importMode);
-			 }else */if (i == 3){
+			 }else if (i == 3){
 				 session.setAttribute("status", opMessage + "Derivatives Creation ...");
 				 boolean derReplace = getParameter(paramsMap, "derReplace")==null?false:true;
 				 
@@ -529,13 +465,13 @@ public class CollectionOperationController implements Controller {
 			 }*/else if (i == 10){	
 				    session.setAttribute("status", opMessage + "Stage Ingesting ...");
 				    
-					String repo = getParameter(paramsMap, "repo");
+					String unit = getParameter(paramsMap, "unit");
 				    String arkSetting = getParameter(paramsMap, "arkSetting").trim();
 				 	String filePath = getParameter(paramsMap, "filePath").trim();
 				 	String fileFilter = getParameter(paramsMap, "fileFilter").trim();
 				 	String preferedOrder = getParameter(paramsMap, "preferedOrder");
-				 	//String fileSuffixes = getParameter(paramsMap, "suffixes").trim();
 				 	String fileSuffixes = getParameter(paramsMap, "fileSuffixes");
+				 	String fileUse = getParameter(paramsMap, "fileUse");
 			 		if(fileSuffixes != null && fileSuffixes.length() > 0)
 			 			fileSuffixes = fileSuffixes.trim();
 			 		
@@ -556,25 +492,44 @@ public class CollectionOperationController implements Controller {
 				 	String[] fileOrderSuffixes = null;
 				 	if(fileSuffixes != null && fileSuffixes.length() > 0)
 				 		fileOrderSuffixes = fileSuffixes.split(",");
-				 	if((filePath.startsWith("/") || filePath.startsWith("\\")) && (Constants.DAMS_STAGING.endsWith("/") 
-				 			|| Constants.DAMS_STAGING.endsWith("\\")))
-				 		filePath = filePath.substring(1);
+				 	
+				 	String[] fileUses = null;
+				 	if(fileUse != null && (fileUse=fileUse.trim()).length() > 0){
+				 		fileUses = fileUse.split(",");
+				 		for(int j=0; j<fileUses.length; j++){
+				 			if(fileUses[j] != null)
+				 				fileUses[j] = fileUses[j].trim();
+				 		}
+				 	}
 
 				 	session.setAttribute("category", collectionId);
-				 	session.setAttribute("repo", repo);
+				 	session.setAttribute("unit", unit);
 				 	session.setAttribute("arkSetting", arkSetting);
 				 	session.setAttribute("filePath", filePath);
 				 	session.setAttribute("fileFilter", fileFilter);
 				 	session.setAttribute("preferedOrder", preferedOrder);
+				 	session.setAttribute("fileSuffixes", fileSuffixes);
+				 	session.setAttribute("fileUse", fileUse);
 				 	
+				 	String[] dirArr = filePath.split(";");
 				 	List<String> fileList = new ArrayList<String>();
-				 	fileList.add(Constants.DAMS_STAGING + filePath);
+				 	String dir = null;
+				 	for (int j=0; j<dirArr.length; j++){
+				 		dir = dirArr[j];
+				 		if(dir != null && (dir=dir.trim()).length()>0){
+						 	if((dir.startsWith("/") || dir.startsWith("\\")) && (Constants.DAMS_STAGING.endsWith("/") 
+						 			|| Constants.DAMS_STAGING.endsWith("\\")))
+						 		dir = dir.substring(1);
+				 			fileList.add(Constants.DAMS_STAGING + dir);
+				 		}
+				 	}
 
 		            handler = new FileIngestionHandler(damsClient, fileList, Integer.parseInt(arkSetting), collectionId, fileFilter, coDelimiter);
 		            ((FileIngestionHandler)handler).setFileOrderSuffixes(fileOrderSuffixes);
 		            ((FileIngestionHandler)handler).setPreferedOrder(preferedOrder);
-		            ((FileIngestionHandler)handler).setRepository(repo);
-	    
+		            ((FileIngestionHandler)handler).setUnit(unit);
+		            ((FileIngestionHandler)handler).setFileUses(fileUses);
+		    	    
 			 }/* else if (i == 15){	
 				 session.setAttribute("status", opMessage + "Moving files from dev to LocalStore ...");
 				 //localStore = getLocalFileStore();
@@ -598,7 +553,7 @@ public class CollectionOperationController implements Controller {
 				 }else
 					 session.setAttribute("status", opMessage + "Manifest Valification ...");
 			     handler = new LocalStoreManifestHandler(tsUtils, collectionId, validateManifest, writeManifest);
-			 } else if (i == 18){
+			 }*/ else if (i == 18){
 				 String exFormat = getParameter(paramsMap, "exportFormat");
 				 String xslSource = getParameter(paramsMap, "xsl");
 				 if(xslSource == null || (xslSource=xslSource.trim()).length() == 0){
@@ -606,51 +561,29 @@ public class CollectionOperationController implements Controller {
 					 if(!new File(xslSource).exists())
 						 xslSource = Constants.CLUSTER_HOST_NAME + "glossary/xsl/dams/convertToCSV.xsl";
 				 }
-				 session.setAttribute("status", opMessage + (exFormat.equalsIgnoreCase("csv")?"CSV":exFormat.equalsIgnoreCase("ntriples")?"NTriples":"RDF") + " Metadata Export ...");
-				 File outputFile = new File(Constants.TMP_FILE_DIR, "export-" + collectionId + "-" +System.currentTimeMillis() + "-rdf.xml");
-				 boolean translated = getParameter(paramsMap, "translated")!= null;
+				 session.setAttribute("status", opMessage + (exFormat.equalsIgnoreCase("csv")?"CSV":exFormat.equalsIgnoreCase("N-TRIPLE")?"N-TRIPLE":"RDF XML ") + " Metadata Export ...");
+				 File outputFile = new File(Constants.TMP_FILE_DIR, "export-" + DAMSClient.stripID(collectionId) + "-" +System.currentTimeMillis() + "-rdf.xml");
 			     String nsInput = getParameter(paramsMap, "nsInput");
 			     List<String> nsInputs = new ArrayList<String>();
 			     boolean componentsIncluded = true;
 			     if(nsInput != null && (nsInput=nsInput.trim()).length() > 0){
 			    	 String[] nsInputArr = nsInput.split(",");
 			    	 for(int j=0; j<nsInputArr.length; j++){
-			    		 componentsIncluded = false;
 			    		 if(nsInputArr[j]!= null && (nsInputArr[j]=nsInputArr[j].trim()).length()>0)
 			    			 nsInputs.add(nsInputArr[j]);
 			    	 }
 			     }
-			     
-			     if(exFormat.equalsIgnoreCase("csv")){
-			    	 translated = true;
-			    	 handler = new CSVMetadataExportHandler(damsClient, collectionId, outputFile, xslSource);
-					 ((CSVMetadataExportHandler)handler).setTranslated(translated);
-					 ((CSVMetadataExportHandler)handler).setNamespaces(nsInputs);
-					 ((CSVMetadataExportHandler)handler).setComponentsIncluded(componentsIncluded);
-			     }else if(exFormat.equalsIgnoreCase("ntriples")){
-			    	 translated = false;
-			    	 outputFile = new File(Constants.TMP_FILE_DIR, "export-" + collectionId + "-" +System.currentTimeMillis() + "-ntriples.txt");
-			    	 handler = new NTriplesMetadataExportHandler(damsClient, collectionId, outputFile);
-					 ((NTriplesMetadataExportHandler)handler).setTranslated(translated);
-					 ((NTriplesMetadataExportHandler)handler).setNamespaces(nsInputs);
-					 ((NTriplesMetadataExportHandler)handler).setComponentsIncluded(componentsIncluded);
-			     }else{
-					 handler = new RDFMetadaExportHandler(damsClient, collectionId, outputFile);
-					 ((RDFMetadaExportHandler)handler).setTranslated(translated);
-					 ((RDFMetadaExportHandler)handler).setNamespaces(nsInputs);
-					 ((RDFMetadaExportHandler)handler).setComponentsIncluded(componentsIncluded);
-			     }
-			 }*/else if (i == 19){
+			     fileOut = new FileOutputStream(outputFile);
+				 handler = new MetadataExportHandler(damsClient, collectionId, nsInputs, componentsIncluded, exFormat, fileOut);
+				 ((MetadataExportHandler)handler).setFileUri(logLink + "&file=" + outputFile.getName());
+			    
+			 }else if (i == 19){
 				 session.setAttribute("status", opMessage + "Jhove report ...");
 				 boolean bytestreamFilesOnly = getParameter(paramsMap, "bsJhoveReport") != null;
-				 boolean updateFormat = getParameter(paramsMap, "bsJhoveUpdate") != null;
-				 handler = new JhoveReportHandler(damsClient, collectionId, updateFormat);
-				 if(bytestreamFilesOnly && (collectionId == null || collectionId.length() == 0)){
-					 // Report all bytestream format files in DAMS
-					 List<String> items = handler.listAllItems();
-					 handler.setItems(items);
-				 }
-				 ((JhoveReportHandler)handler).setBytestreamFormatOnly(bytestreamFilesOnly);
+				 boolean update = getParameter(paramsMap, "bsJhoveUpdate") != null;
+				 handler = new JhoveReportHandler(damsClient, collectionId, bytestreamFilesOnly);
+				 if(update)
+					 ((JhoveReportHandler)handler).setJhoveUpdate(getParameter(paramsMap, "jhoveUpdate"));
 
 			 }else 	
 		          throw new ServletException("Unhandle operation index: " + i);
@@ -680,6 +613,10 @@ public class CollectionOperationController implements Controller {
 					handler.setExeResult(successful);
 					exeInfo += handler.getExeInfo();
 					handler.release();
+					if(fileOut != null){
+						CollectionHandler.close(fileOut);
+						fileOut = null;
+					}
 				} 
 		   	}
 		 }else
@@ -697,6 +634,13 @@ public class CollectionOperationController implements Controller {
 	}catch (Exception e) {
 		e.printStackTrace();
 		returnMessage += e.getMessage();
+	}finally{
+		if(damsClient != null)
+			damsClient.close();
+		if(fileOut != null){
+			CollectionHandler.close(fileOut);
+			fileOut = null;
+		}
 	}
 	}else
 		returnMessage = message;

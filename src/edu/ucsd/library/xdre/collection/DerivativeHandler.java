@@ -1,6 +1,5 @@
 package edu.ucsd.library.xdre.collection;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -11,7 +10,7 @@ import org.apache.log4j.Logger;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.DFile;
-import edu.ucsd.library.xdre.utils.FileURI;
+import edu.ucsd.library.xdre.utils.DamsURI;
 
 /**
  * Class DerivativeHandler creates thumbnails/derivatives 
@@ -66,12 +65,12 @@ public class DerivativeHandler extends CollectionHandler{
 		        for(Iterator<DFile> it=dFiles.iterator(); it.hasNext();){
 		        	dFile = it.next();
 		        	String use = dFile.getUse();
-		        	//Check for derivative created for service files
+		        	//Check for derivative created for source and service files
     				String sizs2create = "";
     				String sizs2replace = "";
-		        	if(use != null && use.endsWith("-service")){
+		        	if(use != null && (use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE) || (use.endsWith(Constants.SERVICE) && !use.startsWith(Constants.IMAGE)))){
 			        	totalFiles += 1;
-			        	FileURI fileURI = FileURI.toParts(dFile.getId(), dFile.getObject());
+			        	DamsURI fileURI = DamsURI.toParts(dFile.getId(), dFile.getObject());
 		        		String derId = null;
 		        		for(int j=0; j<reqSizes.length; j++){
 		        			derId = fileURI.toString().replace("/"+fileURI.getFileName(), "/"+reqSizes[j]+".jpg");
@@ -113,14 +112,10 @@ public class DerivativeHandler extends CollectionHandler{
 	        		Thread.sleep(10);
 	        	} catch (InterruptedException e1) {
 	        		interrupted = true;
-	        		setExeResult(false);
-	    			String eMessage = "Derivative creation canceled on " + itemLink + " ( " + (i + 1) + " of " + itemsCount + ").";
-	    			String iMessagePrefix = "Derivative creation interrupted with ";
-					System.out.println(iMessagePrefix + eMessage);
+					logError("Derivative creation canceled on " + itemLink + " ( " + (i + 1) + " of " + itemsCount + ").");
 					setStatus("Canceled");
 					clearSession();
-					log("log", iMessagePrefix + eMessage);
-					log.info(iMessagePrefix + eMessage, e1);
+					break;
 				}
 			}
 
