@@ -11,12 +11,9 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;
 
-import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Model;
-import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
-import com.hp.hpl.jena.shared.PrefixMapping;
 
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
@@ -33,13 +30,13 @@ public class MetadataImportHandler extends CollectionHandler{
 	private static Logger log = Logger.getLogger(MetadataImportHandler.class);
 
 	//private Map subjectNSMap = null;
-	private String rdf = null;
-	private String format = null;
-	private String importMode = null;
-	private int count = 0;
-	private int failedCount = 0;
-	private RDFStore rdfStore = null;
-	private Map<String, List<DamsURI>> objects = null;
+	protected String rdf = null;
+	protected String format = null;
+	protected String importMode = null;
+	protected int count = 0;
+	protected int failedCount = 0;
+	protected RDFStore rdfStore = null;
+	protected Map<String, List<DamsURI>> objects = null;
 	
 	/**
 	 * Constructor for MetadataImportHandler
@@ -48,8 +45,8 @@ public class MetadataImportHandler extends CollectionHandler{
 	 * @param operation
 	 * @throws Exception
 	 */
-	public MetadataImportHandler(DAMSClient damsClient, String rdf, String mode) throws Exception{
-		this(damsClient, null, rdf, mode);
+	public MetadataImportHandler(DAMSClient damsClient, String rdf, String importMode) throws Exception{
+		this(damsClient, null, rdf, importMode);
 	}
 	
 	/**
@@ -60,51 +57,73 @@ public class MetadataImportHandler extends CollectionHandler{
 	 * @param mode
 	 * @throws Exception
 	 */
-	public MetadataImportHandler(DAMSClient damsClient, String collectionId, String rdf, String mode) throws Exception{
-		this(damsClient, null, rdf, null, mode);
+	public MetadataImportHandler(DAMSClient damsClient, String collectionId, String rdf, String importMode) throws Exception{
+		this(damsClient, null, rdf, null, importMode);
 	}
 	
 	/**
-	 * Constructor for RDFLoadingHandler
-	 * @param tsUtils
+	 * Constructor for MetadataImportHandler
+	 * @param damsClient
 	 * @param collectionId
-	 * @param rdfXml
-	 * @param operation
+	 * @param rdf
+	 * @param format
+	 * @param importMode
 	 * @throws Exception
 	 */
 	public MetadataImportHandler(DAMSClient damsClient, String collectionId, String rdf, String format, String importMode) throws Exception{
 		super(damsClient, collectionId);
 		this.rdf = rdf;
 		this.importMode = importMode;
-		initHandler();
-	}
-	
-	private void initHandler() throws Exception{
-		objects = new HashMap<String, List<DamsURI>>();
 		rdfStore = new RDFStore();
 		if(format != null && format.equalsIgnoreCase(RDFStore.NTRIPLE_FORMAT))
 			rdfStore.loadNTriples(rdf);
 		else
 			rdfStore.loadRDFXML(rdf);
 		
-		List<String> sItems = rdfStore.listURISubjects();
-		Collections.sort(sItems);
-		int iSize = sItems.size();
+		initHandler();
+	}
+	
+	/**
+	 * Constructor for MetadataImportHandler
+	 * @param damsClient
+	 * @param collectionId
+	 * @param rdf
+	 * @param format
+	 * @param importMode
+	 * @throws Exception
+	 */
+	public MetadataImportHandler(DAMSClient damsClient, String collectionId, RDFStore rdfStore, String importMode) throws Exception{
+		super(damsClient, collectionId);
+		this.rdfStore = rdfStore;
+		this.importMode = importMode;
+		initHandler();
+	}
+	
+	protected void initHandler() throws Exception{
+		objects = new HashMap<String, List<DamsURI>>();
 		
-		// Object list
-		String objId = null;
-		DamsURI objURI = null;
-		List<DamsURI> objURIs = null;
-		for(int i=0; i<iSize; i++){
-			objURI = DamsURI.toParts(sItems.get(i), null);
-			objId = objURI.getObject();
-			objURIs = objects.get(objId);
-			if(objURIs == null){
-				objURIs = new ArrayList<DamsURI>();
-				objects.put(objId , objURIs);
+		if(rdfStore != null){
+			List<String> sItems = rdfStore.listURISubjects();
+			Collections.sort(sItems);
+			int iSize = sItems.size();
+			
+			// Object list
+			String objId = null;
+			DamsURI objURI = null;
+			List<DamsURI> objURIs = null;
+			for(int i=0; i<iSize; i++){
+				objURI = DamsURI.toParts(sItems.get(i), null);
+				objId = objURI.getObject();
+				objURIs = objects.get(objId);
+				if(objURIs == null){
+					objURIs = new ArrayList<DamsURI>();
+					objects.put(objId , objURIs);
+				}
+				objURIs.add(objURI);
 			}
-			objURIs.add(objURI);
-		}
+		}else
+			rdfStore = new RDFStore();
+		
 		items = Arrays.asList(objects.keySet().toArray(new String[objects.size()]));
 		itemsCount = items.size();
 	}
@@ -112,7 +131,7 @@ public class MetadataImportHandler extends CollectionHandler{
 	public void setImportMode(String importMode) {
 		this.importMode = importMode;
 	}
-	
+
 	/**
 	 * Procedure to populate the RDF metadata
 	 */

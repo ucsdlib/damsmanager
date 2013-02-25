@@ -25,10 +25,10 @@ public class Constants {
 	public static final String COLLECTION_SHOTSOFWAR = "bb3209056n"; //ARK for Shot of War collection
 	public static final String COLLECTION_UNIVERSITYCOMMUNICATIONNSEWSRELEASE  = "bb33801227"; //ARK for University Communications collection
 	
-	public static String ARK_ORG = "20775";
-	public static String DAMS_ARK_URL_BASE = "http://libraries.ucsd.edu/ark:/";
+	public static final String ARK_ORG = "20775";
+	public static final String DAMS_ARK_URL_BASE = "http://libraries.ucsd.edu/ark:/";
 
-	public static String MAILSENDER_DAMSSUPPORT = "dams-support@ucsd.edu";
+	public static final String MAILSENDER_DAMSSUPPORT = "dams-support@ucsd.edu";
 
 	public static final String IMPORT_MODE_ADD = "add";
 	public static final String IMPORT_MODE_ALL = "all";

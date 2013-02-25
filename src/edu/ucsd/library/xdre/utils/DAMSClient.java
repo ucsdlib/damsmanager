@@ -94,6 +94,7 @@ public class DAMSClient {
 	private SimpleDateFormat damsDateFormatAlt = null;
 	private String fileStore = null;
 	private String tripleStore = null;
+	private String solrURLBase = null; // SOLR URL
 
 	/**
 	 * Constructor for DAMSClient.
@@ -1593,6 +1594,22 @@ public class DAMSClient {
 	}
 
 	/**
+	 * Get SOLR URL base
+	 * @return
+	 */
+	public String getSolrURLBase() {
+		return solrURLBase;
+	}
+
+	/**
+	 * Set SOLR URL base
+	 * @param solrURLBase
+	 */
+	public void setSolrURLBase(String solrURLBase) {
+		this.solrURLBase = solrURLBase;
+	}
+
+	/**
 	 * Date format used in DAMS.
 	 * 
 	 * @return
@@ -1747,11 +1764,7 @@ public class DAMSClient {
 		String solrQuery = toSolrQuery(unitTitle, collectionTitle);
 		String solrParams = solrQuery + "&rows=" + rows + "&start=" + start + "&fl=id&wt=xml";
 		
-		String url = getIndexURL(null);
-		url += (url.indexOf('?')>0?"&":"?") + solrParams;
-		System.out.println("SOLR URL: " + url);
-		HttpGet req= new HttpGet(url);
-		Document doc = getXMLResult(req);
+		Document doc = solrLookup(solrParams);
 		int numFound = Integer.parseInt(doc.selectSingleNode("/response/result/@numFound").getStringValue());
 		start = Integer.parseInt(doc.selectSingleNode("/response/result/@numFound").getStringValue());
 		List<Node> idNodes = doc.selectNodes("/response/result/doc/str[@name='id']");
@@ -1760,6 +1773,31 @@ public class DAMSClient {
 			items.add(idNode.getText());
 		}
 		return rows+start < numFound; 
+	}
+	
+	/**
+	 * SOLR lookup
+	 * @param solrQuery
+	 * @return
+	 * @throws Exception
+	 */
+	public Document solrLookup(String solrQuery) throws Exception{
+		String url = getSolrURL();
+		url += (url.indexOf('?')>0?"&":"?") + solrQuery + "&wt=xml";
+		System.out.println("SOLR URL: " + url);
+		HttpGet req= new HttpGet(url);
+		return getXMLResult(req);
+	}
+	
+	/**
+	 * Retrieve the URL for the SOLR server
+	 * @return
+	 */
+	private String getSolrURL(){
+		if(solrURLBase == null)
+			return getIndexURL(null);
+		else
+			return solrURLBase + "select";
 	}
 	
 	public void close(){

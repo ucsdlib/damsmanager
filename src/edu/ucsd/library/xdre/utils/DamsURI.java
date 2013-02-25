@@ -45,7 +45,10 @@ public class DamsURI {
 			try{
 				Integer.parseInt(component);
 				return true;
-			}catch(NumberFormatException ne){}
+			}catch(NumberFormatException ne){
+				if(component.toLowerCase().startsWith("cid"))
+					return true;
+			}
 		}
 		return false;
 	}
@@ -84,8 +87,8 @@ public class DamsURI {
 					fileName = idString;
 				}
 			}
-		} else if ((idx=fileURI.indexOf("/ark:/")) > 0){
-			idString = fileURI.substring(idx+7);
+		} else if ((idx=fileURI.indexOf("ark:/")) >= 0){
+			idString = fileURI.substring(idx+6);
 			String[] tmp = idString.split("/");
 			int len = tmp.length;
 			object = fileURI.substring(0, fileURI.indexOf(tmp[1]))+tmp[1];
@@ -97,12 +100,31 @@ public class DamsURI {
 					Integer.parseInt(tmp[2]);
 					component = tmp[2];
 				}catch (NumberFormatException ne){
-					fileName = tmp[2];
+					if(tmp[2].toLowerCase().startsWith("cid"))
+						component = tmp[2];
+					else
+						fileName = tmp[2];
 				}
 			}else if(len != 2)
 				throw new Exception("Unknown object/file URL format: " + fileURI);
-		}else
-			throw new Exception("Unhandled object/file URL format: " + fileURI);
+		}else {
+			String[] tmp = fileURI.split("/");
+			int len = tmp.length;
+			if(tmp.length > 3)
+				throw new Exception("Unhandled object/file URL format: " + fileURI);
+			object = fileURI.substring(0, fileURI.indexOf(tmp[0]))+tmp[0];
+			if(len == 3){
+				component = tmp[1];
+				fileName = tmp[2];
+			}else{
+				try{
+					Integer.parseInt(tmp[1]);
+					component = tmp[1];
+				}catch (NumberFormatException ne){
+					fileName = tmp[1];
+				}
+			}
+		}
 		return new DamsURI(object, component, fileName);
 	}
 }
