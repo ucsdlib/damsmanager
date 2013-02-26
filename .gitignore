@@ -4,8 +4,6 @@ tmp
 dist
 bin
 unitTest
-src/edu/ucsd/library/xdre/model
-src/edu/ucsd/library/xdre/imports
 *.log
 .settings
 .classpath
