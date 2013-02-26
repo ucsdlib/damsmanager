@@ -3,6 +3,7 @@ package edu.ucsd.library.xdre.imports;
 import java.io.File;
 import java.io.PrintWriter;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +85,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 			for(int i=0; i<srcLocations.length; i++){
 				file = new File(srcLocations[i]);
 				if(file.exists()){
-					listFile(file);
+					listFile(filesMap, file);
 				}
 			}
 		}
@@ -382,22 +383,21 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	/**
 	 * List all the files recursively.
 	 * @param file
+	 * @throws Exception 
 	 */
-	private void listFile(File file){
+	public static void listFile(Map<String, File> fMap, File file) throws Exception{
 		String fName = null;
-		File tmpFile = null;
-		File[] files = file.listFiles();
-		for(int i=0; i<files.length; i++){
-			tmpFile = files[i];
-			if(tmpFile.isDirectory())
-				listFile(tmpFile);
-			else {
-				fName = tmpFile.getName();
-				if(filesMap.get(fName) != null){
-					logError("Duplicate source file name found: " + tmpFile.getAbsoluteFile() + "(" + filesMap.get(fName).getAbsolutePath() + ").");
-				}else
-					filesMap.put(fName, tmpFile);
-			}	
+		if(file.isDirectory()){
+			File[] files = file.listFiles();
+			for(int i=0; i<files.length; i++){
+				listFile(fMap, files[i]);
+			}
+		}else{
+			fName = file.getName();
+			if(fMap.get(fName) != null){
+				throw new Exception("Duplicate source file name found: " + file.getAbsoluteFile() + "(" + fMap.get(fName).getAbsolutePath() + ").");
+			}else
+				fMap.put(fName, file);
 		}
 	}
 	
