@@ -125,11 +125,12 @@
 						</div>
 						<div>
 								   <fieldset class="groupbox_der"><legend class="slegandText">Image Type</legend>
-									   <span class="submenuText"><input type="radio" name="size" value="" checked> All Derivatives (768px, 450px, 150px, &amp; 65px)</span><br />
-									   <span class="submenuText"><input type="radio" name="size" value="5" > Thumbnail (65px) </span><br />
+									   <span class="submenuText"><input type="radio" name="size" value="" checked> All Derivatives (1600px, 1200px, 450px, 150px, 65px)</span><br />
+									   <span class="submenuText"><input type="radio" name="size" value="5" > Icon (65px) </span><br />
 									   <span class="submenuText"><input type="radio" name="size" value="4" > Thumbnail (150px)</span><br />
-									   <span class="submenuText"><input type="radio" name="size" value="3" > Medium Resolution (450px)</span><br />
-									   <span class="submenuText"><input type="radio" name="size" value="2" > Medium Resolution (768px)</span><br />
+									   <span class="submenuText"><input type="radio" name="size" value="3" > Preview (450px)</span><br />
+									   <span class="submenuText"><input type="radio" name="size" value="2" > Large (1200px)</span><br />
+									   <span class="submenuText"><input type="radio" name="size" value="6" > Huge (1600px)</span><br />
 									</fieldset>
 						</div>
 						<div title="Check this checkbox to replace the derivatives if exist." class="specialmenuText"><input type="checkbox" id="derReplace" name="derReplace" class="pmcheckbox" onClick="confirmSelection(this, 'replace the selected derivative type above', 'createDerivatives');">
