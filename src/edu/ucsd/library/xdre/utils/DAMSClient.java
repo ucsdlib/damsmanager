@@ -1784,7 +1784,6 @@ public class DAMSClient {
 	public Document solrLookup(String solrQuery) throws Exception{
 		String url = getSolrURL();
 		url += (url.indexOf('?')>0?"&":"?") + solrQuery + "&wt=xml";
-		System.out.println("SOLR URL: " + url);
 		HttpGet req= new HttpGet(url);
 		return getXMLResult(req);
 	}
