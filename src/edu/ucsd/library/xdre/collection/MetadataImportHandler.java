@@ -37,6 +37,17 @@ public class MetadataImportHandler extends CollectionHandler{
 	protected int failedCount = 0;
 	protected RDFStore rdfStore = null;
 	protected Map<String, List<DamsURI>> objects = null;
+
+	/**
+	 * Constructor for MetadataImportHandler
+	 * @param tsUtils
+	 * @param rdfXml
+	 * @param operation
+	 * @throws Exception
+	 */
+	public MetadataImportHandler(DAMSClient damsClient, String importMode) throws Exception{
+		this(damsClient, null, importMode);
+	}
 	
 	/**
 	 * Constructor for MetadataImportHandler
@@ -75,12 +86,14 @@ public class MetadataImportHandler extends CollectionHandler{
 		this.rdf = rdf;
 		this.importMode = importMode;
 		rdfStore = new RDFStore();
-		if(format != null && format.equalsIgnoreCase(RDFStore.NTRIPLE_FORMAT))
-			rdfStore.loadNTriples(rdf);
-		else
-			rdfStore.loadRDFXML(rdf);
-		
-		initHandler();
+		if(rdf != null && rdf.length() > 0){
+			if(format != null && format.equalsIgnoreCase(RDFStore.NTRIPLE_FORMAT))
+				rdfStore.loadNTriples(rdf);
+			else
+				rdfStore.loadRDFXML(rdf);
+			
+			initHandler();
+		}
 	}
 	
 	/**
