@@ -380,27 +380,6 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		updateReference(doc, srcUri, oid);
 	}
 	
-	/**
-	 * List all the files recursively.
-	 * @param file
-	 * @throws Exception 
-	 */
-	public static void listFile(Map<String, File> fMap, File file) throws Exception{
-		String fName = null;
-		if(file.isDirectory()){
-			File[] files = file.listFiles();
-			for(int i=0; i<files.length; i++){
-				listFile(fMap, files[i]);
-			}
-		}else{
-			fName = file.getName();
-			if(fMap.get(fName) != null){
-				throw new Exception("Duplicate source file name found: " + file.getAbsoluteFile() + "(" + fMap.get(fName).getAbsolutePath() + ").");
-			}else
-				fMap.put(fName, file);
-		}
-	}
-	
 	public String getNewId() throws Exception{
 		return toDamsUrl(damsClient.mintArk(null));
 	}
