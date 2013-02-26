@@ -448,10 +448,10 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	 */
 	public String getExeInfo() {
 		if(exeResult)
-			exeReport.append("Import succeeded (Total " + rdfFiles.length + " metadata files imported): \n - Total " + recordsCount + " records ingested. \n - Total " + filesCount + " files ingested. ");
+			exeReport.append("Successful imported objets in " + rdfFiles.length + " metadata files: \n - Total " + recordsCount + " records ingested. \n - Total " + filesCount + " files ingested. ");
 		else {
 			exeReport.append("Import failed (" + failedCount + " of " + rdfFiles.length + " failed): \n ");
-			exeReport.append(" - " + ingestFailed + " of " + filesCount + " files failed: \n" + ingestFailed.toString() + " \n");
+			exeReport.append(" - " + ingestFailedCount + " of " + filesCount + " files failed: \n" + ingestFailed.toString() + " \n");
 			exeReport.append(" - Failed to import the following metadeta records: \n" + metadataFailed.toString());
 		}
 		String exeInfo = exeReport.toString();
