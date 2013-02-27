@@ -1,9 +1,7 @@
 package edu.ucsd.library.xdre.imports;
 
 import java.io.File;
-import java.io.PrintWriter;
 import java.net.URLEncoder;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,9 +96,9 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		int fLen = rdfFiles.length;
 		String currFile = null;
 		SAXReader saxReader = new SAXReader();
-		for(int i=0; i<fLen; i++){
+		for(int i=0; i<fLen&&!interrupted; i++){
 			currFile = rdfFiles[i].getAbsolutePath();
-			setStatus("Processing metadata in file " + currFile + " (" + (i+1) + " of " + fLen + ") ... " );
+			setStatus("Processing external import for file " + currFile + " (" + (i+1) + " of " + fLen + ") ... " );
 			try{
 				doc = saxReader.read(currFile);
 				List<Node> nodes = doc.selectNodes("//@rdf:about");
@@ -182,7 +180,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				RDFNode fNode = null;
 				RDFNode oNode = null;
 				List<Statement> oStmt = rdf.listStatements().toList();
-				for(int l=0; l<oStmt.size();l++){
+				for(int l=0; l<oStmt.size()&&!interrupted;l++){
 					stmt = oStmt.get(l);
 					prop = stmt.getPredicate();
 					if(prop.getLocalName().equals(HAS_FILE)){
@@ -224,7 +222,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 								srcFile = filesMap.get(fName);
 								if(srcFile == null){
 									exeResult = false;
-									logError("Source file " + srcFileName + " doesn't exist. File location is not provided or not valid.");
+									logError("Source file for " + srcFileName + " doesn't exist. Please choose a correct stage file location.");
 								}else{
 									// Ingest the file
 									DamsURI fileURI = null;
@@ -236,9 +234,9 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 										if(!ingested){
 											ingestFailedCount++;
 											ingestFailed.append(fid + " (" + tmpFile + "), \n");
-											logError("Failed to ingest file " + fid + " (" + tmpFile + ").");
+											logError("Error ingesting file " + fid + " in " + tmpFile + ".");
 										}else{
-											message = "Ingested file " + fileURI.toString() + " (" + fid + "). ";
+											message = "Ingested file " + fileURI.toString() + " (" + fid + ") in " + tmpFile + ". ";
 											log.info(message);
 											logMessage(message);
 											// Remove the hasFile property from the record which was ingested during file ingestion.
@@ -249,16 +247,29 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 										e.printStackTrace();
 										ingestFailedCount++;
 										ingestFailed.append(fid + " (" + tmpFile + "), \n");
-										logError("Failed to ingest file " + fid + " (" + tmpFile + "): " + e.getMessage());
+										logError("Failed to ingest file " + fid + " (" + tmpFile + ") in " + currFile + ": " + e.getMessage());
 									}
 								}
 							}
 						}else{
 							ingestFailedCount++;
 							ingestFailed.append( fid + ", \n");
-							logError("Source file name is missing for file " + fid + ".");
-						}	
+							logError("Missing sourceFileName property for file " + fid + " in " + currFile + ".");
+						}
+						
 					}
+					
+					try{
+						Thread.sleep(10);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+						interrupted = true;
+						message = "Import interrupted in " + (fid!=null?fid + " (" + currFile + ")":currFile) + ". \n Error: " + e.getMessage() + "\n";
+						setStatus("Canceled");
+						clearSession();
+						logError(message);
+					}
+					
 				}
 				
 				// Ingest the records
@@ -266,7 +277,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				DamsURI objURI = null;
 				List<DamsURI> objURIs = null;
 				RDFStore graph = new RDFStore();
-				for (int j=0; j<items.size(); j++){
+				for (int j=0; j<items.size()&&!interrupted; j++){
 					recordsCount++;
 					// Add subject
 					subjectId = items.get(i);
@@ -308,27 +319,42 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 						setStatus( message  + " (" +(i+1)+ " of " + fLen + ")"); 
 						logError(message);
 					}
+					
 					setProgressPercentage( ((i + 1) * 100) / fLen);
 					
 					try{
 						Thread.sleep(10);
 					} catch (InterruptedException e) {
 						e.printStackTrace();
+						interrupted = true;
 						failedCount++;
 						metadataFailed.append(subjectId + " (" + currFile + ") \n");
 						message = "Metadata population interrupted for subject " + subjectId  + ". \n Error: " + e.getMessage() + "\n";
 						setStatus("Canceled");
 						clearSession();
 						logError(message);
-						break;
 					}
 				}
 
 			}catch(Exception e){
 				e.printStackTrace();
 				failedCount++;
-				message = "Import failed for oject file " + currFile + ": " + e.getMessage();
+				message = "Import failed for " + currFile + ": " + e.getMessage();
 				setStatus( message  + " (" +(i+1)+ " of " + fLen + ")");
+				logError(message);
+			}
+			
+			setProgressPercentage( ((i + 1) * 100) / fLen);
+			
+			try{
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+				interrupted = true;
+				failedCount++;
+				message = "Import interrupted for oject file " + currFile + ". \n Error: " + e.getMessage() + "\n";
+				setStatus("Canceled");
+				clearSession();
 				logError(message);
 			}
 		}
