@@ -398,13 +398,25 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		updateReference(doc, srcUri, oid);
 	}
 	
+	/**
+	 * Mint a new ark id
+	 * @return
+	 * @throws Exception
+	 */
 	public String getNewId() throws Exception{
 		return toDamsUrl(damsClient.mintArk(null));
 	}
 	
+	/**
+	 * Construct the URL with an id.
+	 * @param arkUrl
+	 * @return
+	 */
 	public String toDamsUrl(String arkUrl){
-		if(!arkUrl.startsWith("http"))
-			arkUrl = Constants.DAMS_ARK_URL_BASE + (arkUrl.indexOf('/')>0?arkUrl:Constants.ARK_ORG+ "/" + arkUrl);
+		if(!arkUrl.startsWith("http")){
+			String arkUrlBase = Constants.DAMS_ARK_URL_BASE;
+			arkUrl = arkUrlBase + (arkUrlBase.endsWith("/")?"":"/") + (arkUrl.indexOf('/')>0?arkUrl:Constants.ARK_ORG+ "/" + arkUrl);
+		}
 		return arkUrl;
 	}
 	
