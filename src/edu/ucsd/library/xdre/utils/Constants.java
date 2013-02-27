@@ -24,9 +24,6 @@ public class Constants {
 	public static final String COLLECTION_ETD = "bb0956474h"; //ARK for ETD collection
 	public static final String COLLECTION_SHOTSOFWAR = "bb3209056n"; //ARK for Shot of War collection
 	public static final String COLLECTION_UNIVERSITYCOMMUNICATIONNSEWSRELEASE  = "bb33801227"; //ARK for University Communications collection
-	
-	public static final String ARK_ORG = "20775";
-	public static final String DAMS_ARK_URL_BASE = "http://libraries.ucsd.edu/ark:/";
 
 	public static final String MAILSENDER_DAMSSUPPORT = "dams-support@ucsd.edu";
 
@@ -42,6 +39,9 @@ public class Constants {
 
 	public static final int TIMEOUT = 30000;
 
+	public static String ARK_ORG = "";
+	public static String DAMS_ARK_URL_BASE = "";
+	
 	public static String CLUSTER_HOST_NAME = "";
 	public static String DAMS_STORAGE_URL = "";
 	public static String TMP_FILE_DIR = "";
@@ -113,6 +113,13 @@ public class Constants {
 			
 			//Default derivatives
 			SOLR_URL_BASE = props.getProperty("xdre.solrBase");
+			
+			//ARK URL nase
+			DAMS_ARK_URL_BASE = props.getProperty("xdre.ark.urlBase");
+			
+			//ARK orgCode
+			ARK_ORG = props.getProperty("xdre.ark.orgCode");
+			
 			//Retrieve the default triplestore and filestore
 			DAMSClient damsClient = new DAMSClient(DAMS_STORAGE_URL);		
 			DEFAULT_FILESTORE = damsClient.defaultFilestore(); //Default filestore
