@@ -175,7 +175,31 @@
 									</div>
 							   </fieldset>
 						   </div>
-					</div>										
+					</div>
+					<div id="externalImportDiv" class="processlayout">
+					   <div title="Import records to DAMS with custom conversion." class="menuText"><input class="pcheckbox" type="checkbox" id="externalImport" name="externalImport" onClick="checkSelections(this);">
+							<span class="text-special">External Import</span>
+						</div>
+						<div>
+							 <fieldset class="groupbox_ingestOpts"><legend class="slegandText">Import Options</legend>
+							 	<div title="Check this checkbox to import metadata and files." class="specialmenuText">
+									<input checked type="radio" name="importOption" value="metadataAndFiles">
+									<span class="text-special">Metadata and files</span>
+								 </div>
+								 <div title="Check this checkbox to import metadata only." class="specialmenuText">
+									<input disabled type="radio" name="importOption" value="metadata">
+									<span class="text-special">Metadata only</span>
+								 </div>
+							  </fieldset>
+						</div>
+															  
+						<div class="specialmenuText" style="margin-top:3px;">Data location:
+							<input type="text" id="dataPath" name="dataPath" size="40" value="">&nbsp;<input type="button" onclick="showFilePicker('dataPath', event)" value="&nbsp;...&nbsp;">
+						</div>
+						<div class="specialmenuText" style="margin-top:3px;">Files location: 
+							<input type="text" id="filesPath" name="filesPath" size="40" value="">&nbsp;<input type="button" onclick="showFilePicker('filesPath', event)" value="&nbsp;...&nbsp;">
+						</div>
+					</div>									
 				</div>
 				<div id="metadataButtonDiv" <c:if test="${model.activeButton != 'metadataButton'}">style="display:none;"</c:if>>
 					<div id="solrIndexDiv" class="processlayout">
