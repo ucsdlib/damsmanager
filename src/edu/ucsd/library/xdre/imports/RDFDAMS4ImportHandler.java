@@ -3,6 +3,7 @@ package edu.ucsd.library.xdre.imports;
 import java.io.File;
 import java.io.PrintWriter;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +45,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	private DAMSClient damsClient = null;
 	private String importMode = null;
 	private File[] rdfFiles = null;
-	private String[] srcLocations = null;
+	private String[] filesPaths = null;
 	private int recordsCount = 0;
 	private int filesCount = 0;
 	private int ingestFailedCount = 0;
@@ -65,26 +66,25 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		this.importMode = importMode;
 	}
 
-	public String[] getSrcLocations() {
-		return srcLocations;
+	public String[] getFilesPaths() {
+		return filesPaths;
 	}
 
-	public void setSrcLocations(String[] srcLocations) {
-		this.srcLocations = srcLocations;
+	public void setFilesPaths(String[] filesPaths) {
+		this.filesPaths = filesPaths;
 	}
 
 	/**
 	 * Procedure to populate the RDF metadata and ingest the files
 	 */
 	public boolean execute() throws Exception {
-
-		if(srcLocations != null){
+		if(filesPaths != null){
 			File file = null;
 			// List the source files
-			for(int i=0; i<srcLocations.length; i++){
-				file = new File(srcLocations[i]);
+			for(int i=0; i<filesPaths.length; i++){
+				file = new File(filesPaths[i]);
 				if(file.exists()){
-					listFile(file);
+					listFile(filesMap, file);
 				}
 			}
 		}
@@ -126,7 +126,6 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							updateReference(doc, iUri, oid);
 							
 						} else if (nName.endsWith("Component") || nName.endsWith("File")){
-							//System.out.println("Processing " + nName + " " + iUri);
 							damsURI = DamsURI.toParts(iUri, null);
 							srcId = damsURI.getObject();
 							oid = idsMap.get(srcId);
@@ -136,7 +135,6 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							}
 							damsURI.setObject(oid);
 							nUri.setText(damsURI.toString());
-							//System.out.println("Processing " + nName + " " + nUri.getParent().asXML().substring(0, 200));
 							// XXX
 							// Assign cid and fid for Component and FIle if required
 							
@@ -154,7 +152,6 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 								field = "name_tesim";
 								xPath = "mads:authoritativeLabel";
 								tNode = parentNode.selectSingleNode(xPath);
-								//System.out.println(parentNode.asXML());
 							} else {
 								// Other records like Role, Language etc. use rdf:value
 								field = "value_tesim";
@@ -207,6 +204,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 								use = tmpStmt.getObject().asLiteral().getString();
 							}
 						}
+						setStatus("Ingesting file " + fid + " " + srcFileName + " in " + currFile + " (" + (i+1) + " of " + fLen + ") ... " );
 						if(srcFileName!=null) {
 							String fName = srcFileName;
 							File srcFile = null;
@@ -237,10 +235,10 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 										ingested = damsClient.createFile(fileURI.getObject(), fileURI.getComponent(), fileURI.getFileName(), tmpFile, use);
 										if(!ingested){
 											ingestFailedCount++;
-											ingestFailed.append(fid + "(" + tmpFile + "), \n");
+											ingestFailed.append(fid + " (" + tmpFile + "), \n");
 											logError("Failed to ingest file " + fid + " (" + tmpFile + ").");
 										}else{
-											message = "Ingested file " + fileURI.toString() + "(" + fid + "). ";
+											message = "Ingested file " + fileURI.toString() + " (" + fid + "). ";
 											log.info(message);
 											logMessage(message);
 											// Remove the hasFile property from the record which was ingested during file ingestion.
@@ -250,7 +248,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 									}catch(Exception e){
 										e.printStackTrace();
 										ingestFailedCount++;
-										ingestFailed.append(fid + "(" + tmpFile + "), \n");
+										ingestFailed.append(fid + " (" + tmpFile + "), \n");
 										logError("Failed to ingest file " + fid + " (" + tmpFile + "): " + e.getMessage());
 									}
 								}
@@ -284,7 +282,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 						}
 						
 						// Update object
-						System.out.println(graph.export(RDFStore.RDFXML_ABBREV_FORMAT));
+						//System.out.println(graph.export(RDFStore.RDFXML_ABBREV_FORMAT));
 						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), importMode);
 							
 						if(!succeeded){
@@ -307,7 +305,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							failedCount++;
 						metadataFailed.append(subjectId + " (" + currFile + "), \n");
 						message = "Metadata import failed: " + e.getMessage();
-						setStatus( message  + "(" +(i+1)+ " of " + fLen + ")"); 
+						setStatus( message  + " (" +(i+1)+ " of " + fLen + ")"); 
 						logError(message);
 					}
 					setProgressPercentage( ((i + 1) * 100) / fLen);
@@ -325,17 +323,12 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 						break;
 					}
 				}
-				
-				
-				PrintWriter writer = new PrintWriter(rdfFiles[i].getParentFile().getParent() + "/" + "_" + rdfFiles[i].getName());
-				writer.write(rdfStore.export(RDFStore.RDFXML_ABBREV_FORMAT));
-				writer.close();
 
 			}catch(Exception e){
 				e.printStackTrace();
 				failedCount++;
 				message = "Import failed for oject file " + currFile + ": " + e.getMessage();
-				setStatus( message  + "(" +(i+1)+ " of " + fLen + ")");
+				setStatus( message  + " (" +(i+1)+ " of " + fLen + ")");
 				logError(message);
 			}
 		}
@@ -379,28 +372,6 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		updateReference(doc, srcUri, oid);
 	}
 	
-	/**
-	 * List all the files recursively.
-	 * @param file
-	 */
-	private void listFile(File file){
-		String fName = null;
-		File tmpFile = null;
-		File[] files = file.listFiles();
-		for(int i=0; i<files.length; i++){
-			tmpFile = files[i];
-			if(tmpFile.isDirectory())
-				listFile(tmpFile);
-			else {
-				fName = tmpFile.getName();
-				if(filesMap.get(fName) != null){
-					logError("Duplicate source file name found: " + tmpFile.getAbsoluteFile() + "(" + filesMap.get(fName).getAbsolutePath() + ").");
-				}else
-					filesMap.put(fName, tmpFile);
-			}	
-		}
-	}
-	
 	public String getNewId() throws Exception{
 		return toDamsUrl(damsClient.mintArk(null));
 	}
@@ -431,7 +402,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	 */
 	public String lookupRecord(String field, String value, String modelName) throws Exception{
 		String modelParam = "\"" + INFO_MODEL_PREFIX + modelName + "\"";
-		// XXX Customize for Simple Subject and Complex Subject 
+		// XXX Customize for Simple Subject and Complex Subject for now 
 		if(modelName.endsWith("Topic"))
 			modelParam = "(" + modelParam +  " OR \"" + INFO_MODEL_PREFIX + "ComplexSubject\")";
 		String query = "q=" + URLEncoder.encode("name_tesim:\"" + value + "\" AND has_model_ssim:" + modelParam, "UTF-8") + "&fl=id&fl=has_model_ssim";
@@ -448,11 +419,13 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	 */
 	public String getExeInfo() {
 		if(exeResult)
-			exeReport.append("Import succeeded (Total " + rdfFiles.length + " metadata files imported): \n - Total " + recordsCount + " records ingested. \n - Total " + filesCount + " files ingested. ");
+			exeReport.append("Successful imported objets in " + rdfFiles.length + " metadata files: \n - Total " + recordsCount + " records ingested. \n - Total " + filesCount + " files ingested. ");
 		else {
 			exeReport.append("Import failed (" + failedCount + " of " + rdfFiles.length + " failed): \n ");
-			exeReport.append(" - " + ingestFailed + " of " + filesCount + " files failed: \n" + ingestFailed.toString() + " \n");
-			exeReport.append(" - Failed to import the following metadeta records: \n" + metadataFailed.toString());
+			if(ingestFailedCount > 0)
+				exeReport.append(" - " + ingestFailedCount + " of " + filesCount + " files failed: \n" + ingestFailed.toString() + " \n");
+			if(metadataFailed.length() > 0)
+				exeReport.append(" - Failed to import the following metadeta records: \n" + metadataFailed.toString());
 		}
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);

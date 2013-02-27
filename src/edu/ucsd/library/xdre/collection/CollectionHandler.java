@@ -582,6 +582,41 @@ public abstract class CollectionHandler implements ProcessHandler {
 		}
 		excludeEmbargoed = true;
 	}
+	
+	/**
+	 * List all the files recursively.
+	 * @param file
+	 * @throws Exception 
+	 */
+	public static void listFile(Map<String, File> fMap, File file) throws Exception{
+		List<File> files = new ArrayList<File> ();
+		listFiles(files, file);
+		String fName = null;
+		for(int i=0; i<files.size(); i++){
+			file = files.get(i);
+			fName = file.getName();
+			if(fMap.get(fName) != null){
+				throw new Exception("Duplicate source file name found: " + file.getAbsoluteFile() + "(" + fMap.get(fName).getAbsolutePath() + ").");
+			}else
+				fMap.put(fName, file);
+		}
+	}
+	
+	/**
+	 * List files
+	 * @param files
+	 * @param file
+	 */
+	public static void listFiles(List<File> files, File file){
+		if(file.isDirectory()){
+			File[] filesArr = file.listFiles();
+			for(int i=0; i<filesArr.length; i++){
+				listFiles(files, filesArr[i]);
+			}
+		}else{
+			files.add(file);
+		}
+	}
 
 	/**
 	 * Close a resource.
