@@ -168,7 +168,7 @@ public class FileIngestionHandler extends CollectionHandler {
 						if(i == 0){
 							String cId = uploadHandler.getCompId();
 							String fileId = uploadHandler.getFileId();
-							if((cId != null && cId.length()>0) && cId.compareTo("1") > 0 || !fileId.startsWith("1.")){
+							if((cId != null && cId.length()>0) && cId.compareTo("1") > 0 || !(fileId.equals("1") || fileId.startsWith("1."))){
 								logError("File Loading failed. The first file for files group with object "
 										+ fileName + " is missing. Fist content file order is " + contentId + ".");
 								break;
