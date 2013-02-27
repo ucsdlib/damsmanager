@@ -40,6 +40,7 @@ import edu.ucsd.library.xdre.collection.JhoveReportHandler;
 import edu.ucsd.library.xdre.collection.MetadataExportHandler;
 import edu.ucsd.library.xdre.collection.MetadataImportHandler;
 import edu.ucsd.library.xdre.collection.SOLRIndexHandler;
+import edu.ucsd.library.xdre.imports.RDFDAMS4ImportHandler;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.RequestOrganizer;
@@ -148,7 +149,7 @@ public class CollectionOperationController implements Controller {
 
 		String[] emails = null;
 		String user = request.getRemoteUser();
-		if(( !(isBSJhoveReport || isDevUpload) && getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "dataConvert") == null )&& 
+		if(( !(isBSJhoveReport || isDevUpload) && getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "externalImport") == null && getParameter(paramsMap, "dataConvert") == null )&& 
 				(collectionId == null || (collectionId=collectionId.trim()).length() == 0)){
 			message = "Please choose a collection ...";
 		}else{
@@ -261,7 +262,7 @@ public class CollectionOperationController implements Controller {
 		operations[2] = getParameter(paramsMap, "rdfImport") != null;
 		operations[3] = getParameter(paramsMap, "createDerivatives") != null;
 		operations[4] = getParameter(paramsMap, "uploadRDF") != null;
-		operations[5] = getParameter(paramsMap, "cacheThumbnails") != null;
+		operations[5] = getParameter(paramsMap, "externalImport") != null;
 		operations[6] = getParameter(paramsMap, "createMETSFiles") != null;
 		operations[7] = getParameter(paramsMap, "luceneIndex") != null || getParameter(paramsMap, "solrDump") != null;
 		operations[8] = getParameter(paramsMap, "sendToCDL") != null;
@@ -376,7 +377,28 @@ public class CollectionOperationController implements Controller {
 				 boolean rdfXmlReplace = getParameter(paramsMap, "rdfXmlReplace") != null;
 	             
 				 handler = new MetaDataStreamUploadHandler(damsClient, collectionId, "rdf", rdfXmlReplace);
-			 } else if (i == 6){	
+			 }*/else if (i == 5){	
+				  session.setAttribute("status", opMessage + "Importing objects ...");
+				  String[] dataPaths = getParameter(paramsMap, "dataPath").split(";");
+				  String[] filesPaths = getParameter(paramsMap, "filesPath").split(";");
+				  String importOption = getParameter(paramsMap, "importOption");
+				  List<File> dFiles = new ArrayList<File>();
+				  for(int j=0; j<dataPaths.length; j++){
+					  String dataPath = dataPaths[j];
+					  if(dataPath != null && (dataPath=dataPath.trim()).length() > 0){
+						  File file = new File(Constants.DAMS_STAGING + "/" + dataPath);
+						  CollectionHandler.listFiles(dFiles, file);
+					  }
+				  }
+				  
+				  List<String> ingestFiles = new ArrayList<String>();
+				  for(int j=0; j<filesPaths.length; j++)
+					  ingestFiles.add(new File(Constants.DAMS_STAGING + "/" + filesPaths[j]).getAbsolutePath());
+				  
+				  System.out.println(dataPaths.length + " data path: " + getParameter(paramsMap, "dataPath"));
+				  handler = new RDFDAMS4ImportHandler(damsClient, dFiles.toArray(new File[dFiles.size()]), importOption);
+				  ((RDFDAMS4ImportHandler)handler).setFilesPaths(ingestFiles.toArray(new String[ingestFiles.size()]));
+			 }/*else if (i == 6){	
 				   session.setAttribute("status", opMessage + "METS File Creation &amp; File Store Upload ...");
 				   boolean metsReplace = getParameter(paramsMap, "metsReplace") != null;
 				   handler = new MetaDataStreamUploadHandler(damsClient, collectionId, "mets", metsReplace);
