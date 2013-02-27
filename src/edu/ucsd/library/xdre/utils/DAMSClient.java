@@ -1783,7 +1783,7 @@ public class DAMSClient {
 	 */
 	public Document solrLookup(String solrQuery) throws Exception{
 		String url = getSolrURL();
-		url += "select?" + solrQuery + "&wt=xml";
+		url += (url.endsWith("/")?"":"/") + "select?" + solrQuery + "&wt=xml";
 		HttpGet req= new HttpGet(url);
 		return getXMLResult(req);
 	}
