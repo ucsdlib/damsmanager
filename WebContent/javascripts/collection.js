@@ -33,6 +33,7 @@
       
       var rdfExport = formObj.metadataExport.checked;
       var rdfImport = formObj.rdfImport.checked;
+      var externalImport = formObj.externalImport.checked;
       var jhoveReport = formObj.jhoveReport.checked;
       var urlParams = "activeButton=" + formObj.activeButton.value; 
       var validateFileCount = formObj.validateFileCount.checked;
@@ -43,7 +44,7 @@
       var sendToCDL = formObj.sendToCDL.checked;
       var luceneIndex = formObj.luceneIndex.checked;
       
-      if((checkedCount > 1 && collectionIndex == 0) || (checkedCount == 1 && collectionIndex == 0 && (!(rdfImport || (rdfImport && (formObj.tsRepopulation.checked || formObj.samePredicatesReplacement.checked)) || (jhoveReport && formObj.bsJhoveReport.checked))))){
+      if((checkedCount > 1 && collectionIndex == 0) || (checkedCount == 1 && collectionIndex == 0 && (!(externalImport || rdfImport || (rdfImport && (formObj.tsRepopulation.checked || formObj.samePredicatesReplacement.checked)) || (jhoveReport && formObj.bsJhoveReport.checked))))){
          alert("Please choose a collection.");
          return false;
       } else if(collectionIndex != 0) {
@@ -111,6 +112,15 @@
          formObj.enctype = "multipart/form-data";
       }
      
+     if(externalImport == true){
+     	var fileName = formObj.dataPath.value;
+ 	    if(fileName == null || trim(fileName).length == 0){
+ 	       alert("Please choose the data path to the external files.");
+ 	       return false;      
+ 	    }
+          operations += "- External Objects Import \n";
+       }
+     
       var exeConfirm = confirm("Are you sure you want to perform the following operations on the " + collectionName + " collection? \n" + operations);
        if(!exeConfirm){
            return false;
@@ -126,10 +136,11 @@
       var formObj = document.mainForm;
       var collectionIndex = formObj.category.selectedIndex;
       var rdfImport = formObj.rdfImport.checked;
+      var externalImport = formObj.externalImport.checked;
       var jhoveReport = formObj.jhoveReport.checked;
       
      if(checkboxObj.checked == true){
-     	if((collectionIndex == 0 && !(rdfImport || jhoveReport)) || (rdfImport && collectionIndex == 0 && checkedCount == 1)){
+     	if((collectionIndex == 0 && !(rdfImport || externalImport || jhoveReport)) || (rdfImport && collectionIndex == 0 && checkedCount == 1)){
      	    checkboxObj.checked = false;
      		alert("Please select a collection to start the operations.");
      		return false;
