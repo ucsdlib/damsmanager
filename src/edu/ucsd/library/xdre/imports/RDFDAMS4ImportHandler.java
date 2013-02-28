@@ -99,10 +99,10 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		String currFile = null;
 		SAXReader saxReader = new SAXReader();
 		for(int i=0; i<fLen&&!interrupted; i++){
-			currFile = rdfFiles[i].getAbsolutePath();
+			currFile = rdfFiles[i].getName();
 			setStatus("Processing external import for file " + currFile + " (" + (i+1) + " of " + fLen + ") ... " );
 			try{
-				doc = saxReader.read(currFile);
+				doc = saxReader.read(rdfFiles[i]);
 				List<Node> nodes = doc.selectNodes("//@rdf:about");
 				for(int j=0; j<nodes.size(); j++){
 					String srcId = null;
