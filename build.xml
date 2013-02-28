@@ -115,7 +115,7 @@
 	  <!-- LOCAL DEPLOY -->
 	  <target name="local-deploy" description="Deploy webapp to local dir (farm)">
 	    <echo level="info" message="war = 'file://${dist}/${appName}.war'"/>
-	    <copy file="${dist}/${appName}.war" todir="${local.farm.dir}"/>
+	    <copy file="${dist}/${appName}.war" todir="${deploy.home}"/>
 	  </target>
 
   <!-- remote deployment -->
