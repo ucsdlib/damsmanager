@@ -18,14 +18,6 @@ public class Constants {
 	public static final String SOURCE = "source";
 	public static final String ALTERNATE = "alternate";
 	public static final String IMAGE = "image";
-	
-	public static final String ARK_DAMS_TITLE = "bb3652744n"; //ARK for dams:title
-
-	public static final String COLLECTION_ETD = "bb0956474h"; //ARK for ETD collection
-	public static final String COLLECTION_SHOTSOFWAR = "bb3209056n"; //ARK for Shot of War collection
-	public static final String COLLECTION_UNIVERSITYCOMMUNICATIONNSEWSRELEASE  = "bb33801227"; //ARK for University Communications collection
-
-	public static final String MAILSENDER_DAMSSUPPORT = "dams-support@ucsd.edu";
 
 	public static final String IMPORT_MODE_ADD = "add";
 	public static final String IMPORT_MODE_ALL = "all";
@@ -45,7 +37,9 @@ public class Constants {
 	public static String DEFAULT_TRIPLESTORE = "";
 	public static String DEFAULT_FILESTORE = "";
 	public static String DEFAULT_DERIVATIVES = "";
-
+	
+	public static String MAILSENDER_DAMSSUPPORT = "";
+	
 	static {
 		InputStream in = null;
 		try {
@@ -81,6 +75,9 @@ public class Constants {
 			
 			//ARK orgCode
 			ARK_ORG = props.getProperty("xdre.ark.orgCode");
+			
+			//Support mail
+			MAILSENDER_DAMSSUPPORT = props.getProperty("mail.support");
 			
 			//Retrieve the default triplestore and filestore
 			DAMSClient damsClient = new DAMSClient(DAMS_STORAGE_URL);		
