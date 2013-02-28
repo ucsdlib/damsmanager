@@ -280,7 +280,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				for (int j=0; j<items.size()&&!interrupted; j++){
 					recordsCount++;
 					// Add subject
-					subjectId = items.get(i);
+					subjectId = items.get(j);
 					try{
 						setStatus("Processing metadata for subject " + subjectId  + " (" + (i+1) + " of " + fLen + ") ... " ); 
 						boolean succeeded = false;
