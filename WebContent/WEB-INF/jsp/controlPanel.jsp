@@ -193,10 +193,10 @@
 							  </fieldset>
 						</div>
 															  
-						<div class="specialmenuText" style="margin-top:3px;">Data location:
+						<div class="specialmenuText" style="margin-top:3px;padding-left:22px;">Data location:
 							<input type="text" id="dataPath" name="dataPath" size="40" value="">&nbsp;<input type="button" onclick="showFilePicker('dataPath', event)" value="&nbsp;...&nbsp;">
 						</div>
-						<div class="specialmenuText" style="margin-top:3px;">Files location: 
+						<div class="specialmenuText" style="margin-top:3px;padding-left:22px;">Files location: 
 							<input type="text" id="filesPath" name="filesPath" size="40" value="">&nbsp;<input type="button" onclick="showFilePicker('filesPath', event)" value="&nbsp;...&nbsp;">
 						</div>
 					</div>									
