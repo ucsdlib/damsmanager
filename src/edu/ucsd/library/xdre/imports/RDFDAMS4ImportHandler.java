@@ -41,9 +41,10 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	//private Map<String, Map<String, List<String>>> objectsMap = new HashMap<String, Map<String, List<String>>>();
 	
 	private DAMSClient damsClient = null;
-	private String importMode = null;
+	private String importOption = null;
 	private File[] rdfFiles = null;
 	private String[] filesPaths = null;
+	
 	private int recordsCount = 0;
 	private int filesCount = 0;
 	private int ingestFailedCount = 0;
@@ -57,11 +58,11 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	 * @param mode
 	 * @throws Exception
 	 */
-	public RDFDAMS4ImportHandler(DAMSClient damsClient, File[] rdfFiles, String importMode) throws Exception {
+	public RDFDAMS4ImportHandler(DAMSClient damsClient, File[] rdfFiles, String importOption) throws Exception {
 		super(damsClient, null);
 		this.damsClient = damsClient;
 		this.rdfFiles = rdfFiles;
-		this.importMode = importMode;
+		this.importOption = importOption;
 	}
 
 	public String[] getFilesPaths() {
@@ -71,7 +72,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	public void setFilesPaths(String[] filesPaths) {
 		this.filesPaths = filesPaths;
 	}
-
+	
 	/**
 	 * Procedure to populate the RDF metadata and ingest the files
 	 */
@@ -170,106 +171,112 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				initHandler();
 				
 				// Ingest the source file
-				String cid = null;
-				String fid = null;
-				String srcPath = null;
-				String srcFileName = null;
-				Statement stmt = null;
-				Statement tmpStmt = null;
-				Property prop = null;
-				RDFNode fNode = null;
-				RDFNode oNode = null;
-				List<Statement> oStmt = rdf.listStatements().toList();
-				for(int l=0; l<oStmt.size()&&!interrupted;l++){
-					stmt = oStmt.get(l);
-					prop = stmt.getPredicate();
-					if(prop.getLocalName().equals(HAS_FILE)){
-						filesCount++;
-						fNode = stmt.getObject();
-						fid = fNode.asResource().getURI();
-						List<Statement> stmts = rdf.listStatements(fNode.asResource(), null, oNode).toList();
-						String use = null;
-						for(int j=0; j<stmts.size(); j++){
-							// File properties. The use property will be retrieved.
-							tmpStmt = stmts.get(j);
-							prop = tmpStmt.getPredicate();
-							String localName = prop.getLocalName();
-							if(localName.equalsIgnoreCase(DFile.SOURCE_PATH)){
-								srcPath = tmpStmt.getObject().asLiteral().getString();
-							}else if(localName.equalsIgnoreCase(DFile.SOURCE_FILE_NAME)){
-								srcFileName = tmpStmt.getObject().asLiteral().getString();
-							}else if (localName.equalsIgnoreCase(DFile.USE)){
-								use = tmpStmt.getObject().asLiteral().getString();
-							}
-						}
-						setStatus("Ingesting file " + fid + " " + srcFileName + " in " + currFile + " (" + (i+1) + " of " + fLen + ") ... " );
-						if(srcFileName!=null) {
-							String fName = srcFileName;
-							File srcFile = null;
-							
-							if(fName.startsWith("http")){
-								// XXX URL resource, handle it for local file for now
-								int idx = fName.lastIndexOf('/');
-								if(idx >= 0 && fName.length() > idx + 1)
-									fName = fName.substring(idx+1);
-							}
-							
-							if(srcPath != null)
-								srcFile = new File(srcPath + "/" + fName);
-							
-							if(srcFile == null || !srcFile.exists()){
-								// Retrieve the file locally
-								srcFile = filesMap.get(fName);
-								if(srcFile == null){
-									exeResult = false;
-									logError("Source file for " + srcFileName + " doesn't exist. Please choose a correct stage file location.");
-								}else{
-									// Ingest the file
-									DamsURI fileURI = null;
-									boolean ingested = false;
-									String tmpFile = srcFile.getAbsolutePath();
-									try{
-										fileURI = DamsURI.toParts(fid, null);
-										ingested = damsClient.createFile(fileURI.getObject(), fileURI.getComponent(), fileURI.getFileName(), tmpFile, use);
-										if(!ingested){
-											ingestFailedCount++;
-											ingestFailed.append(fid + " (" + tmpFile + "), \n");
-											logError("Error ingesting file " + fid + " in " + tmpFile + ".");
-										}else{
-											message = "Ingested file " + fileURI.toString() + " (" + fid + ") in " + tmpFile + ". ";
-											log.info(message);
-											logMessage(message);
-											// Remove the hasFile property from the record which was ingested during file ingestion.
-											rdf.remove(stmt);
-											rdf.remove(stmts);
-										}
-									}catch(Exception e){
-										e.printStackTrace();
-										ingestFailedCount++;
-										ingestFailed.append(fid + " (" + tmpFile + "), \n");
-										logError("Failed to ingest file " + fid + " (" + tmpFile + ") in " + currFile + ": " + e.getMessage());
-									}
+				if(importOption.equalsIgnoreCase("metadataAndFiles")){
+					String cid = null;
+					String fid = null;
+					String fileUrl = null;
+					String srcPath = null;
+					String srcFileName = null;
+					Statement stmt = null;
+					Statement tmpStmt = null;
+					Property prop = null;
+					RDFNode fNode = null;
+					RDFNode oNode = null;
+					List<Statement> oStmt = rdf.listStatements().toList();
+					for(int l=0; l<oStmt.size()&&!interrupted;l++){
+						stmt = oStmt.get(l);
+						prop = stmt.getPredicate();
+						if(prop.getLocalName().equals(HAS_FILE)){
+							filesCount++;
+							fNode = stmt.getObject();
+							fileUrl = fNode.asResource().getURI();
+							List<Statement> stmts = rdf.listStatements(fNode.asResource(), null, oNode).toList();
+							String use = null;
+							for(int j=0; j<stmts.size(); j++){
+								// File properties. The use property will be retrieved.
+								tmpStmt = stmts.get(j);
+								prop = tmpStmt.getPredicate();
+								String localName = prop.getLocalName();
+								if(localName.equalsIgnoreCase(DFile.SOURCE_PATH)){
+									srcPath = tmpStmt.getObject().asLiteral().getString();
+								}else if(localName.equalsIgnoreCase(DFile.SOURCE_FILE_NAME)){
+									srcFileName = tmpStmt.getObject().asLiteral().getString();
+								}else if (localName.equalsIgnoreCase(DFile.USE)){
+									use = tmpStmt.getObject().asLiteral().getString();
 								}
 							}
-						}else{
-							ingestFailedCount++;
-							ingestFailed.append( fid + ", \n");
-							logError("Missing sourceFileName property for file " + fid + " in " + currFile + ".");
+							
+							setStatus("Ingesting file " + fileUrl + " [" + srcFileName + "] in " + currFile + " (" + (i+1) + " of " + fLen + ") ... " );
+							if(srcFileName!=null) {
+								String fName = srcFileName;
+								File srcFile = null;
+								
+								if(fName.startsWith("http")){
+									// XXX URL resource, handle it for local file for now
+									int idx = fName.lastIndexOf('/');
+									if(idx >= 0 && fName.length() > idx + 1)
+										fName = fName.substring(idx+1);
+								}
+								
+								if(srcPath != null)
+									srcFile = new File(srcPath + "/" + fName);
+								
+								if(srcFile == null || !srcFile.exists()){
+									// Retrieve the file locally
+									srcFile = filesMap.get(fName);
+									if(srcFile == null){
+										exeResult = false;
+										logError("Source file for " + srcFileName + " doesn't exist. Please choose a correct stage file location.");
+									}else{
+										// Ingest the file
+										DamsURI dURI = null;
+										boolean ingested = false;
+										String tmpFile = srcFile.getAbsolutePath();
+										try{
+											dURI = DamsURI.toParts(fileUrl, null);
+											oid = dURI.getObject();
+											cid = dURI.getComponent();
+											fid = dURI.getFileName();
+											
+											ingested = damsClient.createFile(oid, cid, fid, tmpFile, use);
+											if(!ingested){
+												ingestFailedCount++;
+												ingestFailed.append(fileUrl + " (" + tmpFile + "), \n");
+												logError("Error ingesting file " + fileUrl  + " (" + tmpFile + ")" + " in " + currFile + ".");
+											}else{
+												message = "Ingested file " + fileUrl + " (" + tmpFile + ") in " + currFile + ". ";
+												log.info(message);
+												logMessage(message);
+												// Remove the hasFile property from the record which was ingested during file ingestion.
+												rdf.remove(stmt);
+												rdf.remove(stmts);
+											}
+										}catch(Exception e){
+											e.printStackTrace();
+											ingestFailedCount++;
+											ingestFailed.append(fileUrl + " (" + tmpFile + "), \n");
+											logError("Failed to ingest file " + fileUrl + " (" + tmpFile + ") in " + currFile + ": " + e.getMessage());
+										}
+									}
+								}
+							}else{
+								ingestFailedCount++;
+								ingestFailed.append( fid + ", \n");
+								logError("Missing sourceFileName property for file " + fileUrl + " in " + currFile + ".");
+							}	
 						}
 						
-					}
-					
-					try{
-						Thread.sleep(10);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-						interrupted = true;
-						message = "Import interrupted in " + (fid!=null?fid + " (" + currFile + ")":currFile) + ". \n Error: " + e.getMessage() + "\n";
-						setStatus("Canceled");
-						clearSession();
-						logError(message);
-					}
-					
+						try{
+							Thread.sleep(10);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+							interrupted = true;
+							message = "Import interrupted in " + (fileUrl!=null?fileUrl + " (" + currFile + ")":currFile) + ". \n Error: " + e.getMessage() + "\n";
+							setStatus("Canceled");
+							clearSession();
+							logError(message);
+						}
+					}	
 				}
 				
 				// Ingest the records
@@ -294,7 +301,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 						
 						// Update object
 						//System.out.println(graph.export(RDFStore.RDFXML_ABBREV_FORMAT));
-						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), importMode);
+						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), Constants.IMPORT_MODE_ADD);
 							
 						if(!succeeded){
 							if(metadataFailed.indexOf(currFile) < 0)

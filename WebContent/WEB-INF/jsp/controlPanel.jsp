@@ -187,7 +187,7 @@
 									<span class="text-special">Metadata and files</span>
 								 </div>
 								 <div title="Check this checkbox to import metadata only." class="specialmenuText">
-									<input disabled type="radio" name="importOption" value="metadata">
+									<input type="radio" name="importOption" value="metadata">
 									<span class="text-special">Metadata only</span>
 								 </div>
 							  </fieldset>

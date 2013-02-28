@@ -395,7 +395,6 @@ public class CollectionOperationController implements Controller {
 				  for(int j=0; j<filesPaths.length; j++)
 					  ingestFiles.add(new File(Constants.DAMS_STAGING + "/" + filesPaths[j]).getAbsolutePath());
 				  
-				  System.out.println(dataPaths.length + " data path: " + getParameter(paramsMap, "dataPath"));
 				  handler = new RDFDAMS4ImportHandler(damsClient, dFiles.toArray(new File[dFiles.size()]), importOption);
 				  ((RDFDAMS4ImportHandler)handler).setFilesPaths(ingestFiles.toArray(new String[ingestFiles.size()]));
 			 }/*else if (i == 6){	
