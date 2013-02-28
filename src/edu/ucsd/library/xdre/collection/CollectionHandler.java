@@ -584,6 +584,36 @@ public abstract class CollectionHandler implements ProcessHandler {
 	}
 	
 	/**
+	 * Check for image file
+	 * @param fileName
+	 * @return
+	 */
+	public boolean isImage(String fileName, String use){
+		fileName = fileName.toLowerCase();
+		String mimeType = DAMSClient.getMimeType(fileName);
+		if((use!=null && use.toLowerCase().startsWith("image")) || 
+				mimeType.indexOf("image")>=0 || fileName.endsWith(".tif") || fileName.endsWith(".png"))
+			return true;
+		else
+			return false;
+	}
+	
+	/**
+	 * Check for document file
+	 * @param fileName
+	 * @return
+	 */
+	public boolean isDocument(String fileName, String use){
+		fileName = fileName.toLowerCase();
+		String mimeType = DAMSClient.getMimeType(fileName);
+		if((use!=null && use.toLowerCase().startsWith("document")) || 
+				mimeType.indexOf("pdf")>=0 || fileName.endsWith(".pdf"))
+			return true;
+		else
+			return false;
+	}
+	
+	/**
 	 * List all the files recursively.
 	 * @param file
 	 * @throws Exception 
