@@ -32,15 +32,6 @@ public class DownloadLogController implements Controller {
 		boolean loginRequired = true;
 		if(userPrincipal != null){
 			loginRequired = false;
-			if(request.isUserInRole(Constants.CURATOR_ROLE))
-				loginRequired = false;
-		}else{
-			String ip = request.getRemoteAddr();	
-			String ips = Constants.IPS_ALLOWED;
-			if(ips.indexOf(ip) >= 0){
-				loginRequired = false;
-				System.out.println("XDRE Manager access allowed from " + ip + ". Operation download - " + request.getRequestURI());
-			}
 		}
 
 		if(!loginRequired){

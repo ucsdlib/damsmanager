@@ -31,11 +31,6 @@ public class Constants {
 	public static final String IMPORT_MODE_ALL = "all";
 	public static final String IMPORT_MODE_SAMEPREDICATES = "samePredicates";
 	public static final String IMPORT_MODE_DESCRIPTIVE = "descriptive";
-	
-	public static final int MEDIUM_RESOLUTION = 2;
-	public static final int MEDIUM_RESOLUTION3A = 3;
-	public static final int THUMBNAIL = 4;
-	public static final int THUMBNAIL2A = 5;
 
 	public static final int TIMEOUT = 30000;
 
@@ -45,17 +40,8 @@ public class Constants {
 	public static String CLUSTER_HOST_NAME = "";
 	public static String DAMS_STORAGE_URL = "";
 	public static String TMP_FILE_DIR = "";
-	public static String CDL_MERRITT_URL = "";
 	public static String DAMS_STAGING = "";
-	public static String STATS_LOG_DIR = "";
-	public static String CLUSTER_SHARE_PATH = "";
-	public static int MERRITT_BATCH_SIZE = 0;
 	public static String SOLR_URL_BASE = "";
-	public static String JHOVE_ARK_LIST = "";
-	public static String IPS_ALLOWED = "";
-	public static String CURATOR_ROLE = "";
-	public static String SOLR_PDF_FULLTEXT_COLLECTIONS = "";
-	public static String JETL_JHOVE_CONF_FILE = "";
 	public static String DEFAULT_TRIPLESTORE = "";
 	public static String DEFAULT_FILESTORE = "";
 	public static String DEFAULT_DERIVATIVES = "";
@@ -77,36 +63,12 @@ public class Constants {
 			
 			//Cluster host URL
 			CLUSTER_HOST_NAME = props.getProperty("xdre.clusterHostName");
-
-			//Web log directory
-			STATS_LOG_DIR = props.getProperty("xdre.weblogs");
 			
 			//DAMS staging area
 			DAMS_STAGING = props.getProperty("xdre.staging");
 			
 			// Directory to write temp files
 			TMP_FILE_DIR = props.getProperty("xdre.tmpFileDir");
-
-			//Merritt feeder URL
-			CDL_MERRITT_URL = props.getProperty("xdre.cdlMerrittUrl");
-
-			//Merritt ingestion batch size
-			MERRITT_BATCH_SIZE = Integer.parseInt(props.getProperty("xdre.merrittBatchSize"));
-			
-			//Sharing disk location 
-			CLUSTER_SHARE_PATH = props.getProperty("xdre.clusterSharedPath");
-			
-			//Cluster IP addresses that allow direct access
-			IPS_ALLOWED = props.getProperty("xdre.ipsAllowed");
-			
-			//Curator role 32
-			CURATOR_ROLE = props.getProperty("xdre.curatorRole");
-
-			//Jhove configuration file
-			JETL_JHOVE_CONF_FILE = props.getProperty("xdre.jetlJhoveConfFile");
-			
-			//Collections need PDF full text extraction
-			SOLR_PDF_FULLTEXT_COLLECTIONS = props.getProperty("xdre.pdfFulltextCollections");
 
 			//SOLR UR
 			DEFAULT_DERIVATIVES = props.getProperty("xdre.defaultDerivatives");
