@@ -1,6 +1,7 @@
 package edu.ucsd.library.xdre.imports;
 
 import java.io.File;
+import java.io.PrintWriter;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
@@ -283,8 +284,10 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				String subjectId = null;
 				DamsURI objURI = null;
 				List<DamsURI> objURIs = null;
-				RDFStore graph = new RDFStore();
+				RDFStore graph = null;
+				
 				for (int j=0; j<items.size()&&!interrupted; j++){
+					graph = new RDFStore();
 					recordsCount++;
 					// Add subject
 					subjectId = items.get(j);
@@ -300,8 +303,9 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 						}
 						
 						// Update object
-						//System.out.println(graph.export(RDFStore.RDFXML_ABBREV_FORMAT));
-						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), Constants.IMPORT_MODE_ADD);
+						log.info(j + " ingesting record " + subjectId + ":\n" + graph.export(RDFStore.RDFXML_ABBREV_FORMAT) + "\n\n");
+						
+						//succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), Constants.IMPORT_MODE_ADD);
 							
 						if(!succeeded){
 							if(metadataFailed.indexOf(currFile) < 0)
@@ -342,7 +346,6 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 						logError(message);
 					}
 				}
-
 			}catch(Exception e){
 				e.printStackTrace();
 				failedCount++;
