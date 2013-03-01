@@ -1,6 +1,7 @@
 package edu.ucsd.library.xdre.imports;
 
 import java.io.File;
+import java.io.PrintWriter;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
@@ -366,6 +367,12 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 						logError(message);
 					}
 				}
+				
+				PrintWriter writer = new PrintWriter(Constants.TMP_FILE_DIR + "/damsmanager/_" + rdfFiles[i].getName());
+				writer.write(doc.asXML());
+				writer.close();
+				if(i== 1)
+					 break;
 			}catch(Exception e){
 				e.printStackTrace();
 				failedCount++;
