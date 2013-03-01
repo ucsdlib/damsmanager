@@ -1,7 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"%>
 <div id="statusDiv" align="center" style="display:none;">
 	<div class="emBox_status">
-	<div class="emBoxBanner">XDRE Manager Progress Report</div>
+	<div class="emBoxBanner">DAMS Manager Progress Report</div>
 	<div align="center" id="statusBarDiv">
 	<table height="120px">
 		<tr>
