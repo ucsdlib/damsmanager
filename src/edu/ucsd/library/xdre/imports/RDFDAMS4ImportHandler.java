@@ -471,8 +471,8 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	public String lookupRecord(String field, String value, String modelName) throws Exception{
 		String modelParam = "\"" + INFO_MODEL_PREFIX + modelName + "\"";
 		// XXX Customize for Simple Subject and Complex Subject for now 
-		if(modelName.endsWith("Topic"))
-			modelParam = "(" + modelParam +  " OR \"" + INFO_MODEL_PREFIX + "ComplexSubject\")";
+		//if(modelName.endsWith("Topic"))
+		//	modelParam = "(" + modelParam +  " OR \"" + INFO_MODEL_PREFIX + "ComplexSubject\")";
 		String query = "q=" + URLEncoder.encode("name_tesim:\"" + value + "\" AND has_model_ssim:" + modelParam, "UTF-8") + "&fl=id&fl=has_model_ssim";
 		Document doc = damsClient.solrLookup(query);
 		int numFound = Integer.parseInt(doc.selectSingleNode("/response/result/@numFound").getStringValue());
