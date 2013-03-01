@@ -303,9 +303,9 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 						}
 						
 						// Update object
-						log.info(j + " ingesting record " + subjectId + ":\n" + graph.export(RDFStore.RDFXML_ABBREV_FORMAT) + "\n\n");
+						log.warn(j + " ingesting record " + subjectId + ":\n" + graph.export(RDFStore.RDFXML_ABBREV_FORMAT) + "\n\n");
 						
-						//succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), Constants.IMPORT_MODE_ADD);
+						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), Constants.IMPORT_MODE_ADD);
 							
 						if(!succeeded){
 							if(metadataFailed.indexOf(currFile) < 0)
@@ -318,7 +318,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							message = "Metadata import for subject " + subjectId  + " succeeded (" + (i+1) + " of " + fLen + "). ";
 							setStatus(message); 
 							logMessage(message);
-							log.info(message);
+							log.warn(message);
 						}
 					
 					} catch (Exception e) {
