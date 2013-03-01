@@ -909,69 +909,71 @@ public class DAMSClient {
 	 * @param compId
 	 * @param fileName
 	 * @param srcFile
-	 * @return
-	 * @throws Exception
-	 */
-	public boolean createFile(String object, String compId, String fileName, String srcFile) throws Exception {
-		return uploadFile(object, compId, fileName, srcFile, null, false);
-	}
-	
-	/**
-	 * Create a new file.
-	 * @param object
-	 * @param compId
-	 * @param fileName
-	 * @param srcFile
 	 * @param use
 	 * @return
 	 * @throws Exception
 	 */
 	public boolean createFile(String object, String compId, String fileName, String srcFile, String use) throws Exception {
-		return uploadFile(object, compId, fileName, srcFile, use, false);
+		Map<String, String> params = new HashMap<String, String>();
+		params.put("oid", object);
+		params.put("cid", compId);
+		params.put("fid", fileName);
+		params.put("local", srcFile);
+		params.put("use", use);
+		return createFile(params);
 	}
-
+	
 	/**
-	 * Create, update/replace a file.
-	 * 
-	 * @param object
-	 * @param fileName
-	 * @param in
-	 * @param len
+	 * Create a new file.
+	 * @param params
 	 * @return
-	 * @throws Exception 
+	 * @throws Exception
 	 */
-	public boolean uploadFile(String object, String compId, String fileName, String srcFile, boolean replace) throws Exception {
-		return uploadFile(object, compId, fileName, srcFile, null, replace);
+	public boolean createFile(Map<String, String> params) throws Exception {
+		return uploadFile(params, false);
 	}
 	
 	/**
 	 * Create, update/replace a file.
-	 * 
-	 * @param object
-	 * @param fileName
-	 * @param in
-	 * @param len
+	 * @param params
+	 * @param replace
 	 * @return
-	 * @throws Exception 
+	 * @throws Exception
 	 */
-	public boolean uploadFile(String object, String compId, String fileName, String srcFile, String use, boolean replace) throws Exception {
-		String format = null;
-		HttpEntityEnclosingRequestBase req = null;
-		//MultipartPostMethod req = new MultipartPostMethod();
-		String url = getFilesURL(object, compId, fileName, null, null);
+	public boolean uploadFile(Map<String, String>params, boolean replace) throws Exception {
+
+		//Retrieve the app parameters that need processing
+		String oid = params.remove("oid");
+		String cid = params.remove("cid");
+		String fid = params.remove("fid");
+		String srcFile = params.remove("local");
+		if(srcFile == null)
+			throw new Exception("Parameter local for the source file is missing.");
+		
+		String format = params.get("format");
+		String url = getFilesURL(oid, cid, fid, null, format);
 		int status = -1;
 		boolean success = false;
+		HttpEntityEnclosingRequestBase req = null;
 		try {
-			if(replace && exists(object, compId, fileName)) {
+			if(replace && exists(oid, cid, fid)) {
 				req = new HttpPut(url);
 			} else {
 				req = new HttpPost(url);
 			}
+			
 			MultipartEntity ent = toMultiPartEntity(srcFile);
 			File file = new File(srcFile);
 			ent.addPart("dateCreated", new StringBody(damsDateFormat.format(file.lastModified())));
-			if(use != null && use.length() > 0)
-				ent.addPart("use", new StringBody(use));
+			
+			String pName = null;
+			String pValue = null;
+			for(Iterator<String> it=params.keySet().iterator(); it.hasNext();){
+				pName = it.next();
+				pValue = params.get(pName);
+				if(pValue != null && (pValue=pValue.trim()).length() > 0)
+					ent.addPart(pName, new StringBody(pValue));
+			}
 			
 			req.setEntity(ent);
 			status = execute(req);

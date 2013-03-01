@@ -1,7 +1,6 @@
 package edu.ucsd.library.xdre.imports;
 
 import java.io.File;
-import java.io.PrintWriter;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
@@ -36,10 +35,8 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 
 	public static final String INFO_MODEL_PREFIX = "info:fedora/afmodel:Dams";
 	public static final String HAS_FILE = "hasFile";
-	//private Map<String, String> collsTitleMap = null;
 	private Map<String, String> idsMap = new HashMap<String, String>();
 	private Map<String, File> filesMap = new HashMap<String, File>();
-	//private Map<String, Map<String, List<String>>> objectsMap = new HashMap<String, Map<String, List<String>>>();
 	
 	private DAMSClient damsClient = null;
 	private String importOption = null;
@@ -94,7 +91,6 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		DamsURI damsURI = null;
 		
 		String oid = null;
-		Map<String, List<String>> parts = new HashMap<String, List<String>>();
 		int fLen = rdfFiles.length;
 		String currFile = null;
 		SAXReader saxReader = new SAXReader();
@@ -183,6 +179,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 					Property prop = null;
 					RDFNode fNode = null;
 					RDFNode oNode = null;
+					Map<String, String> params = null;
 					List<Statement> oStmt = rdf.listStatements().toList();
 					for(int l=0; l<oStmt.size()&&!interrupted;l++){
 						stmt = oStmt.get(l);
@@ -239,7 +236,14 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 											cid = dURI.getComponent();
 											fid = dURI.getFileName();
 											
-											ingested = damsClient.createFile(oid, cid, fid, tmpFile, use);
+											params = new HashMap<String, String>();
+											params.put("oid", oid);
+											params.put("cid", cid);
+											params.put("fid", fid);
+											params.put("use", use);
+											params.put("local", tmpFile);
+											params.put("sourceFileName", srcFileName);
+											ingested = damsClient.createFile(params);
 											if(!ingested){
 												ingestFailedCount++;
 												ingestFailed.append(fileUrl + " (" + tmpFile + "), \n");
@@ -251,6 +255,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 												// Remove the hasFile property from the record which was ingested during file ingestion.
 												rdf.remove(stmt);
 												rdf.remove(stmts);
+												
 											}
 										}catch(Exception e){
 											e.printStackTrace();
