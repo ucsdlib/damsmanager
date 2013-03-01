@@ -167,7 +167,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				}			
 				
 				rdfStore = new RDFStore();
-				Model rdf = rdfStore.loadRDFXML(doc.asXML().replace(" http://lccn.loc.gov/", "http://lccn.loc.gov/"));
+				Model rdf = rdfStore.loadRDFXML(doc.asXML());
 				initHandler();
 				
 				// Ingest the source file
