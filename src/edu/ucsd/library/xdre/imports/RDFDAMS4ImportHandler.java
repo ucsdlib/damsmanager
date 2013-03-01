@@ -46,8 +46,10 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	private int recordsCount = 0;
 	private int filesCount = 0;
 	private int ingestFailedCount = 0;
+	private int derivFailedCount = 0;
 	private StringBuilder ingestFailed = new StringBuilder();
 	private StringBuilder metadataFailed = new StringBuilder();
+	private StringBuilder derivativesFailed = new StringBuilder();
 	
 	/**
 	 * Constructor
@@ -256,6 +258,19 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 												rdf.remove(stmt);
 												rdf.remove(stmts);
 												
+												//Create derivatives for images and documents PDFs
+												if((isImage(fid, use) || isDocument(fid, use)) 
+														&& (use == null || use.endsWith("source") || use.endsWith("service") || use.endsWith("alternate"))){
+													
+													boolean derCreated = damsClient.createDerivatives(oid, cid, fid, null);
+													if(derCreated){
+														logMessage( "Created derivatives for " + fileUrl + " (" + damsClient.getRequestURL() + ").");
+													} else {
+														derivFailedCount++;
+														derivativesFailed.append(damsClient.getRequestURL() + ", \n"); 
+														logError("Failed to created derivatives " + damsClient.getRequestURL() + "(" + srcFileName + "). ");
+													}
+												}
 											}
 										}catch(Exception e){
 											e.printStackTrace();
@@ -474,11 +489,13 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		if(exeResult)
 			exeReport.append("Successful imported objets in " + rdfFiles.length + " metadata files: \n - Total " + recordsCount + " records ingested. \n - Total " + filesCount + " files ingested. ");
 		else {
-			exeReport.append("Import failed (" + failedCount + " of " + rdfFiles.length + " failed): \n ");
+			exeReport.append("Import failed (" + (failedCount>0?failedCount + " of " + rdfFiles.length + " failed; ":"") + (derivFailedCount>0?"Derivatives creation failed for " + derivFailedCount + " files.":"") +"): \n ");
 			if(ingestFailedCount > 0)
 				exeReport.append(" - " + ingestFailedCount + " of " + filesCount + " files failed: \n" + ingestFailed.toString() + " \n");
 			if(metadataFailed.length() > 0)
 				exeReport.append(" - Failed to import the following metadeta records: \n" + metadataFailed.toString());
+			if(derivativesFailed.length() > 0)
+				exeReport.append(" - Failed to create the following derivatives: \n" + derivativesFailed.toString());
 		}
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
