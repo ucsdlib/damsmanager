@@ -182,6 +182,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				Model rdf = rdfStore.loadRDFXML(dams4Rdf);
 				initHandler();
 				
+				Model iRdf = null;
 				for (int j=0; j<items.size()&&!interrupted; j++){
 					graph = new RDFStore();
 					recordsCount++;
@@ -194,14 +195,14 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	
 						for(int k=0; k<objURIs.size(); k++){
 							objURI = objURIs.get(k);
-							rdf = rdfStore.querySubject(objURI.toString());
-							graph.merge(rdf);
+							iRdf = rdfStore.querySubject(objURI.toString());
+							graph.merge(iRdf);
 						}
 						
 						// Update object
 						System.out.println(j + " ingesting record " + subjectId + ":\n" + graph.export(RDFStore.RDFXML_ABBREV_FORMAT) + "\n\n");
 						
-						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), Constants.IMPORT_MODE_ADD);
+						//succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), Constants.IMPORT_MODE_ADD);
 							
 						if(!succeeded){
 							if(metadataFailed.indexOf(currFile) < 0)
