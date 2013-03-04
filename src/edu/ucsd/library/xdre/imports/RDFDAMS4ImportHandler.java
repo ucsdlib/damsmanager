@@ -202,7 +202,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 						// Update object
 						System.out.println(j + " ingesting record " + subjectId + ":\n" + graph.export(RDFStore.RDFXML_ABBREV_FORMAT) + "\n\n");
 						
-						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), Constants.IMPORT_MODE_ADD);
+						//succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), Constants.IMPORT_MODE_ADD);
 							
 						if(!succeeded){
 							if(metadataFailed.indexOf(currFile) < 0)
