@@ -1,6 +1,7 @@
 package edu.ucsd.library.xdre.imports;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.net.URLEncoder;
 import java.util.HashMap;
@@ -43,7 +44,8 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	private String importOption = null;
 	private File[] rdfFiles = null;
 	private String[] filesPaths = null;
-	
+
+	private int objectsCount = 0;
 	private int recordsCount = 0;
 	private int filesCount = 0;
 	private int ingestFailedCount = 0;
@@ -110,10 +112,11 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 					Node parentNode = nUri.getParent();
 					String nName = parentNode.getName();
 					
-					if(!(iUri.startsWith("http") && iUri.indexOf("/ark:/") > 0)){
+					if(iUri.endsWith("/COL") || !(iUri.startsWith("http") && iUri.indexOf("/ark:/") > 0)){
 						// Assign ARK
 						
 						if(nName.endsWith("Object")){
+							objectsCount++;
 							oid = idsMap.get(iUri);
 							// Assign new ARK
 							if(oid == null){
@@ -165,9 +168,12 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 						}
 					}
 				}			
+
+				String dams4Rdf = doc.asXML();
+				logData("dams4_" + rdfFiles[i].getName(),  dams4Rdf);
 				
 				rdfStore = new RDFStore();
-				Model rdf = rdfStore.loadRDFXML(doc.asXML());
+				Model rdf = rdfStore.loadRDFXML(dams4Rdf);
 				initHandler();
 				
 				// Ingest the source file
@@ -324,7 +330,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 						}
 						
 						// Update object
-						log.warn(j + " ingesting record " + subjectId + ":\n" + graph.export(RDFStore.RDFXML_ABBREV_FORMAT) + "\n\n");
+						System.out.println(j + " ingesting record " + subjectId + ":\n" + graph.export(RDFStore.RDFXML_ABBREV_FORMAT) + "\n\n");
 						
 						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), Constants.IMPORT_MODE_ADD);
 							
@@ -368,11 +374,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 					}
 				}
 				
-				PrintWriter writer = new PrintWriter(Constants.TMP_FILE_DIR + "/damsmanager/_" + rdfFiles[i].getName());
-				writer.write(doc.asXML());
-				writer.close();
-				if(i== 1)
-					 break;
+
 			}catch(Exception e){
 				e.printStackTrace();
 				failedCount++;
@@ -420,18 +422,17 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				oid = getNewId();
 				aboutAttr.setText(oid);
 				idsMap.put(nKey, oid);
+				System.out.println("Found new redord " + srcUri + " (" + oid + ": " + field + " -- " + title);
+				
 			}else{
-				Element pNode = record.getParent();
-				pNode.addAttribute("rdf:resource", toDamsUrl(oid));
-				// Record exist. Remove it.
-				record.detach();
-			}
-		}else{
-			// Record exist. Remove it.
-			Element pNode = record.getParent();
-			pNode.addAttribute("rdf:resource", toDamsUrl(oid));
-			record.detach();
+				// Record found. Add linking, remove it.
+				toResourceLinking(oid, record);
+			}			
+		}else{	
+			// Record added. Add linking, remove it.
+			toResourceLinking(oid, record);
 		}
+
 		updateReference(doc, srcUri, oid);
 	}
 	
@@ -445,14 +446,25 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	}
 	
 	/**
+	 * Update record for resource linking
+	 * @param url
+	 * @param node
+	 */
+	public void toResourceLinking(String url, Node record){
+		Element pNode = record.getParent();
+		pNode.addAttribute("rdf:resource", toDamsUrl(url));
+		record.detach();
+	}
+	
+	/**
 	 * Construct the URL with an id.
 	 * @param arkUrl
 	 * @return
 	 */
 	public String toDamsUrl(String arkUrl){
 		if(!arkUrl.startsWith("http")){
-			String arkUrlBase = Constants.DAMS_ARK_URL_BASE;
-			arkUrl = arkUrlBase + (arkUrlBase.endsWith("/")?"":"/") + (arkUrl.indexOf('/')>0?arkUrl:Constants.ARK_ORG+ "/" + arkUrl);
+			String arkUrlBase = "http://library.ucsd.edu/ark:";//Constants.DAMS_ARK_URL_BASE;
+			arkUrl = arkUrlBase + (arkUrlBase.endsWith("/")?"":"/") + (arkUrl.indexOf('/')>0?arkUrl:"20775/" + arkUrl);
 		}
 		return arkUrl;
 	}
@@ -465,6 +477,19 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				nRes.setText(oid);
 				//System.out.println("Res Node: " + nRes.getParent().asXML());
 			}
+		}
+	}
+	
+	public void logData(String fileName, String content) throws FileNotFoundException{
+		File file = new File(Constants.TMP_FILE_DIR + "/damsmanager");
+		if(!file.exists())
+			file.mkdir();
+		PrintWriter writer = null;
+		try{
+			writer = new PrintWriter(file.getAbsoluteFile() + "/" + fileName);
+			writer.write(content);
+		}finally{
+			close(writer);
 		}
 	}
 	
@@ -494,9 +519,9 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	 */
 	public String getExeInfo() {
 		if(exeResult)
-			exeReport.append("Successful imported objets in " + rdfFiles.length + " metadata files: \n - Total " + recordsCount + " records ingested. \n - Total " + filesCount + " files ingested. ");
+			exeReport.append("Successful imported " + objectsCount + " objets in " + rdfFiles.length + " metadata files: \n - Total " + recordsCount + " records ingested. \n - Total " + filesCount + " files ingested. ");
 		else {
-			exeReport.append("Import failed (" + (failedCount>0?failedCount + " of " + rdfFiles.length + " failed; ":"") + (derivFailedCount>0?"Derivatives creation failed for " + derivFailedCount + " files.":"") +"): \n ");
+			exeReport.append("Import failed ( found " +  objectsCount + " objets; Total " + recordsCount + " records" + (failedCount>0?"; " + failedCount + " of " + rdfFiles.length + " failed":"") + (derivFailedCount>0?"; Derivatives creation failed for " + derivFailedCount + " files.":"") +"): \n ");
 			if(ingestFailedCount > 0)
 				exeReport.append(" - " + ingestFailedCount + " of " + filesCount + " files failed: \n" + ingestFailed.toString() + " \n");
 			if(metadataFailed.length() > 0)
