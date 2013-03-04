@@ -4,8 +4,10 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
@@ -384,6 +386,36 @@ public class DFile {
 		else if(prop.equals(STATUS))
 			status = value;
 		}
+	}
+	
+	/**
+	 * Construct a key/value map for the properties.
+	 * @return
+	 */
+	public Map<String, String> toProperties(){
+		Map<String, String> props = new HashMap<String, String>();
+		props.put(ID, id);
+		props.put(OBJECT, object);
+		props.put(USE, use);
+		props.put(SOURCE_FILE_NAME, sourceFileName);
+		props.put(SOURCE_PATH, sourcePath);
+		props.put(DATE_CREATED, dateCreated);
+		props.put(SIZE, size);
+		props.put(FORMAT_NAME, formatName);
+		props.put(FORMAT_VERSION, formatVersion);
+		props.put(MIME_TYPE, mimeType);
+		props.put(QUALITY, quality);
+		props.put(CRC32CHECKSUM, crc32checksum);
+		props.put(MD5CHECKSUM, md5checksum);
+		props.put(SHA1CHECKSUM, sha1checksum);
+		props.put(SHA256CHECKSUM, sha256checksum);
+		props.put(SHA512CHECKSUM, sha512checksum);
+		props.put(COMPOSITION_LEVEL, compositionLevel);
+		props.put(OBJECT_CATEGORY, objectCategory);
+		props.put(PRESERVATION_LEVEL, preservationLevel);
+		props.put(DURATION, duration);
+		props.put(STATUS, status);
+		return props;
 	}
 	
 	/**
