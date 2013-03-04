@@ -247,8 +247,6 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				if(importOption.equalsIgnoreCase("metadataAndFiles")){
 					uploadFiles(rdf, currFile);
 				}
-				
-
 			}catch(Exception e){
 				e.printStackTrace();
 				failedCount++;
