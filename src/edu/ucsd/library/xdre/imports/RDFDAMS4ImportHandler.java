@@ -159,6 +159,11 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 								field = "value_tesim";
 								xPath = "rdf:value";
 								tNode = parentNode.selectSingleNode(xPath);
+								if(tNode == null){
+									field = "code_tesim";
+									xPath = "dams:code";
+									tNode = parentNode.selectSingleNode(xPath);
+								}
 	
 							}
 							if(tNode == null){
