@@ -29,6 +29,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 	protected int failedCount = 0;
 	protected int masterTotal = 0;
 	protected int filesTotal = 0;
+	protected int ingestedCount = 0;
 	protected int ingestFailedCount = 0;
 	protected int derivFailedCount = 0;
 	protected StringBuilder missingObjects = new StringBuilder();
@@ -95,13 +96,16 @@ public class FileCountValidaionHandler extends CollectionHandler{
 		
 		String subjectId = null;
 		String fileId = null;
-		String fName = null;
 		DamsURI damsURI = null;
 		String use = null;
+		String oid = null;
+		String cid = null;
+		String fid = null;
 		for(int i=0; i<itemsCount; i++){
 
 			boolean masterExists = false;
 			boolean missing = false;
+			boolean duplicated = false;
 			count++;
 			subjectId = items.get(i);
 			try{
@@ -117,24 +121,20 @@ public class FileCountValidaionHandler extends CollectionHandler{
 					// Check file existence
 					fileId = dFile.getId();
 					damsURI = DamsURI.toParts(fileId, subjectId);
-					fName = damsURI.getFileName();
-					if(!damsClient.exists(damsURI.getObject(), damsURI.getComponent(), fName)){
-						if(!ingestFile){
-							missingFilesCount++;
-							missing = true;
-							missingFiles.append(fileId + "\t" + (missingFilesCount%10==0?"\n":""));
-							logError("File " + fileId + " doesn't exists.");
-						}else{
-							// Ingest the file from staging or from the original source path
-							// Count it as missing when ingest failed.
-							missing = !ingestFile(dFile);
-						}
-					}
+					oid = damsURI.getObject();
+					cid = damsURI.getComponent();
+					fid = damsURI.getFileName();
 					// Check source and alternate master files 
-					if(fName.endsWith("1") || fName.startsWith("1.") || use.endsWith(Constants.SOURCE) 
+					if(fid.endsWith("1") || fid.startsWith("1.") || use.endsWith(Constants.SOURCE) 
 							|| (use.endsWith(Constants.SERVICE) && !use.startsWith(Constants.IMAGE)) || use.endsWith(Constants.ALTERNATE)){
 						masterTotal++;
 						masterExists = true;
+						
+						// Ingest the file from staging or from the original source path
+						// Count it as missing when ingest failed.
+						if(!damsClient.exists(oid, cid, fid))
+							ingestFile(dFile);
+						
 						List<DamsURI> duFiles = DAMSClient.getFiles(filesDoc, null, dFile.getSourceFileName());
 						if((duSize=duFiles.size()) > 1){
 							String[] checksums = new String[duSize];
@@ -143,25 +143,32 @@ public class FileCountValidaionHandler extends CollectionHandler{
 							}
 							
 							// Check checksums for duplication
-							boolean duplicated = false;
+							boolean du = false;
 							String duItems = "";
 							for(int j=0; j<duSize; j++){
 								for(int k=j+1; k<duSize; k++){
 									if(checksums[j].equals(checksums[k]) && duplicatedFiles.indexOf(duFiles.get(j).toString())<0){
 										duItems += duFiles.get(j) + ", " + duFiles.get(k) + ", ";
-										duplicated = true;
+										du = true;
 									}
 								}
 							}
-							if(duplicated){
-								failedCount++;
+							if(du){
+								duplicated = true;;
 								duplicatedFiles.append(duItems.substring(0, duItems.length()-2) + "\n");
 								logError("Duplicated files found: " + duItems);
 							}
 						}
 					}
+					
+					if(!damsClient.exists(oid, cid, fid)){
+						missingFilesCount++;
+						missing = true;
+						missingFiles.append(fileId + "\t" + (missingFilesCount%10==0?"\n":""));
+						logError("File " + fileId + " doesn't exists.");
+					}
 				}
-				if(!masterExists || missing){
+				if(!masterExists || missing || duplicated){
 					failedCount++;
 					if(!masterExists){
 						missingObjectsCount++;
@@ -254,6 +261,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 							ingestFails.append(fileUrl + " (" + tmpFile + "), \n");
 							logError("Error ingesting file " + fileUrl  + " (" + tmpFile + ").");
 						}else{
+							ingestedCount++;
 							message = "Ingested file " + fileUrl + " (" + tmpFile + "). ";
 							log.info(message);
 							logMessage(message);
@@ -294,13 +302,14 @@ public class FileCountValidaionHandler extends CollectionHandler{
 	public String getExeInfo() {
 		String missingObjectsMessage = " object" + (missingObjectsCount>1?"s have ":" has ") + " no master files";
 		String missingFilesMessage = " file" + (missingFilesCount>1?"s are ":" is ") + " missing from " + damsClient.getFileStore();
+		String ingestedMessage = " file" + (ingestedCount>1?"s are ":" is ") + " ingested";
 		String ingestFailedMessage = " file" + (ingestFailedCount>1?"s are ":" is ") + " failed to be ingested";
 		String derivFailedMessage = " file" + (derivFailedCount>1?"s are ":" is ") + " failed for derivatives creation";
 		if(exeResult)
-			exeReport.append("File count validation succeeded. \n ");
+			exeReport.append("File count validation succeeded: \n");
 		else
-			exeReport.append("File count validation (" + failedCount + " of " + masterTotal + " failed for validation" + (missingObjectsCount>0?"; " + missingObjectsCount + missingObjectsMessage:"") + (missingFilesCount>0?"; " + missingFilesCount + missingFilesMessage:"") + (ingestFailedCount>0?"; " + ingestFailedCount + ingestFailedMessage:"") + (derivFailedCount>0?"; " + derivFailedCount + derivFailedMessage:"") + "): \n ");	
-		exeReport.append("Total files found " + filesTotal + ". \nNumber of objects found " + itemsCount + ". \nNumber of objects processed " + count  + ". \nNumber of source, service and alternate files " + masterTotal + ".\n");
+			exeReport.append("File count validation (" + failedCount + " of " + itemsCount + " objects failed for validation" + (missingObjectsCount>0?"; " + missingObjectsCount + missingObjectsMessage:"") + (missingFilesCount>0?"; " + missingFilesCount + missingFilesMessage:"") + (ingestFailedCount>0?"; " + ingestFailedCount + ingestFailedMessage:"") + (derivFailedCount>0?"; " + derivFailedCount + derivFailedMessage:"") + "): \n");	
+		exeReport.append("Total files found " + filesTotal + ". \nNumber of objects found " + itemsCount + ". \nNumber of objects processed " + count  + ". \nNumber of source, service and alternate files " + masterTotal + ".\n" + (ingestedCount > 0?ingestedCount+ingestedMessage+".\n":""));
 		if(duplicatedFiles.length() > 0)
 			exeReport.append("\nThe following files are duplicated: \n" + duplicatedFiles.toString());
 		
