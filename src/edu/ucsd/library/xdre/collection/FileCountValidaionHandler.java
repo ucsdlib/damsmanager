@@ -126,7 +126,8 @@ public class FileCountValidaionHandler extends CollectionHandler{
 							logError("File " + fileId + " doesn't exists.");
 						}else{
 							// Ingest the file from staging or from the original source path
-							ingestFile(dFile);
+							// Count it as missing when ingest failed.
+							missing = !ingestFile(dFile);
 						}
 					}
 					// Check source and alternate master files 
@@ -227,6 +228,8 @@ public class FileCountValidaionHandler extends CollectionHandler{
 				// Retrieve the file locally
 				srcFile = filesMap.get(fName);
 				if(srcFile == null){
+					ingestFailedCount++;
+					ingestFails.append(fileUrl + " (" + (srcPath==null?"":srcPath+"/"+fName) + "), \n");
 					logError("Source file for " + srcFileName + " doesn't exist. Please choose a valid file location from the staging area.");
 				}else{
 					// Ingest the file
@@ -291,13 +294,13 @@ public class FileCountValidaionHandler extends CollectionHandler{
 	public String getExeInfo() {
 		String missingObjectsMessage = " object" + (missingObjectsCount>1?"s have ":" has ") + " no master files";
 		String missingFilesMessage = " file" + (missingFilesCount>1?"s are ":" is ") + " missing from " + damsClient.getFileStore();
-		String ingestFailedMessage = " file" + (missingFilesCount>1?"s are ":" is ") + " failed to be ingested";
-		String derivFailedMessage = " file" + (missingFilesCount>1?"s are ":" is ") + " failed for derivatives creation";
+		String ingestFailedMessage = " file" + (ingestFailedCount>1?"s are ":" is ") + " failed to be ingested";
+		String derivFailedMessage = " file" + (derivFailedCount>1?"s are ":" is ") + " failed for derivatives creation";
 		if(exeResult)
 			exeReport.append("File count validation succeeded. \n ");
 		else
-			exeReport.append("File count validation (" + failedCount + " of " + masterTotal + " failed" + (missingObjectsCount>0?"; " + missingObjectsCount + missingObjectsMessage:"") + (missingFilesCount>0?"; " + missingFilesCount + missingFilesMessage:"") + (ingestFailedCount>0?"; " + ingestFailedCount + ingestFailedMessage:"") + (derivFailedCount>0?"; " + derivFailedCount + derivFailedMessage:"") + "): \n ");	
-		exeReport.append("Total files found " + filesTotal + ". \nNumber of objects found " + itemsCount + ". \nNumber of objects processed " + count  + ". \nNumber of source, serice and alternate master files detected " + masterTotal + ".\n");
+			exeReport.append("File count validation (" + failedCount + " of " + masterTotal + " failed for validation" + (missingObjectsCount>0?"; " + missingObjectsCount + missingObjectsMessage:"") + (missingFilesCount>0?"; " + missingFilesCount + missingFilesMessage:"") + (ingestFailedCount>0?"; " + ingestFailedCount + ingestFailedMessage:"") + (derivFailedCount>0?"; " + derivFailedCount + derivFailedMessage:"") + "): \n ");	
+		exeReport.append("Total files found " + filesTotal + ". \nNumber of objects found " + itemsCount + ". \nNumber of objects processed " + count  + ". \nNumber of source, service and alternate files " + masterTotal + ".\n");
 		if(duplicatedFiles.length() > 0)
 			exeReport.append("\nThe following files are duplicated: \n" + duplicatedFiles.toString());
 		
@@ -308,10 +311,10 @@ public class FileCountValidaionHandler extends CollectionHandler{
 			exeReport.append("\nThe following " + missingFilesMessage + " : \n" + missingFiles.toString() );
 		
 		if(ingestFails.length() > 0)
-			exeReport.append("\nThe following " + ingestFailedMessage + " : \n" + missingObjects.toString() );
+			exeReport.append("\nThe following " + ingestFailedMessage + " : \n" + ingestFails.toString() );
 		
 		if(derivFails.length() > 0)
-			exeReport.append("\nThe following " + derivFailedMessage + " : \n" + missingFiles.toString() );
+			exeReport.append("\nThe following " + derivFailedMessage + " : \n" + derivFails.toString() );
 		
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
