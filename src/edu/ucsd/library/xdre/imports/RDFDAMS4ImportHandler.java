@@ -188,13 +188,14 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				initHandler();
 				
 				Model iRdf = null;
-				for (int j=0; j<items.size()&&!interrupted; j++){
+				int iLen = items.size();
+				for (int j=0; j<iLen&&!interrupted; j++){
 					graph = new RDFStore();
 					recordsCount++;
 					// Add subject
 					subjectId = items.get(j);
 					try{
-						setStatus("Processing metadata for subject " + subjectId  + " (" + (i+1) + " of " + fLen + ") ... " ); 
+						setStatus("Processing metadata for subject " + subjectId  + " (" + (j+1) + " of " + iLen + " in file " + currFile + ") ... " ); 
 						boolean succeeded = false;
 						objURIs = objects.get(subjectId);
 	
@@ -213,11 +214,11 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							if(metadataFailed.indexOf(currFile) < 0)
 								failedCount++;
 							metadataFailed.append(subjectId + " (" + currFile + "), \n");
-							message = "Metadata import for subject " + subjectId  + " failed (" + (i+1) + " of " + fLen + ").";
+							message = "Metadata import for subject " + subjectId  + " failed (" + (j+1) + " of " + iLen + ") in file " + currFile + ".";
 							setStatus( message ); 
 							logError(message + "\n Error RDF: \n" + graph.export(RDFStore.RDFXML_ABBREV_FORMAT));
 						}else{
-							message = "Metadata import for subject " + subjectId  + " succeeded (" + (i+1) + " of " + fLen + "). ";
+							message = "Metadata import for subject " + subjectId  + " succeeded (" + (j+1) + " of " + iLen + ") in file " + currFile + ". ";
 							setStatus(message); 
 							logMessage(message);
 							log.warn(message);
