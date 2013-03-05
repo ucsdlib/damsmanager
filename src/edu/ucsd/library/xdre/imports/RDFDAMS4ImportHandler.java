@@ -200,7 +200,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 						}
 						
 						// Update object
-						System.out.println(j + " ingesting record " + subjectId + ":\n" + graph.export(RDFStore.RDFXML_ABBREV_FORMAT) + "\n\n");
+						log.info(j + " ingesting record " + subjectId + ":\n" + graph.export(RDFStore.RDFXML_ABBREV_FORMAT) + "\n\n");
 						
 						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), Constants.IMPORT_MODE_ADD);
 							
@@ -427,7 +427,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				oid = getNewId();
 				aboutAttr.setText(oid);
 				idsMap.put(nKey, oid);
-				System.out.println("Found new redord " + srcUri + " (" + oid + ": " + field + " -- " + title);
+				log.info("Found new redord " + srcUri + " (" + oid + ": " + field + " -- " + title);
 				
 			}else{
 				// Record found. Add linking, remove it.

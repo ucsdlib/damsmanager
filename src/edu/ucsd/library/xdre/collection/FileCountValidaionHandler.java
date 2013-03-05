@@ -10,8 +10,6 @@ import org.apache.log4j.Logger;
 import org.dom4j.Document;
 import org.dom4j.Node;
 
-import com.hp.hpl.jena.rdf.model.Statement;
-
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.DFile;
@@ -107,7 +105,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 			count++;
 			subjectId = items.get(i);
 			try{
-				setStatus("Processing file count validation for subject " + subjectId  + " (" + (i+1) + " of " + itemsCount + ") ... " ); 
+				setStatus("Processing file count validation for object " + subjectId  + " (" + (i+1) + " of " + itemsCount + ") ... " ); 
 				DFile dFile = null;
 				int duSize = 0;
 				List<DFile> files = damsClient.listObjectFiles(subjectId);
@@ -181,7 +179,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 				Thread.sleep(10);
 			} catch (InterruptedException e1) {
 				failedCount++;
-    			logError("File count validation interrupted for subject " + subjectId  + ". Error: " + e1.getMessage() + ".");
+    			logError("File count validation canceled on object " + subjectId  + ".");
 				setStatus("Canceled");
 				clearSession();
 				break;
@@ -229,7 +227,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 				// Retrieve the file locally
 				srcFile = filesMap.get(fName);
 				if(srcFile == null){
-					logError("Source file for " + srcFileName + " doesn't exist. Please choose a correct stage file location.");
+					logError("Source file for " + srcFileName + " doesn't exist. Please choose a valid file location from the staging area.");
 				}else{
 					// Ingest the file
 					DamsURI dURI = null;
