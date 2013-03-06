@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,14 +46,18 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	private File[] rdfFiles = null;
 	private String[] filesPaths = null;
 
-	private int objectsCount = 0;
+	//private int objectsCount = 0;
 	private int recordsCount = 0;
 	private int filesCount = 0;
 	private int ingestFailedCount = 0;
 	private int derivFailedCount = 0;
+	private int solrFailedCount = 0;
+	private List<String> objRecords = new ArrayList<String>();
+	private List<String> objWithFiles = new ArrayList<String>();
 	private StringBuilder ingestFailed = new StringBuilder();
 	private StringBuilder metadataFailed = new StringBuilder();
 	private StringBuilder derivativesFailed = new StringBuilder();
+	private StringBuilder solrFailed = new StringBuilder();
 	
 	/**
 	 * Constructor
@@ -116,7 +121,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 						// Assign ARK
 						
 						if(nName.endsWith("Object")){
-							objectsCount++;
+							//objectsCount++;
 							oid = idsMap.get(iUri);
 							// Assign new ARK
 							if(oid == null){
@@ -126,7 +131,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							nUri.setText(oid);
 							
 							updateReference(doc, iUri, oid);
-							
+							objRecords.add(oid);
 						} else if (nName.endsWith("Component") || nName.endsWith("File")){
 							damsURI = DamsURI.toParts(iUri, null);
 							srcId = damsURI.getObject();
@@ -222,6 +227,9 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							setStatus(message); 
 							logMessage(message);
 							log.warn(message);
+							
+							// Update SOLR foe records ingested.
+							updateSOLR(subjectId, currFile);
 						}
 					
 					} catch (Exception e) {
@@ -254,12 +262,19 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				if(importOption.equalsIgnoreCase("metadataAndFiles")){
 					uploadFiles(rdf, currFile);
 				}
+
 			}catch(Exception e){
 				e.printStackTrace();
 				failedCount++;
 				message = "Import failed for " + currFile + ": " + e.getMessage();
 				setStatus( message  + " (" +(i+1)+ " of " + fLen + ")");
 				logError(message);
+			}finally{
+				// Update SOLR for files uploaded
+				int iLen = objWithFiles.size();
+				for (int j=0; j<iLen&&!interrupted; j++){
+					updateSOLR(objWithFiles.get(j), currFile);
+				}
 			}
 			
 			setProgressPercentage( ((i + 1) * 100) / fLen);
@@ -365,6 +380,10 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 									message = "Ingested file " + fileUrl + " (" + tmpFile + ") in " + srcName + ". ";
 									log.info(message);
 									logMessage(message);
+									
+									// Add for SOLR update
+									if(objWithFiles.indexOf(oid) < 0)
+										objWithFiles.add(oid);
 									// Remove the hasFile property from the record which was ingested during file ingestion.
 									//rdf.remove(stmt);
 									//rdf.remove(stmts);
@@ -408,6 +427,41 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				clearSession();
 				logError(message);
 			}
+		}
+	}
+	
+	/**
+	 * Update SOLR
+	 * @param oid
+	 * @param srcFile
+	 */
+	private void updateSOLR(String oid, String srcFile){
+		String message = "";
+		try{
+			setStatus("SOLR update for object " + oid  + " in file " + srcFile + " ... " );
+			boolean succeeded = solrIndex(oid);
+			if(!succeeded){
+				solrFailedCount++;
+				if(metadataFailed.indexOf(srcFile) < 0 && solrFailed.indexOf(srcFile) < 0)
+					failedCount++;
+				solrFailed.append(oid + " (" + srcFile + "), \n");
+				message = "SOLR update for object " + oid  + " failed in file " + srcFile + ".";
+				setStatus( message ); 
+			}else{
+				message = "SOLR update for object " + oid  + " succeeded in file " + srcFile + ". ";
+				setStatus(message); 
+				logMessage(message);
+				log.info(message);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			solrFailedCount++;
+			if(metadataFailed.indexOf(srcFile) < 0 && solrFailed.indexOf(srcFile) < 0)
+				failedCount++;
+			solrFailed.append(oid + " (" + srcFile + "), \n");
+			message = "SOLR update failed: " + e.getMessage();
+			setStatus(message); 
+			logError(message);
 		}
 	}
 
@@ -526,16 +580,19 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	 * Execution result message
 	 */
 	public String getExeInfo() {
+		int objectsCount = objRecords.size();
 		if(exeResult)
 			exeReport.append("Successful imported " + objectsCount + " objets in " + rdfFiles.length + " metadata files: \n - Total " + recordsCount + " records ingested. \n - Total " + filesCount + " files ingested. ");
 		else {
-			exeReport.append("Import failed ( found " +  objectsCount + " objets; Total " + recordsCount + " records" + (failedCount>0?"; " + failedCount + " of " + rdfFiles.length + " failed":"") + (derivFailedCount>0?"; Derivatives creation failed for " + derivFailedCount + " files.":"") +"): \n ");
+			exeReport.append("Import failed ( found " +  objectsCount + " objets; Total " + recordsCount + " records" + (failedCount>0?"; " + failedCount + " of " + rdfFiles.length + " failed":"") + (derivFailedCount>0?"; Derivatives creation failed for " + derivFailedCount + " files.":"") + (solrFailedCount>0?"; SOLR update failed for " + solrFailedCount + " records.":"") +"): \n ");
 			if(ingestFailedCount > 0)
 				exeReport.append(" - " + ingestFailedCount + " of " + filesCount + " files failed: \n" + ingestFailed.toString() + " \n");
 			if(metadataFailed.length() > 0)
 				exeReport.append(" - Failed to import the following metadeta records: \n" + metadataFailed.toString());
 			if(derivativesFailed.length() > 0)
 				exeReport.append(" - Failed to create the following derivatives: \n" + derivativesFailed.toString());
+			if(solrFailed.length() > 0)
+				exeReport.append(" - Failed to update SOLR for the following records: \n" + solrFailed.toString());
 		}
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
