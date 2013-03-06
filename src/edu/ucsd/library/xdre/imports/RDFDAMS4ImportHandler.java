@@ -193,14 +193,14 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				initHandler();
 				
 				Model iRdf = null;
-				int iLen = items.size();
-				for (int j=0; j<iLen&&!interrupted; j++){
+				int jLen = items.size();
+				for (int j=0; j<jLen&&!interrupted; j++){
 					graph = new RDFStore();
 					recordsCount++;
 					// Add subject
 					subjectId = items.get(j);
 					try{
-						setStatus("Processing metadata for record " + subjectId  + " (" + (j+1) + " of " + iLen + " in file " + currFile + ") ... " ); 
+						setStatus("Processing metadata for record " + subjectId  + " (" + (j+1) + " of " + jLen + ") in file " + currFile + " ... " ); 
 						boolean succeeded = false;
 						objURIs = objects.get(subjectId);
 	
@@ -211,7 +211,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 						}
 						
 						// Update object
-						log.info(j + " ingesting record " + subjectId + ":\n" + graph.export(RDFStore.RDFXML_ABBREV_FORMAT) + "\n\n");
+						//log.info(j + " ingesting record " + subjectId + ":\n" + graph.export(RDFStore.RDFXML_ABBREV_FORMAT) + "\n\n");
 						
 						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), Constants.IMPORT_MODE_ADD);
 							
@@ -219,14 +219,14 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							if(metadataFailed.indexOf(currFile) < 0)
 								failedCount++;
 							metadataFailed.append(subjectId + " (" + currFile + "), \n");
-							message = "Metadata import for record " + subjectId  + " failed (" + (j+1) + " of " + iLen + ") in file " + currFile + ".";
+							message = "Metadata import for record " + subjectId  + " failed (" + (j+1) + " of " + jLen + ") in file " + currFile + ".";
 							setStatus( message ); 
 							logError(message + "\n Error RDF: \n" + graph.export(RDFStore.RDFXML_ABBREV_FORMAT));
 						}else{
-							message = "Metadata import for record " + subjectId  + " succeeded (" + (j+1) + " of " + iLen + ") in file " + currFile + ". ";
+							message = "Metadata import for record " + subjectId  + " succeeded (" + (j+1) + " of " + jLen + ") in file " + currFile + ". ";
 							setStatus(message); 
 							logMessage(message);
-							log.warn(message);
+							log.info(message);
 							
 							// Update SOLR foe records ingested.
 							updateSOLR(subjectId, currFile);
@@ -238,7 +238,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							failedCount++;
 						metadataFailed.append(subjectId + " (" + currFile + "), \n");
 						message = "Metadata import failed: " + e.getMessage();
-						setStatus( message  + " (" +(i+1)+ " of " + fLen + ")"); 
+						setStatus( message  + " (" +(j+1)+ " of " + jLen + ") in file " + currFile + "."); 
 						logError(message);
 					}
 					
@@ -265,7 +265,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				e.printStackTrace();
 				failedCount++;
 				message = "Import failed for " + currFile + ": " + e.getMessage();
-				setStatus( message  + " (" +(i+1)+ " of " + fLen + ")");
+				setStatus( message  + " (" +(i+1)+ " of " + fLen + ").");
 				logError(message);
 			}finally{
 				// Update SOLR for files uploaded
@@ -283,7 +283,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				e.printStackTrace();
 				interrupted = true;
 				failedCount++;
-				message = "Import interrupted for oject file " + currFile + ". \n Error: " + e.getMessage() + "\n";
+				message = "Import interrupted for oject in " + currFile + ". \n Error: " + e.getMessage() + "\n";
 				setStatus("Canceled");
 				clearSession();
 				logError(message);
