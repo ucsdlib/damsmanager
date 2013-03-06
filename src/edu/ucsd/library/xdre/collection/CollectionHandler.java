@@ -77,6 +77,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 	protected Map<String, String> collectionsMap = null;
 	protected Map<String, String> unitsMap = null;
 	protected int itemsCount = 0; //Total number of items in the collection/batch
+	protected List<String> solrFailed = new ArrayList<String>();
 
 	/**
 	 * Empty constructor
@@ -631,6 +632,51 @@ public abstract class CollectionHandler implements ProcessHandler {
 	 */
 	public boolean solrDelete(String oid) throws Exception{
 		return damsClient.solrDelete(oid);
+	}
+	
+	/**
+	 * Update SOLR with logging.
+	 * @param oid
+	 */
+	protected void updateSOLR(String oid){
+		String message = "";
+		try{
+			setStatus("SOLR update for record " + oid  + " ... " );
+			boolean succeeded = solrIndex(oid);
+			if(!succeeded){
+				solrFailed.add(oid);
+				message = "SOLR update for object " + oid  + " failed.";
+				setStatus( message ); 
+			}else{
+				message = "SOLR update for object " + oid  + " succeeded. ";
+				setStatus(message); 
+				logMessage(message);
+				log.info(message);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			solrFailed.add(oid);
+			message = "SOLR update failed for " + oid + ": " + e.getMessage();
+			setStatus(message); 
+			logError(message);
+		}
+	}
+	
+	/**
+	 * Generate error message for SOLR update. 
+	 * @return
+	 */
+	protected String getSOLRReport(){
+		StringBuilder builder = new StringBuilder();
+		int iLen = solrFailed.size();
+		if(iLen > 0){
+			builder.append("SOLR update for the following record" + (iLen>1?"s":"") + " failed: \n");
+			for(int i=0; i<iLen; i++){
+				builder.append(solrFailed.get(i) + ", \n");
+			}
+		}
+		
+		return builder.toString();
 	}
 	
 	/**
