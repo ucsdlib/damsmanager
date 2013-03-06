@@ -638,11 +638,12 @@ public abstract class CollectionHandler implements ProcessHandler {
 	 * Update SOLR with logging.
 	 * @param oid
 	 */
-	protected void updateSOLR(String oid){
+	protected boolean updateSOLR(String oid){
 		String message = "";
+		setStatus("SOLR update for record " + oid  + " ... " );
+		boolean succeeded = false;
 		try{
-			setStatus("SOLR update for record " + oid  + " ... " );
-			boolean succeeded = solrIndex(oid);
+			succeeded = solrIndex(oid);
 			if(!succeeded){
 				solrFailed.add(oid);
 				message = "SOLR update for object " + oid  + " failed.";
@@ -660,6 +661,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 			setStatus(message); 
 			logError(message);
 		}
+		return succeeded;
 	}
 	
 	/**
