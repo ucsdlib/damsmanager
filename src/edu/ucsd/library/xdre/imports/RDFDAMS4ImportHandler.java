@@ -229,7 +229,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							log.info(message);
 							
 							// Update SOLR foe records ingested.
-							updateSOLR(subjectId, currFile);
+							updateSOLR(subjectId);
 						}
 					
 					} catch (Exception e) {
@@ -271,7 +271,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				// Update SOLR for files uploaded
 				int iLen = objWithFiles.size();
 				for (int j=0; j<iLen&&!interrupted; j++){
-					updateSOLR(objWithFiles.get(j), currFile);
+					updateSOLR(objWithFiles.get(j));
 				}
 			}
 			
@@ -435,41 +435,6 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 			}
 		}
 	}
-	
-	/**
-	 * Update SOLR
-	 * @param oid
-	 * @param srcFile
-	 */
-	private void updateSOLR(String oid, String srcFile){
-		String message = "";
-		try{
-			setStatus("SOLR update for object " + oid  + " in file " + srcFile + " ... " );
-			boolean succeeded = solrIndex(oid);
-			if(!succeeded){
-				solrFailedCount++;
-				if(metadataFailed.indexOf(srcFile) < 0 && solrFailed.indexOf(srcFile) < 0)
-					failedCount++;
-				solrFailed.append(oid + " (" + srcFile + "), \n");
-				message = "SOLR update for object " + oid  + " failed in file " + srcFile + ".";
-				setStatus( message ); 
-			}else{
-				message = "SOLR update for object " + oid  + " succeeded in file " + srcFile + ". ";
-				setStatus(message); 
-				logMessage(message);
-				log.info(message);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			solrFailedCount++;
-			if(metadataFailed.indexOf(srcFile) < 0 && solrFailed.indexOf(srcFile) < 0)
-				failedCount++;
-			solrFailed.append(oid + " (" + srcFile + "), \n");
-			message = "SOLR update failed: " + e.getMessage();
-			setStatus(message); 
-			logError(message);
-		}
-	}
 
 	/**
 	 * Update the document for DAMS ARK ID
@@ -597,8 +562,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				exeReport.append(" - Failed to import the following metadeta records: \n" + metadataFailed.toString());
 			if(derivativesFailed.length() > 0)
 				exeReport.append(" - Failed to create the following derivatives: \n" + derivativesFailed.toString());
-			if(solrFailed.length() > 0)
-				exeReport.append(" - Failed to update SOLR for the following records: \n" + solrFailed.toString());
+			getSOLRReport();
 		}
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
