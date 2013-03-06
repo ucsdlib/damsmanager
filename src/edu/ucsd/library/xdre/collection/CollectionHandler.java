@@ -614,6 +614,26 @@ public abstract class CollectionHandler implements ProcessHandler {
 	}
 	
 	/**
+	 * Update a record in SOLR 
+	 * @param oid
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean solrIndex(String oid) throws Exception{
+		return damsClient.solrUpdate(oid);
+	}
+	
+	/**
+	 * Remove a record from SOLR
+	 * @param oid
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean solrDelete(String oid) throws Exception{
+		return damsClient.solrDelete(oid);
+	}
+	
+	/**
 	 * List all the files recursively.
 	 * @param file
 	 * @throws Exception 
