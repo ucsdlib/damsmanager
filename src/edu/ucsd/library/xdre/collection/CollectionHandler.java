@@ -646,11 +646,11 @@ public abstract class CollectionHandler implements ProcessHandler {
 			succeeded = solrIndex(oid);
 			if(!succeeded){
 				solrFailed.add(oid);
-				message = "SOLR update for object " + oid  + " failed.";
+				message = "SOLR update failed for object " + oid  + ".";
 				setStatus(message); 
 				logError(message);
 			}else{
-				message = "SOLR update for object " + oid  + " succeeded. ";
+				message = "SOLR update succeeded for object " + oid  + ". ";
 				setStatus(message); 
 				logMessage(message);
 				log.info(message);
@@ -673,7 +673,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 		StringBuilder builder = new StringBuilder();
 		int iLen = solrFailed.size();
 		if(iLen > 0){
-			builder.append("SOLR update for the following record" + (iLen>1?"s":"") + " failed: \n");
+			builder.append("SOLR update failed for the following record" + (iLen>1?"s":"") + ": \n");
 			for(int i=0; i<iLen; i++){
 				builder.append(solrFailed.get(i) + ", \n");
 			}

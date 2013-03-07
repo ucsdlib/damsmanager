@@ -57,7 +57,6 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	private StringBuilder ingestFailed = new StringBuilder();
 	private StringBuilder metadataFailed = new StringBuilder();
 	private StringBuilder derivativesFailed = new StringBuilder();
-	private StringBuilder solrFailed = new StringBuilder();
 	
 	/**
 	 * Constructor
@@ -339,7 +338,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				}
 			}
 			
-			setStatus("Ingesting file " + fileUrl + " (" + srcFileName + ", " + filesCount + " of " + iLen + ") in " + srcName + " ... " );
+			setStatus("Ingesting file " + fileUrl + " (" + srcFileName + ", " + (l+1) + " of " + iLen + ") in " + srcName + " ... " );
 			if(srcFileName!=null) {
 				String fName = srcFileName;
 				File srcFile = null;
@@ -382,9 +381,9 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							if(!ingested){
 								ingestFailedCount++;
 								ingestFailed.append(fileUrl + " (" + tmpFile + "), \n");
-								logError("Error ingesting file " + fileUrl  + " (" + tmpFile + ", " + filesCount + " of " + iLen + ") in " + srcName + ".");
+								logError("Error ingesting file " + fileUrl  + " (" + tmpFile + ", " + (l+1) + " of " + iLen + ") in " + srcName + ".");
 							}else{
-								message = "Ingested file " + fileUrl + " (" + tmpFile + ", " + filesCount + " of " + iLen + ") in " + srcName + ". ";
+								message = "Ingested file " + fileUrl + " (" + tmpFile + ", " + (l+1) + " of " + iLen + ") in " + srcName + ". ";
 								log.info(message);
 								logMessage(message);
 								
@@ -405,7 +404,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 									} else {
 										derivFailedCount++;
 										derivativesFailed.append(damsClient.getRequestURL() + ", \n"); 
-										logError("Failed to created derivatives " + damsClient.getRequestURL() + " (" + tmpFile + ", " + filesCount + " of " + iLen + "). ");
+										logError("Failed to created derivatives " + damsClient.getRequestURL() + " (" + tmpFile + ", " + (l+1) + " of " + iLen + "). ");
 									}
 								}
 							}
@@ -413,14 +412,14 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							e.printStackTrace();
 							ingestFailedCount++;
 							ingestFailed.append(fileUrl + " (" + tmpFile + "), \n");
-							logError("Failed to ingest file " + fileUrl + " (" + tmpFile + ", " + filesCount + " of " + iLen + ") in " + srcName + ": " + e.getMessage());
+							logError("Failed to ingest file " + fileUrl + " (" + tmpFile + ", " + (l+1) + " of " + iLen + ") in " + srcName + ": " + e.getMessage());
 						}
 					}
 				}
 			}else{
 				ingestFailedCount++;
 				ingestFailed.append( fid + ", \n");
-				logError("Missing sourceFileName property for file " + fileUrl + " (" + filesCount + " of " + iLen + ") in " + srcName + ".");
+				logError("Missing sourceFileName property for file " + fileUrl + " (" + (l+1) + " of " + iLen + ") in " + srcName + ".");
 			}	
 			
 			try{
@@ -555,7 +554,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		if(exeResult)
 			exeReport.append("Successful imported " + objectsCount + " objets in " + rdfFiles.length + " metadata files: \n - Total " + recordsCount + " records ingested. \n - Total " + filesCount + " files ingested. ");
 		else {
-			exeReport.append("Import failed ( found " +  objectsCount + " objets; Total " + recordsCount + " records" + (failedCount>0?"; " + failedCount + " of " + rdfFiles.length + " failed":"") + (derivFailedCount>0?"; Derivatives creation failed for " + derivFailedCount + " files.":"") + (solrFailedCount>0?"; SOLR update failed for " + solrFailedCount + " records.":"") +"): \n ");
+			exeReport.append("Import failed ( Found " +  objectsCount + " objets; Total " + recordsCount + " records" + (failedCount>0?"; " + failedCount + " of " + rdfFiles.length + " failed":"") + (derivFailedCount>0?"; Derivatives creation failed for " + derivFailedCount + " files.":"") + (solrFailedCount>0?"; SOLR update failed for " + solrFailedCount + " records.":"") +"): \n ");
 			if(ingestFailedCount > 0)
 				exeReport.append(" - " + ingestFailedCount + " of " + filesCount + " files failed: \n" + ingestFailed.toString() + " \n");
 			if(metadataFailed.length() > 0)
