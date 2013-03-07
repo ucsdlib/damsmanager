@@ -251,17 +251,15 @@ public class MetadataImportHandler extends CollectionHandler{
 					
 				if(!succeeded){
 					failedCount++;
-					exeResult = false;
-					String iMessage = "Metadata import for subject " + subjectId  + " failed ";
+					String iMessage = "Metadata import for record " + subjectId  + " failed ";
 					iMessage += "(" + (i+1) + " of " + itemsCount + "): ";
 					setStatus( iMessage + message.replace("\n", "<br/>")); 
-					log("log", iMessage + message);
-					log.info(iMessage + message);
-				}else{
-					String iMessage = "Metadata import for subject " + subjectId  + " succeeded (" + (i+1) + " of " + itemsCount + "): ";
-					setStatus( iMessage + message.replace("\n", "<br/>")); 
-					log("log", iMessage + message);
-					log.info(iMessage + message);
+					logError(iMessage + message);
+				}else{				
+					// Updated SOLR
+					if(!updateSOLR(subjectId))
+						failedCount++;
+
 				}
 			
 			} catch (Exception e) {
@@ -300,6 +298,9 @@ public class MetadataImportHandler extends CollectionHandler{
 		else
 			exeReport.append("Metadata import failed (" + failedCount + " of " + count + " failed): \n ");	
 		exeReport.append("Total items found " + itemsCount + ". Number of items processed " + count + ".\n");
+		
+		// Add solr report message
+		exeReport.append(getSOLRReport());
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
 		return exeInfo;

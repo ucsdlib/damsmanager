@@ -41,7 +41,6 @@ public class FileIngestionHandler extends CollectionHandler {
 	private String[] fileOrderSuffixes = null;
 	private String[] fileUses = null;
 	private PreferedOrder preferedOrder = null;
-	private String masterContent = "-1";
 
 	private int skipCount = 0;
 	private int loadedCount = 0;
@@ -115,10 +114,10 @@ public class FileIngestionHandler extends CollectionHandler {
 
 		objectsCount = taskOrganizer.getSize();
 
-		String eMessage = taskOrganizer.getMessage();
-		if (eMessage != null && eMessage.length() > 0) {
-			exeReport.append(eMessage);
-			log("log", eMessage + "\n");
+		String message = taskOrganizer.getMessage();
+		if (message != null && message.length() > 0) {
+			exeReport.append(message);
+			log("log", message + "\n");
 		}
 		int objCounter = 0;
 		try {
@@ -224,12 +223,11 @@ public class FileIngestionHandler extends CollectionHandler {
 						
 						List<DamsURI> filesLoaded = fileLoaded(uploadFile.getValue());
 						if(filesLoaded.size() > 1){
-							eMessage = "File " + uploadFile.getValue()
-									+ " was loaded in dams with ";
+							message = "File " + uploadFile.getValue() + " was loaded in dams with ";
 							for(Iterator<DamsURI> it=filesLoaded.iterator();it.hasNext();){
-								eMessage += it.next().toString() + " ";
+								message += it.next().toString() + " ";
 							}
-							logError("File upload failed. " + eMessage);
+							logError("File upload failed. " + message);
 							continue;
 						}
 						
@@ -246,8 +244,7 @@ public class FileIngestionHandler extends CollectionHandler {
 							}
 
 							if(exeResult){
-								String message = "File " + uploadFile.getValue()
-										+ " was ingested into DAMS previously with URI " + subjectURI;
+								message = "File " + uploadFile.getValue() + " was ingested into DAMS previously with URI " + subjectURI;
 								logMessage(message);
 								log.info(message);
 								skipCount++;
@@ -270,6 +267,7 @@ public class FileIngestionHandler extends CollectionHandler {
 				}
 
 				// Ingest the batched content files in turn
+				boolean updateSOLR = false;
 				for (int i = 0; i < batchSize && !interrupted; i++) {
 					uploadHandler = uploadTasks[i];
 
@@ -277,7 +275,7 @@ public class FileIngestionHandler extends CollectionHandler {
 						fileName = uploadHandler.getSourceFile();
 						if (ark == null) {
 							ark = damsClient.mintArk(null);
-							String message = "Assigning ark " + ark
+							message = "Assigning ark " + ark
 									+ " for file " + fileName + " in collection " + collectionTitle
 									+ " (" + (objCounter + 1) + " of " + taskOrganizer.getSize() + ")";
 							log.info(message);
@@ -294,8 +292,8 @@ public class FileIngestionHandler extends CollectionHandler {
 						try {
 							successful = uploadHandler.execute();
 							if (successful) {
-								String message = "Loaded " + damsClient.getRequestURL()
-										+ " for file " + fileName + " successfully. \n";
+								updateSOLR = true;
+								message = "Loaded " + damsClient.getRequestURL() + " for file " + fileName + " successfully. \n";
 								log("log", message);
 								log.info(message);
 								loadedCount++;
@@ -373,7 +371,7 @@ public class FileIngestionHandler extends CollectionHandler {
 							}
 						}
 					}
-					
+
 					try {
 						Thread.sleep(10);
 					} catch (InterruptedException e) {
@@ -383,6 +381,11 @@ public class FileIngestionHandler extends CollectionHandler {
 						clearSession();
 					}
 				}
+				
+				// Updated SOLR
+				if(updateSOLR && !updateSOLR(subjectURI))
+					failedCount++;
+
 				setProgressPercentage(((objCounter + 1) * 100)/ taskOrganizer.getSize());
 
 				objCounter++;
@@ -417,6 +420,8 @@ public class FileIngestionHandler extends CollectionHandler {
 			exeReport.append("Files aborted or failed to be loaded: "
 					+ filesFailed.toString() + "\n");
 		}
+		// Add solr report message
+		exeReport.append(getSOLRReport());
 		exeReport.append("For records, please download the <a href=\""
 				+ Constants.CLUSTER_HOST_NAME
 				+ "/damsmanager/downloadLog.do?log=ingest&category="

@@ -46,94 +46,104 @@ public class DerivativeHandler extends CollectionHandler{
 	 * @throws TripleStoreException 
 	 */
 	public boolean execute() throws Exception{
-	    	String itemLink = null;
-	    	totalFiles = 0;
+    	String itemLink = null;
+    	totalFiles = 0;
 
-			for (int i = 0; i < itemsCount && !interrupted; i++) {        
-		        String subjectId = null;
-		        counter++;
+		for (int i = 0; i < itemsCount && !interrupted; i++) { 
+			boolean updateSOLR = false;
+	        String subjectId = null;
+	        counter++;
 
-	        	subjectId = (String) items.get(i);
-	        	setStatus("Processing derivation for subject " + subjectId  + " (" + (i+1) + " of " + itemsCount + ") ... " ); 
-	        	itemLink = getDDOMReference(subjectId);
-		        List<DFile> dFiles = damsClient.listObjectFiles(subjectId);
-		        DFile dFile = null;
+        	subjectId = (String) items.get(i);
+        	setStatus("Processing derivation for subject " + subjectId  + " (" + (i+1) + " of " + itemsCount + ") ... " ); 
+        	itemLink = getDDOMReference(subjectId);
+	        List<DFile> dFiles = damsClient.listObjectFiles(subjectId);
+	        DFile dFile = null;
 
-		        String[] reqSizes = Constants.DEFAULT_DERIVATIVES.split(",");
-		        if(sizes != null)
-		        	reqSizes = sizes;  	
-		        for(Iterator<DFile> it=dFiles.iterator(); it.hasNext();){
-		        	dFile = it.next();
-		        	String use = dFile.getUse();
-		        	//Check for derivative created for source and service files
-    				String sizs2create = "";
-    				String sizs2replace = "";
-		        	if(use != null && !(use.startsWith("audio") || use.startsWith("data")) && (use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE) || (use.endsWith(Constants.SERVICE) && !use.startsWith(Constants.IMAGE)))){
-			        	totalFiles += 1;
-			        	DamsURI fileURI = DamsURI.toParts(dFile.getId(), dFile.getObject());
-		        		String derId = null;
-		        		for(int j=0; j<reqSizes.length; j++){
-		        			derId = fileURI.toString().replace("/"+fileURI.getFileName(), "/"+reqSizes[j]+".jpg");
-		        			if(!isFileExists(derId, dFiles)){
-		        				sizs2create += reqSizes[j] + ",";
-		        			}else{
-		        				sizs2replace += reqSizes[j] + ",";
-		        			}
-		        		}
-		        		
-		        		int len = sizs2create.length();
-		        		sizs2create = len>0?sizs2create.substring(0, len-1):"";	        		
-		           		len = sizs2replace.length();
-		        		sizs2replace = len>0?sizs2replace.substring(0, len-1):"";
-		        		
-		        		String[] derSize = null;
-		        		// Perform create with POST to DAMS
-		        		if( sizs2create.length() > 0 ){
-		        			derSize = sizs2create.split(",");
-		        			if(reqSizes.length == derSize.length)
-		        				derSize = sizes;
-		        			handleFile(subjectId, fileURI.getComponent(), fileURI.getFileName(), derSize, false, i);
-		        		}else if (!replace)
-		        			skipCount++;
-		        		
-		        		// Replace option. Perform replace with PUT to DAMS for derivatives that were created
-		        		if (replace && sizs2replace.length() > 0){
-		        			derSize = sizs2replace.split(",");
-		        			if(reqSizes.length == sizs2replace.split(",").length)
-		        				derSize = sizes;
-		        			handleFile(subjectId, fileURI.getComponent(), fileURI.getFileName(), derSize, true, i);
-		        		}
-		        	}
-		        }
-	        	//counter++;
-		        setProgressPercentage( ((i + 1) * 100) / itemsCount);
-		        
-	        	try{	        		
-	        		Thread.sleep(10);
-	        	} catch (InterruptedException e1) {
-	        		interrupted = true;
-					logError("Derivative creation canceled on " + itemLink + " ( " + (i + 1) + " of " + itemsCount + ").");
-					setStatus("Canceled");
-					clearSession();
-					break;
-				}
+	        String[] reqSizes = Constants.DEFAULT_DERIVATIVES.split(",");
+	        if(sizes != null)
+	        	reqSizes = sizes;  	
+	        for(Iterator<DFile> it=dFiles.iterator(); it.hasNext();){
+	        	dFile = it.next();
+	        	String use = dFile.getUse();
+	        	//Check for derivative created for source and service files
+				String sizs2create = "";
+				String sizs2replace = "";
+	        	if(use != null && !(use.startsWith("audio") || use.startsWith("data")) && (use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE) || (use.endsWith(Constants.SERVICE) && !use.startsWith(Constants.IMAGE)))){
+		        	totalFiles += 1;
+		        	DamsURI fileURI = DamsURI.toParts(dFile.getId(), dFile.getObject());
+	        		String derId = null;
+	        		for(int j=0; j<reqSizes.length; j++){
+	        			derId = fileURI.toString().replace("/"+fileURI.getFileName(), "/"+reqSizes[j]+".jpg");
+	        			if(!isFileExists(derId, dFiles)){
+	        				sizs2create += reqSizes[j] + ",";
+	        			}else{
+	        				sizs2replace += reqSizes[j] + ",";
+	        			}
+	        		}
+	        		
+	        		int len = sizs2create.length();
+	        		sizs2create = len>0?sizs2create.substring(0, len-1):"";	        		
+	           		len = sizs2replace.length();
+	        		sizs2replace = len>0?sizs2replace.substring(0, len-1):"";
+	        		
+	        		String[] derSize = null;
+	        		// Perform create with POST to DAMS
+	        		if( sizs2create.length() > 0 ){
+	        			derSize = sizs2create.split(",");
+	        			if(reqSizes.length == derSize.length)
+	        				derSize = sizes;
+	        			handleFile(subjectId, fileURI.getComponent(), fileURI.getFileName(), derSize, false, i);
+	        		}else if (!replace)
+	        			skipCount++;
+	        		
+	        		// Replace option. Perform replace with PUT to DAMS for derivatives that were created
+	        		if (replace && sizs2replace.length() > 0){
+	        			derSize = sizs2replace.split(",");
+	        			if(reqSizes.length == sizs2replace.split(",").length)
+	        				derSize = sizes;
+	        			if(handleFile(subjectId, fileURI.getComponent(), fileURI.getFileName(), derSize, true, i))
+	        				updateSOLR = true;
+	        		}
+	        	}
+	        }
+        	
+			// Updated SOLR
+			if(updateSOLR && !updateSOLR(subjectId))
+				failedsCount++;
+			
+	        setProgressPercentage( ((i + 1) * 100) / itemsCount);
+	        
+        	try{	        		
+        		Thread.sleep(10);
+        	} catch (InterruptedException e1) {
+        		interrupted = true;
+				logError("Derivative creation canceled on " + itemLink + " ( " + (i + 1) + " of " + itemsCount + ").");
+				setStatus("Canceled");
+				clearSession();
+				break;
 			}
+		}
 
 		return exeResult;
 	}
 
 	public String getExeInfo() {
-		String message = "Derivatives ";
-			if(exeResult && failedsCount <=0){
-				if(replace)
-					message += " updated ";
-				else
-					message += " created ";
-				message += " for " + collectionTitle + ": " + "created " + createdCount + ", " + (replace?"updated " + updatedCount + ", ":"") + "skit " + skipCount + ", total " + totalFiles + " master files in " + counter + " objects.\n"; 
-			}else{
-				message = "Execution result for derivative creation " 
-					+ " in " + collectionTitle + ": " + "created " + createdCount + ", " + (replace?"updated " + updatedCount  + ", ":"") + "skit " + skipCount + ", failed " + failedsCount + " (Total " + itemsCount +  " items found. " + totalFiles + " master files in " + counter + " objects processed). \n";
-			}
+		exeReport.append("Derivatives ");
+		if(exeResult && failedsCount <=0){
+			if(replace)
+				exeReport.append(" updated ");
+			else
+				exeReport.append(" created ");
+			exeReport.append(" for " + collectionTitle + ": " + "created " + createdCount + ", " + (replace?"updated " + updatedCount + ", ":"") + "skit " + skipCount + ", total " + totalFiles + " master files in " + counter + " objects.\n"); 
+		}else{
+			exeReport.append("Execution result for derivative creation " 
+				+ " in " + collectionTitle + ": " + "created " + createdCount + ", " + (replace?"updated " + updatedCount  + ", ":"") + "skit " + skipCount + ", failed " + failedsCount + " (Total " + itemsCount +  " items found. " + totalFiles + " master files in " + counter + " objects processed). \n");
+		}
+		
+		// Add SOLR report message
+		exeReport.append(getSOLRReport());
+		String message = exeReport.toString();
 		log("log", message);
 		return message;
 	}

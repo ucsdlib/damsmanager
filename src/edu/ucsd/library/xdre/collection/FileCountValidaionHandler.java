@@ -94,6 +94,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 			}
 		}
 		
+		String message = "";
 		String subjectId = null;
 		String fileId = null;
 		DamsURI damsURI = null;
@@ -106,6 +107,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 			boolean masterExists = false;
 			boolean missing = false;
 			boolean duplicated = false;
+			boolean updateSOLR = false;
 			count++;
 			subjectId = items.get(i);
 			try{
@@ -132,8 +134,10 @@ public class FileCountValidaionHandler extends CollectionHandler{
 						
 						// Ingest the file from staging or from the original source path
 						// Count it as missing when ingest failed.
-						if(!damsClient.exists(oid, cid, fid))
-							ingestFile(dFile);
+						if(ingestFile && !damsClient.exists(oid, cid, fid)){
+							if(ingestFile(dFile))
+								updateSOLR = true;
+						}
 						
 						List<DamsURI> duFiles = DAMSClient.getFiles(filesDoc, null, dFile.getSourceFileName());
 						if((duSize=duFiles.size()) > 1){
@@ -181,6 +185,11 @@ public class FileCountValidaionHandler extends CollectionHandler{
 				e.printStackTrace();
 				logError("File count validation failed: " + e.getMessage());
 			}
+			
+			// Updated SOLR
+			if(updateSOLR && !updateSOLR(subjectId))
+				failedCount++;
+
 			setProgressPercentage( ((i + 1) * 100) / itemsCount);
 			
 			try{
@@ -314,17 +323,19 @@ public class FileCountValidaionHandler extends CollectionHandler{
 			exeReport.append("\nThe following files are duplicated: \n" + duplicatedFiles.toString());
 		
 		if(missingObjects.length() > 0)
-			exeReport.append("\nThe following " + missingObjectsMessage + " : \n" + missingObjects.toString() );
+			exeReport.append("\nThe following " + missingObjectsMessage + " : \n" + missingObjects.toString());
 		
 		if(missingFiles.length() > 0)
-			exeReport.append("\nThe following " + missingFilesMessage + " : \n" + missingFiles.toString() );
+			exeReport.append("\nThe following " + missingFilesMessage + " : \n" + missingFiles.toString());
 		
 		if(ingestFails.length() > 0)
-			exeReport.append("\nThe following " + ingestFailedMessage + " : \n" + ingestFails.toString() );
+			exeReport.append("\nThe following " + ingestFailedMessage + " : \n" + ingestFails.toString());
 		
 		if(derivFails.length() > 0)
-			exeReport.append("\nThe following " + derivFailedMessage + " : \n" + derivFails.toString() );
+			exeReport.append("\nThe following " + derivFailedMessage + " : \n" + derivFails.toString());
 		
+		// Add solr report message
+		exeReport.append(getSOLRReport());
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
 		return exeInfo;

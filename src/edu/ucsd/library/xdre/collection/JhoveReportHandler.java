@@ -73,7 +73,7 @@ public class JhoveReportHandler extends CollectionHandler{
 	 */
 	public boolean execute() throws Exception {
 
-		String eMessage;
+		String message;
 		String subjectURI = null;
 		
     	log("log", "ARK_ID\tFormat&Version\tSize(bytes)\tCheckSum_CRC32\tDate_Modified\tDuration\tStatus\tSource_File");
@@ -149,6 +149,11 @@ public class JhoveReportHandler extends CollectionHandler{
 						    		damsClient.updateFileCharacterize(fileURI.getObject(), fileURI.getComponent(), fileURI.getFileName(), optionalParams);
 						    		log("log", dFile.getId() + "\t" + dFileTmp.getFormatName() + " " + dFileTmp.getFormatVersion() + "\t" + dFileTmp.getSize() + "\t" + dFileTmp.getCrc32checksum() + "\t" + dFileTmp.getDateCreated() + "\t" + dFileTmp.getDuration() + "\t" + dFileTmp.getStatus() + "\t" + (oSrcFileName==null?" ":oSrcFileName));
 						    		filesUpdated++;
+						    		
+									// Updated SOLR
+									if(!updateSOLR(subjectURI))
+										failedCount++;
+
 					    		}else{
 					    			filesNotUpdated.append(dFileTmp.getId() + "\t" + dFileTmp.getFormatName() + " " + dFileTmp.getFormatVersion() + "\t" + dFileTmp.getSize() + "\t" + dFileTmp.getCrc32checksum() + "\t" + dFileTmp.getDateCreated() + "\t" + dFileTmp.getDuration() + "\t" + dFileTmp.getStatus() + "\t" + (oSrcFileName==null?" ":oSrcFileName));
 					    		}
@@ -164,10 +169,10 @@ public class JhoveReportHandler extends CollectionHandler{
 				failedCount++;
 				e.printStackTrace();
 				exeResult = false;
-				eMessage = "Jhove report failed: " + e.getMessage();
-				setStatus( eMessage  + "(" +(i+1)+ " of " + itemsCount + ")"); 
-				jhoveErrorReport(subjectURI + "\t \t \t \t \t \tError" + eMessage + "\t ");
-				log.info(eMessage );
+				message = "Jhove report failed: " + e.getMessage();
+				setStatus(message  + "(" +(i+1)+ " of " + itemsCount + ")"); 
+				jhoveErrorReport(subjectURI + "\t \t \t \t \t \tError" + message + "\t ");
+				log.info(message );
 			}
 			setProgressPercentage( ((i + 1) * 100) / itemsCount);
 			
@@ -176,9 +181,9 @@ public class JhoveReportHandler extends CollectionHandler{
 			} catch (InterruptedException e1) {
 				failedCount++;
         		exeResult = false;
-    			eMessage = "Jhove report canceled on subject " + subjectURI  + ".";
-				jhoveErrorReport(subjectURI + "\t \t \t \t \t \tError" + eMessage + "\t ");
-				log.info(eMessage, e1);
+    			message = "Jhove report canceled on subject " + subjectURI  + ".";
+				jhoveErrorReport(subjectURI + "\t \t \t \t \t \tError" + message + "\t ");
+				log.info(message, e1);
 				setStatus("Canceled");
 				clearSession();
 				break;
@@ -226,6 +231,8 @@ public class JhoveReportHandler extends CollectionHandler{
 			log("log", "\n*************************************************************************************************************************************");
 			log("log", filesNotUpdated.toString());
 		}
+		// Add solr report message
+		exeReport.append(getSOLRReport());
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
 		return exeInfo;

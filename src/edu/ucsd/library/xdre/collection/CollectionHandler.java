@@ -647,7 +647,8 @@ public abstract class CollectionHandler implements ProcessHandler {
 			if(!succeeded){
 				solrFailed.add(oid);
 				message = "SOLR update for object " + oid  + " failed.";
-				setStatus( message ); 
+				setStatus(message); 
+				logError(message);
 			}else{
 				message = "SOLR update for object " + oid  + " succeeded. ";
 				setStatus(message); 
