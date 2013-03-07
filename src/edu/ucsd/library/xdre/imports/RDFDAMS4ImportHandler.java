@@ -158,6 +158,11 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 								field = "name_tesim";
 								xPath = "mads:authoritativeLabel";
 								tNode = parentNode.selectSingleNode(xPath);
+							} else if (nName.endsWith("Copyright")){
+								// XXX Copyright records use dams:copyrightStatus 
+								field = "status_tesim";
+								xPath = "dams:copyrightStatus";
+								tNode = parentNode.selectSingleNode(xPath);
 							} else {
 								// Other records like Role, Language etc. use rdf:value
 								field = "value_tesim";
