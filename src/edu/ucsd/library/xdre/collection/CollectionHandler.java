@@ -697,7 +697,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 			if(fMap.get(fName) != null){
 				String message = "Duplicate source file name found: " + file.getAbsoluteFile() + "(" + fMap.get(fName).getAbsolutePath() + ").";
 				// XXX ignore the duplication of validation files and manifest files
-				if((fName.indexOf("validation") >=0 || fName.indexOf("manifest") >= 0) && fName.endsWith(".txt"))
+				if((fName.indexOf("validation") >=0 || fName.indexOf("manifest") >= 0 || fName.startsWith("bagit")) && fName.endsWith(".txt"))
 					log.warn(message);
 				else
 					throw new Exception(message);
