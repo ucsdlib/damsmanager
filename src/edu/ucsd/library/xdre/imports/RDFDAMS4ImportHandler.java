@@ -153,7 +153,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 								field = "title_tesim";
 								xPath = "dams:title/dams:Title/rdf:value";
 								tNode = parentNode.selectSingleNode(xPath);
-							} else if (nName.endsWith("Subject") || nName.endsWith("Name") || nName.endsWith("Topic") || nName.endsWith("GenreForm")){
+							} else if (nName.endsWith("Subject") || nName.endsWith("Name") || nName.endsWith("Topic") || nName.endsWith("GenreForm") || nName.endsWith("Temporal")){
 								// Subject, Authority records use mads:authoritativeLabel
 								field = "name_tesim";
 								xPath = "mads:authoritativeLabel";
@@ -173,7 +173,6 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 									xPath = "dams:code";
 									tNode = parentNode.selectSingleNode(xPath);
 								}
-	
 							}
 							if(tNode == null){
 								throw new Exception("Element " + xPath + " is missing from the " + nName + " record " + iUri + " in file " + currFile + ".");
