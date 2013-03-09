@@ -352,7 +352,16 @@ public class CollectionOperationController implements Controller {
 			
 			 if(i == 0){
 				 session.setAttribute("status", opMessage + "File Count Validation for FileStore " + fileStore + " ...");
+				 boolean ingestFile = getParameter(paramsMap, "ingestFile") != null;
 				 handler = new FileCountValidaionHandler(damsClient, collectionId);
+				 if(ingestFile){
+					 String[] filesPaths = getParameter(paramsMap, "filesLocation").split(";");
+					  List<String> ingestFiles = new ArrayList<String>();
+					  for(int j=0; j<filesPaths.length; j++)
+						  ingestFiles.add(new File(Constants.DAMS_STAGING + "/" + filesPaths[j]).getAbsolutePath());
+					 ((FileCountValidaionHandler)handler).setIngestFile(ingestFile);
+					 ((FileCountValidaionHandler)handler).setFilesPaths(ingestFiles.toArray(new String[ingestFiles.size()]));
+				 }
 			 }else if (i == 1){
 				   session.setAttribute("status", opMessage + "Checksum Validation for FileStore " + fileStore + " ...");
 				   handler = new ChecksumsHandler(damsClient, collectionId, null);
