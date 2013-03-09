@@ -84,10 +84,13 @@
 		    <div id="processesDiv">             
 				<div id="validateButtonDiv" <c:if test="${model.activeButton != 'validateButton'}">style="display:none;"</c:if>>
 				    <div id="fileCountDiv" class="processlayout">
-						<span title="Validate master files for duplicate files, mixed file format, and file count" class="menuText"><input class="pcheckbox" type="checkbox" name="validateFileCount" id="validateFileCount" onClick="checkSelections(this);">
-									<span class="text-special">File Count Validation <c:if test="${model.itemsCount > 0}">(${model.itemsCount} objects)</c:if></span></span><br />  
+						<div title="Validate master files for duplicate files, mixed file format, and file count" class="menuText"><input class="pcheckbox" type="checkbox" name="validateFileCount" id="validateFileCount" onClick="checkSelections(this);">
+							<span class="text-special">File Count Validation <c:if test="${model.itemsCount > 0}">(${model.itemsCount} objects)</c:if></span></div>
+						<div title="Check this checkbox to ingest the file when it's missing." class="specialmenuText"><input type="checkbox" id="ingestFile" name="ingestFile" class="pmcheckbox" onClick="confirmSelection(this, 'ingest the missing files.', 'validateFileCount');">
+							<span class="text-special">Ingest missing files from staging:&nbsp;<input type="text" id="filesLocation" name="filesLocation" size="30" value="">&nbsp;<input type="button" onclick="showFilePicker('filesLocation', event)" value="&nbsp;...&nbsp;"/></span>
+						</div>  
 					</div>
-				    <div id="fileCountDiv" class="processlayout">
+				    <div id="jhoveReportDiv" class="processlayout">
 						<span title="Generate Jhove Report" class="menuText">
 							<input class="pcheckbox" type="checkbox" name="jhoveReport" id="jhoveReport" onClick="checkSelections(this);">
 							<span class="text-special">Jhove Report</span>
