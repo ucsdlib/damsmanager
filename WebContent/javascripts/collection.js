@@ -27,7 +27,8 @@
     
    function submitForm(){
       var formObj = document.mainForm;
-      var collectionIndex = document.mainForm.category.selectedIndex;
+      var filestore = formObj.fs.options[formObj.fs.selectedIndex].text;
+      var collectionIndex = formObj.category.selectedIndex;
       var collectionName = "";
       operations = "";
       
@@ -121,7 +122,7 @@
           operations += "- External Objects Import \n";
        }
      
-      var exeConfirm = confirm("Are you sure you want to perform the following operations on the " + collectionName + " collection? \n" + operations);
+      var exeConfirm = confirm("Are you sure to perform the following operations for " + collectionName + (filestore!=null?" to filestore " + filestore:"") + "? \n" + operations);
        if(!exeConfirm){
            return false;
       }
