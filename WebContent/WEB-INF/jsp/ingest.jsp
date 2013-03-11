@@ -179,8 +179,12 @@
 			<span><select id="category" name="category" onChange="selectCollection(this);" class="inputText" >
 						<option value=""> -- collections -- </option>
 						<c:forEach var="entry" items="${model.categories}">
+							<c:set var="colNameLen"> ${fn:length(entry.key)}</c:set>
 							<option value="${entry.value}" <c:if test="${model.category == entry.value}">selected</c:if>>
-                       			<c:out value="${entry.key}" />
+                       			<c:choose>
+									<c:when test="${colNameLen > 60}"><c:out value="${fn:substring(entry.key, 0, 60)}" /> ...</c:when>
+									<c:otherwise><c:out value="${entry.key}" /></c:otherwise>
+								</c:choose>
                         	</option>
 						</c:forEach>
 					</select>
