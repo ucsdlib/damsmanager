@@ -417,8 +417,8 @@ public class FileIngestionHandler extends CollectionHandler {
 			exeReport.append("Number of files skip: " + skipCount + "\n");
 		if (failedCount > 0) {
 			exeReport.append("Number of files failed: " + failedCount + "\n");
-			exeReport.append("Files aborted or failed to be loaded: "
-					+ filesFailed.toString() + "\n");
+			if(filesFailed.length() > 0)
+				exeReport.append("Files aborted or failed to be loaded: " + filesFailed.toString() + "\n");
 		}
 		// Add solr report message
 		exeReport.append(getSOLRReport());
