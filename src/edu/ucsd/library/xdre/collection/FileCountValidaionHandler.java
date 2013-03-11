@@ -191,7 +191,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 			} catch (Exception e) {
 				failedCount++;
 				e.printStackTrace();
-				logError("File count validation failed: " + e.getMessage());
+				logError("File count validation failed" + (damsURI==null?": ":damsURI+": ") + e.getMessage());
 			}
 			
 			// Updated SOLR
@@ -254,7 +254,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 				if(srcFile == null){
 					ingestFailedCount++;
 					ingestFails.append(fileUrl + " (" + (srcPath==null?"":srcPath+"/"+fName) + "), \n");
-					logError("Source file for " + srcFileName + " doesn't exist. Please choose a valid file location from the staging area.");
+					logError("Source file for " + fileUrl + " (" + srcFileName + ") doesn't exist. Please make sure it's deposited in dams staging.");
 				}else{
 					// Ingest the file
 					DamsURI dURI = null;
