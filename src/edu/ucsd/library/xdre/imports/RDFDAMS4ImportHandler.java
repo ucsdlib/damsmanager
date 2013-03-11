@@ -569,11 +569,13 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 			getSOLRReport();
 		}
 		
-		String key = null;
-		exeReport.append("The following " + objectsCount + " object " + (objectsCount>1?"s":"") + " found in the source metadata: ");
-		for(Iterator<String> it=objRecords.keySet().iterator(); it.hasNext();){
-			key = it.next();
-			exeReport.append(key + " \t" + objRecords.get(key) + "\n");
+		if(objectsCount > 0){
+			String key = null;
+			exeReport.append("The following " + objectsCount + " object " + (objectsCount>1?"s":"") + " found in the source metadata: ");
+			for(Iterator<String> it=objRecords.keySet().iterator(); it.hasNext();){
+				key = it.next();
+				exeReport.append(key + " \t" + objRecords.get(key) + "\n");
+			}
 		}
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
