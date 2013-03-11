@@ -126,9 +126,17 @@ public class FileCountValidaionHandler extends CollectionHandler{
 					oid = damsURI.getObject();
 					cid = damsURI.getComponent();
 					fid = damsURI.getFileName();
+					
+					// Files has no file extension
+					if(fid==null && cid != null){
+						fid = cid;
+						cid = null;
+						damsURI.setFileName(fid);
+						damsURI.setComponent(cid);
+					}
 					// Check source and alternate master files 
-					if(fid.endsWith("1") || fid.startsWith("1.") || use.endsWith(Constants.SOURCE) 
-							|| (use.endsWith(Constants.SERVICE) && !use.startsWith(Constants.IMAGE)) || use.endsWith(Constants.ALTERNATE)){
+					if(fid.endsWith("1") || fid.startsWith("1.") || (use!=null && use.endsWith(Constants.SOURCE) 
+							|| (use.endsWith(Constants.SERVICE) && !use.startsWith(Constants.IMAGE)) || use.endsWith(Constants.ALTERNATE))){
 						masterTotal++;
 						masterExists = true;
 						
@@ -169,7 +177,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 						missingFilesCount++;
 						missing = true;
 						missingFiles.append(fileId + "\t" + (missingFilesCount%10==0?"\n":""));
-						logError("File " + fileId + " doesn't exists.");
+						logError("File " + fileId + " (" + damsClient.getRequestURL() + ") doesn't exists.");
 					}
 				}
 				if(!masterExists || missing || duplicated){
