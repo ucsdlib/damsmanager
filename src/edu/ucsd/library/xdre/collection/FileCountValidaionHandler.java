@@ -254,7 +254,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 				if(srcFile == null){
 					ingestFailedCount++;
 					ingestFails.append(fileUrl + " (" + (srcPath==null?"":srcPath+"/"+fName) + "), \n");
-					logError("Source file for " + fileUrl + " (" + srcFileName + ") doesn't exist. Please make sure it's deposited in dams staging.");
+					logError("Source file for " + fileUrl + " (" + srcFileName + ") doesn't exist. \nPlease make sure the file is deposited in dams staging and the location is selected for ingestion.");
 				}else{
 					// Ingest the file
 					DamsURI dURI = null;
