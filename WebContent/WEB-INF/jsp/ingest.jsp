@@ -131,7 +131,7 @@
 		var unitName = unitOpt.options[unitOpt.selectedIndex].text;
 		var fsOpts = document.mainForm.fs.options;
 		var fsSelected = fsDefault;
-		if(unitName == "rci" || unitName == "RCI")
+		if(unitName == "rci" || unitName == "RCI" || unitName.indexOf("Research Data Curation") == 0)
 			fsSelected = "openStack";
 		for(var i=0; i<fsOpts.length; i++){
 			if(fsOpts[i].value == fsSelected){
