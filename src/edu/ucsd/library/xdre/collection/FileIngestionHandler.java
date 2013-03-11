@@ -383,7 +383,7 @@ public class FileIngestionHandler extends CollectionHandler {
 				}
 				
 				// Updated SOLR
-				if(updateSOLR && !updateSOLR(subjectURI))
+				if(updateSOLR && !updateSOLR(subjectId))
 					failedCount++;
 
 				setProgressPercentage(((objCounter + 1) * 100)/ taskOrganizer.getSize());
