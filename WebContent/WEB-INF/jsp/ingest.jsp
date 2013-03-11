@@ -219,7 +219,7 @@
 			<td height="25px">
 				<span class="submenuText"><b>Staging Area: </b></span>
 				</td><td>
-				<span class="submenuText">
+				<span class="submenuText" title="Enter a filter path for the location to speek up the search. Click on the folder to select/deselect. Multiple loations allowed.">
 					<input type="text" id="filePath" name="filePath" size="45" value="${model.filePath}">&nbsp;<input type="button" onclick="showFilePicker('filePath', event)" value="&nbsp;...&nbsp;">
 				</span>
 			</td>
