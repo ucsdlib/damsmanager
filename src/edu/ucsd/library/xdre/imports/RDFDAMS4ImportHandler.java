@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -52,7 +53,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	private int ingestFailedCount = 0;
 	private int derivFailedCount = 0;
 	private int solrFailedCount = 0;
-	private List<String> objRecords = new ArrayList<String>();
+	private Map<String, String> objRecords = new HashMap<String, String>();
 	private List<String> objWithFiles = new ArrayList<String>();
 	private StringBuilder ingestFailed = new StringBuilder();
 	private StringBuilder metadataFailed = new StringBuilder();
@@ -130,7 +131,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							nUri.setText(oid);
 							
 							updateReference(doc, iUri, oid);
-							objRecords.add(oid);
+							objRecords.put(oid, currFile);
 						} else if (nName.endsWith("Component") || nName.endsWith("File")){
 							damsURI = DamsURI.toParts(iUri, null);
 							srcId = damsURI.getObject();
@@ -362,7 +363,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 					srcFile = filesMap.get(fName);
 					if(srcFile == null){
 						exeResult = false;
-						logError("Source file for " + srcFileName + " doesn't exist. Please choose a correct stage file location.");
+						logError("Source file for " + srcFileName + " in " + srcName + " doesn't exist. Please choose a correct stage file location.");
 					}else{
 						// Ingest the file
 						DamsURI dURI = null;
@@ -566,6 +567,13 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 			if(derivativesFailed.length() > 0)
 				exeReport.append(" - Failed to create the following derivatives: \n" + derivativesFailed.toString());
 			getSOLRReport();
+		}
+		
+		String key = null;
+		exeReport.append("The following " + objectsCount + " object " + (objectsCount>1?"s":"") + " found in the source metadata: ");
+		for(Iterator<String> it=objRecords.keySet().iterator(); it.hasNext();){
+			key = it.next();
+			exeReport.append(key + " \t" + objRecords.get(key) + "\n");
 		}
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
