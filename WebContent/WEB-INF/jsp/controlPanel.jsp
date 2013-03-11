@@ -70,8 +70,12 @@
 			<span><select id="category" name="category" class="inputText" onChange="requestStats(this);">
 						<option value=""> -- collections -- </option>
 						<c:forEach var="entry" items="${model.collections}">
+							<c:set var="colNameLen"> ${fn:length(entry.key)}</c:set>
 							<option value="${entry.value}" <c:if test="${model.category == entry.value}">selected</c:if>>
-                       			<c:out value="${entry.key}" />
+								<c:choose>
+									<c:when test="${colNameLen > 60}"><c:out value="${fn:substring(entry.key, 0, 60)}" /> ...</c:when>
+									<c:otherwise><c:out value="${entry.key}" /></c:otherwise>
+								</c:choose>
                         	</option>
 						</c:forEach>
 					</select>
@@ -87,7 +91,7 @@
 						<div title="Validate master files for duplicate files, mixed file format, and file count" class="menuText"><input class="pcheckbox" type="checkbox" name="validateFileCount" id="validateFileCount" onClick="checkSelections(this);">
 							<span class="text-special">File Count Validation <c:if test="${model.itemsCount > 0}">(${model.itemsCount} objects)</c:if></span></div>
 						<div title="Check this checkbox to ingest the file when it's missing." class="specialmenuText"><input type="checkbox" id="ingestFile" name="ingestFile" class="pmcheckbox" onClick="confirmSelection(this, 'ingest the missing files.', 'validateFileCount');">
-							<span class="text-special"  title="Enter a filter path for the location to speek up the search. Click on the folder to select/deselect. Multiple loations allowed.">Ingest missing files from staging:&nbsp;<input type="text" id="filesLocation" name="filesLocation" size="30" value="">&nbsp;<input type="button" onclick="showFilePicker('filesLocation', event)" value="&nbsp;...&nbsp;"/></span>
+							<span class="text-special"  title="Enter a filter path for the location to speek up the search. From the popup, click on the folder to select/deselect a location. Multiple loations allowed.">Ingest missing files from staging:&nbsp;<input type="text" id="filesLocation" name="filesLocation" size="30" value="">&nbsp;<input type="button" onclick="showFilePicker('filesLocation', event)" value="&nbsp;...&nbsp;"/></span>
 						</div>  
 					</div>
 				    <div id="jhoveReportDiv" class="processlayout">
@@ -197,10 +201,10 @@
 							  </fieldset>
 						</div>
 															  
-						<div class="specialmenuText" style="margin-top:3px;padding-left:22px;"  title="Enter a filter path for the location to speek up the search. Click on the folder to select/deselect. Multiple loations allowed.">Data location:
+						<div class="specialmenuText" style="margin-top:3px;padding-left:22px;"  title="Enter a filter path for the location to speek up the search. From the popup, click on the folder to select/deselect a location. Multiple loations allowed.">Data location:
 							<input type="text" id="dataPath" name="dataPath" size="40" value="">&nbsp;<input type="button" onclick="showFilePicker('dataPath', event)" value="&nbsp;...&nbsp;">
 						</div>
-						<div class="specialmenuText" style="margin-top:3px;padding-left:22px;"  title="Enter a filter path for the location to speek up the search. Click on the folder to select/deselect. Multiple loations allowed.">Files location: 
+						<div class="specialmenuText" style="margin-top:3px;padding-left:22px;"  title="Enter a filter path for the location to speek up the search. From the popup, click on the folder to select/deselect a location. Multiple loations allowed.">Files location: 
 							<input type="text" id="filesPath" name="filesPath" size="40" value="">&nbsp;<input type="button" onclick="showFilePicker('filesPath', event)" value="&nbsp;...&nbsp;">
 						</div>
 					</div>									
