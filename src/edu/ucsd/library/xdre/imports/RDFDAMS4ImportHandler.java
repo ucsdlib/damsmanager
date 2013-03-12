@@ -572,7 +572,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		
 		if(objectsCount > 0){
 			String key = null;
-			exeReport.append("The following " + objectsCount + " object " + (objectsCount>1?"s":"") + " found in the source metadata: ");
+			exeReport.append("The following " + objectsCount + " object" + (objectsCount>1?"s are ":" is ") + "found in the source metadata: \n");
 			for(Iterator<String> it=objRecords.keySet().iterator(); it.hasNext();){
 				key = it.next();
 				exeReport.append(key + " \t" + objRecords.get(key) + "\n");

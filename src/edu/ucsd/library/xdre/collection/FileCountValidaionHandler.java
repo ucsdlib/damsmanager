@@ -310,7 +310,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 			}
 		}else{
 			ingestFailedCount++;
-			ingestFails.append( fid + ", \n");
+			ingestFails.append( fileUrl + ", \n");
 			logError("Missing sourceFileName property for file " + fileUrl + ".");
 		}
 		return successful;
