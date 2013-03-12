@@ -136,6 +136,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 					// Check source and alternate master files 
 					if((fid!=null && (fid.equals("1") || fid.startsWith("1."))) || (use!=null && (use.endsWith(Constants.SOURCE) 
 							|| (use.endsWith(Constants.SERVICE) && !use.startsWith(Constants.IMAGE)) || use.endsWith(Constants.ALTERNATE)))){
+
 						masterTotal++;
 						masterExists = true;
 						
