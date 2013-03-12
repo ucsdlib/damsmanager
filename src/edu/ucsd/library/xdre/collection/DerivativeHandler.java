@@ -135,10 +135,10 @@ public class DerivativeHandler extends CollectionHandler{
 				exeReport.append(" updated ");
 			else
 				exeReport.append(" created ");
-			exeReport.append(" for " + collectionTitle + ": " + "created " + createdCount + ", " + (replace?"updated " + updatedCount + ", ":"") + "skit " + skipCount + ", total " + totalFiles + " master files in " + counter + " objects.\n"); 
+			exeReport.append(" for " + collectionTitle + ": " + "created " + createdCount + ", " + (replace?"updated " + updatedCount + ", ":"") + "skit " + skipCount + ", " + totalFiles + " files are processed for derivative creation in total " + counter + " objects.\n"); 
 		}else{
 			exeReport.append("Execution result for derivative creation " 
-				+ " in " + collectionTitle + ": " + "created " + createdCount + ", " + (replace?"updated " + updatedCount  + ", ":"") + "skit " + skipCount + ", failed " + failedsCount + " (Total " + itemsCount +  " items found. " + totalFiles + " master files in " + counter + " objects processed). \n");
+				+ " in " + collectionTitle + ": " + "created " + createdCount + ", " + (replace?"updated " + updatedCount  + ", ":"") + "skit " + skipCount + ", failed " + failedsCount + " (Total " + itemsCount +  " items found. " + totalFiles + " files are processed for derivative creation in total " + counter + " objects.\n");
 		}
 		
 		// Add SOLR report message
