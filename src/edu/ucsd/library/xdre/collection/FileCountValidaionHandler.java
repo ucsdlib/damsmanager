@@ -147,28 +147,31 @@ public class FileCountValidaionHandler extends CollectionHandler{
 								updateSOLR = true;
 						}
 						
-						List<DamsURI> duFiles = DAMSClient.getFiles(filesDoc, null, dFile.getSourceFileName());
-						if((duSize=duFiles.size()) > 1){
-							String[] checksums = new String[duSize];
-							for(int j=0; j<duSize; j++){
-								checksums[j] = getChecksum(duFiles.get(j));
-							}
-							
-							// Check checksums for duplication
-							boolean du = false;
-							String duItems = "";
-							for(int j=0; j<duSize; j++){
-								for(int k=j+1; k<duSize; k++){
-									if(checksums[j].equals(checksums[k]) && duplicatedFiles.indexOf(duFiles.get(j).toString())<0){
-										duItems += duFiles.get(j) + ", " + duFiles.get(k) + ", ";
-										du = true;
+						String srcFileName = dFile.getSourceFileName();
+						if(srcFileName != null){
+							List<DamsURI> duFiles = DAMSClient.getFiles(filesDoc, null, srcFileName);
+							if((duSize=duFiles.size()) > 1){
+								String[] checksums = new String[duSize];
+								for(int j=0; j<duSize; j++){
+									checksums[j] = getChecksum(duFiles.get(j));
+								}
+								
+								// Check checksums for duplication
+								boolean du = false;
+								String duItems = "";
+								for(int j=0; j<duSize; j++){
+									for(int k=j+1; k<duSize; k++){
+										if(checksums[j].equals(checksums[k]) && duplicatedFiles.indexOf(duFiles.get(j).toString())<0){
+											duItems += duFiles.get(j) + ", " + duFiles.get(k) + ", ";
+											du = true;
+										}
 									}
 								}
-							}
-							if(du){
-								duplicated = true;;
-								duplicatedFiles.append(duItems.substring(0, duItems.length()-2) + "\n");
-								logError("Duplicated files found: " + duItems);
+								if(du){
+									duplicated = true;;
+									duplicatedFiles.append(duItems.substring(0, duItems.length()-2) + "\n");
+									logError("Duplicated files found: " + duItems);
+								}
 							}
 						}
 					}
@@ -177,7 +180,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 						missingFilesCount++;
 						missing = true;
 						missingFiles.append(fileId + "\t" + (missingFilesCount%10==0?"\n":""));
-						logError("File " + fileId + " (" + damsClient.getRequestURL() + ") doesn't exists.");
+						logError("File " + fileId + " (" + damsClient.getRequestURL() + ") doesn't exist.");
 					}
 				}
 				if(!masterExists || missing || duplicated){
