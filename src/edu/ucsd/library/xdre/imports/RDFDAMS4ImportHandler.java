@@ -58,6 +58,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	private StringBuilder ingestFailed = new StringBuilder();
 	private StringBuilder metadataFailed = new StringBuilder();
 	private StringBuilder derivativesFailed = new StringBuilder();
+	private StringBuilder filesIngested = new StringBuilder();
 	
 	/**
 	 * Constructor
@@ -391,6 +392,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 								message = "Ingested file " + fileUrl + " (" + tmpFile + ", " + (l+1) + " of " + iLen + ") in " + srcName + ". ";
 								log.info(message);
 								logMessage(message);
+								filesIngested.append(fileUrl + "\t" + srcFileName + "\t" + damsClient.getRequestURL() + "\n");
 								
 								// Add for SOLR update
 								if(objWithFiles.indexOf(oid) < 0)
@@ -579,6 +581,9 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		}
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
+		if(filesIngested.length() > 0){
+			log("log", "\nThe following files are ingested successfully: \n" + filesIngested.toString());
+		}
 		return exeInfo;
 	}
 }
