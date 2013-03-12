@@ -83,6 +83,9 @@ public class DAMSClient {
 	public static final int MAX_SIZE = 1000000;
 	public static enum DataFormat {rdf, xml, json, mets, html};
 	private static final Logger log = Logger.getLogger(DAMSClient.class);
+	
+	private static SimpleDateFormat damsDateFormat = new SimpleDateFormat(DAMS_DATE_FORMAT);
+	private static SimpleDateFormat damsDateFormatAlt = new SimpleDateFormat(DAMS_DATE_FORMAT_ALT);
 
 	private Properties prop = null; // Properties for DAMS REST API
 	private String storageURL = null; // DAMS REST URL
@@ -90,8 +93,6 @@ public class DAMSClient {
 	private HttpRequestBase request = null; // HTTP request
 	private HttpResponse response = null; // HTTP response
 	private HttpContext httpContext = null;
-	private SimpleDateFormat damsDateFormat = null;
-	private SimpleDateFormat damsDateFormatAlt = null;
 	private String fileStore = null;
 	private String tripleStore = null;
 	private String solrURLBase = null; // SOLR URL
@@ -111,8 +112,6 @@ public class DAMSClient {
 		DefaultHttpRequestRetryHandler x = new DefaultHttpRequestRetryHandler(0, false);
 		client = new DefaultHttpClient(new PoolingClientConnectionManager(), params);
 		client.setHttpRequestRetryHandler(x);
-		this.damsDateFormat = new SimpleDateFormat(DAMS_DATE_FORMAT);
-		this.damsDateFormatAlt = new SimpleDateFormat(DAMS_DATE_FORMAT_ALT);
 	}
 	
 	/**
@@ -962,12 +961,10 @@ public class DAMSClient {
 				req = new HttpPost(url);
 			}
 			
-			MultipartEntity ent = toMultiPartEntity(srcFile);
-			File file = new File(srcFile);
-			ent.addPart("dateCreated", new StringBody(damsDateFormat.format(file.lastModified())));
 			
 			String pName = null;
 			String pValue = null;
+			MultipartEntity ent = toMultiPartEntity(srcFile);
 			for(Iterator<String> it=params.keySet().iterator(); it.hasNext();){
 				pName = it.next();
 				pValue = params.get(pName);
@@ -1670,6 +1667,7 @@ public class DAMSClient {
 			FileBody fileBody = new FileBody(file, contentType);
 			ent.addPart("file", fileBody);
 		}
+		ent.addPart("dateCreated", new StringBody(damsDateFormat.format(file.lastModified())));
 		return ent;
 	}
 	
