@@ -401,8 +401,10 @@ public class CollectionOperationController implements Controller {
 				  }
 				  
 				  List<String> ingestFiles = new ArrayList<String>();
-				  for(int j=0; j<filesPaths.length; j++)
-					  ingestFiles.add(new File(Constants.DAMS_STAGING + "/" + filesPaths[j]).getAbsolutePath());
+				  for(int j=0; j<filesPaths.length; j++){
+					  if((filesPaths[j]=filesPaths[j].trim()).length() > 0)
+						  ingestFiles.add(new File(Constants.DAMS_STAGING + "/" + filesPaths[j]).getAbsolutePath());
+				  }
 				  
 				  handler = new RDFDAMS4ImportHandler(damsClient, dFiles.toArray(new File[dFiles.size()]), importOption);
 				  ((RDFDAMS4ImportHandler)handler).setFilesPaths(ingestFiles.toArray(new String[ingestFiles.size()]));
