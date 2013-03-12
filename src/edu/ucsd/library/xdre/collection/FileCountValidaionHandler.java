@@ -191,7 +191,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 			} catch (Exception e) {
 				failedCount++;
 				e.printStackTrace();
-				logError("File count validation failed" + (damsURI==null?": ":damsURI+": ") + e.getMessage());
+				logError("File count validation failed " + (damsURI==null?": ":damsURI+": ") + e.getMessage());
 			}
 			
 			// Updated SOLR
