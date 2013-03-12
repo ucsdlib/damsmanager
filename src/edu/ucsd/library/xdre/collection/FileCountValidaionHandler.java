@@ -128,7 +128,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 					fid = damsURI.getFileName();
 					
 					// Files has no file extension
-					if(fid==null && cid != null){
+					if(fid==null && cid != null && cid.equals("1")){
 						fid = cid;
 						cid = null;
 						damsURI.setFileName(fid);
