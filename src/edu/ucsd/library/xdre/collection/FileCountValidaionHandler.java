@@ -254,60 +254,61 @@ public class FileCountValidaionHandler extends CollectionHandler{
 			if(srcFile == null || !srcFile.exists()){
 				// Retrieve the file locally
 				srcFile = filesMap.get(fName);
-				if(srcFile == null){
-					ingestFailedCount++;
-					ingestFails.append(fileUrl + " (" + (srcPath==null?"":srcPath+"/"+fName) + "), \n");
-					logError("Source file for " + fileUrl + " (" + srcFileName + ") doesn't exist. \nPlease make sure the file is deposited in dams staging and the location is selected for ingestion.");
-				}else{
-					// Ingest the file
-					DamsURI dURI = null;
-					String tmpFile = srcFile.getAbsolutePath();
-					try{
-						dURI = DamsURI.toParts(fileUrl, null);
-						Map<String, String> params = new HashMap<String, String>();
-						oid = dURI.getObject();
-						cid = dURI.getComponent();
-						fid = dURI.getFileName();
-						
-						params.put("oid", oid);
-						params.put("cid", cid);
-						params.put("fid", fid);
-						params.put("use", use);
-						params.put("local", tmpFile);
-						params.put("sourceFileName", srcFileName);
-						successful = damsClient.createFile(params);
-						if(!successful){
-							ingestFailedCount++;
-							ingestFails.append(fileUrl + " (" + tmpFile + "), \n");
-							logError("Error ingesting file " + fileUrl  + " (" + tmpFile + ").");
-						}else{
-							ingestedCount++;
-							message = "Ingested file " + fileUrl + " (" + tmpFile + "). ";
-							log.info(message);
-							logMessage(message);
-							
-							//Create derivatives for images and documents PDFs
-							if((isImage(fid, use) || isDocument(fid, use)) 
-									&& (use == null || use.endsWith("source") || use.endsWith("service") || use.endsWith("alternate") || use.endsWith("Master"))){
-								
-								successful = damsClient.createDerivatives(oid, cid, fid, null);
-								if(successful){
-									logMessage( "Created derivatives for " + fileUrl + " (" + damsClient.getRequestURL() + ").");
-								} else {
-									derivFailedCount++;
-									derivFails.append(damsClient.getRequestURL() + ", \n"); 
-									logError("Failed to created derivatives " + damsClient.getRequestURL() + "(" + srcFileName + "). ");
-								}
-							}
-						}
-					}catch(Exception e){
-						e.printStackTrace();
+			}
+			if(srcFile == null){
+				ingestFailedCount++;
+				ingestFails.append(fileUrl + " (" + (srcPath==null?"":srcPath+"/"+fName) + "), \n");
+				logError("Source file for " + fileUrl + " (" + srcFileName + ") doesn't exist. \nPlease make sure the file is deposited in dams staging and the location is selected for ingestion.");
+			}else{
+				// Ingest the file
+				DamsURI dURI = null;
+				String tmpFile = srcFile.getAbsolutePath();
+				try{
+					dURI = DamsURI.toParts(fileUrl, null);
+					Map<String, String> params = new HashMap<String, String>();
+					oid = dURI.getObject();
+					cid = dURI.getComponent();
+					fid = dURI.getFileName();
+					
+					params.put("oid", oid);
+					params.put("cid", cid);
+					params.put("fid", fid);
+					params.put("use", use);
+					params.put("local", tmpFile);
+					params.put("sourceFileName", srcFileName);
+					successful = damsClient.createFile(params);
+					if(!successful){
 						ingestFailedCount++;
 						ingestFails.append(fileUrl + " (" + tmpFile + "), \n");
-						logError("Failed to ingest file " + fileUrl + " (" + tmpFile + "): " + e.getMessage());
+						logError("Error ingesting file " + fileUrl  + " (" + tmpFile + ").");
+					}else{
+						ingestedCount++;
+						message = "Ingested file " + fileUrl + " (" + tmpFile + "). ";
+						log.info(message);
+						logMessage(message);
+						
+						//Create derivatives for images and documents PDFs
+						if((isImage(fid, use) || isDocument(fid, use)) 
+								&& (use == null || use.endsWith("source") || use.endsWith("service") || use.endsWith("alternate") || use.endsWith("Master"))){
+							
+							successful = damsClient.createDerivatives(oid, cid, fid, null);
+							if(successful){
+								logMessage( "Created derivatives for " + fileUrl + " (" + damsClient.getRequestURL() + ").");
+							} else {
+								derivFailedCount++;
+								derivFails.append(damsClient.getRequestURL() + ", \n"); 
+								logError("Failed to created derivatives " + damsClient.getRequestURL() + "(" + srcFileName + "). ");
+							}
+						}
 					}
+				}catch(Exception e){
+					e.printStackTrace();
+					ingestFailedCount++;
+					ingestFails.append(fileUrl + " (" + tmpFile + "), \n");
+					logError("Failed to ingest file " + fileUrl + " (" + tmpFile + "): " + e.getMessage());
 				}
 			}
+			
 		}else{
 			ingestFailedCount++;
 			ingestFails.append( fileUrl + ", \n");
