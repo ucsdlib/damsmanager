@@ -112,40 +112,39 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				doc = saxReader.read(rdfFiles[i]);
 				List<Node> nodes = doc.selectNodes("//@rdf:about");
 				for(int j=0; j<nodes.size(); j++){
-					String srcId = null;
 					Node nUri = nodes.get(j);
 					String iUri = nUri.getStringValue();
 					Node parentNode = nUri.getParent();
-					String nName = parentNode.getName();
-					
-					if(iUri.endsWith("/COL") || !(iUri.startsWith("http") && iUri.indexOf("/ark:/") > 0)){
+					String nName = parentNode.getName();				
+					if (iUri.endsWith("/COL") || !(iUri.startsWith("http") && iUri.indexOf("/ark:/") > 0)){
 						// Assign ARK
-						
-						if(nName.endsWith("Object")){
-							//objectsCount++;
-							oid = idsMap.get(iUri);
+						if(nName.endsWith("Object") || nName.endsWith("Component") || nName.endsWith("File")){
+							String objId = iUri;
+							
+							if(nName.endsWith("Component") || nName.endsWith("File")){
+								damsURI = DamsURI.toParts(iUri, null);
+								objId = damsURI.getObject();
+							}
+							String srcObjKey = objId + "::" + rdfFiles[i].getAbsolutePath();
+							oid = idsMap.get(srcObjKey);
+							
 							// Assign new ARK
 							if(oid == null){
 								oid = getNewId();
-								idsMap.put(iUri, oid);
+								idsMap.put(srcObjKey, oid);
 							}
-							nUri.setText(oid);
-							
-							updateReference(doc, iUri, oid);
-							objRecords.put(oid, currFile);
-						} else if (nName.endsWith("Component") || nName.endsWith("File")){
-							damsURI = DamsURI.toParts(iUri, null);
-							srcId = damsURI.getObject();
-							oid = idsMap.get(srcId);
-							if(oid == null){
-								oid = getNewId();
-								idsMap.put(srcId, oid);
-							}
-							damsURI.setObject(oid);
-							nUri.setText(damsURI.toString());
-							// XXX
-							// Assign cid and fid for Component and FIle if required
-							
+
+							if(nName.endsWith("Object")){
+								objId = oid;
+								objRecords.put(objId, currFile);
+							}else{
+								damsURI.setObject(oid);
+								// XXX
+								// Assign cid and fid for Component and FIle if required
+								objId = damsURI.toString();
+							} 
+							nUri.setText(objId);
+							updateReference(doc, iUri, objId);
 						} else {
 							String field = null;
 							Node tNode = null;
@@ -155,7 +154,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 								field = "title_tesim";
 								xPath = "dams:title/dams:Title/rdf:value";
 								tNode = parentNode.selectSingleNode(xPath);
-							} else if (nName.endsWith("Subject") || nName.endsWith("Name") || nName.endsWith("Topic") || nName.endsWith("GenreForm") || nName.endsWith("Temporal")){
+							} else if (nName.endsWith("Subject") || nName.endsWith("Name") || nName.endsWith("Topic") || nName.endsWith("GenreForm") || nName.endsWith("Temporal") || nName.endsWith("Geographic")){
 								// Subject, Authority records use mads:authoritativeLabel
 								field = "name_tesim";
 								xPath = "mads:authoritativeLabel";
