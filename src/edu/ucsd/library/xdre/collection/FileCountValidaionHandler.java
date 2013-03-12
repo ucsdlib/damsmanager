@@ -37,6 +37,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 	protected StringBuilder duplicatedFiles = new StringBuilder();
 	protected StringBuilder ingestFails = new StringBuilder();
 	protected StringBuilder derivFails = new StringBuilder();
+	private StringBuilder filesIngested = new StringBuilder();
 	protected Document filesDoc = null;
 	private boolean ingestFile = false;
 	private String[] filesPaths = null;
@@ -286,6 +287,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 						message = "Ingested file " + fileUrl + " (" + tmpFile + "). ";
 						log.info(message);
 						logMessage(message);
+						filesIngested.append(fileUrl + "\t" + tmpFile + "\t" + damsClient.getRequestURL() + "\n");
 						
 						//Create derivatives for images and documents PDFs
 						if((isImage(fid, use) || isDocument(fid, use)) 
@@ -350,6 +352,9 @@ public class FileCountValidaionHandler extends CollectionHandler{
 		exeReport.append(getSOLRReport());
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
+		if(filesIngested.length() > 0){
+			log("log", "\nThe following files are ingested successfully: \n" + filesIngested.toString());
+		}
 		return exeInfo;
 	}
 }
