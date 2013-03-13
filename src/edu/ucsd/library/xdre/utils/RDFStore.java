@@ -8,7 +8,6 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.text.Normalizer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -244,17 +243,25 @@ public class RDFStore {
 		String ns = null;
 		Statement stmt = null;
 		Resource res = null;
-		StmtIterator stmtIt = rdfModel.listStatements();
-		PrefixMapping prefixMap = rdfModel.lock();
-		
-		while (stmtIt.hasNext()){
-			stmt = stmtIt.next();
-			sid = stmt.getSubject().toString();
-			if(sid.equals(subject)){
-				res = stmt.getPredicate();
-				ns = prefixMap.getNsURIPrefix(res.getNameSpace()) + ":" + res.getLocalName();
-				if(pres.indexOf(ns) < 0)
-					pres.add(ns);
+		StmtIterator stmtIt = null;
+		try{
+			stmtIt = rdfModel.listStatements();
+			PrefixMapping prefixMap = rdfModel.lock();
+			
+			while (stmtIt.hasNext()){
+				stmt = stmtIt.next();
+				sid = stmt.getSubject().toString();
+				if(sid.equals(subject)){
+					res = stmt.getPredicate();
+					ns = prefixMap.getNsURIPrefix(res.getNameSpace()) + ":" + res.getLocalName();
+					if(pres.indexOf(ns) < 0)
+						pres.add(ns);
+				}
+			}
+		}finally{
+			if(stmtIt != null){
+				stmtIt.close();
+				stmtIt = null;
 			}
 		}
 		return pres;
@@ -289,27 +296,59 @@ public class RDFStore {
 		String prep = null;
 		Statement stmt = null;
 		Property prop = null;
-		RDFNode rdfNode = null;
 		boolean keep = false;
-		List<Statement> stmts = rdfModel.listStatements().toList();
-		for(int i=0; i<stmts.size(); i++){
-			stmt = stmts.get(i);
-			if(stmt.getSubject().isURIResource()){
-				keep = false;
-				prop = stmt.getPredicate();
-				prep = rdfModel.getNsURIPrefix(prop.getNameSpace()) + ":" + prop.getLocalName();
-				for(Iterator<String> pIt=preds.iterator(); pIt.hasNext();){
-					if(prep.indexOf(pIt.next()) >= 0){
-						keep = true;
-						break;
+		StmtIterator stmtIt = null;
+		try{
+			stmtIt = rdfModel.listStatements();
+			List<Statement> stmts = stmtIt.toList();
+			for(int i=0; i<stmts.size(); i++){
+				stmt = stmts.get(i);
+				if(stmt.getSubject().isURIResource()){
+					keep = false;
+					prop = stmt.getPredicate();
+					prep = rdfModel.getNsURIPrefix(prop.getNameSpace()) + ":" + prop.getLocalName();
+					for(Iterator<String> pIt=preds.iterator(); pIt.hasNext();){
+						if(prep.indexOf(pIt.next()) >= 0){
+							keep = true;
+							break;
+						}
+					}
+					
+					if(!keep){	
+						removeStatement(stmt, true);
 					}
 				}
-				
-				if(!keep){
-					rdfModel.remove(stmt);
-					rdfNode = stmt.getObject();
-					if(rdfNode.isAnon()){
-						rdfModel.remove(rdfNode.getModel());
+			}
+		}finally{
+			if(stmtIt != null){
+				stmtIt.close();
+				stmtIt = null;
+			}
+		}
+	}
+	
+	/**
+	 * Remove the statement. When tree is set to true, remove the BlankNode structure
+	 * @param stmt
+	 * @param tree
+	 */
+	public void removeStatement(Statement stmt, boolean tree){
+		rdfModel.remove(stmt);
+		if(tree){
+			RDFNode rdfNode = stmt.getObject();
+			if(rdfNode.isAnon()){
+				RDFNode objNode = null;
+				StmtIterator stmtIt = null;
+				try{
+					stmtIt = rdfModel.listStatements(rdfNode.asResource(), null, objNode);
+					List<Statement> stmts = stmtIt.toList();
+					for(int i=0; i<stmts.size(); i++){
+						removeStatement(stmts.get(i), tree);
+					}
+				}finally{
+					if(stmtIt != null){
+						stmtIt.close();
+						stmtIt = null;
 					}
 				}
 			}
