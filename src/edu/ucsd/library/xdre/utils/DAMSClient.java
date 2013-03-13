@@ -1217,14 +1217,22 @@ public class DAMSClient {
 	public int execute(HttpRequestBase req) throws ClientProtocolException,
 			IOException, LoginException {
 
-		this.request = req;
-		if (httpContext != null) {
-			response = client.execute(request, httpContext);
-		} else {
-			response = client.execute(request);
+		int statusCode = -1;
+		response = null;
+		request = req;
+		try{
+			if (httpContext != null) {
+				response = client.execute(request, httpContext);
+			} else {
+				response = client.execute(request);
+			}
+		}finally{
+			if(response != null)
+				statusCode = response.getStatusLine().getStatusCode();
+			log.info(statusCode + " " + req.getMethod() + " " + req.getURI());
 		}
 
-		return response.getStatusLine().getStatusCode();
+		return statusCode;
 	}
 	
 	/**
@@ -1308,7 +1316,7 @@ public class DAMSClient {
 	public String toDAMSURL(String[] urlParts, String format){
 		NameValuePair[] params = {new BasicNameValuePair("format", format), new BasicNameValuePair("ts",tripleStore), new BasicNameValuePair("fs", fileStore)};
 		String paramsStr = concatParams(params);
-		System.out.println(storageURL + toUrlPath(urlParts) + (paramsStr.length()>0?"?":"") + paramsStr);
+		//System.out.println(storageURL + toUrlPath(urlParts) + (paramsStr.length()>0?"?":"") + paramsStr);
 		return storageURL + toUrlPath(urlParts) + (paramsStr.length()>0?"?":"") + paramsStr;
 	}
 	
@@ -1654,20 +1662,21 @@ public class DAMSClient {
 	public static MultipartEntity toMultiPartEntity(String srcFile) throws UnsupportedEncodingException{
 		File file = new File(srcFile);
 		MultipartEntity ent = new MultipartEntity();
-		ent.addPart("sourcePath", new StringBody(file.getParent()));
 		String srcAbsPath = file.getAbsolutePath();
 		String stagingAbsPath = new File(Constants.DAMS_STAGING).getAbsolutePath();
 		int idx = srcAbsPath.indexOf(stagingAbsPath);
 		if(idx == 0){
-			ent.addPart("local", new StringBody(srcAbsPath.substring(idx+stagingAbsPath.length())));
-			// Add field sourceFileName
-			ent.addPart("sourceFileName", new StringBody(file.getName()));
+			ent.addPart("local", new StringBody(srcAbsPath.substring(idx+stagingAbsPath.length()).replace("\\", "/")));
 		}else{
 			String contentType = new FileDataSource(srcFile).getContentType();
 			FileBody fileBody = new FileBody(file, contentType);
 			ent.addPart("file", fileBody);
+			// Add field dateCreated, sourceFileName, sourcePath etc.
+			ent.addPart("sourcePath", new StringBody(file.getParent()));
+			ent.addPart("sourceFileName", new StringBody(file.getName()));
+			ent.addPart("dateCreated", new StringBody(damsDateFormat.format(file.lastModified())));
 		}
-		ent.addPart("dateCreated", new StringBody(damsDateFormat.format(file.lastModified())));
+			
 		return ent;
 	}
 	
