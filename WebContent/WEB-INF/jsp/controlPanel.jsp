@@ -255,7 +255,7 @@
 								<fieldset class="groupbox_emOptions"><legend class="slegandText">Special Options</legend>
 									<div title="Export metadata with namespaces limitation." class="specialmenuText"><span style="color:red;font-size:12px;padding-left:5px;">*</span>&nbsp;Namespace(s) delimited by comma: <input type="text" name="nsInput" size="35" class="inputText" /></div> 
 									<div title="Check this checkbox to exclude metadata in the components and files." class="specialmenuText"><input type="checkbox" id="exComponents" name="exComponents" onClick="confirmSelection(this, 'exclude metadata in components and files', 'metadataExport');">
-										Exclude metadata in components and files.
+										<span class="text-special">Exclude metadata in components and files.</span>
 									</div>
 								</fieldset>
 							</div>
