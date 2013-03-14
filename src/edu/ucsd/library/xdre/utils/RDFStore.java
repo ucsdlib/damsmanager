@@ -269,10 +269,10 @@ public class RDFStore {
 	
 	
 	/**
-	 * Remove the triples for components
+	 * Remove the triples for components and files
 	 * @throws Exception
 	 */
-	public void excludeComponents() throws Exception{
+	public void excludeComponentsAndFiles() throws Exception{
 		DamsURI damsURI = null;
 		String subId = null;
 		ResIterator resIt = rdfModel.listSubjects();;
@@ -281,7 +281,7 @@ public class RDFStore {
 			if(res.isURIResource()){
 				subId = res.getURI();
 				damsURI = DamsURI.toParts(subId, null);
-				if(damsURI.isComponentURI()){
+				if(damsURI.isFileURI() || damsURI.isComponentURI()){
 					rdfModel.remove(querySubject(subId));
 				}
 			}

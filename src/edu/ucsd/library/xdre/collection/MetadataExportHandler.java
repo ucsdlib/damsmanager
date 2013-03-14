@@ -3,10 +3,13 @@ package edu.ucsd.library.xdre.collection;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.dom4j.DocumentException;
+
+import com.hp.hpl.jena.rdf.model.Resource;
 
 import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.RDFStore;
@@ -22,7 +25,7 @@ public class MetadataExportHandler extends CollectionHandler{
 
 	//private Map subjectNSMap = null;
 	private List<String> predicates = null;
-	private boolean components = false;
+	private boolean components = true;
 	private int count = 0;
 	private int failedCount = 0;
 	private RDFStore rdfStore = null;
@@ -78,6 +81,17 @@ public class MetadataExportHandler extends CollectionHandler{
 		this.fileUri = fileUri;
 	}
 
+	public boolean isComponents() {
+		return components;
+	}
+
+	/**
+	 * Set to true to include components descriptive metadata in the export.
+	 */
+	public void setComponents(boolean components) {
+		this.components = components;
+	}
+
 	/**
 	 * Procedure to populate the RDF metadata
 	 */
@@ -85,6 +99,7 @@ public class MetadataExportHandler extends CollectionHandler{
 
 		String subjectId = null;
 		RDFStore iStore = null;
+		Resource res = null;
 		for(int i=0; i<itemsCount; i++){
 			count++;
 			subjectId = items.get(i);
@@ -95,8 +110,15 @@ public class MetadataExportHandler extends CollectionHandler{
 				// Same predicates export
 				if(predicates.size() > 0 || !components){
 					trimStatements(iStore);
-				}
-				rdfStore.mergeObjects(iStore);
+					// Merge the resources
+					List<Resource> resIds = iStore.listURIResources();
+					for(Iterator<Resource> it=resIds.iterator(); it.hasNext();){
+						res = it.next();
+						rdfStore.merge(iStore.querySubject(res.getURI()));
+					}
+				}else
+					rdfStore.mergeObjects(iStore);
+				
 				logMessage("Exported metadata for subject " + subjectId + ".");
 			} catch (Exception e) {
 				failedCount++;
@@ -126,7 +148,7 @@ public class MetadataExportHandler extends CollectionHandler{
 	 */
 	public void trimStatements(RDFStore iStore) throws Exception{
 		if(!components)
-			iStore.excludeComponents();
+			iStore.excludeComponentsAndFiles();
 		if(predicates.size() > 0)
 			iStore.trimStatements(predicates);
 	}
