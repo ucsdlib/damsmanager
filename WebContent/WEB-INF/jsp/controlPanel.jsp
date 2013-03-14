@@ -247,15 +247,17 @@
 					<div id="metadataExportDiv" class="processlayout">
 						<div class="menuText"><input class="pcheckbox" type="checkbox" id="metadataExport" name="metadataExport" onClick="checkSelections(this, 'metadataExport');"><span class="text-special"><strong>Metadata Export: </strong></span><br />
 						    <div style="padding-left:18px;">
-							    <div title="Export metadata with namespaces limitation." class="specialmenuText">
-								    <span class="text-special">&nbsp;In Namespace(s): <input type="text" name="nsInput" size="30" class="inputText" />&nbsp; (<span style="color:red;font-size:12px;">*</span>delimited by comma)</span> 
-								</div>
 								<div class="specialmenuText"><input type="radio" name="exportFormat" value="RDF/XML-ABBREV" checked><span class="text-special">RDF XML</span></div>
 								<div class="specialmenuText"><input type="radio" name="exportFormat" value="N-TRIPLE"><span class="text-special">N-Triples</span></div>
 								<!-- <div class="specialmenuText"><input disabled type="radio" name="exportFormat" value="csv"><span class="text-special">CSV Export</span></div> -->
-								<div title="Check this checkbox to exclude metadata in the components and files." class="specialmenuText"><input type="checkbox" id="exComponents" name="exComponents" class="pmcheckbox" onClick="confirmSelection(this, 'exclude metadata in components and files', 'metadataExport');">
-									<span class="text-special">Exclude metadata in components and files.</span>
-								</div>
+							</div>
+							<div>
+								<fieldset class="groupbox_emOptions"><legend class="slegandText">Special Options</legend>
+									<div title="Export metadata with namespaces limitation." class="specialmenuText"><span style="color:red;font-size:12px;padding-left:5px;">*</span>&nbsp;Namespace(s) delimited by comma: <input type="text" name="nsInput" size="35" class="inputText" /></div> 
+									<div title="Check this checkbox to exclude metadata in the components and files." class="specialmenuText"><input type="checkbox" id="exComponents" name="exComponents" onClick="confirmSelection(this, 'exclude metadata in components and files', 'metadataExport');">
+										Exclude metadata in components and files.
+									</div>
+								</fieldset>
 							</div>
 						</div>
 					</div>

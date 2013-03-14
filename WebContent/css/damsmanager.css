@@ -364,6 +364,11 @@ a {color: #336699;}
 	width: 460px;	
 	text-align:left;
 }
+.groupbox_emOptions {
+	font-weight: normal;
+	margin-left:25px;
+	width: 400px;	
+}
 
 .groupbox_ark {
 	margin-left:15px;
