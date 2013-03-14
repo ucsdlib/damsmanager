@@ -586,6 +586,7 @@ public class CollectionOperationController implements Controller {
 					 session.setAttribute("status", opMessage + "Manifest Valification ...");
 			     handler = new LocalStoreManifestHandler(tsUtils, collectionId, validateManifest, writeManifest);
 			 }*/ else if (i == 18){
+				 boolean components = getParameter(paramsMap, "exComponents") == null;
 				 String exFormat = getParameter(paramsMap, "exportFormat");
 				 String xslSource = getParameter(paramsMap, "xsl");
 				 if(xslSource == null || (xslSource=xslSource.trim()).length() == 0){
@@ -608,6 +609,7 @@ public class CollectionOperationController implements Controller {
 			     fileOut = new FileOutputStream(outputFile);
 				 handler = new MetadataExportHandler(damsClient, collectionId, nsInputs, componentsIncluded, exFormat, fileOut);
 				 ((MetadataExportHandler)handler).setFileUri(logLink + "&file=" + outputFile.getName());
+				 ((MetadataExportHandler)handler).setComponents(components);
 			    
 			 }else if (i == 19){
 				 session.setAttribute("status", opMessage + "Jhove report ...");

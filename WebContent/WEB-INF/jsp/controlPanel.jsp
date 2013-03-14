@@ -253,6 +253,9 @@
 								<div class="specialmenuText"><input type="radio" name="exportFormat" value="RDF/XML-ABBREV" checked><span class="text-special">RDF XML</span></div>
 								<div class="specialmenuText"><input type="radio" name="exportFormat" value="N-TRIPLE"><span class="text-special">N-Triples</span></div>
 								<!-- <div class="specialmenuText"><input disabled type="radio" name="exportFormat" value="csv"><span class="text-special">CSV Export</span></div> -->
+								<div title="Check this checkbox to exclude metadata in the components and files." class="specialmenuText"><input type="checkbox" id="exComponents" name="exComponents" class="pmcheckbox" onClick="confirmSelection(this, 'exclude metadata in components and files', 'metadataExport');">
+									<span class="text-special">Exclude metadata in components and files.</span>
+								</div>
 							</div>
 						</div>
 					</div>
