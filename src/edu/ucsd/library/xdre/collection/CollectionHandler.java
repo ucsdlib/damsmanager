@@ -13,6 +13,7 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -35,9 +36,11 @@ import javax.xml.transform.stream.StreamSource;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.dom4j.Attribute;
+import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
+import org.dom4j.Node;
 
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
@@ -51,6 +54,9 @@ import edu.ucsd.library.xdre.utils.RequestOrganizer;
  * @author lsitu@ucsd.edu
  */
 public abstract class CollectionHandler implements ProcessHandler {
+	public static final String INFO_MODEL_PREFIX = "info:fedora/afmodel:";
+	public static final String HAS_FILE = "hasFile";
+	
 	private static Logger log = Logger.getLogger(CollectionHandler.class);
 
 	protected int submissionId = -1;
@@ -763,6 +769,25 @@ public abstract class CollectionHandler implements ProcessHandler {
 			items.addAll(damsClient.listUnitObjects(unitId));
 		}
 		return items; 
+	}
+	
+	/**
+	 * Look up record from dams
+	 * @param value
+	 * @param modelName
+	 * @return
+	 * @throws Exception
+	 */
+	public static String lookupRecord(DAMSClient damsClient, String field, String value, String modelName) throws Exception{
+		String modelParam = "(\"" + INFO_MODEL_PREFIX + "Dams" + modelName + "\" OR \"" + INFO_MODEL_PREFIX + "Mads" + modelName + "\")";
+		String query = "q=" + URLEncoder.encode(field + ":\"" + value + "\" AND has_model_ssim:" + modelParam, "UTF-8") + "&fl=id&fl=has_model_ssim";
+		Document doc = damsClient.solrLookup(query);
+		int numFound = Integer.parseInt(doc.selectSingleNode("/response/result/@numFound").getStringValue());
+		if(numFound <= 0)
+			return null;
+		else {
+			return ((Node)doc.selectNodes("/response/result/doc/str[@name='id']").get(0)).getText();
+		}
 	}
 
 	/**

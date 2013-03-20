@@ -37,8 +37,6 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 
 	private static Logger log = Logger.getLogger(RDFDAMS4ImportHandler.class);
 
-	public static final String INFO_MODEL_PREFIX = "info:fedora/afmodel:";
-	public static final String HAS_FILE = "hasFile";
 	private Map<String, String> idsMap = new HashMap<String, String>();
 	private Map<String, File> filesMap = new HashMap<String, File>();
 	
@@ -457,7 +455,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		String oid = idsMap.get(nKey);
 		// Retrieve the record
 		if(oid == null){
-			oid = lookupRecord(field, title, nName);
+			oid = lookupRecord(damsClient, field, title, nName);
 			if(oid == null){
 				// Create the record
 				oid = getNewId();
@@ -530,25 +528,6 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 			writer.write(content);
 		}finally{
 			close(writer);
-		}
-	}
-	
-	/**
-	 * Look up record from dams
-	 * @param value
-	 * @param modelName
-	 * @return
-	 * @throws Exception
-	 */
-	public String lookupRecord(String field, String value, String modelName) throws Exception{
-		String modelParam = "(\"" + INFO_MODEL_PREFIX + "Dams" + modelName + "\" OR \"" + INFO_MODEL_PREFIX + "Mads" + modelName + "\")";
-		String query = "q=" + URLEncoder.encode(field + ":\"" + value + "\" AND has_model_ssim:" + modelParam, "UTF-8") + "&fl=id&fl=has_model_ssim";
-		Document doc = damsClient.solrLookup(query);
-		int numFound = Integer.parseInt(doc.selectSingleNode("/response/result/@numFound").getStringValue());
-		if(numFound <= 0)
-			return null;
-		else {
-			return ((Node)doc.selectNodes("/response/result/doc/str[@name='id']").get(0)).getText();
 		}
 	}
 	
