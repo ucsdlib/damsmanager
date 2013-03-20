@@ -154,7 +154,7 @@
 						<div>
 							 <fieldset class="groupbox_ingestOpts"><legend class="slegandText">Special Options</legend>
 								 <div title="Check this checkbox to start a new round of TripleStore population." class="specialmenuText">
-											<input type="radio" id="importMode" name="importMode" value="add">
+											<input type="radio" id="importMode" name="importMode" value="add" checked>
 											 <span class="text-special">Add metadata</span>
 								 </div>
 								 <div title="Check this checkbox to repopulate metadata but keep file characterize metadata for all the subjects included in the file submitted." class="specialmenuText">
@@ -224,7 +224,7 @@
 									<span class="text-special">RDF Creation &amp; uploading</span></span><br />
 						 </div>	
 						 <div>
-							<fieldset class="groupbox_rdf"><legend class="slegandText">Meta Data</legend>
+							<fieldset class="groupbox_rdf"><legend class="slegandText">Metadata</legend>
    						        <span class="submenuText"><input disabled type="radio" name="rdfXmlDataType" value="all" checked>All</span><br />
 						        <span class="submenuText"><input disabled type="radio" name="rdfXmlDataType" value="jhove" >JHOVE extracted metadata only</span><br />
 						   </fieldset>
