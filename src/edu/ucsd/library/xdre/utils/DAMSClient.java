@@ -919,6 +919,12 @@ public class DAMSClient {
 		params.put("fid", fileName);
 		params.put("local", srcFile);
 		params.put("use", use);
+		
+		// Add field dateCreated, sourceFileName, sourcePath etc.
+		File file = new File(srcFile);
+		params.put("sourcePath", file.getParent());
+		params.put("sourceFileName", file.getName());
+		params.put("dateCreated", damsDateFormat.format(file.lastModified()));
 		return createFile(params);
 	}
 	
