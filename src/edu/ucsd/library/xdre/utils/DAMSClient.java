@@ -12,6 +12,8 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -29,14 +31,28 @@ import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import javax.security.auth.login.LoginException;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpException;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.ParseException;
+import org.apache.http.auth.AuthScheme;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.AuthState;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
@@ -44,15 +60,24 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.BasicHttpParams;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
@@ -87,32 +112,14 @@ public class DAMSClient {
 	private static SimpleDateFormat damsDateFormat = new SimpleDateFormat(DAMS_DATE_FORMAT);
 	private static SimpleDateFormat damsDateFormatAlt = new SimpleDateFormat(DAMS_DATE_FORMAT_ALT);
 
-	private Properties prop = null; // Properties for DAMS REST API
 	private String storageURL = null; // DAMS REST URL
-	private DefaultHttpClient client = null; // Httpclient object
+	private HttpClient client = null; // Httpclient object
 	private HttpRequestBase request = null; // HTTP request
 	private HttpResponse response = null; // HTTP response
 	private HttpContext httpContext = null;
 	private String fileStore = null;
 	private String tripleStore = null;
 	private String solrURLBase = null; // SOLR URL
-
-	/**
-	 * Constructor for DAMSClient.
-	 * 
-	 * @param storageURL
-	 * @throws IOException
-	 * @throws LoginException
-	 */
-	public DAMSClient() throws IOException, LoginException {
-		// disable retries and timeouts
-		BasicHttpParams params = new BasicHttpParams();
-		params.setParameter("http.socket.timeout", new Integer(0));
-		params.setParameter("http.connection.timeout", new Integer(0));
-		DefaultHttpRequestRetryHandler x = new DefaultHttpRequestRetryHandler(0, false);
-		client = new DefaultHttpClient(new PoolingClientConnectionManager(), params);
-		client.setHttpRequestRetryHandler(x);
-	}
 	
 	/**
 	 * Construct a DAMSClient object using storage URL.
@@ -122,15 +129,25 @@ public class DAMSClient {
 	 * @throws LoginException
 	 */
 	public DAMSClient(String storageURL) throws IOException, LoginException {
-		this();
+		this(storageURL, Constants.DAMS_STORAGE_USER, Constants.DAMS_STORAGE_PWD);
+	}
+	
+	/**
+	 * Construct a DAMSClient object using storage URL, username and password.
+	 * 
+	 * @param storageURL
+	 * @throws IOException
+	 * @throws LoginException
+	 */
+	public DAMSClient(String storageURL, String user, String password) throws IOException, LoginException {
 		if(storageURL.endsWith("/"))
 			storageURL = storageURL.substring(0, storageURL.length() -1);
 		this.storageURL = storageURL;
-
+		client = createHttpClient(user, password);
 	}
 
 	/**
-	 * Construct DAMSClient object and authenticate using the auth account
+	 * Construct DAMSClient object and authenticate using the dams repository properties
 	 * information provided.
 	 * 
 	 * @param account
@@ -138,15 +155,76 @@ public class DAMSClient {
 	 * @throws IOException
 	 * @throws LoginException
 	 */
-	public DAMSClient(Properties prop) throws IOException, LoginException {
-		this();
-		this.prop = prop;
-		if (prop != null && prop.size() > 0) {
-			storageURL = prop.getProperty("storageUrl");
-			if(storageURL.endsWith("/"))
-				storageURL = storageURL.substring(0, storageURL.length() -1);
-		}
+	public DAMSClient(Properties props) throws IOException, LoginException {
+		this((String)props.get("xdre.damsRepo"), (String)props.get("xdre.damsRepo.user"), (String)props.get("xdre.damsRepo.pwd"));
 	}
+    
+    /**
+     * Create HttpClient with PreemptiveAuth when user and password provide 
+     * @param userName
+     * @param password
+     * @return
+     */
+    private HttpClient createHttpClient(String userName, String password) {
+		// disable timeouts
+		BasicHttpParams params = new BasicHttpParams();
+		params.setParameter( "http.socket.timeout",     new Integer(0) );
+		params.setParameter( "http.connection.timeout", new Integer(0) );
+      
+		DefaultHttpClient client = new DefaultHttpClient( getConnectionManager(), params );
+
+		// disable retries
+		DefaultHttpRequestRetryHandler x = new DefaultHttpRequestRetryHandler(0, false);
+		client.setHttpRequestRetryHandler( x );
+        
+        if (userName != null && userName.length() > 0) {
+            client.getCredentialsProvider().setCredentials(
+                    new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT),
+                    new UsernamePasswordCredentials(userName, password)
+            );
+            
+            httpContext = new BasicHttpContext();
+
+            // Generate BASIC scheme object and stick it to the local execution context
+            BasicScheme basicAuth = new BasicScheme();
+            httpContext.setAttribute("preemptive-auth", basicAuth);
+
+            // Add as the first request interceptor
+            client.addRequestInterceptor(new PreemptiveAuthInterceptor(), 0);
+        }
+
+        return client;
+    }
+    
+    /**
+     * Initiate ClientConnectionManager for http and https connections
+     * @return
+     */
+    private ClientConnectionManager getConnectionManager(){
+
+        ClientConnectionManager ccm = new PoolingClientConnectionManager();
+		try {
+			// Accept all SSL certificates
+        	X509TrustManager tm = new X509TrustManager() {
+            	public void checkClientTrusted(X509Certificate[] xcs, String string) throws CertificateException { }
+            	public void checkServerTrusted(X509Certificate[] xcs, String string) throws CertificateException { }
+            	public X509Certificate[] getAcceptedIssuers() { return null; }
+        	};
+
+			SSLContext ctx = SSLContext.getInstance("TLS");
+        	ctx.init(null, new TrustManager[]{tm}, null);
+        	SSLContext.setDefault(ctx);
+        	
+        	SSLSocketFactory ssf = new SSLSocketFactory(ctx,SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+        	SchemeRegistry sr = ccm.getSchemeRegistry();
+        	sr.register(new Scheme("https", 443, ssf));
+        	sr.register(new Scheme("http", 80, new PlainSocketFactory()));
+			
+		} catch ( Exception ex ){
+			ex.printStackTrace();
+		}
+		return ccm;
+    }
 
 	/**
 	 * Mint an ark ID
@@ -1944,4 +2022,29 @@ public class DAMSClient {
 		}
 	}
 
+	/**
+	 * PreemptiveAuthInterceptor class for PreemptiveAuth
+	 * @author lsitu
+	 *
+	 */
+    class PreemptiveAuthInterceptor implements HttpRequestInterceptor {
+        public void process(final HttpRequest request, final HttpContext context) throws HttpException, IOException {
+
+            AuthState authState = (AuthState) context.getAttribute(ClientContext.TARGET_AUTH_STATE);
+
+            // If no auth scheme available yet, try to initialize it preemptively
+            if (authState.getAuthScheme() == null) {
+                AuthScheme authScheme = (AuthScheme) context.getAttribute("preemptive-auth");
+                CredentialsProvider credsProvider = (CredentialsProvider) context.getAttribute(ClientContext.CREDS_PROVIDER);
+                HttpHost targetHost = (HttpHost) context.getAttribute(ExecutionContext.HTTP_TARGET_HOST);
+                if (authScheme != null) {
+                    Credentials creds = credsProvider.getCredentials(new AuthScope(targetHost.getHostName(), targetHost.getPort()));
+                    if (creds == null) {
+                        throw new HttpException("No credentials for preemptive authentication");
+                    }
+                    authState.update(authScheme, creds);
+                }
+            }
+        }
+    }
 }

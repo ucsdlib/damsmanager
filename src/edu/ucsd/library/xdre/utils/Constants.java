@@ -29,8 +29,11 @@ public class Constants {
 	public static String ARK_ORG = "";
 	public static String DAMS_ARK_URL_BASE = "";
 	
-	public static String CLUSTER_HOST_NAME = "";
 	public static String DAMS_STORAGE_URL = "";
+	public static String DAMS_STORAGE_USER = "";
+	public static String DAMS_STORAGE_PWD = "";
+	
+	public static String CLUSTER_HOST_NAME = "";
 	public static String TMP_FILE_DIR = "";
 	public static String DAMS_STAGING = "";
 	public static String SOLR_URL_BASE = "";
@@ -52,8 +55,14 @@ public class Constants {
 			Properties props = new Properties();
 			props.load( in );
 
-			//DAMS REST API servlet URL
-			DAMS_STORAGE_URL = props.getProperty("xdre.damsStorageURL");
+			//DAMS repository REST API servlet URL
+			DAMS_STORAGE_URL = props.getProperty("xdre.damsRepo");
+			
+			//DAMS repository user
+			DAMS_STORAGE_USER = props.getProperty("xdre.damsRepo.user");
+			
+			//DAMS repository password
+			DAMS_STORAGE_PWD = props.getProperty("xdre.damsRepo.pwd");
 			
 			//Cluster host URL
 			CLUSTER_HOST_NAME = props.getProperty("xdre.clusterHostName");
