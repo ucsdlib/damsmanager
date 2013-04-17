@@ -178,6 +178,8 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							}
 							updateDocument(doc, parentNode, field, tNode.getText());
 						}
+					}else if(nName.endsWith("Object")){
+						objRecords.put(iUri, currFile);
 					}
 				}			
 
@@ -361,7 +363,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 					srcFile = filesMap.get(fName);
 					if(srcFile == null){
 						exeResult = false;
-						logError("Source file for " + srcFileName + " in " + srcName + " doesn't exist. Please choose a correct stage file location.");
+						logError("Source file for " + srcFileName + " in " + srcName + " doesn't exist. Please choose a correct file location from the dams staging area.");
 					}else{
 						// Ingest the file
 						DamsURI dURI = null;
@@ -490,8 +492,15 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	 */
 	public void toResourceLinking(String url, Node record){
 		Element pNode = record.getParent();
-		pNode.addAttribute("rdf:resource", toDamsUrl(url));
-		record.detach();
+		if(pNode.getName().endsWith("List") && !record.getName().toLowerCase().endsWith(pNode.getName().toLowerCase())){
+			//List elements
+			record.setName("rdf:Description");
+			((Element)record).clearContent();
+			((Element)record).selectSingleNode("@rdf:about").setText(toDamsUrl(url));
+		}else{
+			pNode.addAttribute("rdf:resource", toDamsUrl(url));
+			record.detach();
+		}
 	}
 	
 	/**
@@ -537,7 +546,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	public String getExeInfo() {
 		int objectsCount = objRecords.size();
 		if(exeResult)
-			exeReport.append("Successful imported " + objectsCount + " objets in " + rdfFiles.length + " metadata files: \n - Total " + recordsCount + " records ingested. \n - Total " + filesCount + " files ingested. ");
+			exeReport.append("Successful imported " + objectsCount + " objets in " + rdfFiles.length + " metadata files: \n - Total " + recordsCount + " records ingested. \n - " + (filesCount==0?"No":"Total " + filesCount) + " files ingested. ");
 		else {
 			exeReport.append("Import failed ( Found " +  objectsCount + " objets; Total " + recordsCount + " records" + (failedCount>0?"; " + failedCount + " of " + rdfFiles.length + " failed":"") + (derivFailedCount>0?"; Derivatives creation failed for " + derivFailedCount + " files.":"") + (solrFailedCount>0?"; SOLR update failed for " + solrFailedCount + " records.":"") +"): \n ");
 			if(ingestFailedCount > 0)
