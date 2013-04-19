@@ -29,9 +29,9 @@ public class DirectoryController implements Controller {
 
 	
 	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		String dirFilter = request.getParameter("filter");
-		boolean listOnly = request.getParameter("listOnly") !=null;
-		boolean dataOnly = request.getParameter("data") !=null;
+		String dirFilter = request.getParameter("filter"); 
+		boolean subList = request.getParameter("subList") !=null;   // When parameter subList provided, listing the child directories only and return it in JSON data format.
+		boolean listOnly = request.getParameter("listOnly") !=null; // When parameter listOnly provided, won't recursively list the whole directories but children and parent.
 		String damsStaging = Constants.DAMS_STAGING;
 		
 		File saFile = null;
@@ -41,7 +41,7 @@ public class DirectoryController implements Controller {
 			damsStaging += (dirFilter.startsWith("/")?"":"/") + dirFilter;
 			saFile = new File(damsStaging);
 			final String dirName = saFile.getName();
-			if(dataOnly){
+			if(subList){
 				saFiles = saFile.list();
 			}else{
 				saFile = saFile.getParentFile();
@@ -72,7 +72,7 @@ public class DirectoryController implements Controller {
 		
 		saObj.put(rootMessage, dirsArr);
 		
-		if(!listOnly){
+		if(!subList){
 			File sDir = new File(Constants.DAMS_STAGING);
 			File pFile = saFile;
 			if(pFile.compareTo(sDir) > 0){
@@ -102,7 +102,7 @@ public class DirectoryController implements Controller {
 				}
 			}
 		}
-		if(dataOnly){
+		if(subList){
 			response.setContentType("text/plain");
 			OutputStream out = response.getOutputStream();
 			out.write(saObj.get(rootMessage).toString().getBytes("UTF-8"));

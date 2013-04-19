@@ -218,29 +218,31 @@ function addDir(directory){
     var toAdd = true;
     for(var i=0; i<dirArr.length; i++){
     	var iDir = dirArr[i];
-    	if(iDir != null &&  iDir == directory){
-    		// Remove it when click on the folder again
-    		dirArr[i] = "";
-    		toAdd = false;
-    		break;
-    	}else if(iDir.indexOf(directory + "/") == 0){
-    		// Choose parent directory need clear all child directory
-    		if(toAdd){
-    			dirArr[i] = directory;
-    			toAdd = false;
-    		}else
-    			dirArr[i] = "";
-
-    	}else if(directory.indexOf(iDir + "/") == 0){
-    		// Choose child directory, replace it
-    		dirArr[i] = directory;
-    		toAdd = false;
-    		break;
+    	if(iDir != null && iDir.length > 0){
+	    	if(iDir == directory){
+	    		// Remove it when click on the folder again
+	    		dirArr[i] = "";
+	    		toAdd = false;
+	    		break;
+	    	}else if(iDir.indexOf(directory + "/") == 0){
+	    		// Choose parent directory need clear all child directory
+	    		if(toAdd){
+	    			dirArr[i] = directory;
+	    			toAdd = false;
+	    		}else
+	    			dirArr[i] = "";
+	
+	    	}else if(directory.indexOf(iDir + "/") == 0){
+	    		// Choose child directory, replace it
+	    		dirArr[i] = directory;
+	    		toAdd = false;
+	    		break;
+	    	}
     	}
     }
-    if(toAdd)
+    if(toAdd){
     	dirValues += directory + ";";
-    else {
+    }else {
 		dirValues = ""; 
     	// Re-assemble the path string.
     	for(var i=0; i<dirArr.length; i++){

@@ -21,7 +21,7 @@
 			dbo.render(output);
 		}else{
 		  $.ajax({
-			  url: "/damsmanager/directory.do?listOnly&data&filter=" +paths,
+			  url: "/damsmanager/directory.do?listOnly&subList&filter=" +paths,
 			  dataType: "json",
 			  success: function(data){
 					var dbo = new DebuggableObject(data);
