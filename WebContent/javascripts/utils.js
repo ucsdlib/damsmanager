@@ -136,7 +136,8 @@
 			  return false;
 		  }
 		  dirFilter = "?filter=" + dirFilter;
-	  }
+	  }else
+		  dirFilter = "?listOnly";
 	  var popwin = window.open("/damsmanager/directory.do"+dirFilter, "dirPicker", "toolbar=0,scrollbars=1,location=0,statusbar=0,menubar=0,resizable=0,width=450,height=300,left=400,top=184");
 	  popwin.focus();
   }

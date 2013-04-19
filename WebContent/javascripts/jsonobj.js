@@ -264,7 +264,7 @@ DebuggableObject.prototype = {
 	    renderObject(this.obj, cell, 1);
 	    element.appendChild(cell);
     }else{
-    	renderObjectDetails(this.obj, element, 0);
+    	renderObjectDetails(this.obj, element, 1);
     }
   }
   ,

@@ -8,6 +8,7 @@
 	<META http-equiv=Content-Type content="text/html; charset=iso-8859-1"/>
 	<LINK href="/damsmanager/css/jsonobj.css" rel="stylesheet"/>
 	<script type="text/javascript" src="/damsmanager/javascripts/jsonobj.js"></script>
+	<script type="text/javascript" src="/damsmanager/javascripts/jquery-1.4.2.min.js"></script>
 	<script type="text/javascript">
 	var dirRoot = 'dirPanel';
 	function loadPicker(output, paths){
@@ -20,7 +21,7 @@
 			dbo.render(output);
 		}else{
 		  $.ajax({
-			  url: "/damsmanager/directory.do?listOnly&filter=" +paths,
+			  url: "/damsmanager/directory.do?listOnly&data&filter=" +paths,
 			  dataType: "json",
 			  success: function(data){
 					var dbo = new DebuggableObject(data);
