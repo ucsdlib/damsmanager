@@ -1,7 +1,6 @@
 package edu.ucsd.library.xdre.web;
 
 import java.io.File;
-import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -30,6 +29,7 @@ public class DirectoryController implements Controller {
 	
 	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		String dirFilter = request.getParameter("filter");
+		boolean listOnly = request.getParameter("listOnly") !=null;
 		String damsStaging = Constants.DAMS_STAGING;
 		
 		File saFile = null;
@@ -60,24 +60,28 @@ public class DirectoryController implements Controller {
 		String rootMessage = "[Staging Area]";
 		if(saFiles == null || saFiles.length == 0)
 			rootMessage = "[No results: " + saFile.getAbsolutePath() + "]";
+		else if(saFile.getAbsolutePath().equals(new File(Constants.DAMS_STAGING)))
+			rootMessage = saFile.getName();
 		saObj.put(rootMessage, dirsArr);
 		
-		File sDir = new File(Constants.DAMS_STAGING);
-		File pFile = saFile;
-		if(pFile.compareTo(sDir) > 0){
-			List<String> folders = new ArrayList<String>();
-			do{
-				folders.add(0, pFile.getName());
-				pFile = pFile.getParentFile();
-			}while(pFile.compareTo(sDir) > 0);
-			
-			String curFolder = null;
-			for(int i=0; i<folders.size(); i++){
-				curFolder = folders.get(i);
-				tmpFile = new File(pFile.getPath() + File.separatorChar + curFolder);
-				appendFolder(dirsArr, tmpFile, false);
-				dirsArr = (JSONArray) ((JSONObject)dirsArr.get(0)).get(curFolder);
-				pFile = tmpFile;
+		if(!listOnly){
+			File sDir = new File(Constants.DAMS_STAGING);
+			File pFile = saFile;
+			if(pFile.compareTo(sDir) > 0){
+				List<String> folders = new ArrayList<String>();
+				do{
+					folders.add(0, pFile.getName());
+					pFile = pFile.getParentFile();
+				}while(pFile.compareTo(sDir) > 0);
+				
+				String curFolder = null;
+				for(int i=0; i<folders.size(); i++){
+					curFolder = folders.get(i);
+					tmpFile = new File(pFile.getPath() + File.separatorChar + curFolder);
+					appendFolder(dirsArr, tmpFile, false);
+					dirsArr = (JSONArray) ((JSONObject)dirsArr.get(0)).get(curFolder);
+					pFile = tmpFile;
+				}
 			}
 		}
 		
@@ -86,7 +90,7 @@ public class DirectoryController implements Controller {
 			for(int i = 0; i<saFiles.length; i++){
 				tmpFile = new File(saFile.getPath() + File.separatorChar + saFiles[i]);
 				if(tmpFile.isDirectory()){
-					appendFolder(dirsArr, tmpFile, true);
+					appendFolder(dirsArr, tmpFile, !listOnly);
 				}
 			}
 		}

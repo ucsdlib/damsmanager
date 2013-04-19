@@ -30,6 +30,7 @@ function renderObject(obj, element, depth) {
  	 toggle.setAttribute("title",obj);
  	 var folder = document.createElement('img');
  	 folder.setAttribute("src","/damsmanager/images/dir.gif");
+ 	 folder.style.paddingRight = '2';
  	 toggle.appendChild(folder);
  	 toggle.appendChild(document.createTextNode(obj));
  	 toggle.className = 'dbg-toggle';
@@ -126,9 +127,11 @@ function createToggleElement(obj, target, label, depth) {
   var toggle = document.createElement('div');
   var folder = document.createElement('img');
   folder.setAttribute("src","/damsmanager/images/dir.gif");
+  folder.style.paddingRight = '2';
   toggle.appendChild(folder);
   toggle.appendChild(document.createTextNode(label));
   toggle.className = 'dbg-toggle';
+
   var wrapper = document.createElement('div');
 
   wrapper.className = 'dbg-toggle-closed';
@@ -168,6 +171,7 @@ function createToggleElement(obj, target, label, depth) {
     }
     paths = "/" + paths;
     addDir(paths);
+    loadPicker(target, paths);
     //document.getElementById("dir").value = paths;
    // }
   };
@@ -254,10 +258,14 @@ DebuggableObject.prototype = {
 
   render : function (element) {
     while (element.firstChild) element.removeChild(element.firstChild);
-    var cell = document.createElement('div');
-    cell.className = 'dbg-value';
-    renderObject(this.obj, cell, 1);
-    element.appendChild(cell);
+    if(element.id == dirRoot){
+	    var cell = document.createElement('div');
+	    cell.className = 'dbg-value';
+	    renderObject(this.obj, cell, 1);
+	    element.appendChild(cell);
+    }else{
+    	renderObjectDetails(this.obj, element, 0);
+    }
   }
   ,
 
