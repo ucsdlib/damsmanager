@@ -20,6 +20,7 @@
 			var dbo = new DebuggableObject(dirobj);
 			dbo.render(output);
 		}else{
+		  $(output).html("<img src=\"/damsmanager/images/indicator.gif\" />");
 		  $.ajax({
 			  url: "/damsmanager/directory.do?listOnly&subList&filter=" +paths,
 			  dataType: "json",
