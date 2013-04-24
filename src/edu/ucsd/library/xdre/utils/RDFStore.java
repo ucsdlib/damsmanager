@@ -86,7 +86,11 @@ public class RDFStore {
 	public Property createProperty( String prop ) {
 		if(prop == null)
 			return null;
-		return rdfModel.createProperty(prop);
+		String[] uriParts = prop.split(":");
+		if(uriParts.length == 2){
+			return rdfModel.createProperty(rdfModel.getNsPrefixURI(uriParts[0]), uriParts[1]);
+		}else
+			return rdfModel.createProperty(prop);
 	}
 	
 	
@@ -124,6 +128,35 @@ public class RDFStore {
 				in = null;
 			}
 		}
+	}
+	
+	/**
+	 * Retrieve the property
+	 * @param uri
+	 * @param prodName
+	 * @return
+	 */
+	public String getProperty(String uri, String prodName){
+		return getProperty(createResource(uri), createProperty(prodName));
+	}
+	
+	/**
+	 * Retrieve the property
+	 * @param res
+	 * @param prod
+	 * @return
+	 */
+	public String getProperty(Resource res, Property prod){
+		String value = null;
+		Statement stmt = rdfModel.getProperty(res, prod);
+		if(stmt != null){
+			RDFNode rn = stmt.getObject();
+			if(rn.isLiteral())
+				value = rn.asLiteral().getString();
+			else
+				value = rn.asResource().getURI().toString();
+		}
+		return value;
 	}
 	
 	/**
