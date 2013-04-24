@@ -23,6 +23,7 @@ public class Constants {
 	public static final String IMPORT_MODE_ALL = "all";
 	public static final String IMPORT_MODE_SAMEPREDICATES = "samePredicates";
 	public static final String IMPORT_MODE_DESCRIPTIVE = "descriptive";
+	public static final String IMPORT_MODE_DELETE = "delete";
 
 	public static final int TIMEOUT = 30000;
 
