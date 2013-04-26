@@ -449,6 +449,10 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	 * @throws Exception
 	 */
 	private void updateDocument(Document doc, Node record, String field, String title) throws Exception{
+		// Skip if the record detached
+		if(record.getDocument() == null)
+			return;
+		
 		// Subject, Authority records use mads:authoritativeLabel
 		Node aboutAttr = record.selectSingleNode("@rdf:about");
 		String srcUri = aboutAttr.getStringValue();
