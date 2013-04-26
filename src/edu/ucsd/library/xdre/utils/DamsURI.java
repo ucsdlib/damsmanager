@@ -103,9 +103,9 @@ public class DamsURI {
 					component = tmp[0];	
 			} else
 				throw new Exception("Unknown object/file URL format: " + damsUri);
-		} else if ((idx=damsUri.indexOf("ark:/")) >= 0){
+		} else if ((idx=damsUri.indexOf(Constants.DAMS_ARK_URL_BASE)) >= 0){
 			// /ark:/20775/cid/fid
-			idString = damsUri.substring(idx+6);
+			idString = damsUri.substring(idx+Constants.DAMS_ARK_URL_BASE.length()+(Constants.DAMS_ARK_URL_BASE.endsWith("/")?0:1));
 			tmp = idString.split("/");
 			int len = tmp.length;
 			object = damsUri.substring(0, damsUri.indexOf(tmp[1]))+tmp[1];
