@@ -3,6 +3,8 @@ package edu.ucsd.library.xdre.collection;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
@@ -21,6 +23,7 @@ import edu.ucsd.library.xdre.utils.DamsURI;
 public class JhoveReportHandler extends CollectionHandler{
 	protected static Logger log = Logger.getLogger(JhoveReportHandler.class);
 
+	public static final String ADDJHOVE = "addJhove";
 	public static final String BYTESTREAM = "bytestream";
 	public static final String DURATION = "duration";
 	
@@ -95,8 +98,10 @@ public class JhoveReportHandler extends CollectionHandler{
 				for(Iterator<DFile> it=files.iterator(); it.hasNext();){
 					dFile = it.next();
 					use = dFile.getUse();
-					if(use != null && ((use.endsWith(Constants.SERVICE) && !use.startsWith(Constants.IMAGE)) || use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE))){
-						masterCount++;
+					
+					if((jhoveUpdate != null && jhoveUpdate.equalsIgnoreCase("addJhove")) || isMasterFile(use)){
+						if(isMasterFile(use))
+							masterCount++;
 						// Jhove report for bytestream format files only
 						if(bytestreamFilesOnly) 
 							formatName = dFile.getFormatName();
@@ -109,41 +114,66 @@ public class JhoveReportHandler extends CollectionHandler{
 			    			// Update Jhove
 					    	if(jhoveUpdate != null && jhoveUpdate.length() > 0){
 					    		boolean updateJhove = false;
-					    		boolean addDuration = true;
-					    		List<NameValuePair> paramsOrg = dFile.toNameValuePairs();
 					    		List<NameValuePair> optionalParams = new ArrayList<NameValuePair>();
-					    		formatNameTmp = dFileTmp.getFormatName();
-					    		durationTmp = dFileTmp.getDuration();
-					    		for(int j=0; j<paramsOrg.size(); j++){
-					    			NameValuePair optParam = paramsOrg.get(j);
-					    			String paramName = optParam.getName();
-						    		
-						    		if(jhoveUpdate.equalsIgnoreCase(BYTESTREAM) && formatNameTmp != null && !formatNameTmp.equalsIgnoreCase(BYTESTREAM) 
-						    				&& !formatNameTmp.equals(formatName) && (paramName.equals(DFile.FORMAT_NAME) || paramName.equals(DFile.FORMAT_VERSION))){
-							    		// Format and formatVersion extracted from Jhove	
-						    			if(paramName.equals(DFile.FORMAT_NAME)){
-						    				addProperty(optionalParams, paramName, formatNameTmp);
-						    				addProperty(optionalParams, DFile.FORMAT_VERSION, dFileTmp.getFormatVersion());
-						    			}
-							    		updateJhove = true;
-						    		}else if(jhoveUpdate.equalsIgnoreCase(DURATION) && paramName.equals(DFile.DURATION)){
-						    			addDuration = false;
-						    			if(durationTmp != null)
-						    				addProperty(optionalParams, paramName, durationTmp);
-						    			if(duration == null || !durationTmp.equals(duration))
-						    				updateJhove = true;
-									}else{
-										// Overwrite other properties that don't need update. 
-										optionalParams.add(paramsOrg.get(j));
+					    		if (jhoveUpdate.equalsIgnoreCase("addJhove")){
+					    			updateJhove = true;
+									// Overwrite the jhove metadta with the original properties.
+									Map<String, String> props = dFile.toProperties();
+									Map<String, String> newProps = dFileTmp.toProperties();
+									String key = null;
+									String value = null;
+									for(Iterator<String> pit=props.keySet().iterator(); pit.hasNext();){
+										key = pit.next();
+										value = props.get(key);
+										if(value != null && value.length() > 0)
+											newProps.put(key, value);
+									}
+									
+									//file properties to update
+									for(Iterator<String> pit=newProps.keySet().iterator(); pit.hasNext();){
+										key = pit.next();
+										value = props.get(key);
+										if(value != null)
+											addProperty(optionalParams, key, value);
+									}	
+					    		} else {
+					    			// Update file properties selectively
+						    		boolean addDuration = true;
+						    		List<NameValuePair> paramsOrg = dFile.toNameValuePairs();
+						    		formatNameTmp = dFileTmp.getFormatName();
+						    		durationTmp = dFileTmp.getDuration();
+						    		for(int j=0; j<paramsOrg.size(); j++){
+						    			NameValuePair optParam = paramsOrg.get(j);
+						    			String paramName = optParam.getName();
+							    		
+							    		if(jhoveUpdate.equalsIgnoreCase(BYTESTREAM) && formatNameTmp != null && !formatNameTmp.equalsIgnoreCase(BYTESTREAM) 
+							    				&& !formatNameTmp.equals(formatName) && (paramName.equals(DFile.FORMAT_NAME) || paramName.equals(DFile.FORMAT_VERSION))){
+								    		// Format and formatVersion extracted from Jhove	
+							    			if(paramName.equals(DFile.FORMAT_NAME)){
+							    				addProperty(optionalParams, paramName, formatNameTmp);
+							    				addProperty(optionalParams, DFile.FORMAT_VERSION, dFileTmp.getFormatVersion());
+							    			}
+								    		updateJhove = true;
+							    		}else if(jhoveUpdate.equalsIgnoreCase(DURATION) && paramName.equals(DFile.DURATION)){
+							    			addDuration = false;
+							    			if(durationTmp != null)
+							    				addProperty(optionalParams, paramName, durationTmp);
+							    			if(duration == null || !durationTmp.equals(duration))
+							    				updateJhove = true;
+										}else{
+											// Overwrite other properties that don't need update. 
+											optionalParams.add(paramsOrg.get(j));
+							    		}
+						    		}
+					    		
+					    		
+						    		// Duration that need to be extracted and save
+						    		if(jhoveUpdate.equalsIgnoreCase(DURATION) && durationTmp != null && addDuration){
+						    			addProperty(optionalParams, DFile.DURATION, durationTmp);
+						    			updateJhove = true;
 						    		}
 					    		}
-					    		
-					    		// Duration that need to be extracted and save
-					    		if(jhoveUpdate.equalsIgnoreCase(DURATION) && durationTmp != null && addDuration){
-					    			addProperty(optionalParams, DFile.DURATION, durationTmp);
-					    			updateJhove = true;
-					    		}
-					    		
+						    		
 					    		// Save Jhove
 					    		if(updateJhove){
 						    		damsClient.updateFileCharacterize(fileURI.getObject(), fileURI.getComponent(), fileURI.getFileName(), optionalParams);
@@ -157,6 +187,7 @@ public class JhoveReportHandler extends CollectionHandler{
 					    		}else{
 					    			filesNotUpdated.append(dFileTmp.getId() + "\t" + dFileTmp.getFormatName() + " " + dFileTmp.getFormatVersion() + "\t" + dFileTmp.getSize() + "\t" + dFileTmp.getCrc32checksum() + "\t" + dFileTmp.getDateCreated() + "\t" + dFileTmp.getDuration() + "\t" + dFileTmp.getStatus() + "\t" + (oSrcFileName==null?" ":oSrcFileName));
 					    		}
+					    		
 					    	}else
 								log("log", dFile.getId() + "\t" + dFileTmp.getFormatName() + " " + dFileTmp.getFormatVersion() + "\t" + dFileTmp.getSize() + "\t" + dFileTmp.getCrc32checksum() + "\t" + dFileTmp.getDateCreated() + "\t" + dFileTmp.getDuration() + "\t" + dFileTmp.getStatus() + "\t" + (oSrcFileName==null?" ":oSrcFileName));
 							
@@ -191,6 +222,10 @@ public class JhoveReportHandler extends CollectionHandler{
 		}
 		
 		return exeResult;
+	}
+	
+	public boolean isMasterFile(String use){
+		return use != null && (use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE) || (use.endsWith(Constants.SERVICE) && !use.startsWith(Constants.IMAGE)));
 	}
 	
 	public void addProperty(List<NameValuePair> params, String propName, String propValue){
