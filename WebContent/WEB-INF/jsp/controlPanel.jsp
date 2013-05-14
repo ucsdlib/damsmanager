@@ -108,10 +108,10 @@
 						</div>
 						<div>
 							<fieldset class="groupbox_rdf"><legend class="slegandText" style="padding-left:8px;padding-right:8px;">Update Options</legend>
-								<span title="Check this checkbox to add Jhove metadata when it's missing." class="submenuText">&nbsp;<input type="radio" name="jhoveUpdate" value="addJhove">
-									Extract and add Jhove metadata when it's missing.
-								</span>
-								<span title="Check this checkbox to update the format when it's validated by Jhove." class="submenuText" >&nbsp;<input type="radio" name="jhoveUpdate" value="ByteStream" checked>
+								<span title="Check this checkbox to add Jhove metadata when it's missing." class="submenuText">&nbsp;<input type="radio" name="jhoveUpdate" value="addJhove" checked>
+									Extract and add Jhove metadata.
+								</span><br />
+								<span title="Check this checkbox to update the format when it's validated by Jhove." class="submenuText" >&nbsp;<input type="radio" name="jhoveUpdate" value="ByteStream">
 									Correct format and format version.
 								</span><br />
 								<span title="Check this checkbox to update duration when it's available." class="submenuText">&nbsp;<input type="radio" name="jhoveUpdate" value="Duration">

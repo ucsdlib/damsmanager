@@ -72,11 +72,20 @@
        }
        
        if(jhoveReport == true){ 
-       		if(formObj.bsJhoveUpdate.checked && !formObj.bsJhoveReport.checked){
-       			alert("Option Jhove report for BYTESTREAM files only need to check for Jhove format update as well!");
-       			return false;
-       		}  
-          	operations += "- Jhove Report \n";
+       		if(formObj.bsJhoveUpdate.checked){
+       			var updateModes = formObj.jhoveUpdate;
+	       	    for(var i=0; i<updateModes.length; i++){
+	       	    	if(updateModes[i].checked) {
+	       	    		var updateMode = updateModes[i].value;
+	       	    		if(updateMode == "ByteStream"  && !formObj.bsJhoveReport.checked){
+	       	    			alert("Jhove format update only apply to BYTESTREAM files only. Please check option Jhove report for BYTESTREAM files only!");
+	       	       			return false;
+	       	    		}else
+	       	    			operations += "- Jhove update: " + updateMode + "\n";
+	       	    	}
+	       	    }
+       		}else 
+       			operations += "- Jhove Report \n";
        }
        
        if(createDerivatives == true){
