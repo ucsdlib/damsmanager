@@ -92,7 +92,8 @@
 							<span class="text-special">File Count Validation <c:if test="${model.itemsCount > 0}">(${model.itemsCount} objects)</c:if></span></div>
 						<div title="Check this checkbox to ingest the file when it's missing." class="specialmenuText"><input type="checkbox" id="ingestFile" name="ingestFile" class="pmcheckbox" onClick="confirmSelection(this, 'ingest the missing files.', 'validateFileCount');">
 							<span class="text-special"  title="Enter a filter path for the location to speek up the search. From the popup, click on the folder to select/deselect a location. Multiple loations allowed.">Ingest missing files from staging:&nbsp;<input type="text" id="filesLocation" name="filesLocation" size="30" value="">&nbsp;<input type="button" onclick="showFilePicker('filesLocation', event)" value="&nbsp;...&nbsp;"/></span>
-						</div>  
+						</div>
+						<div title="Check this checkbox to rename dams3 files to DAMS4 naming conventions." class="specialmenuText"><input type="checkbox" id="dams4FileRename" name="dams4FileRename" class="pmcheckbox" onClick="confirmSelection(this, 'rename DAMS3 files to DAMS4 naming convention.', 'validateFileCount');"></div>  
 					</div>
 				    <div id="jhoveReportDiv" class="processlayout">
 						<span title="Generate Jhove Report" class="menuText">

@@ -353,7 +353,9 @@ public class CollectionOperationController implements Controller {
 			 if(i == 0){
 				 session.setAttribute("status", opMessage + "File Count Validation for FileStore " + fileStore + " ...");
 				 boolean ingestFile = getParameter(paramsMap, "ingestFile") != null;
+				 boolean dams4FileRename = getParameter(paramsMap, "dams4FileRename") != null;
 				 handler = new FileCountValidaionHandler(damsClient, collectionId);
+				 ((FileCountValidaionHandler)handler).setDams4FileRename(dams4FileRename);
 				 if(ingestFile){
 					 String[] filesPaths = getParameter(paramsMap, "filesLocation").split(";");
 					  List<String> ingestFiles = new ArrayList<String>();

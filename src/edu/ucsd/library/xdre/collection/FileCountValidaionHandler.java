@@ -40,6 +40,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 	private StringBuilder filesIngested = new StringBuilder();
 	protected Document filesDoc = null;
 	private boolean ingestFile = false;
+	private boolean dams4FileRename = false;
 	private String[] filesPaths = null;
 	private Map<String, File> filesMap = new HashMap<String, File>();
 	
@@ -78,6 +79,14 @@ public class FileCountValidaionHandler extends CollectionHandler{
 
 	public void setFilesPaths(String[] filesPaths) {
 		this.filesPaths = filesPaths;
+	}
+
+	public boolean isDams4FileRename() {
+		return dams4FileRename;
+	}
+
+	public void setDams4FileRename(boolean dams4FileRename) {
+		this.dams4FileRename = dams4FileRename;
 	}
 
 	/**
