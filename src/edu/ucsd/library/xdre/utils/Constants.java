@@ -44,6 +44,9 @@ public class Constants {
 	
 	public static String MAILSENDER_DAMSSUPPORT = "";
 	
+	public static String FILESTORE_DIR = "";
+	public static String DERIVATIVES_LIST = "";
+	
 	static {
 		InputStream in = null;
 		try {
@@ -88,6 +91,12 @@ public class Constants {
 			
 			//Support mail
 			MAILSENDER_DAMSSUPPORT = props.getProperty("mail.support");
+			
+			//Local filestore base dir for DAMS3 files rename to DAMS4 naming convention only
+			FILESTORE_DIR = props.getProperty("fs.localStore.baseDir");
+			
+			//DAMS4/dams3 derivative list
+			DERIVATIVES_LIST = props.getProperty("derivatives.list");
 			
 			//Retrieve the default triplestore and filestore
 			DAMSClient damsClient = new DAMSClient(DAMS_STORAGE_URL);		
