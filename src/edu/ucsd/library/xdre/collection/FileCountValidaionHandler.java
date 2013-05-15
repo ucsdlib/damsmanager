@@ -43,6 +43,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 	private boolean dams4FileRename = false;
 	private String[] filesPaths = null;
 	private Map<String, File> filesMap = new HashMap<String, File>();
+	private Map<String, String> dersMap = getDams4n3derivativesMap();
 	
 	/**
 	 * Constructor for FileCountValidaionHandler
@@ -131,18 +132,24 @@ public class FileCountValidaionHandler extends CollectionHandler{
 					
 					// Check file existence
 					fileId = dFile.getId();
-					damsURI = DamsURI.toParts(fileId, subjectId);
+					damsURI = DamsURI.toParts(fileId, subjectId, DamsURI.FILE);
 					oid = damsURI.getObject();
 					cid = damsURI.getComponent();
 					fid = damsURI.getFileName();
 					
-					// Files has no file extension
-					if(fid==null && cid != null){
-						fid = cid;
-						cid = null;
-						damsURI.setFileName(fid);
-						damsURI.setComponent(cid);
+					// Rename DAMS3 files to DAMS4 naming convention
+					if(dams4FileRename && !damsClient.exists(oid, cid, fid)){
+						String dams3FileName = getDams3FileName(oid, cid, fid);
+						String dams4FileName = getDams4FileName(oid, cid, fid);
+						String fileDir = Constants.FILESTORE_DIR + "/" + pairPath(DAMSClient.stripID(oid));
+						File dams3File = new File(fileDir, dams3FileName);
+						if(dams3File.exists()){
+							File dams4File = new File(fileDir, dams4FileName);
+							dams3File.renameTo(dams4File);
+							logMessage("Renamed file " + dams3File.getPath() + " to " + dams4File.getPath());
+						}
 					}
+					
 					// Check source and alternate master files 
 					if((fid!=null && (fid.equals("1") || fid.startsWith("1."))) || (use!=null && (use.endsWith(Constants.SOURCE) 
 							|| (use.endsWith(Constants.SERVICE) && !use.startsWith(Constants.IMAGE)) || use.endsWith(Constants.ALTERNATE)))){
@@ -234,6 +241,50 @@ public class FileCountValidaionHandler extends CollectionHandler{
 		if(checksumNode != null)
 			checksum = checksumNode.getText();
 		return checksum;
+	}
+	
+	public String pairPath(String value){
+		String path = "";
+		for(int i=0; i<value.length(); i+=2){
+			path += value.substring(i, (i+2<value.length()?i+2:value.length())) + "/";
+		}
+		return path;
+	}
+	
+	public String getDams4FileName(String oid, String cid, String fid){
+		return Constants.ARK_ORG + "-" + DAMSClient.stripID(oid) + "-" + (cid!=null&&cid.length()>0?cid:"0") + "-" + fid;
+	}
+	
+	public String getDams3FileName(String oid, String cid, String fid){
+		return Constants.ARK_ORG + "-" + DAMSClient.stripID(oid) + "-" + toDams3FileConvention(cid, fid);
+	}
+	
+	private String toDams3FileConvention(String cid, String fid){
+		String dams3Name = "1";
+		if(cid != null && cid.length() > 0){
+			//Complex object
+			dams3Name += "-" + cid;
+		}
+		
+		//files like xml in ETD and derivatives like jpeg, mp3, mp4 etc.
+		String fName = dersMap.get(fid);
+		if(fName == null)
+			fName = fid;
+		
+		dams3Name += "-" + fid;
+		return dams3Name;
+	}
+	
+	public static Map<String, String> getDams4n3derivativesMap(){
+		Map<String, String> map = new HashMap<String, String>();
+		if(Constants.DERIVATIVES_LIST != null){
+			String[] pairs = Constants.DERIVATIVES_LIST.split(",");
+			for(int i=0; i<pairs.length; i++){
+				String[] pair = pairs[i].split(":");
+				map.put(pair[0], pair[1]);
+			}
+		}
+		return map;	
 	}
 	
 	public boolean ingestFile(DFile dFile){
