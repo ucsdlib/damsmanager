@@ -237,7 +237,7 @@ public class JhoveReportHandler extends CollectionHandler{
 	}
 	
 	public boolean isMasterFile(String use){
-		return use != null && (use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE) || (use.endsWith(Constants.SERVICE) && !use.startsWith(Constants.IMAGE)));
+		return use != null && (use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE));
 	}
 	
 	public void addProperty(List<NameValuePair> params, String propName, String propValue){

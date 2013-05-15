@@ -351,7 +351,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 						
 						//Create derivatives for images and documents PDFs
 						if((isImage(fid, use) || isDocument(fid, use)) 
-								&& (use == null || use.endsWith("source") || use.endsWith("service") || use.endsWith("alternate") || use.endsWith("Master"))){
+								&& (use == null || use.endsWith("source") || use.endsWith("alternate") || use.endsWith("Master"))){
 							
 							successful = damsClient.createDerivatives(oid, cid, fid, null);
 							if(successful){
