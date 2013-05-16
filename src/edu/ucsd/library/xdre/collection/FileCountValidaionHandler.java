@@ -146,7 +146,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 						if(dams3File.exists()){
 							File dams4File = new File(fileDir, dams4FileName);
 							dams3File.renameTo(dams4File);
-							logMessage("Renamed file " + dams3File.getPath() + " to " + dams4File.getPath());
+							logMessage("Renamed DAMS3 file " + dams3File.getPath() + " to " + dams4File.getPath());
 						}
 					}
 					
@@ -351,7 +351,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 						
 						//Create derivatives for images and documents PDFs
 						if((isImage(fid, use) || isDocument(fid, use)) 
-								&& (use == null || use.endsWith("source") || use.endsWith("alternate") || use.endsWith("Master"))){
+								&& (use == null || use.endsWith("source") || use.endsWith("alternate"))){
 							
 							successful = damsClient.createDerivatives(oid, cid, fid, null);
 							if(successful){
@@ -392,7 +392,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 			exeReport.append("File count validation succeeded: \n");
 		else
 			exeReport.append("File count validation (" + failedCount + " of " + itemsCount + " objects failed for validation" + (missingObjectsCount>0?"; " + missingObjectsCount + missingObjectsMessage:"") + (missingFilesCount>0?"; " + missingFilesCount + missingFilesMessage:"") + (ingestFailedCount>0?"; " + ingestFailedCount + ingestFailedMessage:"") + (derivFailedCount>0?"; " + derivFailedCount + derivFailedMessage:"") + "): \n");	
-		exeReport.append("Total files found " + filesTotal + ". \nNumber of objects found " + itemsCount + ". \nNumber of objects processed " + count  + ". \nNumber of source, service and alternate files " + masterTotal + ".\n" + (ingestedCount > 0?ingestedCount+ingestedMessage+".\n":""));
+		exeReport.append("Total files found " + filesTotal + ". \nNumber of objects found " + itemsCount + ". \nNumber of objects processed " + count  + ". \nNumber of source and alternate files " + masterTotal + ".\n" + (ingestedCount > 0?ingestedCount+ingestedMessage+".\n":""));
 		if(duplicatedFiles.length() > 0)
 			exeReport.append("\nThe following files are duplicated: \n" + duplicatedFiles.toString());
 		
