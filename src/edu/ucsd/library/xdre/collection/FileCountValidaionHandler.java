@@ -152,7 +152,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 					
 					// Check source and alternate master files 
 					if((fid!=null && (fid.equals("1") || fid.startsWith("1."))) || (use!=null && (use.endsWith(Constants.SOURCE) 
-							|| (use.endsWith(Constants.SERVICE) && !use.startsWith(Constants.IMAGE)) || use.endsWith(Constants.ALTERNATE)))){
+							|| use.endsWith(Constants.ALTERNATE)))){
 
 						masterTotal++;
 						masterExists = true;
@@ -271,7 +271,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 		if(fName == null)
 			fName = fid;
 		
-		dams3Name += "-" + fid;
+		dams3Name += "-" + fName;
 		return dams3Name;
 	}
 	
@@ -392,7 +392,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 			exeReport.append("File count validation succeeded: \n");
 		else
 			exeReport.append("File count validation (" + failedCount + " of " + itemsCount + " objects failed for validation" + (missingObjectsCount>0?"; " + missingObjectsCount + missingObjectsMessage:"") + (missingFilesCount>0?"; " + missingFilesCount + missingFilesMessage:"") + (ingestFailedCount>0?"; " + ingestFailedCount + ingestFailedMessage:"") + (derivFailedCount>0?"; " + derivFailedCount + derivFailedMessage:"") + "): \n");	
-		exeReport.append("Total files found " + filesTotal + ". \nNumber of objects found " + itemsCount + ". \nNumber of objects processed " + count  + ". \nNumber of source and alternate files " + masterTotal + ".\n" + (ingestedCount > 0?ingestedCount+ingestedMessage+".\n":""));
+		exeReport.append("Total files found " + filesTotal + ". \nNumber of objects found " + itemsCount + ". \nNumber of objects processed " + count  + ". \nNumber of source and/or alternate files " + masterTotal + ".\n" + (ingestedCount > 0?ingestedCount+ingestedMessage+".\n":""));
 		if(duplicatedFiles.length() > 0)
 			exeReport.append("\nThe following files are duplicated: \n" + duplicatedFiles.toString());
 		
