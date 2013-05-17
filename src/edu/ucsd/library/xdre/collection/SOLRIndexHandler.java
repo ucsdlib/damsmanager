@@ -66,6 +66,11 @@ public class SOLRIndexHandler extends CollectionHandler{
 	public boolean execute() throws Exception {
 
 		String subjectURI = null;
+		if(collectionId != null && collectionId.length() > 0){
+			// Update SOLR for the collection record
+			setStatus("Adding collection record " + collectionId  + " for SOLR update ... " );
+			updateSOLR(collectionId);
+		}
 		
 		for(int i=0; i<itemsCount && !interrupted; i++){
 			count++;
