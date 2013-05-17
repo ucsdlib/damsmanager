@@ -99,6 +99,7 @@ public class JhoveReportHandler extends CollectionHandler{
 					dFile = it.next();
 					use = dFile.getUse();
 					try{
+						setStatus("Processing Jhove report for file " + dFile.getId()  + " (" + (i+1) + " of " + itemsCount + ") ... " ); 
 						if((jhoveUpdate != null && jhoveUpdate.equalsIgnoreCase("addJhove")) || isMasterFile(use)){
 							if(isMasterFile(use))
 								masterCount++;
