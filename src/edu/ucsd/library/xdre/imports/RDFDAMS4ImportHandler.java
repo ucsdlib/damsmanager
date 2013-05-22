@@ -1,9 +1,9 @@
 package edu.ucsd.library.xdre.imports;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.net.URLEncoder;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -34,7 +34,7 @@ import edu.ucsd.library.xdre.utils.RDFStore;
  * @author lsitu@ucsd.edu
  */
 public class RDFDAMS4ImportHandler extends MetadataImportHandler{
-
+	public static final String COPYRIGHT = "Copyright";
 	private static Logger log = Logger.getLogger(RDFDAMS4ImportHandler.class);
 
 	private Map<String, String> idsMap = new HashMap<String, String>();
@@ -157,7 +157,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 								field = "name_tesim";
 								xPath = "mads:authoritativeLabel";
 								tNode = parentNode.selectSingleNode(xPath);
-							} else if (nName.endsWith("Copyright")){
+							} else if (nName.endsWith(COPYRIGHT)){
 								// XXX Copyright records use dams:copyrightStatus 
 								field = "status_tesim";
 								xPath = "dams:copyrightStatus";
@@ -461,7 +461,12 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		String oid = idsMap.get(nKey);
 		// Retrieve the record
 		if(oid == null){
-			oid = lookupRecord(damsClient, field, title, nName);
+			Map<String, String> props = null;
+			if(nName.endsWith(COPYRIGHT)){
+				props = copyrightProperties(record);
+			}			
+			oid = lookupRecord(damsClient, field, title, nName, props);
+			
 			if(oid == null){
 				// Create the record
 				oid = getNewId();
@@ -478,6 +483,36 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 			toResourceLinking(oid, record);
 		}
 		updateReference(doc, srcUri, oid);
+	}
+	
+	private Map<String, String> copyrightProperties(Node record){
+		Map<String, String> propNames = getcopyrightPropNames();
+		Map<String, String> props = new HashMap<String, String>();
+		String key = null;
+		String solrName = null;
+		String propValue = null;
+		for(Iterator<String> it=propNames.keySet().iterator(); it.hasNext();){
+			propValue = null;
+			key = it.next();
+			solrName = propNames.get(key);
+			Node tNode = record.selectSingleNode(key);
+			if(tNode != null)
+				propValue = tNode.getText().trim();
+			
+			props.put(solrName, propValue);
+		}
+		return props;
+	}
+	
+	private Map<String, String> getcopyrightPropNames(){
+		Map<String, String> propNames = new HashMap<String, String>();
+		propNames.put("dams:copyrightStatus", "status_tesim");
+		propNames.put("dams:copyrightJurisdiction", "jurisdiction_tesim");
+		propNames.put("dams:copyrightPurposeNote", "purposeNote_tesim");
+		//propNames.put("dams:copyrightNote", "note_tesim");
+		propNames.put("dams:beginDate", "beginDate_tesim");
+		propNames.put("dams:endDate", "endDate_tesim");
+		return propNames;
 	}
 	
 	/**
@@ -531,16 +566,16 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		}
 	}
 	
-	public void logData(String fileName, String content) throws FileNotFoundException{
+	public void logData(String fileName, String content) throws UnsupportedEncodingException, IOException{
 		File file = new File(Constants.TMP_FILE_DIR + "/damsmanager");
 		if(!file.exists())
 			file.mkdir();
-		PrintWriter writer = null;
+		FileOutputStream out = null;
 		try{
-			writer = new PrintWriter(file.getAbsoluteFile() + "/" + fileName);
-			writer.write(content);
+			out = new FileOutputStream(file.getAbsoluteFile() + "/" + fileName);
+			out.write(content.getBytes("UTF-8"));
 		}finally{
-			close(writer);
+			close(out);
 		}
 	}
 	
