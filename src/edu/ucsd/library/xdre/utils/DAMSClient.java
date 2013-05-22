@@ -485,7 +485,7 @@ public class DAMSClient {
 			if (!(status == 200 || status == 201))
 				handleError(format);
 		}finally{
-			post.reset();
+			post.releaseConnection();
 		}
 		return new HttpContentInputStream(response.getEntity().getContent(), request);
 	}
@@ -533,7 +533,7 @@ public class DAMSClient {
 			Document doc = getXMLResult(req);
 			fileURIs = getFiles(doc, srcPath, srcFileName);
 		}finally{
-			req.reset();
+			req.releaseConnection();
 		}
 		return fileURIs;
 	}
@@ -632,7 +632,7 @@ public class DAMSClient {
 			if (!success)
 				handleError(format);
 		} finally {
-			req.reset();
+			req.releaseConnection();
 		}
 
 		return success;
@@ -680,7 +680,7 @@ public class DAMSClient {
 			if (!success)
 				handleError(format);
 		} finally {
-			post.reset();
+			post.releaseConnection();
 		}
 
 		return success;
@@ -709,7 +709,7 @@ public class DAMSClient {
 			if (!success)
 				handleError(format);
 		} finally {
-			del.reset();
+			del.releaseConnection();
 		}
 		return success;
 	}
@@ -762,6 +762,50 @@ public class DAMSClient {
 		int status = -1;
 		return status == 200;
 	}
+	
+	public List<RightsAction> getUnitEmbargoeds(String unitId) throws Exception{
+		String url = getUnitsURL(unitId, "embargo", "xml");
+		HttpGet get = new HttpGet(url);
+		Document doc = getXMLResult(get);
+		System.out.println(doc.asXML());
+		List<Node> objectNodes = doc.selectNodes(DOCUMENT_RESPONSE_ROOT_PATH + "/embargoed/value");
+		Node valNode= null;
+		Node oidNode = null;
+		Node startDateNode = null;
+		Node endDateNode = null;
+		
+		List<RightsAction> objectsList = new ArrayList<RightsAction>();
+		for(Iterator<Node> it= objectNodes.iterator(); it.hasNext();){
+			valNode = (Node)it.next();
+			startDateNode = valNode.selectSingleNode("startDate");
+			endDateNode = valNode.selectSingleNode("endDate");
+			oidNode = valNode.selectSingleNode("oid");
+			objectsList.add(new RightsAction(null, startDateNode==null?null:startDateNode.getText(), endDateNode==null?null:endDateNode.getText(), null, oidNode.getText()));
+		}
+		return objectsList;
+	}
+	
+	public List<RightsAction> getCollectionEmbargoeds(String collectionId) throws Exception{
+		String url = getCollectionsURL(collectionId, "embargo", "xml");
+		HttpGet get = new HttpGet(url);
+		Document doc = getXMLResult(get);
+		System.out.println(doc.asXML());
+		List<Node> objectNodes = doc.selectNodes(DOCUMENT_RESPONSE_ROOT_PATH + "/embargoed/value");
+		Node valNode= null;
+		Node oidNode = null;
+		Node startDateNode = null;
+		Node endDateNode = null;
+		
+		List<RightsAction> objectsList = new ArrayList<RightsAction>();
+		for(Iterator<Node> it= objectNodes.iterator(); it.hasNext();){
+			valNode = (Node)it.next();
+			startDateNode = valNode.selectSingleNode("startDate");
+			endDateNode = valNode.selectSingleNode("endDate");
+			oidNode = valNode.selectSingleNode("oid");
+			objectsList.add(new RightsAction(null, startDateNode==null?null:startDateNode.getText(), endDateNode==null?null:endDateNode.getText(), null, oidNode.getText()));
+		}
+		return objectsList;
+	}
 
 	/**
 	 * Retrieve metatada of an object
@@ -781,7 +825,7 @@ public class DAMSClient {
 				handleError(format);
 			return EntityUtils.toString(response.getEntity());
 		} finally {
-			req.reset();
+			req.releaseConnection();
 		}
 	}
 
@@ -810,7 +854,7 @@ public class DAMSClient {
 			if (!success)
 				handleError(format);
 		} finally {
-			req.reset();
+			req.releaseConnection();
 		}
 
 		return success;
@@ -842,7 +886,7 @@ public class DAMSClient {
 			if (!success)
 				handleError(format);
 		} finally {
-			req.reset();
+			req.releaseConnection();
 		}
 
 		return success;
@@ -864,7 +908,7 @@ public class DAMSClient {
 			if (mData != null)
 				dfile = DFile.toDFile(mData);
 		} finally {
-			req.reset();
+			req.releaseConnection();
 		}
 
 		return dfile;
@@ -904,7 +948,7 @@ public class DAMSClient {
 		} catch(FileNotFoundException e){
 			exists = false;
 		} finally {
-			req.reset();
+			req.releaseConnection();
 		}
 		return exists;
 	}
@@ -974,7 +1018,7 @@ public class DAMSClient {
 			if(status != 200)
 				handleError(format);
 		}finally{
-			get.reset();
+			get.releaseConnection();
 		}
 
 		return new HttpContentInputStream(response.getEntity().getContent(), get);
@@ -1062,7 +1106,7 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		} finally {
-			req.reset();
+			req.releaseConnection();
 		}
 		return success;
 	}
@@ -1096,7 +1140,7 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		} finally {
-			req.reset();
+			req.releaseConnection();
 		}
 		return success;
 	}
@@ -1135,7 +1179,7 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		} finally {
-			req.reset();
+			req.releaseConnection();
 			close(in);
 		}
 		return success;
@@ -1179,7 +1223,7 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		} finally {
-			req.reset();
+			req.releaseConnection();
 		}
 		return success;
 	}
@@ -1231,7 +1275,7 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		}finally{
-			del.reset();
+			del.releaseConnection();
 		}
 		return success;
 	}
@@ -1265,7 +1309,7 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		} finally {
-			del.reset();
+			del.releaseConnection();
 		}
 		return success;
 	}
@@ -1426,7 +1470,7 @@ public class DAMSClient {
 				handleError("json");
 			}
 		}finally{
-			req.reset();
+			req.releaseConnection();
 			close(in);
 			close(reader);
 		}
@@ -1454,7 +1498,7 @@ public class DAMSClient {
 				handleError("json");
 			}
 		}finally{
-			req.reset();
+			req.releaseConnection();
 			close(in);
 		}
 		return resObj;
@@ -1514,8 +1558,7 @@ public class DAMSClient {
 			if(status != 200)
 				handleError(null);
 		} finally {
-			
-			get.reset();
+			get.releaseConnection();
 		}
 		return EntityUtils.toString(response.getEntity());
 	}
@@ -1543,8 +1586,31 @@ public class DAMSClient {
 			try{
 				in = ent.getContent();
 				String contentType = ent.getContentType().getValue();
-				if(ent.getContentLength() > MAX_SIZE || !contentType.startsWith("text/xml")
-						&& !(format!=null && format.equals("json"))){
+				if(contentType.indexOf("xml") >= 0){
+					try{
+						SAXReader saxReader = new SAXReader();
+						Document doc = saxReader.read(in);
+						System.out.println(doc.asXML());
+						Node node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/status");
+						
+						if(node != null)
+							respContent += node.getText();
+						node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/statusCode");
+						if(node != null)
+							respContent += " status code " + doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/statusCode").getText();
+						node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/message");
+						if(node != null)
+							respContent += " =>" + node.getText();
+					}catch (Exception e){
+						e.printStackTrace();
+					}
+				} else if(format.equals("json")){
+					Reader reader = new InputStreamReader(in);
+					JSONObject resultObj = (JSONObject) JSONValue.parse(reader);
+					respContent += resultObj.get("status") + " status code " + resultObj.get("statusCode") + " => " + resultObj.get("message");
+					System.out.println(resultObj.toString());
+					reader.close();
+				} else {
 
 					byte[] buf = new byte[4096];
 					StringBuilder strContent = new StringBuilder();
@@ -1554,26 +1620,6 @@ public class DAMSClient {
 						strContent.append((char)bRead);
 					respContent = strContent.toString();
 					System.out.println(respContent);
-				}else if (contentType.startsWith("text/xml")) {
-					SAXReader saxReader = new SAXReader();
-					Document doc = saxReader.read(in);
-					System.out.println(doc.asXML());
-					Node node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/status");
-					
-					if(node != null)
-						respContent += node.getText();
-					node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/statusCode");
-					if(node != null)
-						respContent += " status code " + doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/statusCode").getText();
-					node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/message");
-					if(node != null)
-						respContent += ". " + node.getText();
-				} else if(format.equals("json")){
-					Reader reader = new InputStreamReader(in);
-					JSONObject resultObj = (JSONObject) JSONValue.parse(reader);
-					respContent += resultObj.get("status") + " status code " + resultObj.get("statusCode") + ". " + resultObj.get(status);
-					System.out.println(resultObj.toString());
-					reader.close();
 				}
 			}finally{
 				close(in);
@@ -2012,7 +2058,7 @@ public class DAMSClient {
 				in.close();
 			} finally {
 				// Reset http request
-				request.reset();
+				request.releaseConnection();
 			}
 		}
 
