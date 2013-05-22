@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -779,15 +780,82 @@ public abstract class CollectionHandler implements ProcessHandler {
 	 * @throws Exception
 	 */
 	public static String lookupRecord(DAMSClient damsClient, String field, String value, String modelName) throws Exception{
+		return lookupRecord(damsClient, field, value, modelName, null);
+	}
+	
+	/**
+	 * Look up copyrights record from dams
+	 * @param value
+	 * @param modelName
+	 * @return
+	 * @throws Exception
+	 */
+	public static String lookupRecord(DAMSClient damsClient, String field, String value, String modelName, Map<String, String> properties) throws Exception{
+		if(properties != null && properties.containsKey(field))
+			properties.remove(field);
+		
 		String modelParam = "(\"" + INFO_MODEL_PREFIX + "Dams" + modelName + "\" OR \"" + INFO_MODEL_PREFIX + "Mads" + modelName + "\")";
-		String query = "q=" + URLEncoder.encode(field + ":\"" + value + "\" AND has_model_ssim:" + modelParam, "UTF-8") + "&fl=id&fl=has_model_ssim";
+		String propsParams = toSolrQuery(properties);
+		String query = "q=" + URLEncoder.encode(field + ":\"" + value + "\" AND has_model_ssim:" + modelParam, "UTF-8") + "&rows=1000" + (propsParams.length()>0?"&fq="+ URLEncoder.encode(propsParams, "UTF-8"):"");
 		Document doc = damsClient.solrLookup(query);
 		int numFound = Integer.parseInt(doc.selectSingleNode("/response/result/@numFound").getStringValue());
 		if(numFound <= 0)
 			return null;
 		else {
-			return ((Node)doc.selectNodes("/response/result/doc/str[@name='id']").get(0)).getText();
+			Node record = null;
+			boolean matched = true;
+			List<Node> records = doc.selectNodes("/response/result/doc");
+			if(properties == null || properties.size() == 0){
+				// If no additional properties provided, just return the first record.
+				record = (Node)doc.selectNodes("/response/result/doc").get(0);
+			}else{
+				String key = null;
+				String propValue = null;
+				Node propNode = null;
+				// Matching all the properties to discover the record
+				for(Iterator<Node> it=records.iterator(); it.hasNext();){
+					matched = true;
+					record = it.next();
+					for(Iterator<String> pit=properties.keySet().iterator(); pit.hasNext();){
+						key = pit.next();
+						propValue = properties.get(key);
+						if(propValue == null || propValue.length() == 0){
+							propNode = record.selectSingleNode("arr[@name='"+key+"']/str");
+							if(propNode != null && propNode.getText().length() > 0){
+								matched = false;
+								continue;
+							}
+						}
+					}
+					if(matched)
+						break;
+				}
+			}
+			
+			if(matched)
+				return record.selectSingleNode("str[@name='id']").getText();
+			else
+				return null;
 		}
+	}
+	
+	private static String toSolrQuery(Map<String, String> properties) throws UnsupportedEncodingException{
+		String solrParams = "";
+		String key = null;
+		String value = null;
+		if(properties != null){
+			for(Iterator<String> it=properties.keySet().iterator(); it.hasNext();){
+				key = it.next();
+				value = properties.get(key);
+				if(value != null && value.length() > 0)
+					solrParams += key+ ":\"" + value.replace("\"", "\\\"") + "\"" + " AND ";
+			}
+			
+			int len = solrParams.length();
+			if(len > 0)
+				solrParams = solrParams.substring(0, len-5);
+		}
+		return solrParams;
 	}
 
 	/**

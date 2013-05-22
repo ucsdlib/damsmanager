@@ -1600,14 +1600,14 @@ public class DAMSClient {
 							respContent += " status code " + doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/statusCode").getText();
 						node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/message");
 						if(node != null)
-							respContent += " =>" + node.getText();
+							respContent += ". Error " + node.getText();
 					}catch (Exception e){
 						e.printStackTrace();
 					}
 				} else if(format.equals("json")){
 					Reader reader = new InputStreamReader(in);
 					JSONObject resultObj = (JSONObject) JSONValue.parse(reader);
-					respContent += resultObj.get("status") + " status code " + resultObj.get("statusCode") + " => " + resultObj.get("message");
+					respContent += resultObj.get("status") + " status code " + resultObj.get("statusCode") + ". Error " + resultObj.get("message");
 					System.out.println(resultObj.toString());
 					reader.close();
 				} else {
