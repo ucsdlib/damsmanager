@@ -1,5 +1,7 @@
 package edu.ucsd.library.xdre.collection;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -9,6 +11,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.dom4j.Document;
+import org.dom4j.Element;
+import org.dom4j.Node;
+import org.dom4j.io.SAXReader;
 import org.json.simple.JSONObject;
 
 import com.hp.hpl.jena.rdf.model.Model;
@@ -113,19 +119,46 @@ public class MetadataImportHandler extends CollectionHandler{
 	}
 	
 	protected void initHandler() throws Exception{
-		objects = new HashMap<String, List<DamsURI>>();
 		
-		if(rdfStore != null){
+		// Object list
+		objects = new HashMap<String, List<DamsURI>>();
+		String objId = null;
+		DamsURI objURI = null;
+		List<DamsURI> objURIs = null;
+		
+		// For delete operation, retrive all the resource from attribute rdf:about 
+	    if(importMode.equalsIgnoreCase(Constants.IMPORT_MODE_DELETE)){
+			SAXReader saxReader = new SAXReader();
+			InputStream in = null;
+			try{
+				in = new ByteArrayInputStream(rdf.getBytes("UTF-8"));
+		  		Document doc = saxReader.read(in);
+		  		List<Node> nodes = doc.selectNodes("//@rdf:about");
+		  		Node aboutNode = null;
+		  		Element pNode = null;
+		  	 	for(Iterator<Node> it=nodes.iterator(); it.hasNext();){
+		  			aboutNode = it.next();
+		  			pNode = aboutNode.getParent();
+		  			objURI = DamsURI.toParts(aboutNode.getStringValue(), null, pNode.getNamespacePrefix()+ ":" + pNode.getName());
+					objId = objURI.getObject();
+					objURIs = objects.get(objId);
+					if(objURIs == null){
+						objURIs = new ArrayList<DamsURI>();
+						objects.put(objId , objURIs);
+					}
+					objURIs.add(objURI);
+		  	}
+		  }finally{
+			  close(in);
+		  }
+	  }else if(rdfStore != null){
 			List<String> sItems = rdfStore.listURISubjects();
 			Collections.sort(sItems);
 			int iSize = sItems.size();
 			
-			// Object list
-			String objId = null;
-			DamsURI objURI = null;
-			List<DamsURI> objURIs = null;
 			for(int i=0; i<iSize; i++){
-				objURI = DamsURI.toParts(sItems.get(i), null);
+				String iUri = sItems.get(i);
+				objURI = DamsURI.toParts(iUri, null, rdfStore.getProperty(iUri, "rdf:type"));
 				objId = objURI.getObject();
 				objURIs = objects.get(objId);
 				if(objURIs == null){
@@ -163,6 +196,7 @@ public class MetadataImportHandler extends CollectionHandler{
 				setStatus("Processing metadata for subject " + subjectId  + " (" + (i+1) + " of " + itemsCount + ") ... " ); 
 				String message = "";
 				boolean succeeded = false;
+				boolean delete = false;
 				objURIs = objects.get(subjectId);
 
 				RDFStore rdfStoreOrgin = null;
@@ -233,6 +267,22 @@ public class MetadataImportHandler extends CollectionHandler{
 					} else if(importMode.equals(Constants.IMPORT_MODE_ADD)) {
 						// Add subject
 						graph.merge(rdf);
+					}  else if(importMode.equals(Constants.IMPORT_MODE_DELETE)) {
+						// Delete: Object, Component, File or other records.
+						if(objURI.isFileURI() || objURI.isComponentURI()){
+							// Delete a File or a Component
+							try{
+								if(!damsClient.delete(objURI.getObject(), objURI.getComponent(), objURI.getFileName())){
+									logError("Failed to delete " + (objURI.isFileURI()?"File ":"Component ") + objURI.toString() + ".");
+								}else{
+									logMessage("Deleted " + (objURI.isFileURI()?"File ":"Component ") + objURI.toString()  + " from dams.");
+								}
+							} catch (Exception e){
+								logError("Error delete " + (objURI.isFileURI()?"File ":"Component ")  + objURI.toString() + ": " + e.getMessage());
+							}
+						}else
+							// Mark record for deletion
+							delete = true;
 					} else 
 						throw new Exception ("Unhandled import mode for metadata import: " + importMode + ".");
 				}
@@ -244,22 +294,41 @@ public class MetadataImportHandler extends CollectionHandler{
 						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), Constants.IMPORT_MODE_ADD);
 					else if(importMode.equals(Constants.IMPORT_MODE_DESCRIPTIVE))
 						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), Constants.IMPORT_MODE_ALL);
-					else
+					else if(importMode.equals(Constants.IMPORT_MODE_DELETE)){
+						if(delete)
+							succeeded = damsClient.delete(subjectId, null, null);
+						else
+							succeeded = true;
+					}else
 						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), importMode);
 				}else
 					succeeded = false;
 					
 				if(!succeeded){
 					failedCount++;
-					String iMessage = "Metadata import for record " + subjectId  + " failed ";
-					iMessage += "(" + (i+1) + " of " + itemsCount + "): ";
-					setStatus( iMessage + message.replace("\n", "<br/>")); 
-					logError(iMessage + message);
+					eMessage = "Metadata import for record " + subjectId  + " failed ";
+					if(delete)
+						eMessage = "Delete record " + subjectId  + " failed ";
+					eMessage += "(" + (i+1) + " of " + itemsCount + ")";
+					setStatus( eMessage + (message.length()>0?": "+message.replace("\n", "<br/>"):".")); 
+					logError(eMessage + (message.length()>0?": "+message:"."));
 				}else{				
 					// Updated SOLR
-					if(!updateSOLR(subjectId))
+					if(delete){
+						succeeded = solrDelete(subjectId);
+						message = "Deleted record " + subjectId  + " from solr.";
+					}else{
+						succeeded = updateSOLR(subjectId);
+						message = "Updated record " + subjectId  + " in solr.";
+					}
+					
+					if(!succeeded){
 						failedCount++;
-
+						eMessage = "SOLR " + (delete?"delete":"update") + " failed for " + subjectId + ".";
+						setStatus( eMessage); 
+						logError(eMessage);
+					}else
+						logMessage((delete?"Deleted":"Updated") + " record " + subjectId + (delete?" from ":" in ") + "SOLR.");
 				}
 			
 			} catch (Exception e) {
@@ -294,9 +363,9 @@ public class MetadataImportHandler extends CollectionHandler{
 	 */
 	public String getExeInfo() {
 		if(exeResult)
-			exeReport.append("Metadata import succeeded. \n ");
+			exeReport.append("Metadata " + (importMode==Constants.IMPORT_MODE_DELETE?"deleted":"import") + " succeeded. \n ");
 		else
-			exeReport.append("Metadata import failed (" + failedCount + " of " + count + " failed): \n ");	
+			exeReport.append("Metadata " + (importMode==Constants.IMPORT_MODE_DELETE?"deleted":"import") + " failed (" + failedCount + " of " + count + " failed): \n ");	
 		exeReport.append("Total items found " + itemsCount + ". Number of items processed " + count + ".\n");
 		
 		// Add solr report message
