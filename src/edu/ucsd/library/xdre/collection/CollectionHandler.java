@@ -48,6 +48,7 @@ import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.DomUtil;
 import edu.ucsd.library.xdre.utils.ProcessHandler;
 import edu.ucsd.library.xdre.utils.RequestOrganizer;
+import edu.ucsd.library.xdre.utils.RightsAction;
 
 /**
  * Class CollectionHandler, a class for procedure handling
@@ -150,13 +151,32 @@ public abstract class CollectionHandler implements ProcessHandler {
 	}
 
 	/**
-	 * Retrieve the embargoed objects in the collection
+	 * Retrieve embargoed objects in the collection
 	 * @param collectionId
 	 * @return
+	 * @throws Exception 
 	 */
-	public List<String> getEmbargoedItems(String collectionId){
-		//XXX
-		return null;
+	public List<String> getEmbargoedItems(String collectionId) throws Exception{
+		List<String> embargoes = new ArrayList<String>();
+		List<RightsAction> embargoList = listEmbargoes(collectionId, null);
+		for(Iterator<RightsAction> it=embargoList.iterator(); it.hasNext();){
+			embargoes.add(it.next().getOid());
+		}
+		return embargoes;
+	}
+	
+	/**
+	 * Retrieve embargoed objects in a group like collection, unit, etc.
+	 * @param collectionId
+	 * @param group - Unit, Collection etc.
+	 * @return
+	 * @throws Exception 
+	 */
+	public List<RightsAction> listEmbargoes(String id, String group) throws Exception{
+		if(group != null && group.equalsIgnoreCase("unit")){
+			return damsClient.getUnitEmbargoeds(id);
+		}else
+			return damsClient.getCollectionEmbargoeds(id);
 	}
 	
 	/**
@@ -578,7 +598,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 		return excludeEmbargoed;
 	}
 
-	public void excludeEmbargoedObjects() {
+	public void excludeEmbargoedObjects() throws Exception {
 		List<String> embargoItems = getEmbargoedItems(collectionId);
 		int idx = -1;
 		if (embargoItems.size() > 0) {
