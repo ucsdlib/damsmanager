@@ -839,12 +839,17 @@ public abstract class CollectionHandler implements ProcessHandler {
 					for(Iterator<String> pit=properties.keySet().iterator(); pit.hasNext();){
 						key = pit.next();
 						propValue = properties.get(key);
+						propNode = record.selectSingleNode("arr[@name='"+key+"']/str");
 						if(propValue == null || propValue.length() == 0){
-							propNode = record.selectSingleNode("arr[@name='"+key+"']/str");
 							if(propNode != null && propNode.getText().length() > 0){
 								matched = false;
 								continue;
 							}
+						}else{
+							if(propNode == null || !propValue.equalsIgnoreCase(propNode.getText())){
+								matched = false;
+								continue;
+							}	
 						}
 					}
 					if(matched)

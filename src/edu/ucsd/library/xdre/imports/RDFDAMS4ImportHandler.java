@@ -509,7 +509,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		propNames.put("dams:copyrightStatus", "status_tesim");
 		propNames.put("dams:copyrightJurisdiction", "jurisdiction_tesim");
 		propNames.put("dams:copyrightPurposeNote", "purposeNote_tesim");
-		//propNames.put("dams:copyrightNote", "note_tesim");
+		propNames.put("dams:copyrightNote", "note_tesim");
 		propNames.put("dams:beginDate", "beginDate_tesim");
 		propNames.put("dams:endDate", "endDate_tesim");
 		return propNames;
