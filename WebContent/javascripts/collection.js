@@ -118,7 +118,16 @@
 	       alert("Please choose a data file.");
 	       return false;      
 	    }
-         operations += "- Metadata Import \n";
+		 var importModes = formObj.importMode;
+	     for(var i=0; i<importModes.length; i++){
+	    	 if(importModes[i].checked) {
+	    		 var importMode = importModes[i].value;
+	    		 if(importMode == "delete")
+	    			 operations += "- Delete all records/resources referenced by rdf:about \n";
+	    		 else
+	    			 operations += "- Metadata Import: " + importMode + "\n";
+	    	 }
+	     }
          formObj.enctype = "multipart/form-data";
       }
      

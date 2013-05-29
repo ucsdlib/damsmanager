@@ -173,6 +173,10 @@
 											<input type="radio" id="importMode" name="importMode" value="samePredicates">
 											 <span class="text-special">Same predicates replacement with metadata submitted</span>
 								  </div>
+								  <div title="Check this checkbox to delete the subjects and/or files included in the submitted RDF." class="specialmenuText">
+											<input type="radio" id="importMode" name="importMode" value="delete">
+											 <span class="text-special">Delete all submitted records/resources referenced by rdf:about</span>
+								  </div>
 							  </fieldset>
 						  </div>
 						  <div>
