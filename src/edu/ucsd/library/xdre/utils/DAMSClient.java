@@ -404,10 +404,14 @@ public class DAMSClient {
 		JSONArray colArr = (JSONArray) resObj.get("collections");
 		JSONObject col = null;
 		map = new TreeMap<String, String>();
-		for(Iterator it= colArr.iterator(); it.hasNext();){
-			col = (JSONObject)it.next();
+		for(Iterator<JSONObject> it= colArr.iterator(); it.hasNext();){
+			col = it.next();
 			// Collection title, collection URL
-			map.put((String)col.get("title"), (String)col.get("collection"));
+			String title = (String)col.get("title");
+			String colId = (String)col.get("collection");
+			if(map.get(title) != null)
+				title += " (" + stripID(colId) + ")";
+			map.put(title, colId);
 		}
 
 		return map;
