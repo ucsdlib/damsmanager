@@ -127,7 +127,7 @@ public class MetadataImportHandler extends CollectionHandler{
 		List<DamsURI> objURIs = null;
 		
 		// For delete operation, retrive all the resource from attribute rdf:about 
-	    if(importMode.equalsIgnoreCase(Constants.IMPORT_MODE_DELETE)){
+	    if(importMode!=null && importMode.equalsIgnoreCase(Constants.IMPORT_MODE_DELETE)){
 			SAXReader saxReader = new SAXReader();
 			InputStream in = null;
 			try{
