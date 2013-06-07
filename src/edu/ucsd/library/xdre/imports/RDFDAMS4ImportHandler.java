@@ -152,13 +152,13 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 								field = "title_tesim";
 								xPath = "dams:title/dams:Title/rdf:value";
 								tNode = parentNode.selectSingleNode(xPath);
-							} else if (nName.endsWith("Subject") || nName.endsWith("Name") || nName.endsWith("Topic") || nName.endsWith("GenreForm") || nName.endsWith("Temporal") || nName.endsWith("Geographic")){
+							} else if (nName.endsWith("Language") || nName.endsWith("Authority") || nName.endsWith("Subject") || nName.endsWith("Name") || nName.endsWith("Topic") || nName.endsWith("GenreForm") || nName.endsWith("Temporal") || nName.endsWith("Geographic")){
 								// Subject, Authority records use mads:authoritativeLabel
 								field = "name_tesim";
 								xPath = "mads:authoritativeLabel";
 								tNode = parentNode.selectSingleNode(xPath);
 							} else if (nName.endsWith(COPYRIGHT)){
-								// XXX Copyright records use dams:copyrightStatus 
+								// Copyright records use dams:copyrightStatus, plus other properties in the next step.
 								field = "status_tesim";
 								xPath = "dams:copyrightStatus";
 								tNode = parentNode.selectSingleNode(xPath);
