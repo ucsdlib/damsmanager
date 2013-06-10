@@ -147,27 +147,34 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							String field = null;
 							Node tNode = null;
 							String xPath = null;
+							String elemXPath = parentNode.getPath();
 							if (nName.endsWith("Collection")){
 								// Retrieve the Collection record
 								field = "title_tesim";
 								xPath = "dams:title/dams:Title/rdf:value";
 								tNode = parentNode.selectSingleNode(xPath);
-							} else if (nName.endsWith("Language") || nName.endsWith("Authority") || nName.endsWith("Subject") || nName.endsWith("Name") || nName.endsWith("Topic") || nName.endsWith("GenreForm") || nName.endsWith("Temporal") || nName.endsWith("Geographic")){
+							}/* else if (nName.endsWith("Language") || nName.endsWith("Authority") || nName.endsWith("Subject") || nName.endsWith("Name") || nName.endsWith("Topic") || nName.endsWith("GenreForm") || nName.endsWith("Temporal") || nName.endsWith("Geographic")){
 								// Subject, Authority records use mads:authoritativeLabel
 								field = "name_tesim";
 								xPath = "mads:authoritativeLabel";
 								tNode = parentNode.selectSingleNode(xPath);
-							} else if (nName.endsWith(COPYRIGHT)){
+							} */else if (nName.endsWith(COPYRIGHT)){
 								// Copyright records use dams:copyrightStatus, plus other properties in the next step.
 								field = "status_tesim";
 								xPath = "dams:copyrightStatus";
 								tNode = parentNode.selectSingleNode(xPath);
+							} else if(elemXPath.indexOf("mads", elemXPath.lastIndexOf('/') + 1) >= 0){
+								// Subject, Authority records use mads:authoritativeLabel
+								field = "name_tesim";
+								xPath = "mads:authoritativeLabel";
+								tNode = parentNode.selectSingleNode(xPath);
+								
 							} else {
-								// Other records like Role, Language etc. use rdf:value
+								// XXX Other Rights records like Statute, License, Other Rights etc. 
 								field = "value_tesim";
 								xPath = "rdf:value";
 								tNode = parentNode.selectSingleNode(xPath);
-								if(tNode == null){
+								if (tNode == null) {
 									field = "code_tesim";
 									xPath = "dams:code";
 									tNode = parentNode.selectSingleNode(xPath);
@@ -232,7 +239,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							logMessage(message);
 							log.info(message);
 							
-							// Update SOLR foe records ingested.
+							// Update SOLR fre records ingested.
 							updateSOLR(subjectId);
 						}
 					

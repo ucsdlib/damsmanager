@@ -104,8 +104,24 @@ public class DamsURI {
 			} else
 				throw new Exception("Unknown object/file URL format: " + damsUri);
 		} else if ((idx=damsUri.indexOf(Constants.DAMS_ARK_URL_BASE)) >= 0){
-			// /ark:/20775/cid/fid
+			// /ark:/20775/oid/cid/fid
 			idString = damsUri.substring(idx+Constants.DAMS_ARK_URL_BASE.length()+(Constants.DAMS_ARK_URL_BASE.endsWith("/")?0:1));
+			tmp = idString.split("/");
+			int len = tmp.length;
+			object = damsUri.substring(0, damsUri.indexOf(tmp[1]))+tmp[1];
+			if(len == 4){
+				component = tmp[2];
+				fileName = tmp[3];
+			}else if(len == 3){
+				if(isFileId(tmp[2], type) && !tmp[2].toLowerCase().startsWith("cid"))
+					fileName = tmp[2];
+				else
+					component = tmp[2];
+			}else if(len != 2)
+				throw new Exception("Unknown object/file URL format: " + damsUri);
+		}  else if ((idx=damsUri.indexOf("ark:/")) >= 0){
+			// ark:/13030/oid/cid/fid
+			idString = damsUri.substring(idx + 6);
 			tmp = idString.split("/");
 			int len = tmp.length;
 			object = damsUri.substring(0, damsUri.indexOf(tmp[1]))+tmp[1];
