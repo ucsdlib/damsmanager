@@ -35,6 +35,7 @@ import edu.ucsd.library.xdre.utils.RDFStore;
  */
 public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	public static final String COPYRIGHT = "Copyright";
+	public static final String MADSSCHEME = "MADSScheme";
 	private static Logger log = Logger.getLogger(RDFDAMS4ImportHandler.class);
 
 	private Map<String, String> idsMap = new HashMap<String, String>();
@@ -164,18 +165,23 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 								xPath = "dams:copyrightStatus";
 								tNode = parentNode.selectSingleNode(xPath);
 							} else if(elemXPath.indexOf("mads", elemXPath.lastIndexOf('/') + 1) >= 0){
-								// Subject, Authority records use mads:authoritativeLabel
-								field = "name_tesim";
-								xPath = "mads:authoritativeLabel";
+								// MADSScheme
+								if(nName.endsWith(MADSSCHEME)){
+									field = "code_tesim";
+									xPath = "mads:code";
+								} else {
+									// Subject, Authority records use mads:authoritativeLabel
+									field = "name_tesim";
+									xPath = "mads:authoritativeLabel";
+								}
 								tNode = parentNode.selectSingleNode(xPath);
-								
 							} else {
 								// XXX Other Rights records like Statute, License, Other Rights etc. 
 								field = "value_tesim";
 								xPath = "rdf:value";
 								tNode = parentNode.selectSingleNode(xPath);
+								field = "code_tesim";
 								if (tNode == null) {
-									field = "code_tesim";
 									xPath = "dams:code";
 									tNode = parentNode.selectSingleNode(xPath);
 								}
