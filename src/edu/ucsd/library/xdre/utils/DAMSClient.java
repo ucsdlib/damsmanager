@@ -1675,7 +1675,7 @@ public class DAMSClient {
 	public static int copy(InputStream in, OutputStream out) throws IOException {
 		int len = 0;
 		int bytesRead = 0;
-		byte[] buf = new byte[5096];
+		byte[] buf = new byte[5120];
 		while ((bytesRead = in.read(buf)) > 0) {
 			out.write(buf, 0, bytesRead);
 			len += bytesRead;
@@ -1687,7 +1687,7 @@ public class DAMSClient {
 	 * Close up IO resources
 	 * @param closeable
 	 */
-	public void close(Closeable closeable){
+	public static void close(Closeable closeable){
 		if(closeable != null){
 			try{
 				closeable.close();
@@ -1879,6 +1879,19 @@ public class DAMSClient {
 	 */
 	public static String[] toFileParts(String fullArkFileName)  {
 		return fullArkFileName.split("-", 4);
+	}
+	
+	/**
+	 * Utility function for pairing file path with an ark
+	 * @param value
+	 * @return
+	 */
+	public static String pairPath(String value){
+		String path = "";
+		for(int i=0; i<value.length(); i+=2){
+			path += value.substring(i, (i+2<value.length()?i+2:value.length())) + "/";
+		}
+		return path;
 	}
 	
 	/**

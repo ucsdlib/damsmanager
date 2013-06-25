@@ -46,6 +46,8 @@ public class Constants {
 	
 	public static String FILESTORE_DIR = "";
 	public static String DERIVATIVES_LIST = "";
+	public static String VIDEO_SIZE = "";
+	public static String FFMPEG_COMMAND = "";
 	
 	static {
 		InputStream in = null;
@@ -97,6 +99,12 @@ public class Constants {
 			
 			//DAMS4/dams3 derivative list
 			DERIVATIVES_LIST = props.getProperty("derivatives.list");
+			
+			// FFMPEG command
+			FFMPEG_COMMAND = props.getProperty("xdre.ffmpeg");
+			
+			// FFMPEG command
+			VIDEO_SIZE = props.getProperty("video.size");
 			
 			//Retrieve the default triplestore and filestore
 			DAMSClient damsClient = new DAMSClient(DAMS_STORAGE_URL);		
