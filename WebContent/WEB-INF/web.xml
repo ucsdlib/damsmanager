@@ -69,6 +69,7 @@
     	<web-resource-collection>
 	        <web-resource-name>Protected Area</web-resource-name>
 	        <url-pattern>/ingest.do</url-pattern>
+	        <url-pattern>/derivative.do</url-pattern>
 	        <url-pattern>/collectionUpdate.do</url-pattern>
 	        <url-pattern>/controlPanel.do</url-pattern>
 	        <url-pattern>/metaDataImport.do</url-pattern>

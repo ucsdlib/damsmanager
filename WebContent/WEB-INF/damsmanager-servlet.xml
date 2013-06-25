@@ -15,7 +15,7 @@
     <bean name="/ingest.do" class="edu.ucsd.library.xdre.web.IngestController"></bean>
 	<bean name="/directory.do" class="edu.ucsd.library.xdre.web.DirectoryController"></bean>
     <!--<bean name="/jhove.do" class="edu.ucsd.library.xdre.web.JhoveIngestController" />-->
-    <!--<bean name="/derivative.do" class="edu.ucsd.library.xdre.web.DerivativeCreationController" />-->
+    <bean name="/derivative.do" class="edu.ucsd.library.xdre.web.DerivativeController" />
  	<!--<bean name="/collectionReport.do" class="edu.ucsd.library.xdre.web.CollectionStatusReport" />-->
 	<bean name="/logout.do" class="edu.ucsd.library.xdre.web.LogoutController" />
 	<bean name="/login.do" class="edu.ucsd.library.xdre.web.LoginController" />
