@@ -34,6 +34,7 @@ public class DerivativeController implements Controller{
 		String reqSize = request.getParameter("size");
 		String[] subjects = request.getParameterValues("subject");
 		String frameNo = request.getParameter("frame");
+		String file = "file";
 		boolean successful = false;
 		String message = "";
 		int status = 200;
@@ -53,6 +54,7 @@ public class DerivativeController implements Controller{
 			List<String> items = Arrays.asList(subjects);
 			handler.setItems(items);
 			handler.setFrameNo(frameNo);
+			handler.setFile(file);
 			successful = handler.execute();
 			if(successful)
 				message = handler.getExeInfo();

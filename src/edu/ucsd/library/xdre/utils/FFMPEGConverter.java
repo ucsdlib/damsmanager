@@ -55,7 +55,7 @@ public class FFMPEGConverter
 			throw new Exception ("Master file " + src.getPath() + " doesn't exists.");
 		}
 
-		File tmpDir = new File(Constants.DAMS_STAGING + "/ffmpeg");
+		File tmpDir = new File(Constants.DAMS_STAGING + "/darry/ffmpeg");
 		if(!tmpDir.exists())
 			tmpDir.mkdir();
 		dst = File.createTempFile("ffmpeg_tmp", oid+"-"+dfName, tmpDir);

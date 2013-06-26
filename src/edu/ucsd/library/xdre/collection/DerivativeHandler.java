@@ -27,6 +27,7 @@ public class DerivativeHandler extends CollectionHandler{
 
 	private static Logger log = Logger.getLogger(DerivativeHandler.class);
 	private String[] sizes = null;
+	private String file = null; // Source file for derivative creation
 	boolean replace = false;
 	//Using frameNo -1 to diable the page/frame option
 	private String frameNo = null;
@@ -46,6 +47,38 @@ public class DerivativeHandler extends CollectionHandler{
 		this.replace = replace;
 	}
 
+	/**
+	 * Access the source file name that use for derivative creation
+	 * @return
+	 */
+	public String getFile() {
+		return file;
+	}
+
+	/**
+	 * Setter for the source file fid | cid/fid for derivative creation
+	 * @param file
+	 */
+	public void setFile(String file) {
+		this.file = file;
+	}
+
+	/**
+	 * Access the frameNo property
+	 * @return
+	 */
+	public String getFrameNo() {
+		return frameNo;
+	}
+
+	/**
+	 * Frame number that designated for derivative creation
+	 * @param frameNo
+	 */
+	public void setFrameNo(String frameNo) {
+		frameDefault = false;
+		this.frameNo = frameNo;
+	}
 	/**
 	 * Implements the collection handler's execute method for
 	 * LocalStore derivative creation
@@ -75,9 +108,13 @@ public class DerivativeHandler extends CollectionHandler{
 	        	//Check for derivative created for source and service files
 				String sizs2create = "";
 				String sizs2replace = "";
-	        	if(use != null && !(use.startsWith("audio") || use.startsWith("data")) && (use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE) || (use.endsWith(Constants.SERVICE) && !use.startsWith(Constants.IMAGE) && !(reqSizes.length==1 && reqSizes[0].equals("v"))))){
+				String fileID = dFile.getId();
+				
+				// Create derivative for the designated source file or master image files (source/alternative?), service video files (mp4) etc.
+	        	if((file!=null && file.length()>0 && fileID.endsWith(file)) || 
+	        			use != null && !(use.startsWith("audio") || use.startsWith("data")) && (use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE) || (use.endsWith(Constants.SERVICE) && !use.startsWith(Constants.IMAGE) && !(reqSizes.length==1 && reqSizes[0].equals("v"))))){
 		        	totalFiles += 1;
-		        	DamsURI fileURI = DamsURI.toParts(dFile.getId(), dFile.getObject());
+		        	DamsURI fileURI = DamsURI.toParts(fileID, dFile.getObject());
 	        		String derId = null;
 	        		String mfId = fileURI.getFileName();
 	        		for(int j=0; j<reqSizes.length; j++){
@@ -156,16 +193,6 @@ public class DerivativeHandler extends CollectionHandler{
 		String message = exeReport.toString();
 		log("log", message);
 		return message;
-	}
-
-
-	public String getFrameNo() {
-		return frameNo;
-	}
-
-	public void setFrameNo(String frameNo) {
-		frameDefault = false;
-		this.frameNo = frameNo;
 	}
 	
 	private boolean handleFile(String oid, String cid, String fid, String[] derSizes, boolean update, int itemIndex) throws Exception{
