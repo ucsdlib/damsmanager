@@ -148,6 +148,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							String field = null;
 							Node tNode = null;
 							String xPath = null;
+							Map<String, String> props= new HashMap<String, String>();
 							String elemXPath = parentNode.getPath();
 							if (nName.endsWith("Collection")){
 								// Retrieve the Collection record
@@ -164,8 +165,9 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 								field = "status_tesim";
 								xPath = "dams:copyrightStatus";
 								tNode = parentNode.selectSingleNode(xPath);
+								props = copyrightProperties(parentNode);
 							} else if(elemXPath.indexOf("mads", elemXPath.lastIndexOf('/') + 1) >= 0){
-								// MADSScheme
+								// MADSScheme record
 								if(nName.endsWith(MADSSCHEME)){
 									field = "code_tesim";
 									xPath = "mads:code";
@@ -173,6 +175,21 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 									// Subject, Authority records use mads:authoritativeLabel
 									field = "name_tesim";
 									xPath = "mads:authoritativeLabel";
+									// Mapping for mads:isMemberOfMADSScheme
+									String madsScheme = null;
+									Node madsSchemeNode = parentNode.selectSingleNode("mads:isMemberOfMADSScheme");
+									if(madsSchemeNode != null){
+										Node msValueNode = madsSchemeNode.selectSingleNode("@rdf:resource");
+										if (msValueNode != null){
+											madsScheme = madsSchemeNode.getStringValue();
+										}else if ((msValueNode=madsSchemeNode.selectSingleNode("mads:MADSScheme/rdfs:label")) != null){
+											madsScheme = msValueNode.getText();
+										}else if ((msValueNode=madsSchemeNode.selectSingleNode("mads:MADSScheme/mads:code")) != null){
+											madsScheme = msValueNode.getText();
+										}
+									}
+									if(madsScheme != null)
+										props.put("scheme_tesim", madsScheme);
 								}
 								tNode = parentNode.selectSingleNode(xPath);
 							} else {
@@ -189,7 +206,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							if(tNode == null){
 								throw new Exception("Element " + xPath + " is missing from the " + nName + " record " + iUri + " in file " + currFile + ".");
 							}
-							updateDocument(doc, parentNode, field, tNode.getText());
+							updateDocument(doc, parentNode, field, tNode.getText(), props);
 						}
 					}else if(nName.endsWith("Object")){
 						objRecords.put(iUri, currFile);
@@ -461,7 +478,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	 * @param title
 	 * @throws Exception
 	 */
-	private void updateDocument(Document doc, Node record, String field, String title) throws Exception{
+	private void updateDocument(Document doc, Node record, String field, String title, Map<String, String> props) throws Exception{
 		// Skip if the record detached
 		if(record.getDocument() == null)
 			return;
@@ -474,10 +491,10 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		String oid = idsMap.get(nKey);
 		// Retrieve the record
 		if(oid == null){
-			Map<String, String> props = null;
+			/*Map<String, String> props = null;
 			if(nName.endsWith(COPYRIGHT)){
 				props = copyrightProperties(record);
-			}			
+			}*/			
 			oid = lookupRecord(damsClient, field, title, nName, props);
 			
 			if(oid == null){
