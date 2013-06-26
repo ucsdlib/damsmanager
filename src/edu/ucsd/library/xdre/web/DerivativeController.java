@@ -9,7 +9,6 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.json.simple.JSONValue;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -34,7 +33,7 @@ public class DerivativeController implements Controller{
 		String reqSize = request.getParameter("size");
 		String[] subjects = request.getParameterValues("subject");
 		String frameNo = request.getParameter("frame");
-		String file = "file";
+		String file = request.getParameter("file");
 		boolean successful = false;
 		String message = "";
 		int status = 200;
