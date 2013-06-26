@@ -54,10 +54,15 @@ public class FFMPEGConverter
 			// XXX Implementation to retrieve master file to local disk???
 			throw new Exception ("Master file " + src.getPath() + " doesn't exists.");
 		}
-
+		
+		// Create the directory in dams staging to hold the temporary files created by ffmpeg for ingest
 		File tmpDir = new File(Constants.DAMS_STAGING + "/darry/ffmpeg");
-		if(!tmpDir.exists())
-			tmpDir.mkdir();
+		if(!tmpDir.exists()){
+			if(new File(Constants.DAMS_STAGING + "/darry").exists())
+				tmpDir.mkdir();
+			else
+				tmpDir.mkdirs();
+		}
 		dst = File.createTempFile("ffmpeg_tmp", oid+"-"+dfName, tmpDir);
 		boolean succssful = createVideo( src, dst, frameSize );
 		if ( !succssful ) {

@@ -357,7 +357,7 @@ public class DerivativeHandler extends CollectionHandler{
 		FFMPEGConverter converter = new FFMPEGConverter();
 		if(Constants.FFMPEG_COMMAND != null && Constants.FFMPEG_COMMAND.length() > 0)
 			converter.setCommand(Constants.FFMPEG_COMMAND);
-		return converter.createDerivative(oid, cid, mfid, dfid, Constants.VIDEO_SIZE);
+		return converter.createDerivative(DAMSClient.stripID(oid), cid, mfid, dfid, Constants.VIDEO_SIZE);
 	}
 	
 	public boolean isFileExists(String fileId, List<DFile> dFiles){
