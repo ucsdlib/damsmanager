@@ -27,6 +27,7 @@ public class Constants {
 
 	public static final int TIMEOUT = 30000;
 
+	public static String DEFAULT_ARK_NAME = "";
 	public static String ARK_ORG = "";
 	public static String DAMS_ARK_URL_BASE = "";
 	
@@ -88,6 +89,8 @@ public class Constants {
 			//ARK URL nase
 			DAMS_ARK_URL_BASE = props.getProperty("xdre.ark.urlBase");
 			
+			//ARK name
+			DEFAULT_ARK_NAME = props.getProperty("xdre.ark.name");
 			//ARK orgCode
 			ARK_ORG = props.getProperty("xdre.ark.orgCode");
 			

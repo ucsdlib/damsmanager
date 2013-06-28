@@ -814,6 +814,13 @@ public abstract class CollectionHandler implements ProcessHandler {
 		if(properties != null && properties.containsKey(field))
 			properties.remove(field);
 		
+		// XXX No scheme_code_tesim lookup, need handle scheme_code_tesim to disable it for solr search???
+		String scheme_code_tesim_key = "scheme_code_tesim";
+		String scheme_code_tesim_value = properties.get(scheme_code_tesim_key);
+		if(properties.containsKey(scheme_code_tesim_key)){
+			properties.put(scheme_code_tesim_key, null);
+		}
+		
 		String modelParam = "(\"" + INFO_MODEL_PREFIX + "Dams" + modelName + "\" OR \"" + INFO_MODEL_PREFIX + "Mads" + modelName + "\")";
 		String propsParams = toSolrQuery(properties);
 		String query = "q=" + URLEncoder.encode(field + ":\"" + value + "\" AND has_model_ssim:" + modelParam, "UTF-8") + "&rows=1000" + (propsParams.length()>0?"&fq="+ URLEncoder.encode(propsParams, "UTF-8"):"");
@@ -839,17 +846,28 @@ public abstract class CollectionHandler implements ProcessHandler {
 					for(Iterator<String> pit=properties.keySet().iterator(); pit.hasNext();){
 						key = pit.next();
 						propValue = properties.get(key);
-						propNode = record.selectSingleNode("arr[@name='"+key+"']/str");
-						if(propValue == null || propValue.length() == 0){
-							if(propNode != null && propNode.getText().length() > 0){
+						//  XXX No scheme_code_tesim lookup, need second lookup for scheme_tesim???
+						if(key.equals(scheme_code_tesim_key)){
+							propNode = record.selectSingleNode("arr[@name='scheme_tesim']/str");
+							String authority_scheme_id = propNode==null?"":propNode.getText();
+							String scheme_id = lookupRecord(damsClient, "code_tesim", scheme_code_tesim_value, "MADSScheme", null);
+							if(authority_scheme_id == null || scheme_id == null || !authority_scheme_id.endsWith(scheme_id)){
 								matched = false;
-								continue;
+								break;
 							}
 						}else{
-							if(propNode == null || !propValue.equalsIgnoreCase(propNode.getText())){
-								matched = false;
-								continue;
-							}	
+							propNode = record.selectSingleNode("arr[@name='"+key+"']/str");
+							if(propValue == null || propValue.length() == 0){
+								if(propNode != null && propNode.getText().length() > 0){
+									matched = false;
+									break;
+								}
+							}else{
+								if(propNode == null || !propValue.equalsIgnoreCase(propNode.getText())){
+									matched = false;
+									break;
+								}	
+							}
 						}
 					}
 					if(matched)

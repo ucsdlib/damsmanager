@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.apache.log4j.Logger;
 import org.dom4j.Document;
@@ -148,7 +149,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							String field = null;
 							Node tNode = null;
 							String xPath = null;
-							Map<String, String> props= new HashMap<String, String>();
+							Map<String, String> props= new TreeMap<String, String>();
 							String elemXPath = parentNode.getPath();
 							if (nName.endsWith("Collection")){
 								// Retrieve the Collection record
@@ -169,8 +170,8 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							} else if(elemXPath.indexOf("mads", elemXPath.lastIndexOf('/') + 1) >= 0){
 								// MADSScheme record
 								if(nName.endsWith(MADSSCHEME)){
-									field = "code_tesim";
-									xPath = "mads:code";
+									field = "scheme_name_tesim";
+									xPath = "rdfs:label";
 								} else {
 									// Subject, Authority records use mads:authoritativeLabel
 									field = "name_tesim";
@@ -182,14 +183,18 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 										Node msValueNode = madsSchemeNode.selectSingleNode("@rdf:resource");
 										if (msValueNode != null){
 											madsScheme = madsSchemeNode.getStringValue();
+											props.put("scheme_tesim", madsScheme);
 										}else if ((msValueNode=madsSchemeNode.selectSingleNode("mads:MADSScheme/rdfs:label")) != null){
 											madsScheme = msValueNode.getText();
+											props.put("scheme_name_tesim", madsScheme);
 										}else if ((msValueNode=madsSchemeNode.selectSingleNode("mads:MADSScheme/mads:code")) != null){
 											madsScheme = msValueNode.getText();
-										}
+											props.put("scheme_code_tesim", madsScheme);
+										}else
+											props.put("scheme_tesim", "");
+									}else{
+										props.put("scheme_tesim", null);
 									}
-									if(madsScheme != null)
-										props.put("scheme_tesim", madsScheme);
 								}
 								tNode = parentNode.selectSingleNode(xPath);
 							} else {
@@ -488,6 +493,12 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		String srcUri = aboutAttr.getStringValue();
 		String nName = record.getName();
 		String nKey = INFO_MODEL_PREFIX+nName + "::" + title;
+		if(props != null){
+			for(Iterator<String> it=props.keySet().iterator(); it.hasNext();){
+				String iKey = it.next();
+				nKey += "_" + iKey + "::" + props.get(iKey);
+			}
+		}
 		String oid = idsMap.get(nKey);
 		// Retrieve the record
 		if(oid == null){
@@ -517,7 +528,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	
 	private Map<String, String> copyrightProperties(Node record){
 		Map<String, String> propNames = getcopyrightPropNames();
-		Map<String, String> props = new HashMap<String, String>();
+		Map<String, String> props = new TreeMap<String, String>();
 		String key = null;
 		String solrName = null;
 		String propValue = null;
@@ -551,7 +562,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	 * @throws Exception
 	 */
 	public String getNewId() throws Exception{
-		return toDamsUrl(damsClient.mintArk(null));
+		return toDamsUrl(damsClient.mintArk(Constants.DEFAULT_ARK_NAME));
 	}
 	
 	/**
