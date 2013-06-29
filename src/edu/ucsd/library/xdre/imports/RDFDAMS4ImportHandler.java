@@ -154,7 +154,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							if (nName.endsWith("Collection")){
 								// Retrieve the Collection record
 								field = "title_tesim";
-								xPath = "dams:title/dams:Title/rdf:value";
+								xPath = "dams:title/mads:Title/mads:authoritativeLabel";
 								tNode = parentNode.selectSingleNode(xPath);
 							}/* else if (nName.endsWith("Language") || nName.endsWith("Authority") || nName.endsWith("Subject") || nName.endsWith("Name") || nName.endsWith("Topic") || nName.endsWith("GenreForm") || nName.endsWith("Temporal") || nName.endsWith("Geographic")){
 								// Subject, Authority records use mads:authoritativeLabel
@@ -170,12 +170,19 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							} else if(elemXPath.indexOf("mads", elemXPath.lastIndexOf('/') + 1) >= 0){
 								// MADSScheme record
 								if(nName.endsWith(MADSSCHEME)){
-									field = "scheme_name_tesim";
-									xPath = "rdfs:label";
+									field = "code_tesim";
+									xPath = "mads:code";
+									tNode = parentNode.selectSingleNode(xPath);
 								} else {
 									// Subject, Authority records use mads:authoritativeLabel
 									field = "name_tesim";
 									xPath = "mads:authoritativeLabel";
+									tNode = parentNode.selectSingleNode(xPath);
+									if(tNode == null){
+										field = "code_tesim";
+										xPath = "mads:code";
+										tNode = parentNode.selectSingleNode(xPath);
+									}
 									// Mapping for mads:isMemberOfMADSScheme
 									String madsScheme = null;
 									Node madsSchemeNode = parentNode.selectSingleNode("mads:isMemberOfMADSScheme");
@@ -196,7 +203,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 										props.put("scheme_tesim", null);
 									}
 								}
-								tNode = parentNode.selectSingleNode(xPath);
+								
 							} else {
 								// XXX Other Rights records like Statute, License, Other Rights etc. 
 								field = "value_tesim";
@@ -626,11 +633,11 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	public String getExeInfo() {
 		int objectsCount = objRecords.size();
 		if(exeResult)
-			exeReport.append("Successful imported " + objectsCount + " objets in " + rdfFiles.length + " metadata files: \n - Total " + recordsCount + " records ingested. \n - " + (filesCount==0?"No":"Total " + filesCount) + " files ingested. ");
+			exeReport.append("Successfully imported " + objectsCount + " objets in " + rdfFiles.length + " metadata file" + (rdfFiles.length>1?"s":"") + ": \n - Total " + recordsCount + " records ingested. \n - " + (filesCount==0?"No":"Total " + filesCount) + " files ingested. ");
 		else {
-			exeReport.append("Import failed ( Found " +  objectsCount + " objets; Total " + recordsCount + " records" + (failedCount>0?"; " + failedCount + " of " + rdfFiles.length + " failed":"") + (derivFailedCount>0?"; Derivatives creation failed for " + derivFailedCount + " files.":"") + (solrFailedCount>0?"; SOLR update failed for " + solrFailedCount + " records.":"") +"): \n ");
+			exeReport.append("Import failed ( Found " +  objectsCount + " objets; Total " + recordsCount + " record" + (recordsCount>1?"s":"") + (failedCount>0?"; " + failedCount + " of " + rdfFiles.length + " failed":"") + (derivFailedCount>0?"; Derivatives creation failed for " + derivFailedCount + " files.":"") + (solrFailedCount>0?"; SOLR update failed for " + solrFailedCount + " records.":"") +"): \n ");
 			if(ingestFailedCount > 0)
-				exeReport.append(" - " + ingestFailedCount + " of " + filesCount + " files failed: \n" + ingestFailed.toString() + " \n");
+				exeReport.append(" - " + ingestFailedCount + " of " + filesCount + " file" + (filesCount>1?"s":"") + " failed: \n" + ingestFailed.toString() + " \n");
 			if(metadataFailed.length() > 0)
 				exeReport.append(" - Failed to import the following metadeta records: \n" + metadataFailed.toString());
 			if(derivativesFailed.length() > 0)
