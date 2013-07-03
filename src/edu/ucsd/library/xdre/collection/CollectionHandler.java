@@ -821,7 +821,8 @@ public abstract class CollectionHandler implements ProcessHandler {
 			properties.put(scheme_code_tesim_key, null);
 		}
 		
-		String modelParam = "(\"" + INFO_MODEL_PREFIX + "Dams" + modelName + "\" OR \"" + INFO_MODEL_PREFIX + "Mads" + modelName + "\")";
+		//String modelParam = "(\"" + INFO_MODEL_PREFIX + "Dams" + modelName + "\" OR \"" + INFO_MODEL_PREFIX + (modelName.startsWith("Mads")?"":"Mads") + modelName + "\")";
+		String modelParam = INFO_MODEL_PREFIX + modelName;
 		String propsParams = toSolrQuery(properties);
 		String query = "q=" + URLEncoder.encode(field + ":\"" + value + "\" AND has_model_ssim:" + modelParam, "UTF-8") + "&rows=1000" + (propsParams.length()>0?"&fq="+ URLEncoder.encode(propsParams, "UTF-8"):"");
 		Document doc = damsClient.solrLookup(query);
@@ -834,7 +835,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 			List<Node> records = doc.selectNodes("/response/result/doc");
 			if(properties == null || properties.size() == 0){
 				// If no additional properties provided, just return the first record.
-				record = (Node)doc.selectNodes("/response/result/doc").get(0);
+				record = records.get(0);
 			}else{
 				String key = null;
 				String propValue = null;
@@ -850,7 +851,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 						if(key.equals(scheme_code_tesim_key)){
 							propNode = record.selectSingleNode("arr[@name='scheme_tesim']/str");
 							String authority_scheme_id = propNode==null?"":propNode.getText();
-							String scheme_id = lookupRecord(damsClient, "code_tesim", scheme_code_tesim_value, "MADSScheme", null);
+							String scheme_id = lookupRecord(damsClient, "code_tesim", scheme_code_tesim_value, "MadsScheme", new HashMap<String, String>());
 							if(authority_scheme_id == null || scheme_id == null || !authority_scheme_id.endsWith(scheme_id)){
 								matched = false;
 								break;

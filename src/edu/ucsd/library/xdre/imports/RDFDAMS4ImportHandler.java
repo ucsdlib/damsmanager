@@ -37,6 +37,7 @@ import edu.ucsd.library.xdre.utils.RDFStore;
 public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	public static final String COPYRIGHT = "Copyright";
 	public static final String MADSSCHEME = "MADSScheme";
+	public static final String LANGUAGE = "Language";
 	private static Logger log = Logger.getLogger(RDFDAMS4ImportHandler.class);
 
 	private Map<String, String> idsMap = new HashMap<String, String>();
@@ -168,17 +169,23 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 								tNode = parentNode.selectSingleNode(xPath);
 								props = copyrightProperties(parentNode);
 							} else if(elemXPath.indexOf("mads", elemXPath.lastIndexOf('/') + 1) >= 0){
-								// MADSScheme record
-								if(nName.endsWith(MADSSCHEME)){
+								// MADSScheme and Language
+								if(nName.endsWith(MADSSCHEME) || nName.equals(LANGUAGE)){
 									field = "code_tesim";
 									xPath = "mads:code";
 									tNode = parentNode.selectSingleNode(xPath);
+									if(tNode == null){
+										field = "name_tesim";
+										xPath = "rdfs:label";
+										tNode = parentNode.selectSingleNode(xPath);
+									}
 								} else {
 									// Subject, Authority records use mads:authoritativeLabel
 									field = "name_tesim";
 									xPath = "mads:authoritativeLabel";
 									tNode = parentNode.selectSingleNode(xPath);
 									if(tNode == null){
+										// Try to use the mads:code for mapping when mads:authoritativeLabel is not available
 										field = "code_tesim";
 										xPath = "mads:code";
 										tNode = parentNode.selectSingleNode(xPath);
@@ -191,14 +198,17 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 										if (msValueNode != null){
 											madsScheme = madsSchemeNode.getStringValue();
 											props.put("scheme_tesim", madsScheme);
-										}else if ((msValueNode=madsSchemeNode.selectSingleNode("mads:MADSScheme/rdfs:label")) != null){
-											madsScheme = msValueNode.getText();
-											props.put("scheme_name_tesim", madsScheme);
-										}else if ((msValueNode=madsSchemeNode.selectSingleNode("mads:MADSScheme/mads:code")) != null){
-											madsScheme = msValueNode.getText();
-											props.put("scheme_code_tesim", madsScheme);
-										}else
+										}else if ((madsSchemeNode = madsSchemeNode.selectSingleNode("mads:MADSScheme")) != null && madsSchemeNode.hasContent()){
+											if((msValueNode=madsSchemeNode.selectSingleNode("rdfs:label")) != null){
+												madsScheme = msValueNode.getText();
+												props.put("scheme_name_tesim", madsScheme);
+											}else if ((msValueNode=madsSchemeNode.selectSingleNode("mads:code")) != null){
+												madsScheme = msValueNode.getText();
+												props.put("scheme_code_tesim", madsScheme);
+											}
+										}else{
 											props.put("scheme_tesim", "");
+										}
 									}else{
 										props.put("scheme_tesim", null);
 									}
@@ -498,8 +508,15 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		// Subject, Authority records use mads:authoritativeLabel
 		Node aboutAttr = record.selectSingleNode("@rdf:about");
 		String srcUri = aboutAttr.getStringValue();
-		String nName = record.getName();
-		String nKey = INFO_MODEL_PREFIX+nName + "::" + title;
+		//String nName = record.getName();
+		String xPath = record.getPath();
+		String elemName = xPath.substring(xPath.lastIndexOf("/")+1);
+		
+		// MADSScheme model: MadsScheme
+		if(elemName.endsWith("MADSScheme"))
+			elemName = elemName.replace("MADSScheme", "Scheme");
+		String modelName = (elemName.substring(0, 1).toUpperCase() + elemName.substring(1)).replace(":", "");
+		String nKey = INFO_MODEL_PREFIX + modelName + "::" + title;
 		if(props != null){
 			for(Iterator<String> it=props.keySet().iterator(); it.hasNext();){
 				String iKey = it.next();
@@ -513,7 +530,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 			if(nName.endsWith(COPYRIGHT)){
 				props = copyrightProperties(record);
 			}*/			
-			oid = lookupRecord(damsClient, field, title, nName, props);
+			oid = lookupRecord(damsClient, field, title, modelName, props);
 			
 			if(oid == null){
 				// Create the record
