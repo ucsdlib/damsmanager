@@ -178,6 +178,14 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 										field = "name_tesim";
 										xPath = "rdfs:label";
 										tNode = parentNode.selectSingleNode(xPath);
+										if(tNode == null){
+											// Loop through to locate the rdfs:label if not selected by xPath.
+											for(Iterator<Element> it=((Element)parentNode).elementIterator(); it.hasNext();){
+												Element elem = it.next();
+												if(elem.getNamespacePrefix().equals("rdfs") && elem.getName().equals("label"))
+													tNode = elem;
+											}
+										}
 									}
 								} else {
 									// Subject, Authority records use mads:authoritativeLabel
