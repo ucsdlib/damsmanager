@@ -831,64 +831,73 @@ public abstract class CollectionHandler implements ProcessHandler {
 			return null;
 		else {
 			Node record = null;
+			Node propNode = null;
 			boolean matched = true;
 			List<Node> records = doc.selectNodes("/response/result/doc");
 			if(properties == null || properties.size() == 0){
 				// If no additional properties provided, just return the first record.
-				record = records.get(0);
+				for(Iterator<Node> it=records.iterator(); it.hasNext();){
+					record = it.next();
+					propNode = record.selectSingleNode("*[@name='" + field + "']/str");
+					if(propNode.getText().equals(value))
+						return record.selectSingleNode("str[@name='id']").getText();
+				}
 			}else{
 				String key = null;
 				String propValue = null;
-				Node propNode = null;
+
 				// Matching all the properties to discover the record
 				for(Iterator<Node> it=records.iterator(); it.hasNext();){
-					matched = true;
 					record = it.next();
-					for(Iterator<String> pit=properties.keySet().iterator(); pit.hasNext();){
-						key = pit.next();
-						propValue = properties.get(key);
-						
-						if(key.equals(scheme_code_tesim_key)){
-							propNode = record.selectSingleNode("arr[@name='scheme_code_tesim']/str");
-							if(propNode != null){
-								String scheme_code = propNode.getText();
-								if((scheme_code_tesim_value == null && scheme_code.length()>0) || !scheme_code.equals(scheme_code_tesim_value)){
-									matched = false;
-									break;
+					propNode = record.selectSingleNode("*[@name='" + field + "']/str");
+					if(propNode.getText().equals(value)){
+						matched = true;
+						for(Iterator<String> pit=properties.keySet().iterator(); pit.hasNext();){
+							key = pit.next();
+							propValue = properties.get(key);
+							
+							if(key.equals(scheme_code_tesim_key)){
+								propNode = record.selectSingleNode("*[@name='scheme_code_tesim']/str");
+								if(propNode != null){
+									String scheme_code = propNode.getText();
+									if((scheme_code_tesim_value == null && scheme_code.length()>0) || !scheme_code.equals(scheme_code_tesim_value)){
+										matched = false;
+										break;
+									}
+								}else{
+									//  XXX No scheme_code_tesim lookup, need second lookup for scheme_tesim???
+									propNode = record.selectSingleNode("*[@name='scheme_tesim']/str");
+									String authority_scheme_id = propNode==null?"":propNode.getText();
+									String scheme_id = lookupRecord(damsClient, "code_tesim", scheme_code_tesim_value, "MadsScheme", new HashMap<String, String>());
+									if(authority_scheme_id == null || scheme_id == null || !authority_scheme_id.endsWith(scheme_id)){
+										matched = false;
+										break;
+									}
 								}
 							}else{
-								//  XXX No scheme_code_tesim lookup, need second lookup for scheme_tesim???
-								propNode = record.selectSingleNode("arr[@name='scheme_tesim']/str");
-								String authority_scheme_id = propNode==null?"":propNode.getText();
-								String scheme_id = lookupRecord(damsClient, "code_tesim", scheme_code_tesim_value, "MadsScheme", new HashMap<String, String>());
-								if(authority_scheme_id == null || scheme_id == null || !authority_scheme_id.endsWith(scheme_id)){
-									matched = false;
-									break;
+								propNode = record.selectSingleNode("*[@name='"+key+"']/str");
+								if(propValue == null || propValue.length() == 0){
+									if(propNode != null && propNode.getText().length() > 0){
+										matched = false;
+										break;
+									}
+								}else{
+									if(propNode == null || !propValue.equalsIgnoreCase(propNode.getText())){
+										matched = false;
+										break;
+									}	
 								}
-							}
-						}else{
-							propNode = record.selectSingleNode("arr[@name='"+key+"']/str");
-							if(propValue == null || propValue.length() == 0){
-								if(propNode != null && propNode.getText().length() > 0){
-									matched = false;
-									break;
-								}
-							}else{
-								if(propNode == null || !propValue.equalsIgnoreCase(propNode.getText())){
-									matched = false;
-									break;
-								}	
 							}
 						}
+						if(matched)
+							break;
 					}
-					if(matched)
-						break;
 				}
 			}
 			
-			if(matched)
-				return record.selectSingleNode("str[@name='id']").getText();
-			else
+			if(matched){
+				return record.selectSingleNode("*[@name='id']").getText();
+			}else
 				return null;
 		}
 	}
