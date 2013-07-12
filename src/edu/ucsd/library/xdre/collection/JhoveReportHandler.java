@@ -86,6 +86,7 @@ public class JhoveReportHandler extends CollectionHandler{
 				setStatus("Processing Jhove report for subject " + subjectURI  + " (" + (i+1) + " of " + itemsCount + ") ... " ); 
 				DFile dFile = null;
 				DFile dFileTmp = null;
+				DamsURI fileURI = null;
 				String formatName = null;
 				String formatNameTmp = null;
 				String duration = null;
@@ -110,7 +111,7 @@ public class JhoveReportHandler extends CollectionHandler{
 							if(!bytestreamFilesOnly || (bytestreamFilesOnly && (formatName ==null || formatName !=null&&formatName.equalsIgnoreCase(BYTESTREAM)))){
 								oSrcFileName = dFile.getSourceFileName();
 								duration = dFile.getDuration();
-								DamsURI fileURI = DamsURI.toParts(dFile.getId(), subjectURI);
+								fileURI = DamsURI.toParts(dFile.getId(), subjectURI);
 								dFileTmp = damsClient.extractFileCharacterize(fileURI.getObject(), fileURI.getComponent(), fileURI.getFileName());
 				    			// Update Jhove
 						    	if(jhoveUpdate != null && jhoveUpdate.length() > 0){
@@ -185,8 +186,10 @@ public class JhoveReportHandler extends CollectionHandler{
 							    		filesUpdated++;
 							    		
 										// Updated SOLR
-										if(!updateSOLR(subjectURI))
+										if(!updateSOLR(subjectURI)){
 											failedCount++;
+											jhoveErrorReport(dFile.getId() + "\t \t \t \t \t \tError: failed to updated SOLR for " + subjectURI + "\t ");
+										}
 	
 						    		}else{
 						    			filesNotUpdated.append(dFileTmp.getId() + "\t" + dFileTmp.getFormatName() + " " + dFileTmp.getFormatVersion() + "\t" + dFileTmp.getSize() + "\t" + dFileTmp.getCrc32checksum() + "\t" + dFileTmp.getDateCreated() + "\t" + dFileTmp.getDuration() + "\t" + dFileTmp.getStatus() + "\t" + (oSrcFileName==null?" ":oSrcFileName));
@@ -204,7 +207,7 @@ public class JhoveReportHandler extends CollectionHandler{
 						exeResult = false;
 						message = "Jhove report failed: " + e.getMessage();
 						setStatus(message  + "(" +(i+1)+ " of " + itemsCount + ")"); 
-						jhoveErrorReport(subjectURI + "\t \t \t \t \t \tError" + message + "\t ");
+						jhoveErrorReport(fileURI + "\t \t \t \t \t \tError: " + message + "\t ");
 						log.info(message );
 					}
 				}
@@ -214,7 +217,7 @@ public class JhoveReportHandler extends CollectionHandler{
 				exeResult = false;
 				message = "Jhove report failed: " + e.getMessage();
 				setStatus(message  + "(" +(i+1)+ " of " + itemsCount + ")"); 
-				jhoveErrorReport(subjectURI + "\t \t \t \t \t \tError" + message + "\t ");
+				jhoveErrorReport(subjectURI + "\t \t \t \t \t \tError: " + message + "\t ");
 				log.info(message );
 			}
 
@@ -223,10 +226,10 @@ public class JhoveReportHandler extends CollectionHandler{
 			try{
 				Thread.sleep(10);
 			} catch (InterruptedException e1) {
-				failedCount++;
+				//failedCount++;
         		exeResult = false;
     			message = "Jhove report canceled on subject " + subjectURI  + ".";
-				jhoveErrorReport(subjectURI + "\t \t \t \t \t \tError" + message + "\t ");
+				//jhoveErrorReport(subjectURI + "\t \t \t \t \t \tError: " + message + "\t ");
 				log.info(message, e1);
 				setStatus("Canceled");
 				clearSession();
@@ -275,7 +278,7 @@ public class JhoveReportHandler extends CollectionHandler{
 		
 		if(jhoveUpdate != null && jhoveUpdate.length() > 0 && filesNotUpdated.length()>0){
 			log("log", "\n*************************************************************************************************************************************");
-			log("log", "\n" + jhoveUpdate + " for the following " + (filesReported-filesUpdated)+ " files haven't being updated by XDRE Manager: \n");
+			log("log", "\n" + jhoveUpdate + " for the following " + failedCount + " files haven't being updated by DAMS Manager: \n");
 			log("log", "\n*************************************************************************************************************************************");
 			log("log", filesNotUpdated.toString());
 		}
