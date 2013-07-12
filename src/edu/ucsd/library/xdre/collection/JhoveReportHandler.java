@@ -81,7 +81,6 @@ public class JhoveReportHandler extends CollectionHandler{
 		
     	log("log", "ARK_ID\tFormat&Version\tSize(bytes)\tCheckSum_CRC32\tDate_Modified\tDuration\tStatus\tSource_File");
 		for(int i=0; i<itemsCount; i++){
-			count++;
 			subjectURI = items.get(i);
 			try{
 				setStatus("Processing Jhove report for subject " + subjectURI  + " (" + (i+1) + " of " + itemsCount + ") ... " ); 
@@ -96,6 +95,7 @@ public class JhoveReportHandler extends CollectionHandler{
 				List<DFile> files = damsClient.listObjectFiles(subjectURI);
 				
 				for(Iterator<DFile> it=files.iterator(); it.hasNext();){
+					count++;
 					dFile = it.next();
 					use = dFile.getUse();
 					try{

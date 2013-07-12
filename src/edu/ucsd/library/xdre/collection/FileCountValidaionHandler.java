@@ -270,14 +270,13 @@ public class FileCountValidaionHandler extends CollectionHandler{
 		String fName = dersMap.get(fid);
 		if(fName == null){
 			if(cid != null && cid.length() > 0 && fid.startsWith("1.")){
-				//master file
-				fName = fid.substring(1);
+				//master file 1-cid.ext
+				dams3Name += fid.substring(1);
 			}else
 				//Unknown file???
-				fName = fid;
-		}
-		
-		dams3Name += "-" + fName;
+				dams3Name += "-" + fid;
+		}else
+			dams3Name += "-" + fName;
 		return dams3Name;
 	}
 	
