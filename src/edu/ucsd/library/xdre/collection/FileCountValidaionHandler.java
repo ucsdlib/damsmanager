@@ -271,7 +271,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 		if(fName == null){
 			if(cid != null && cid.length() > 0 && fid.startsWith("1.")){
 				//master file
-				fName = fid.substring(2);
+				fName = fid.substring(1);
 			}else
 				//Unknown file???
 				fName = fid;
