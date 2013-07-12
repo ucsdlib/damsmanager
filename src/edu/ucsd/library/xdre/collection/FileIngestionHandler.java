@@ -302,8 +302,14 @@ public class FileIngestionHandler extends CollectionHandler {
 								if ( i == 0 ) {
 									RDFStore rdfStore = new RDFStore();
 									List<Statement> stmts = new ArrayList<Statement>();
-									if(collectionId != null && collectionId.length() > 0)
-										stmts.add(rdfStore.createStatement(subjectId, "dams:collection", collectionId, true));
+									if(collectionId != null && collectionId.length() > 0){
+										// Collection linking predicate
+										String colType = getCollectionType(collectionId);
+										String colPredicate = "dams:collection";
+										if(colType != null && colType.length() > 0)
+											colPredicate = "dams:" + colPredicate.substring(0,1).toLowerCase() +  colPredicate.substring(1);
+										stmts.add(rdfStore.createStatement(subjectId, colPredicate, collectionId, true));
+									}
 									if(unit != null && unit.length() > 0)
 										stmts.add(rdfStore.createStatement(subjectId, "dams:unit", unit, true));
 									if(stmts.size() > 0){
@@ -318,7 +324,7 @@ public class FileIngestionHandler extends CollectionHandler {
 
 								log.info("Uploaded " + successful + ": "
 										+ uploadHandler.getSubjectId() + " -> " + uploadHandler.getSourceFile());
-								//Create derivatives for images and PDFs
+								// Create derivatives for images and PDFs
 								try{
 									String fileId = uploadHandler.getFileId();
 									String use = uploadHandler.getUse();
@@ -481,6 +487,11 @@ public class FileIngestionHandler extends CollectionHandler {
 	public List<DamsURI> fileLoaded(String sourceFile) throws Exception{
 		File srcFile = new File(sourceFile);
 		return damsClient.retrieveFileURI(srcFile.getName(), srcFile.getParent(), collectionId, unit);
+	}
+	
+	public String getCollectionType(String cid){
+		String colTitle = collectionsMap.get(collectionId);
+		return colTitle.charAt(colTitle.length()-1)==']'?colTitle.substring(colTitle.lastIndexOf("[")+1, colTitle.length()-1):null;
 	}
 
 	public static synchronized FileWriter getFileStoreLog(String collectionId)

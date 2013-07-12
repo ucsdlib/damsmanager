@@ -409,8 +409,10 @@ public class DAMSClient {
 			// Collection title, collection URL
 			String title = (String)col.get("title");
 			String colId = (String)col.get("collection");
+			String type = (String)col.get("type");
 			if(map.get(title) != null)
 				title += " (" + stripID(colId) + ")";
+			title += " [" + type + "]";
 			map.put(title, colId);
 		}
 
