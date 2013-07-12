@@ -268,8 +268,14 @@ public class FileCountValidaionHandler extends CollectionHandler{
 		
 		//files like xml in ETD and derivatives like jpeg, mp3, mp4 etc.
 		String fName = dersMap.get(fid);
-		if(fName == null)
-			fName = fid;
+		if(fName == null){
+			if(cid != null && cid.length() > 0 && fid.startsWith("1.")){
+				//master file
+				fName = fid.substring(2);
+			}else
+				//Unknown file???
+				fName = fid;
+		}
 		
 		dams3Name += "-" + fName;
 		return dams3Name;
