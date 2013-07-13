@@ -307,7 +307,7 @@ public class FileIngestionHandler extends CollectionHandler {
 										String colType = getCollectionType(collectionId);
 										String colPredicate = "dams:collection";
 										if(colType != null && colType.length() > 0)
-											colPredicate = "dams:" + colPredicate.substring(0,1).toLowerCase() +  colPredicate.substring(1);
+											colPredicate = "dams:" + colType.substring(0,1).toLowerCase() +  colType.substring(1);
 										stmts.add(rdfStore.createStatement(subjectId, colPredicate, collectionId, true));
 									}
 									if(unit != null && unit.length() > 0)
@@ -490,7 +490,7 @@ public class FileIngestionHandler extends CollectionHandler {
 	}
 	
 	public String getCollectionType(String cid){
-		String colTitle = collectionsMap.get(collectionId);
+		String colTitle = collectionsMap.get(cid);
 		return colTitle.charAt(colTitle.length()-1)==']'?colTitle.substring(colTitle.lastIndexOf("[")+1, colTitle.length()-1):null;
 	}
 
