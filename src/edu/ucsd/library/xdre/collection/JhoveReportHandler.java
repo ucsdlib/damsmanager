@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
@@ -268,7 +267,7 @@ public class JhoveReportHandler extends CollectionHandler{
 	 * Execution result message
 	 */
 	public String getExeInfo() {
-		String iMessage = "Number of objects found: " + itemsCount + " \nTotal master files (source and alternate) processed: " + masterCount + " \nTotal master/service Files reported: " + filesReported + (jhoveUpdate!=null&&jhoveUpdate.length()>0?" \nTotal Files updated: "+filesUpdated:"");
+		String iMessage = "Number of objects found: " + itemsCount + " \nTotal master files: " + masterCount + " \nTotal Files reported: " + filesReported + (jhoveUpdate!=null&&jhoveUpdate.length()>0?" \nTotal Files updated: "+filesUpdated:"");
         String mHeader = "\nFile characterize/Jhove report " + ((collectionId!=null&&collectionId.length()==10)?"for "+collectionTitle:"");
 		if(exeResult)
 			exeReport.append(mHeader + " succeeded: \n" + iMessage + "\n");
