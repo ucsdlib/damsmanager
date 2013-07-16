@@ -111,7 +111,7 @@ public class JhoveReportHandler extends CollectionHandler{
 								oSrcFileName = dFile.getSourceFileName();
 								duration = dFile.getDuration();
 								fileURI = DamsURI.toParts(dFile.getId(), subjectURI);
-								dFileTmp = damsClient.extractFileCharacterize(fileURI.getObject(), fileURI.getComponent(), fileURI.getFileName());
+								//dFileTmp = damsClient.extractFileCharacterize(fileURI.getObject(), fileURI.getComponent(), fileURI.getFileName());
 				    			// Update Jhove
 						    	if(jhoveUpdate != null && jhoveUpdate.length() > 0){
 						    		boolean updateJhove = false;
@@ -119,16 +119,18 @@ public class JhoveReportHandler extends CollectionHandler{
 						    		if (jhoveUpdate.equalsIgnoreCase("addJhove")){
 						    			updateJhove = true;
 										// Overwrite the jhove metadta with the original properties.
-										Map<String, String> props = dFile.toProperties();
+						    			dFileTmp = dFile;
 										Map<String, String> newProps = dFileTmp.toProperties();
 										String key = null;
 										String value = null;
-										for(Iterator<String> pit=props.keySet().iterator(); pit.hasNext();){
+										/*
+										 Map<String, String> props = dFile.toProperties();
+										 for(Iterator<String> pit=props.keySet().iterator(); pit.hasNext();){
 											key = pit.next();
 											value = props.get(key);
 											if(value != null && value.length() > 0)
 												newProps.put(key, value);
-										}
+										}*/
 										
 										//file properties to update
 										for(Iterator<String> pit=newProps.keySet().iterator(); pit.hasNext();){
@@ -141,6 +143,7 @@ public class JhoveReportHandler extends CollectionHandler{
 											}
 										}
 						    		} else {
+						    			dFileTmp = damsClient.extractFileCharacterize(fileURI.getObject(), fileURI.getComponent(), fileURI.getFileName());
 						    			// Update file properties selectively
 							    		boolean addDuration = true;
 							    		List<NameValuePair> paramsOrg = dFile.toNameValuePairs();
@@ -194,8 +197,10 @@ public class JhoveReportHandler extends CollectionHandler{
 						    			filesNotUpdated.append(dFileTmp.getId() + "\t" + dFileTmp.getFormatName() + " " + dFileTmp.getFormatVersion() + "\t" + dFileTmp.getSize() + "\t" + dFileTmp.getCrc32checksum() + "\t" + dFileTmp.getDateCreated() + "\t" + dFileTmp.getDuration() + "\t" + dFileTmp.getStatus() + "\t" + (oSrcFileName==null?" ":oSrcFileName));
 						    		}
 						    		
-						    	}else
+						    	}else{
+						    		dFileTmp = damsClient.extractFileCharacterize(fileURI.getObject(), fileURI.getComponent(), fileURI.getFileName());
 									log("log", dFile.getId() + "\t" + dFileTmp.getFormatName() + " " + dFileTmp.getFormatVersion() + "\t" + dFileTmp.getSize() + "\t" + dFileTmp.getCrc32checksum() + "\t" + dFileTmp.getDateCreated() + "\t" + dFileTmp.getDuration() + "\t" + dFileTmp.getStatus() + "\t" + (oSrcFileName==null?" ":oSrcFileName));
+						    	}
 								
 								filesReported++;
 							}
