@@ -119,7 +119,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 					String nName = parentNode.getName();				
 					if (iUri.endsWith("/COL") || !(iUri.startsWith("http") && iUri.indexOf("/ark:/") > 0)){
 						// Assign ARK
-						if(nName.endsWith("Object") || nName.endsWith("Component") || nName.endsWith("File")){
+						if(nName.endsWith("Object") || nName.endsWith("Component") || nName.endsWith("File") || ((Element)parentNode).isRootElement()){
 							String objId = iUri;
 							
 							if(nName.endsWith("Component") || nName.endsWith("File")){
@@ -138,12 +138,13 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							if(nName.endsWith("Object")){
 								objId = oid;
 								objRecords.put(objId, currFile);
-							}else{
+							}else if(nName.endsWith("Component") || nName.endsWith("File")){
 								damsURI.setObject(oid);
 								// XXX
 								// Assign cid and fid for Component and FIle if required
 								objId = damsURI.toString();
-							} 
+							}else
+								objId = oid;
 							nUri.setText(objId);
 							updateReference(doc, iUri, objId);
 						} else {
