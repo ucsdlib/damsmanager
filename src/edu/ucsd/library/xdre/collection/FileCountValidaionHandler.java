@@ -147,7 +147,8 @@ public class FileCountValidaionHandler extends CollectionHandler{
 							File dams4File = new File(fileDir, dams4FileName);
 							dams3File.renameTo(dams4File);
 							logMessage("Renamed DAMS3 file " + dams3File.getPath() + " to " + dams4File.getPath());
-						}
+						}else
+							logError("DMAS3 file " + dams3File.getPath() + " doesn't exist.");
 					}
 					
 					// Check source and alternate master files 
