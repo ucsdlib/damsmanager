@@ -148,7 +148,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 							dams3File.renameTo(dams4File);
 							logMessage("Renamed DAMS3 file " + dams3File.getPath() + " to " + dams4File.getPath());
 						}else
-							logError("DMAS3 file " + dams3File.getPath() + " doesn't exist.");
+							logError("Error DMAS3 file renaming: " + dams3File.getPath() + " doesn't exist for dams4 file " + fid + ", " + damsURI + ".");
 					}
 					
 					// Check source and alternate master files 
