@@ -81,6 +81,7 @@ public class JhoveReportHandler extends CollectionHandler{
     	log("log", "ARK_ID\tFormat&Version\tSize(bytes)\tCheckSum_CRC32\tDate_Modified\tDuration\tStatus\tSource_File");
 		for(int i=0; i<itemsCount; i++){
 			subjectURI = items.get(i);
+			boolean updateSolr = false;
 			try{
 				setStatus("Processing Jhove report for subject " + subjectURI  + " (" + (i+1) + " of " + itemsCount + ") ... " ); 
 				DFile dFile = null;
@@ -183,15 +184,10 @@ public class JhoveReportHandler extends CollectionHandler{
 							    		
 						    		// Save Jhove
 						    		if(updateJhove){
+						    			updateSolr = true;
 							    		damsClient.updateFileCharacterize(fileURI.getObject(), fileURI.getComponent(), fileURI.getFileName(), optionalParams);
 							    		log("log", dFile.getId() + "\t" + dFileTmp.getFormatName() + " " + dFileTmp.getFormatVersion() + "\t" + dFileTmp.getSize() + "\t" + dFileTmp.getCrc32checksum() + "\t" + dFileTmp.getDateCreated() + "\t" + dFileTmp.getDuration() + "\t" + dFileTmp.getStatus() + "\t" + (oSrcFileName==null?" ":oSrcFileName));
 							    		filesUpdated++;
-							    		
-										// Updated SOLR
-										if(!updateSOLR(subjectURI)){
-											failedCount++;
-											jhoveErrorReport(dFile.getId() + "\t \t \t \t \t \tError: failed to updated SOLR for " + subjectURI + "\t ");
-										}
 	
 						    		}else{
 						    			filesNotUpdated.append(dFileTmp.getId() + "\t" + dFileTmp.getFormatName() + " " + dFileTmp.getFormatVersion() + "\t" + dFileTmp.getSize() + "\t" + dFileTmp.getCrc32checksum() + "\t" + dFileTmp.getDateCreated() + "\t" + dFileTmp.getDuration() + "\t" + dFileTmp.getStatus() + "\t" + (oSrcFileName==null?" ":oSrcFileName));
@@ -225,6 +221,13 @@ public class JhoveReportHandler extends CollectionHandler{
 				log.info(message );
 			}
 
+    		
+			// Updated SOLR
+			if(updateSolr && !updateSOLR(subjectURI)){
+				failedCount++;
+				jhoveErrorReport(subjectURI + "\t \t \t \t \t \tError: failed to updated SOLR." + "\t ");
+			}
+			
 			setProgressPercentage( ((i + 1) * 100) / itemsCount);
 			
 			try{
