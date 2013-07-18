@@ -119,7 +119,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 					String nName = parentNode.getName();				
 					if (iUri.endsWith("/COL") || !(iUri.startsWith("http") && iUri.indexOf("/ark:/") > 0)){
 						// Assign ARK
-						if(nName.endsWith("Object") || nName.endsWith("Component") || nName.endsWith("File") || ((Element)parentNode).isRootElement()){
+						if(nName.endsWith("Object") || nName.endsWith("Component") || nName.endsWith("File") || (((Element)parentNode).isRootElement() || (parentNode.getParent().isRootElement() && parentNode.getParent().getName().equals("RDF")))){
 							String objId = iUri;
 							
 							if(nName.endsWith("Component") || nName.endsWith("File")){
