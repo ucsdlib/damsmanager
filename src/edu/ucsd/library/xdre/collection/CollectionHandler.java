@@ -832,15 +832,17 @@ public abstract class CollectionHandler implements ProcessHandler {
 		else {
 			Node record = null;
 			Node propNode = null;
-			boolean matched = true;
+			boolean matched = false;
 			List<Node> records = doc.selectNodes("/response/result/doc");
 			if(properties == null || properties.size() == 0){
 				// If no additional properties provided, just return the first record.
 				for(Iterator<Node> it=records.iterator(); it.hasNext();){
 					record = it.next();
 					propNode = record.selectSingleNode("*[@name='" + field + "']/str");
-					if(propNode.getText().equals(value))
-						return record.selectSingleNode("str[@name='id']").getText();
+					if(propNode.getText().equals(value)){
+						matched = true;
+						break;
+					}
 				}
 			}else{
 				String key = null;
