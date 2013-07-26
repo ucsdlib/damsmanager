@@ -679,6 +679,15 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				exeReport.append(key + " \t" + objRecords.get(key) + "\n");
 			}
 		}
+		
+		int recordSize = items.size();
+		if(recordSize > 0){
+			exeReport.append("The following " + recordSize + " record" + (recordSize>1?"s are ":" is ") + "ingested: \n");
+			for(Iterator<String> it=items.iterator(); it.hasNext();){
+				exeReport.append(it.next() + "\n");
+			}
+		}else
+			exeReport.append("No records were ingested.\n");
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
 		if(filesIngested.length() > 0){
