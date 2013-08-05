@@ -55,6 +55,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	private int derivFailedCount = 0;
 	private int solrFailedCount = 0;
 	private Map<String, String> objRecords = new HashMap<String, String>();
+	private List<String> recordsIngested = new ArrayList<String>();
 	private List<String> objWithFiles = new ArrayList<String>();
 	private StringBuilder ingestFailed = new StringBuilder();
 	private StringBuilder metadataFailed = new StringBuilder();
@@ -288,6 +289,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							setStatus( message ); 
 							logError(message + "\n Error RDF: \n" + graph.export(RDFStore.RDFXML_ABBREV_FORMAT));
 						}else{
+							recordsIngested.add(subjectId);
 							message = "Metadata import for record " + subjectId  + " succeeded (" + (j+1) + " of " + jLen + ") in file " + currFile + ". ";
 							setStatus(message); 
 							logMessage(message);
@@ -680,14 +682,14 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 			}
 		}
 		
-		int recordSize = items.size();
+		int recordSize = recordsIngested.size();
 		if(recordSize > 0){
-			exeReport.append("The following " + recordSize + " record" + (recordSize>1?"s are ":" is ") + "ingested: \n");
+			exeReport.append("The following " + recordSize + " record" + (recordSize>1?"s are":" is") + " imported: \n");
 			for(Iterator<String> it=items.iterator(); it.hasNext();){
 				exeReport.append(it.next() + "\n");
 			}
 		}else
-			exeReport.append("No records were ingested.\n");
+			exeReport.append("No records were imported.\n");
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
 		if(filesIngested.length() > 0){
