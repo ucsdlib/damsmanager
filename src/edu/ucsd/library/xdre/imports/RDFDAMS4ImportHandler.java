@@ -685,7 +685,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		int recordSize = recordsIngested.size();
 		if(recordSize > 0){
 			exeReport.append("The following " + recordSize + " record" + (recordSize>1?"s are":" is") + " imported: \n");
-			for(Iterator<String> it=items.iterator(); it.hasNext();){
+			for(Iterator<String> it=recordsIngested.iterator(); it.hasNext();){
 				exeReport.append(it.next() + "\n");
 			}
 		}else
