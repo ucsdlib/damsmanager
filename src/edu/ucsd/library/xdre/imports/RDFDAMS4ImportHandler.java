@@ -154,7 +154,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							String xPath = null;
 							Map<String, String> props= new TreeMap<String, String>();
 							String elemXPath = parentNode.getPath();
-							if (nName.endsWith("Collection")){
+							if (nName.endsWith("Collection") || nName.endsWith("CollectionPart")){
 								// Retrieve the Collection record
 								field = "title_tesim";
 								xPath = "dams:title/mads:Title/mads:authoritativeLabel";
