@@ -35,6 +35,7 @@ import edu.ucsd.library.xdre.utils.RDFStore;
  * @author lsitu@ucsd.edu
  */
 public class RDFDAMS4ImportHandler extends MetadataImportHandler{
+	public static final String LICENSE = "License";
 	public static final String COPYRIGHT = "Copyright";
 	public static final String MADSSCHEME = "MADSScheme";
 	public static final String LANGUAGE = "Language";
@@ -179,6 +180,12 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 								xPath = "dams:copyrightStatus";
 								tNode = parentNode.selectSingleNode(xPath);
 								props = copyrightProperties(parentNode);
+							} else if (nName.endsWith(LICENSE)){
+								// Copyright records use dams:copyrightStatus, plus other properties in the next step.
+								field = "license_type_tesim";
+								xPath = "dams:permission/dams:Permission/dams:type";
+								tNode = parentNode.selectSingleNode(xPath);
+								props = licenseProperties(parentNode);
 							} else if(elemXPath.indexOf("mads", elemXPath.lastIndexOf('/') + 1) >= 0){
 								// MADSScheme and Language
 								if(nName.endsWith(MADSSCHEME) || nName.equals(LANGUAGE)){
@@ -589,6 +596,25 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		return props;
 	}
 	
+	private Map<String, String> licenseProperties(Node record){
+		Map<String, String> propNames = getLicensePropNames();
+		Map<String, String> props = new TreeMap<String, String>();
+		String key = null;
+		String solrName = null;
+		String propValue = null;
+		for(Iterator<String> it=propNames.keySet().iterator(); it.hasNext();){
+			propValue = null;
+			key = it.next();
+			solrName = propNames.get(key);
+			Node tNode = record.selectSingleNode(key);
+			if(tNode != null)
+				propValue = tNode.getText().trim();
+			
+			props.put(solrName, propValue);
+		}
+		return props;
+	}
+	
 	private Map<String, String> getcopyrightPropNames(){
 		Map<String, String> propNames = new HashMap<String, String>();
 		propNames.put("dams:copyrightStatus", "status_tesim");
@@ -597,6 +623,15 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		propNames.put("dams:copyrightNote", "note_tesim");
 		propNames.put("dams:beginDate", "beginDate_tesim");
 		propNames.put("dams:endDate", "endDate_tesim");
+		return propNames;
+	}
+	
+	private Map<String, String> getLicensePropNames(){
+		Map<String, String> propNames = new HashMap<String, String>();
+		propNames.put("dams:licenseNote", "licenseNote_tesim");
+		propNames.put("dams:restriction/dams:Restriction/dams:type", "restriction_type_tesim");
+		propNames.put("dams:restriction/dams:Restriction/dams:startDate", "restriction_startDate_tesim");
+		propNames.put("dams:restriction/dams:Restriction/dams:endDate", "restriction_endDate_tesim");
 		return propNames;
 	}
 	
