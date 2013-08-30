@@ -839,7 +839,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 				for(Iterator<Node> it=records.iterator(); it.hasNext();){
 					record = it.next();
 					propNode = record.selectSingleNode("*[@name='" + field + "']/str");
-					if(propNode.getText().equals(value)){
+					if(propNode.getText().equalsIgnoreCase(value)){
 						matched = true;
 						break;
 					}
@@ -852,17 +852,17 @@ public abstract class CollectionHandler implements ProcessHandler {
 				for(Iterator<Node> it=records.iterator(); it.hasNext();){
 					record = it.next();
 					propNode = record.selectSingleNode("*[@name='" + field + "']/str");
-					if(propNode.getText().equals(value)){
+					if(propNode.getText().equalsIgnoreCase(value)){
 						matched = true;
 						for(Iterator<String> pit=properties.keySet().iterator(); pit.hasNext();){
 							key = pit.next();
 							propValue = properties.get(key);
 							
-							if(key.equals(scheme_code_tesim_key)){
+							if(key.equalsIgnoreCase(scheme_code_tesim_key)){
 								propNode = record.selectSingleNode("*[@name='scheme_code_tesim']/str");
 								if(propNode != null){
 									String scheme_code = propNode.getText();
-									if((scheme_code_tesim_value == null && scheme_code.length()>0) || !scheme_code.equals(scheme_code_tesim_value)){
+									if((scheme_code_tesim_value == null && scheme_code.length()>0) || !scheme_code.equalsIgnoreCase(scheme_code_tesim_value)){
 										matched = false;
 										break;
 									}
