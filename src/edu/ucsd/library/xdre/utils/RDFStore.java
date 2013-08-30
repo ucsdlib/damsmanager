@@ -341,7 +341,8 @@ public class RDFStore {
 					prop = stmt.getPredicate();
 					prep = rdfModel.getNsURIPrefix(prop.getNameSpace()) + ":" + prop.getLocalName();
 					for(Iterator<String> pIt=preds.iterator(); pIt.hasNext();){
-						if(prep.indexOf(pIt.next()) >= 0){
+						String tPrep = pIt.next();
+						if(prep.equals(tPrep) || (prep.startsWith(tPrep) && tPrep.indexOf(":") < 0)){
 							keep = true;
 							break;
 						}
