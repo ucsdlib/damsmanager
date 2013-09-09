@@ -36,6 +36,7 @@ import edu.ucsd.library.xdre.utils.RDFStore;
  */
 public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	public static final String LICENSE = "License";
+	public static final String PERMISSION = "Permission";
 	public static final String COPYRIGHT = "Copyright";
 	public static final String MADSSCHEME = "MADSScheme";
 	public static final String LANGUAGE = "Language";
@@ -186,6 +187,11 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 								xPath = "dams:permission/dams:Permission/dams:type";
 								tNode = parentNode.selectSingleNode(xPath);
 								props = licenseProperties(parentNode);
+							}  else if (nName.endsWith(PERMISSION)){
+								// Copyright records use dams:copyrightStatus, plus other properties in the next step.
+								field = "type_tesim";
+								xPath = "dams:type";
+								tNode = parentNode.selectSingleNode(xPath);
 							} else if(elemXPath.indexOf("mads", elemXPath.lastIndexOf('/') + 1) >= 0){
 								// MADSScheme and Language
 								if(nName.endsWith(MADSSCHEME) || nName.equals(LANGUAGE)){
