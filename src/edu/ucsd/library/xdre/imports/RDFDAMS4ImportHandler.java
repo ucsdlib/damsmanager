@@ -231,12 +231,12 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 											madsScheme = madsSchemeNode.getStringValue();
 											props.put("scheme_tesim", madsScheme);
 										}else if ((madsSchemeNode = madsSchemeNode.selectSingleNode("mads:MADSScheme")) != null && madsSchemeNode.hasContent()){
-											if((msValueNode=madsSchemeNode.selectSingleNode("rdfs:label")) != null){
-												madsScheme = msValueNode.getText();
-												props.put("scheme_name_tesim", madsScheme);
-											}else if ((msValueNode=madsSchemeNode.selectSingleNode("mads:code")) != null){
+											if ((msValueNode=madsSchemeNode.selectSingleNode("mads:code")) != null){
 												madsScheme = msValueNode.getText();
 												props.put("scheme_code_tesim", madsScheme);
+											}else if((msValueNode=madsSchemeNode.selectSingleNode("rdfs:label")) != null){
+												madsScheme = msValueNode.getText();
+												props.put("scheme_name_tesim", madsScheme);
 											}
 										}else{
 											props.put("scheme_tesim", "");

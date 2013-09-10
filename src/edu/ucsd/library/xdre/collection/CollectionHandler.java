@@ -820,6 +820,11 @@ public abstract class CollectionHandler implements ProcessHandler {
 		if(properties.containsKey(scheme_code_tesim_key)){
 			properties.put(scheme_code_tesim_key, null);
 		}
+		String scheme_name_tesim_key = "scheme_name_tesim";
+		String scheme_name_tesim_value = properties.get(scheme_name_tesim_key);
+		if(properties.containsKey(scheme_name_tesim_key)){
+			properties.put(scheme_name_tesim_key, null);
+		}
 		
 		//String modelParam = "(\"" + INFO_MODEL_PREFIX + "Dams" + modelName + "\" OR \"" + INFO_MODEL_PREFIX + (modelName.startsWith("Mads")?"":"Mads") + modelName + "\")";
 		String modelParam = INFO_MODEL_PREFIX + modelName;
@@ -871,6 +876,24 @@ public abstract class CollectionHandler implements ProcessHandler {
 									propNode = record.selectSingleNode("*[@name='scheme_tesim']/str");
 									String authority_scheme_id = propNode==null?"":propNode.getText();
 									String scheme_id = lookupRecord(damsClient, "code_tesim", scheme_code_tesim_value, "MadsScheme", new HashMap<String, String>());
+									if(authority_scheme_id == null || scheme_id == null || !authority_scheme_id.endsWith(scheme_id)){
+										matched = false;
+										break;
+									}
+								}
+							}else if(key.equalsIgnoreCase(scheme_name_tesim_key)){
+								propNode = record.selectSingleNode("*[@name='scheme_name_tesim']/str");
+								if(propNode != null){
+									String scheme_name = propNode.getText();
+									if((scheme_name_tesim_value == null && scheme_name.length()>0) || !scheme_name.equalsIgnoreCase(scheme_name_tesim_value)){
+										matched = false;
+										break;
+									}
+								}else{
+									//  XXX No scheme_name_tesim lookup, need second lookup for scheme_tesim???
+									propNode = record.selectSingleNode("*[@name='scheme_tesim']/str");
+									String authority_scheme_id = propNode==null?"":propNode.getText();
+									String scheme_id = lookupRecord(damsClient, "name_tesim", scheme_name_tesim_value, "MadsScheme", new HashMap<String, String>());
 									if(authority_scheme_id == null || scheme_id == null || !authority_scheme_id.endsWith(scheme_id)){
 										matched = false;
 										break;
