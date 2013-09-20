@@ -829,7 +829,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 		//String modelParam = "(\"" + INFO_MODEL_PREFIX + "Dams" + modelName + "\" OR \"" + INFO_MODEL_PREFIX + (modelName.startsWith("Mads")?"":"Mads") + modelName + "\")";
 		String modelParam = INFO_MODEL_PREFIX + modelName;
 		String propsParams = toSolrQuery(properties);
-		String query = "q=" + URLEncoder.encode(field + ":\"" + value + "\" AND has_model_ssim:" + modelParam, "UTF-8") + "&rows=1000" + (propsParams.length()>0?"&fq="+ URLEncoder.encode(propsParams, "UTF-8"):"");
+		String query = "q=" + URLEncoder.encode(field + ":\"" + StringEscapeUtils.escapeJava(value) + "\" AND has_model_ssim:" + modelParam, "UTF-8") + "&rows=1000" + (propsParams.length()>0?"&fq="+ URLEncoder.encode(propsParams, "UTF-8"):"");
 		Document doc = damsClient.solrLookup(query);
 		int numFound = Integer.parseInt(doc.selectSingleNode("/response/result/@numFound").getStringValue());
 		if(numFound <= 0)
@@ -936,7 +936,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 				key = it.next();
 				value = properties.get(key);
 				if(value != null && value.length() > 0)
-					solrParams += key+ ":\"" + value.replace("\"", "\\\"") + "\"" + " AND ";
+					solrParams += key+ ":\"" + StringEscapeUtils.escapeJava(value) + "\"" + " AND ";
 			}
 			
 			int len = solrParams.length();
