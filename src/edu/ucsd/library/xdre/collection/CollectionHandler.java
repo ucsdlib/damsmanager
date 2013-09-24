@@ -15,6 +15,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -857,7 +858,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 				for(Iterator<Node> it=records.iterator(); it.hasNext();){
 					record = it.next();
 					propNode = record.selectSingleNode("*[@name='" + field + "']/str");
-					if(propNode.getText().equalsIgnoreCase(value)){
+					if(propNode.getText().equalsIgnoreCase(value) || Normalizer.normalize(propNode.getText(), Normalizer.Form.NFD).equalsIgnoreCase(value)){
 						matched = true;
 						for(Iterator<String> pit=properties.keySet().iterator(); pit.hasNext();){
 							key = pit.next();
@@ -907,7 +908,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 										break;
 									}
 								}else{
-									if(propNode == null || !propValue.equalsIgnoreCase(propNode.getText())){
+									if(propNode == null || !(propValue.equalsIgnoreCase(propNode.getText()) || Normalizer.normalize(propNode.getText(), Normalizer.Form.NFD).equalsIgnoreCase(value))){
 										matched = false;
 										break;
 									}	
