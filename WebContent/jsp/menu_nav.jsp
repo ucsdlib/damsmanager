@@ -11,7 +11,6 @@
 	<li><a>DAMS</a>
 		<ul>
 			<li><a href='/damsmanager/solrDump.do'>SOLR Dump Utility</a></li>
-			<li><a href='/damsmanager/devUpload.do'>FileStore Upload</a></li>
 		</ul>
 	</li>
 	<li><a>Resources</a>

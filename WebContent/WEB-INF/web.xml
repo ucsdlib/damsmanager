@@ -80,6 +80,7 @@
 	        <url-pattern>/devUpload.do</url-pattern>
 	        <url-pattern>/statusUpload.do</url-pattern>
 	        <url-pattern>/rdfExport.do</url-pattern>
+	        <url-pattern>/solrDump.do</url-pattern>
     	</web-resource-collection>
     	<auth-constraint>
         	<role-name>4708</role-name>
