@@ -421,22 +421,26 @@ public class CollectionOperationController implements Controller {
 					 String collIDs = collectionId;
 					 String[] collArr = collectionId.split(",");
 					 List<String> items = new ArrayList<String>();
-					 System.out.println("SOLR indexing collections: " + collectionId);
 					 String collNames = "";
 					 for(int j=0; j<collArr.length; j++){
 						 if(collArr[j] != null && (collArr[j]=collArr[j].trim()).length()>0){
 							 collectionId = collArr[j];
-							 try{
-								 handler = new SOLRIndexHandler( damsClient, collectionId );
-								 items.addAll(handler.getItems());
-								 collNames += handler.getCollectionTitle() + "(" + handler.getFilesCount() + "), ";
-								 if(j>0 && j%5==0)
-									 collNames += "\n";
-							 }finally{
-								 if(handler != null){
-									 handler.release();
-									 handler = null;
-								 } 
+							 if(collectionId.equalsIgnoreCase("all")){
+								 items.addAll(damsClient.listAllRecords());
+								 collNames += "All Records (" + items.size() + "), ";
+							 }else{
+								 try{
+									 handler = new SOLRIndexHandler( damsClient, collectionId );
+									 items.addAll(handler.getItems());
+									 collNames += handler.getCollectionTitle() + "(" + handler.getFilesCount() + "), ";
+									 if(j>0 && j%5==0)
+										 collNames += "\n";
+								 }finally{
+									 if(handler != null){
+										 handler.release();
+										 handler = null;
+									 } 
+								 }
 							 }
 						 }
 					 }
@@ -444,9 +448,13 @@ public class CollectionOperationController implements Controller {
 					 handler.setItems(items);
 					 handler.setCollectionTitle(collNames.substring(0, collNames.lastIndexOf(",")));
 					 handler.setCollectionId(collIDs);
-				 }else
-					 handler = new SOLRIndexHandler(damsClient, collectionId, update);
-
+				 }else{
+					 if(collectionId.equalsIgnoreCase("all")){
+						 handler = new SOLRIndexHandler(damsClient, null, update);
+						 handler.setItems(damsClient.listAllRecords());
+					 }else
+						 handler = new SOLRIndexHandler(damsClient, collectionId, update);
+				 }
 			 }/*else if (i == 8){	
 				    //session.setAttribute("status", opMessage + "CDL Sending ...");
 				    int operationType = 0;

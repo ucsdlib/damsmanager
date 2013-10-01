@@ -68,8 +68,14 @@ public class SOLRIndexHandler extends CollectionHandler{
 		String subjectURI = null;
 		if(collectionId != null && collectionId.length() > 0){
 			// Update SOLR for the collection record
-			setStatus("Adding collection record " + collectionId  + " for SOLR update ... " );
-			updateSOLR(collectionId);
+			String[] colIds = collectionId.split(",");
+			for(int i=0; i< colIds.length; i++){
+				String colId = colIds[i];
+				if( colId != null && !colId.equalsIgnoreCase("all")){
+					setStatus("Adding collection record " + collectionId  + " for SOLR update ... " );
+					updateSOLR(colId);
+				}
+			}
 		}
 		
 		for(int i=0; i<itemsCount && !interrupted; i++){

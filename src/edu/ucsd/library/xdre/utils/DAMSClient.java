@@ -430,6 +430,24 @@ public class DAMSClient {
 		List<Node> objectNodes = doc.selectNodes(DOCUMENT_RESPONSE_ROOT_PATH + "/objects/value/obj");
 		Node valNode= null;
 		List<String> objectsList = new ArrayList<String>();
+		for(Iterator<Node> it= objectNodes.iterator(); it.hasNext();){
+			valNode = it.next();
+			objectsList.add(valNode.getText());
+		}
+		return objectsList;
+	}
+	
+	/**
+	 * Get a list of objects in the whole repository.
+	 * @throws Exception 
+	 **/
+	public List<String> listAllRecords() throws Exception {
+		String url = getRecordsURL("xml");
+		HttpGet get = new HttpGet(url);
+		Document doc = getXMLResult(get);
+		List<Node> objectNodes = doc.selectNodes(DOCUMENT_RESPONSE_ROOT_PATH + "/records/value/obj");
+		Node valNode= null;
+		List<String> objectsList = new ArrayList<String>();
 		for(Iterator it= objectNodes.iterator(); it.hasNext();){
 			valNode = (Node)it.next();
 			objectsList.add(valNode.getText());
@@ -1389,6 +1407,12 @@ public class DAMSClient {
 		String[] parts = {"index"};
 		return toDAMSURL(parts, format);
 	}
+	
+	public String getRecordsURL(String format){
+		String[] parts = {"records"};
+		return toDAMSURL(parts, format);
+	}
+	
 	
 	/**
 	 * Construct REST URL for administration unit
