@@ -20,6 +20,7 @@
 	<bean name="/logout.do" class="edu.ucsd.library.xdre.web.LogoutController" />
 	<bean name="/login.do" class="edu.ucsd.library.xdre.web.LoginController" />
 	<bean name="/loginPas.do" class="edu.ucsd.library.xdre.web.LoginPasController" />
+	<bean name="/solrDump.do" class="edu.ucsd.library.xdre.web.SolrDumpController" />
 	<!--<bean name="/metaDataImport.do" class="edu.ucsd.library.xdre.web.MetadataImportController" />-->
 	<!--<bean name="/solrIndex.do" class="edu.ucsd.library.xdre.web.SolrIndexController" />-->
 	<!--<bean name="/collectionUpdate.do" class="edu.ucsd.library.xdre.web.CollectionUpdateController"></bean>-->
