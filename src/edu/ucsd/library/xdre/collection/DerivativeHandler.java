@@ -222,7 +222,8 @@ public class DerivativeHandler extends CollectionHandler{
 	    	}
 	    	
 	    	List<String> dSizes = new ArrayList<String>();//Arrays.asList(derSizes.clone());
-	    	dSizes.addAll(Arrays.asList(derSizes.clone()));
+	    	if(derSizes != null)
+	    		dSizes.addAll(Arrays.asList(derSizes.clone()));
 	    	int vIdx = -1;
 	    	if((vIdx=dSizes.indexOf("v")) >= 0){
 	    		// MP4 derivative processing
@@ -281,7 +282,7 @@ public class DerivativeHandler extends CollectionHandler{
 				}
 	    	}
 	    	
-	    	if(derSizes.length > 0){
+	    	if(derSizes == null || derSizes.length > 0){
 				// JPEG Derivative Creation/Replacement
 				if(update) {
 					successful = damsClient.updateDerivatives(oid, cid, fid, derSizes, frameNo, update);				
