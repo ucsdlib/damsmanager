@@ -140,7 +140,8 @@ public class DerivativeHandler extends CollectionHandler{
 	        			derSize = sizs2create.split(",");
 	        			if(reqSizes.length == derSize.length)
 	        				derSize = sizes;
-	        			handleFile(subjectId, fileURI.getComponent(), fileURI.getFileName(), derSize, false, i);
+	        			if(handleFile(subjectId, fileURI.getComponent(), fileURI.getFileName(), derSize, false, i))
+	        				updateSOLR = true;
 	        		}else if (!replace)
 	        			skipCount++;
 	        		
