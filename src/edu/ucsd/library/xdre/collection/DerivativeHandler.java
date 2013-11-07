@@ -112,7 +112,7 @@ public class DerivativeHandler extends CollectionHandler{
 				
 				// Create derivative for the designated source file or master image files (source/alternative?), service video files (mp4) etc.
 	        	if((file!=null && file.length()>0 && fileID.endsWith(file)) || 
-	        			(file==null || file.length()==0) && use != null && !(use.startsWith("audio") || use.startsWith("data")) && (use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE) || (use.endsWith(Constants.SERVICE) && !use.startsWith(Constants.IMAGE) && !(reqSizes.length==1 && reqSizes[0].equals("v"))))){
+	        			(file==null || file.length()==0) && use != null && !(use.startsWith("audio") || use.startsWith("data")) && (use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE) || (use.endsWith(Constants.SERVICE) && (fileID.startsWith("1.") || (reqSizes.length==1 && reqSizes[0].equals("v")))))){
 		        	totalFiles += 1;
 		        	DamsURI fileURI = DamsURI.toParts(fileID, dFile.getObject());
 	        		String derId = null;
