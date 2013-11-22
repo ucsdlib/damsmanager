@@ -847,7 +847,10 @@ public class DAMSClient {
 			status = execute(req);
 			if (status != 200)
 				handleError(format);
-			return EntityUtils.toString(response.getEntity());
+			
+			HttpEntity en = response.getEntity();
+			Header encoding = en.getContentEncoding();
+			return EntityUtils.toString(en, (encoding==null?"UTF-8":encoding.getValue()));
 		} finally {
 			req.releaseConnection();
 		}
@@ -1590,7 +1593,10 @@ public class DAMSClient {
 		} finally {
 			get.releaseConnection();
 		}
-		return EntityUtils.toString(response.getEntity());
+		
+		HttpEntity en = response.getEntity();
+		Header encoding = en.getContentEncoding();
+		return EntityUtils.toString(en, (encoding==null?"UTF-8":encoding.getValue()));
 	}
 
 	/**
@@ -1690,7 +1696,9 @@ public class DAMSClient {
 	}
 	
 	public String getResponseMessage() throws ParseException, IOException{
-		return EntityUtils.toString(response.getEntity());
+		HttpEntity en = response.getEntity();
+		Header encoding = en.getContentEncoding();
+		return EntityUtils.toString(en, (encoding==null?"UTF-8":encoding.getValue()));
 	}
 
 	/**
