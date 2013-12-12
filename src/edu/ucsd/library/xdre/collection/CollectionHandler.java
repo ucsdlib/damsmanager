@@ -729,7 +729,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 					log.warn(message);
 				else
 					throw new Exception(message);
-			}else if(file.getCanonicalPath().indexOf("/siogeocoll/Master_Files_Bag/") < 0)
+			}else if(file.getAbsolutePath().indexOf("/siogeocoll/Master_Files_Bag/") < 0)
 				fMap.put(fName, file);
 		}
 	}
