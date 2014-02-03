@@ -812,6 +812,22 @@ public abstract class CollectionHandler implements ProcessHandler {
 	 * @throws Exception
 	 */
 	public static String lookupRecord(DAMSClient damsClient, String field, String value, String modelName, Map<String, String> properties) throws Exception{
+		List<String> recordIds = lookupRecords(damsClient, field, value, modelName, properties);
+		if(recordIds.size() > 0)
+			return recordIds.get(0);
+		else
+			return null;
+	}
+	
+	/**
+	 * Look up copyrights record from dams
+	 * @param value
+	 * @param modelName
+	 * @return
+	 * @throws Exception
+	 */
+	public static List<String> lookupRecords(DAMSClient damsClient, String field, String value, String modelName, Map<String, String> properties) throws Exception{
+		List<String> recordIds = new ArrayList<String>();
 		if(properties != null && properties.containsKey(field))
 			properties.remove(field);
 		
@@ -834,7 +850,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 		Document doc = damsClient.solrLookup(query);
 		int numFound = Integer.parseInt(doc.selectSingleNode("/response/result/@numFound").getStringValue());
 		if(numFound <= 0)
-			return null;
+			return recordIds;
 		else {
 			Node record = null;
 			Node propNode = null;
@@ -846,8 +862,9 @@ public abstract class CollectionHandler implements ProcessHandler {
 					record = it.next();
 					propNode = record.selectSingleNode("*[@name='" + field + "']/str");
 					if(propNode.getText().equalsIgnoreCase(value)){
-						matched = true;
-						break;
+						recordIds.add(record.selectSingleNode("*[@name='id']").getText());
+						//matched = true;
+						//break;
 					}
 				}
 			}else{
@@ -916,15 +933,13 @@ public abstract class CollectionHandler implements ProcessHandler {
 							}
 						}
 						if(matched)
-							break;
+							recordIds.add(record.selectSingleNode("*[@name='id']").getText());
+							//break;
 					}
 				}
 			}
 			
-			if(matched){
-				return record.selectSingleNode("*[@name='id']").getText();
-			}else
-				return null;
+			return recordIds;
 		}
 	}
 	

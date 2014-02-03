@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.util.Properties;
 
 import javax.naming.InitialContext;
+import javax.sql.DataSource;
 
 /**
  * Constants used by the DAMS Manager
@@ -49,6 +50,12 @@ public class Constants {
 	public static String DERIVATIVES_LIST = "";
 	public static String VIDEO_SIZE = "";
 	public static String FFMPEG_COMMAND = "";
+	
+	/* begin stats declaration*/
+	public static String CURATOR_ROLE ="";
+	public static DataSource DAMS_DATA_SOURCE = null;
+	public static String STATS_LOG_DIR = "";
+	/* end stats declaration*/
 	
 	static {
 		InputStream in = null;
@@ -113,6 +120,11 @@ public class Constants {
 			DAMSClient damsClient = new DAMSClient(DAMS_STORAGE_URL);		
 			DEFAULT_FILESTORE = damsClient.defaultFilestore(); //Default filestore
 			DEFAULT_TRIPLESTORE = damsClient.defaultTriplestore(); //Default triplestore
+
+			// DAMS super user role
+			CURATOR_ROLE = props.getProperty("dams.curator.role");
+			// DAMS stats datasource
+			DAMS_DATA_SOURCE = (DataSource) ctx.lookup("java:comp/env/jdbc/dams");
 			
 		} catch (Exception e) {
 			e.printStackTrace();

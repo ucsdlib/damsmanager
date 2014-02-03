@@ -284,8 +284,8 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				
 				Model iRdf = null;
 				int jLen = items.size();
-
-				for (int j=0; j<jLen&&!interrupted; j++){
+				System.out.println(rdfFiles[i] + " #Records: " + jLen);
+				/*for (int j=0; j<jLen&&!interrupted; j++){
 					graph = new RDFStore();
 					recordsCount++;
 					// Add subject
@@ -352,7 +352,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				if(importOption.equalsIgnoreCase("metadataAndFiles")){
 					uploadFiles(rdf, currFile);
 				}
-
+*/
 			}catch(Exception e){
 				e.printStackTrace();
 				failedCount++;
@@ -363,7 +363,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				// Update SOLR for files uploaded
 				int iLen = objWithFiles.size();
 				for (int j=0; j<iLen&&!interrupted; j++){
-					updateSOLR(objWithFiles.get(j));
+					//updateSOLR(objWithFiles.get(j));
 				}
 			}
 			

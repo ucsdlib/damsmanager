@@ -120,6 +120,11 @@ public class DAMSClient {
 	private String fileStore = null;
 	private String tripleStore = null;
 	private String solrURLBase = null; // SOLR URL
+
+	/**
+	 * Construct a DAMSClient object.
+	 */
+	public DAMSClient() {}
 	
 	/**
 	 * Construct a DAMSClient object using storage URL.
@@ -159,6 +164,16 @@ public class DAMSClient {
 		this((String)props.get("xdre.damsRepo"), (String)props.get("xdre.damsRepo.user"), (String)props.get("xdre.damsRepo.pwd"));
 	}
     
+	/**
+	 * Method to create a new DAMSClient instance
+	 * @return
+	 * @throws IOException 
+	 * @throws LoginException 
+	 */
+	public static DAMSClient getInstance() throws LoginException, IOException{
+		return new DAMSClient(Constants.DAMS_STORAGE_URL);
+	}
+	
     /**
      * Create HttpClient with PreemptiveAuth when user and password provide 
      * @param userName
@@ -1584,19 +1599,22 @@ public class DAMSClient {
 	 * @throws Exception 
 	 */
 	public String getContentBodyAsString(String url) throws Exception {
+		String result = "";
 		HttpGet get = new HttpGet(url);
 		int status = -1;
 		try {
 			status = execute(get);
-			if(status != 200)
+			if(status == 200){				
+				HttpEntity en = response.getEntity();
+				Header encoding = en.getContentEncoding();
+				result = EntityUtils.toString(en, (encoding==null?"UTF-8":encoding.getValue()));
+			} else
 				handleError(null);
+		
 		} finally {
 			get.releaseConnection();
 		}
-		
-		HttpEntity en = response.getEntity();
-		Header encoding = en.getContentEncoding();
-		return EntityUtils.toString(en, (encoding==null?"UTF-8":encoding.getValue()));
+		return result;
 	}
 
 	/**
@@ -2045,6 +2063,21 @@ public class DAMSClient {
 		return fileURIs;
 	}
 	
+	/**
+	 * Reverse the key/value in a map
+	 * @return
+	 */
+	public static Map<String, String> reverseMap(Map<String, String> m){
+
+		Map<String, String> collsMap = new HashMap<String, String>();
+
+		for(Iterator<String> it=m.keySet().iterator(); it.hasNext();){
+			String key = it.next();
+			collsMap.put(m.get(key), key);
+		}
+		return collsMap;
+	}
+		
 	/**
 	 * Static method to send mail
 	 * @param from

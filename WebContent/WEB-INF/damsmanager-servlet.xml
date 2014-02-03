@@ -16,7 +16,6 @@
 	<bean name="/directory.do" class="edu.ucsd.library.xdre.web.DirectoryController"></bean>
     <!--<bean name="/jhove.do" class="edu.ucsd.library.xdre.web.JhoveIngestController" />-->
     <bean name="/derivative.do" class="edu.ucsd.library.xdre.web.DerivativeController" />
- 	<!--<bean name="/collectionReport.do" class="edu.ucsd.library.xdre.web.CollectionStatusReport" />-->
 	<bean name="/logout.do" class="edu.ucsd.library.xdre.web.LogoutController" />
 	<bean name="/login.do" class="edu.ucsd.library.xdre.web.LoginController" />
 	<bean name="/loginPas.do" class="edu.ucsd.library.xdre.web.LoginPasController" />
@@ -58,20 +57,18 @@
 	<!--
 	<bean name="/statusItems.do" class="edu.ucsd.library.xdre.web.CollectionStatusItemsController"></bean>
 	<bean name="/collectionInfo.do" class="edu.ucsd.library.xdre.web.CollectionStatusInfoController"></bean>
+	
 	<bean name="/collectionProcess.do" class="edu.ucsd.library.xdre.web.StatsDLCollectionController"></bean>
-	<bean name="/statsSummary.do" class="edu.ucsd.library.xdre.web.StatsDLPSummaryController"></bean>
-	<bean name="/dlPopular.do" class="edu.ucsd.library.xdre.web.statsDLPopularController"></bean>
-	<bean name="/stats.do" class="edu.ucsd.library.xdre.web.StatsController"></bean>
-	<bean name="/statsDlp.do" class="edu.ucsd.library.xdre.web.StatsDLPController"></bean>
-	<bean name="/statsDlpObject.do" class="edu.ucsd.library.xdre.web.StatsDLPController"></bean>
-	<bean name="/statsKeywords.do" class="edu.ucsd.library.xdre.web.StatsDLCKeywordsController"></bean>		
-	<bean name="/statsProcess.do" class="edu.ucsd.library.xdre.web.StatisticsAnalyzerController"></bean>
-	<bean name="/libstats.do" class="edu.ucsd.library.xdre.web.StatsController"></bean>
-	<bean name="/libStatsDlp.do" class="edu.ucsd.library.xdre.web.StatsDLPController"></bean>
-	<bean name="/libStatsDlpObject.do" class="edu.ucsd.library.xdre.web.StatsDLPController"></bean>
-	<bean name="/LibStatsSummary.do" class="edu.ucsd.library.xdre.web.StatsDLPSummaryController"></bean>
-	<bean name="/libDlcPopular.do" class="edu.ucsd.library.xdre.web.statsDLPopularController"></bean>
 	-->
+	<bean name="/collectionsReport.do" class="edu.ucsd.library.xdre.web.StatsCollectionsReportController" />
+	<bean name="/statsSummary.do" class="edu.ucsd.library.xdre.web.StatsSummaryController"></bean>
+	<bean name="/statsPopular.do" class="edu.ucsd.library.xdre.web.StatsPopularController"></bean>
+	<bean name="/stats.do" class="edu.ucsd.library.xdre.web.StatsController"></bean>
+	<bean name="/statsUsage.do" class="edu.ucsd.library.xdre.web.StatsUsageController"></bean>
+	<bean name="/statsItemUsage.do" class="edu.ucsd.library.xdre.web.StatsUsageController"></bean>
+	<bean name="/statsKeywords.do" class="edu.ucsd.library.xdre.web.StatsKeywordsController"></bean>
+	<bean name="/statsCollections.do" class="edu.ucsd.library.xdre.web.StatsCollectionsAccessController"></bean>		
+
 	<!--<bean name="/tsAnalyzer.do" class="edu.ucsd.library.xdre.web.SparqlAnalyzerController"></bean>-->
 	<!--<bean name="/statusUpload.do" class="edu.ucsd.library.xdre.web.MerrittStatusUploadController"></bean>-->
 	
