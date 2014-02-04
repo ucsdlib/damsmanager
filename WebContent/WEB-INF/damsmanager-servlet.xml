@@ -57,9 +57,9 @@
 	<!--
 	<bean name="/statusItems.do" class="edu.ucsd.library.xdre.web.CollectionStatusItemsController"></bean>
 	<bean name="/collectionInfo.do" class="edu.ucsd.library.xdre.web.CollectionStatusInfoController"></bean>
-	
-	<bean name="/collectionProcess.do" class="edu.ucsd.library.xdre.web.StatsDLCollectionController"></bean>
 	-->
+	<bean name="/statsWebLogAnalyzer.do" class="edu.ucsd.library.xdre.web.StatsWeblogAnalyzerController"/>
+	<bean name="/statsQuantytyAnalyzer.do" class="edu.ucsd.library.xdre.web.StatsQuantityAnalyzerController"></bean>
 	<bean name="/collectionsReport.do" class="edu.ucsd.library.xdre.web.StatsCollectionsReportController" />
 	<bean name="/statsSummary.do" class="edu.ucsd.library.xdre.web.StatsSummaryController"></bean>
 	<bean name="/statsPopular.do" class="edu.ucsd.library.xdre.web.StatsPopularController"></bean>
