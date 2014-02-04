@@ -20,7 +20,7 @@ import edu.ucsd.library.xdre.utils.Constants;
 
 
  /**
- * Class StatusController handles assignments the status of a request
+ * Class StatsController handles the stats requests
  *
  * @author lsitu@ucsd.edu
  */
@@ -37,7 +37,6 @@ public class StatsController implements Controller {
 		Calendar sCal = Calendar.getInstance();
 		Calendar eCal = Calendar.getInstance();
 		sCal.add(Calendar.MONTH, -1);
-		//sCal.add(Calendar.DATE, 1);
 		String templete = "stats";	
 		
 		boolean isCas = false;
@@ -52,9 +51,7 @@ public class StatsController implements Controller {
 			con = Constants.DAMS_DATA_SOURCE.getConnection();
 			for(int i=0; i<apps2sum.length; i++){
 				StatsUsage statsUsage = null;
-				/*if(statsType != null && statsType.equalsIgnoreCase("damsObject")){
-					statsUsage = new DAMSObjectUsage(APPS[i], sCal.getTime(), eCal.getTime(), con);
-				}else*/
+
 				statsUsage = new DAMSAppUsage(apps2sum[i], sCal.getTime(), eCal.getTime(), con);
 				statsUsage.setStatsDaily();
 				model.putAll(statsUsage.getGraphData());

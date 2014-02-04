@@ -1,7 +1,6 @@
 package edu.ucsd.library.xdre.web;
 
 import java.io.OutputStream;
-import java.net.URL;
 import java.net.URLEncoder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -33,7 +32,7 @@ import edu.ucsd.library.xdre.utils.DomUtil;
 import edu.ucsd.library.xdre.utils.ReportFormater;
 
 /**
- * CollectionStatusReport generate reports for the status of the colletions in DAMS
+ * Class StatsCollectionsReportController generate reports for DAMS collections
  * @author lsitu
  *
  */
@@ -51,20 +50,18 @@ public class StatsCollectionsReportController implements Controller {
 		boolean cacheOnly = request.getParameter("cacheOnly")!=null;
 		String today = ReportFormater.getCurrentTimestamp();
 		today = today.substring(0, today.indexOf('T'));
-		synchronized(log){
-			if(cacheOnly || STATUSREPORT == null || current || STATUSREPORT.indexOf(today) < 0){
-				try{
-					damsClient =DAMSClient.getInstance();
-					STATUSREPORT = generateReport(damsClient).toString();
-				}catch (Exception e){
-					e.printStackTrace();
-					successful = false;
-					message += "Failed to generate report. Internal error: " + e.getMessage();
-				}finally{
-					if(damsClient != null){
-						damsClient.close();
-						damsClient = null;
-					}
+		if(cacheOnly || STATUSREPORT == null || current || STATUSREPORT.indexOf(today) < 0){
+			try{
+				
+				generateReport();
+			}catch (Exception e){
+				e.printStackTrace();
+				successful = false;
+				message += "Failed to generate report. Internal error: " + e.getMessage();
+			}finally{
+				if(damsClient != null){
+					damsClient.close();
+					damsClient = null;
 				}
 			}
 		}
@@ -96,50 +93,60 @@ public class StatsCollectionsReportController implements Controller {
 		return null;
 	}
 
-	private synchronized StringBuilder generateReport(DAMSClient damsClient) throws Exception{
+	public synchronized static void generateReport() throws Exception{
+		DAMSClient damsClient = null;
 		StringBuilder strBuf = new StringBuilder();
-		strBuf.append("UCSD DAMS Collections Report - " + ReportFormater.getCurrentTimestamp() + "\n");
+		strBuf.append("UCSD Library DAMS Collections Report - " + ReportFormater.getCurrentTimestamp() + "\n");
 		strBuf.append("Collection\tType\tUnit\tSearchable Items\tItems Count\tSize(MB)\tView\tPublic\tUCSD\tCurator\tRestricted\tCulturally Sensitive\tNotes" + "\n");
 
 		Map<String, String> colRows = new TreeMap<String, String>();
 
-		String colId = null;
-		String colTitle = null; 
-		Map<String, String> colMap = damsClient.listCollections();
-		List<String> values = null;
-		String visibility = "";
-		String unit = "";
-		String colType = "";
-		String rowVal = null;
-		Document doc = null;
-		for(Iterator<String> iter=colMap.keySet().iterator();iter.hasNext();){
-			visibility = "";
-			unit = "";
-			colTitle = iter.next();
-			colId = colMap.get(colTitle);
-			colId = colId.substring(colId.lastIndexOf("/")+1);
-			int idx = colTitle.lastIndexOf("[");
-			if( idx > 0){
-				colType = colTitle.substring(idx+1, colTitle.lastIndexOf("]"));
-				colTitle = colTitle.substring(0, idx).trim();
+		try{
+			String colId = null;
+			String colTitle = null;
+			List<String> values = null;
+			String visibility = "";
+			String unit = "";
+			String colType = "";
+			String rowVal = null;
+			Document doc = null;
+			damsClient = DAMSClient.getInstance();
+			Map<String, String> colMap = damsClient.listCollections();
+			for(Iterator<String> iter=colMap.keySet().iterator();iter.hasNext();){
+				visibility = "";
+				unit = "";
+				colTitle = iter.next();
+				colId = colMap.get(colTitle);
+				colId = colId.substring(colId.lastIndexOf("/")+1);
+				int idx = colTitle.lastIndexOf("[");
+				if( idx > 0){
+					colType = colTitle.substring(idx+1, colTitle.lastIndexOf("]"));
+					colTitle = colTitle.substring(0, idx).trim();
+				}
+				
+				doc = damsClient.solrLookup("q=" + URLEncoder.encode("id:" + colId, "UTF-8"));
+				values = getValues(doc, "//*[@name='visibility_tesim']/str");
+				for(Iterator<String> it=values.iterator(); it.hasNext();)
+					visibility += (visibility.length()>0?" ":"") + it.next();
+				values = getValues(doc, "//*[@name='unit_code_tesim']/str");
+				for(Iterator<String> it=values.iterator(); it.hasNext();)
+					unit += (unit.length()>0?" ":"") + it.next();
+				rowVal = getRow(damsClient, colTitle, colId, colType, unit, visibility, colMap);
+				if(rowVal != null && rowVal.length() > 0)
+					colRows.put(colTitle, rowVal + "\n");
 			}
 			
-			doc = damsClient.solrLookup("q=" + URLEncoder.encode("id:" + colId, "UTF-8"));
-			values = getValues(doc, "//*[@name='visibility_tesim']/str");
-			for(Iterator<String> it=values.iterator(); it.hasNext();)
-				visibility += (visibility.length()>0?" ":"") + it.next();
-			values = getValues(doc, "//*[@name='unit_code_tesim']/str");
-			for(Iterator<String> it=values.iterator(); it.hasNext();)
-				unit += (unit.length()>0?" ":"") + it.next();
-			rowVal = getRow(damsClient, colTitle, colId, colType, unit, visibility, colMap);
-			if(rowVal != null && rowVal.length() > 0)
-				colRows.put(colTitle, rowVal + "\n");
+			for(Iterator<String> iter=colRows.values().iterator();iter.hasNext();){
+				strBuf.append(iter.next());
+			}
+			
+			STATUSREPORT = strBuf.toString();
+		}finally{
+			if(damsClient != null){
+				damsClient.close();
+				damsClient = null;
+			}
 		}
-		for(Iterator<String> iter=colRows.values().iterator();iter.hasNext();){
-			strBuf.append(iter.next());
-		}
-		
-		return strBuf;
 	}
 	
 	public String getLiteralValue(Document doc, String xPath){
@@ -151,12 +158,10 @@ public class StatsCollectionsReportController implements Controller {
 		return val;
 	}
 	
-	public String getRow(DAMSClient damsClient, String colTitle, String colId, String colType, String unit, String visibility, Map<String, String> colMap) throws Exception{
+	public static String getRow(DAMSClient damsClient, String colTitle, String colId, String colType, String unit, String visibility, Map<String, String> colMap) throws Exception{
 		String rowVal = null;
 		long itemsCount = damsClient.countObjects(colId);;
-
-		//if(itemsCount > 0){
-	
+		
 		String solrBase = "start=0&rows=1&";
 		String[] views = {"discover_access_group_ssim:public", "discover_access_group_ssim:local", "discover_access_group_ssim:dams-manager-admin AND NOT(discover_access_group_ssim:public OR discover_access_group_ssim:local)"};
 		String solrQuery = solrBase + "q=" + URLEncoder.encode("collections_tesim:" + colId + " OR collection_sim:\""+colTitle+ "\"", "UTF-8") + "&fq=" + URLEncoder.encode("has_model_ssim:\"info:fedora/afmodel:DamsObject\"", "UTF-8");
@@ -218,25 +223,22 @@ public class StatsCollectionsReportController implements Controller {
 			}
 			rowVal += " Culturally sensitive items: [" + sensitive + "]";
 		}
-
-		//}
-		
 		return rowVal;
 	}
 		
-	public List<String> getRestrictedItems(DAMSClient damsClient, String collectionId) throws Exception{
+	public static List<String> getRestrictedItems(DAMSClient damsClient, String collectionId) throws Exception{
 		String field = "id";
 		String solrQuery = "fl=" + field + "&q=" + URLEncoder.encode("\"Display currently prohibited\"", "UTF-8") + "&qf=license_tesim&fq=" + URLEncoder.encode("collections_tesim:" + collectionId, "UTF-8");
 		return getSOLRResults(damsClient, solrQuery, field);
 	}
 	
-	public List<String> getCulturallySensitiveItems(DAMSClient damsClient, String collectionId) throws Exception{
+	public static List<String> getCulturallySensitiveItems(DAMSClient damsClient, String collectionId) throws Exception{
 		String field = "id";
 		String solrQuery = "fl=" + field + "&qf=note_tesim&q=" + URLEncoder.encode("\"culturally+sensitive\"", "UTF-8") + "&fq=" + URLEncoder.encode("collections_tesim:"+collectionId, "UTF-8");
 		return getSOLRResults(damsClient, solrQuery, field);
 	}
 	
-	public List<String> getSOLRResults(DAMSClient damsClient, String solrQuery, String field) throws Exception{
+	public static List<String> getSOLRResults(DAMSClient damsClient, String solrQuery, String field) throws Exception{
 		List<String> results = new ArrayList<String>();	
 		String xPath = "//*[@name='" + field + "']";
 		
@@ -265,8 +267,7 @@ public class StatsCollectionsReportController implements Controller {
 	    return results;
 	}
 	
-	
-	public List<String> getValues(Document doc, String xPath){
+	public static List<String> getValues(Document doc, String xPath){
 		List<String> values = new ArrayList<String>();
 		List<Node> nodes = doc.selectNodes(xPath);
 		for(Iterator<Node> it=nodes.iterator(); it.hasNext();)

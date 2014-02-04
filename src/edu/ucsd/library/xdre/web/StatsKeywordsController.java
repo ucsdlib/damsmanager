@@ -30,7 +30,7 @@ import edu.ucsd.library.xdre.utils.Constants;
 
 
  /**
- * Class StatsDLCKeywordsController handles assignments the status of a request
+ * Class StatsKeywordsController handles the statics for keyword/phrase
  *
  * @author lsitu@ucsd.edu
  */

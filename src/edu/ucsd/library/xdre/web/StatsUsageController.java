@@ -21,7 +21,7 @@ import edu.ucsd.library.xdre.utils.Constants;
 
 
  /**
- * Class StatusController handles assignments the status of a request
+ * Class StatsUsageController summarizes the output for DAMS usage
  *
  * @author lsitu@ucsd.edu
  */

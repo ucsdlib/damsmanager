@@ -29,7 +29,7 @@ import edu.ucsd.library.xdre.utils.ReportFormater;
 
 
  /**
- * Class StatsDLPCollsAccessController
+ * Class StatsCollectionsAccessController
  *
  * @author lsitu@ucsd.edu
  */
@@ -91,7 +91,7 @@ public class StatsCollectionsAccessController implements Controller {
 				periods.add(0, "Collection");
 				if(export != null){
 					if(i==0){
-						strBuf.append("UC San Diego DAMS Usage Statistics " + ReportFormater.getCurrentTimestamp() + "\n");
+						strBuf.append("UCSD Library DAMS Usage Statistics " + ReportFormater.getCurrentTimestamp() + "\n");
 						//strBuf.append("Month\tCollections\tTotal Items\tSize(MB)\tDAMS Usage\tQueries\tItem Hits\tItem Views\tObject Usage\tObject View" + "\n");
 						periods = (List)model.get("periodsList");
 						for(int j=0; j<periods.size();j++){

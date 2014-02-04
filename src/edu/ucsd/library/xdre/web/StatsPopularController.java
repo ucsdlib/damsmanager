@@ -27,14 +27,13 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import edu.ucsd.library.xdre.statistic.beans.DAMSItem;
-import edu.ucsd.library.xdre.statistic.beans.DAMSItem;
 import edu.ucsd.library.xdre.statistic.report.StatsUsage;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 
 
  /**
- * Class statsDLPopularController
+ * Class StatsPopularController
  *
  * @author lsitu@ucsd.edu
  */

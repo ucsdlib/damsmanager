@@ -30,6 +30,7 @@ import org.springframework.web.servlet.mvc.Controller;
 import edu.ucsd.library.xdre.statistic.analyzer.Statistics;
 import edu.ucsd.library.xdre.statistic.beans.DAMSItemSummary;
 import edu.ucsd.library.xdre.statistic.beans.DAMSummary;
+import edu.ucsd.library.xdre.statistic.beans.StatSummary;
 import edu.ucsd.library.xdre.statistic.report.DAMSUsage;
 import edu.ucsd.library.xdre.statistic.report.StatsUsage;
 import edu.ucsd.library.xdre.utils.Constants;
@@ -37,7 +38,7 @@ import edu.ucsd.library.xdre.utils.ReportFormater;
 
 
  /**
- * Class StatusController handles assignments the status of a request
+ * Class StatsSummaryController to summarize out put for dams statistics
  *
  * @author lsitu@ucsd.edu
  */
@@ -94,7 +95,7 @@ public class StatsSummaryController implements Controller {
 			if(export != null)
 				strBuf = new StringBuilder();
 			con = Constants.DAMS_DATA_SOURCE.getConnection();
-			Collection rows = null;
+			Collection<StatSummary> rows = null;
 			DAMSummary dlcSum = null;
 			DAMSItemSummary dlcItemSum = null;
 
@@ -109,14 +110,14 @@ public class StatsSummaryController implements Controller {
 				
 				if(export != null){
 					if(i==0){
-						strBuf.append("Digital Library Collections Statistics " + ReportFormater.getCurrentTimestamp() + "\n");
+						strBuf.append("UCSD Library DAMS Statistics " + ReportFormater.getCurrentTimestamp() + "\n");
 						//strBuf.append("Month\tCollections\tTotal Items\tSize(MB)\tDLC Usage\tQueries\tItem Hits\tItem Views\tObject Usage\tObject View" + "\n");
 						strBuf.append("Month\tCollections\tTotal Items\tSize(MB)\tDAMS Usage\tQueries\tItem Hits\tItem Views" + "\n");
 					}else{
 						strBuf.append(" ");
 						strBuf.append(apps2sum[i]);
 					}
-					for(Iterator it=rows.iterator();it.hasNext();){
+					for(Iterator<StatSummary> it=rows.iterator();it.hasNext();){
 						dlcSum = (DAMSummary)it.next();
 						dlcItemSum = dlcSum.getItemSummary(); 
 						strBuf.append(dlcSum.getPeriodDisplay() + "\t" + dlcSum.getNumOfCollections() + "\t" + numFormatter.format(dlcSum.getNumOfItems()) + "\t" + numFormatter.format(dlcSum.getTotalSize()/1000000.0) + "\t" 
