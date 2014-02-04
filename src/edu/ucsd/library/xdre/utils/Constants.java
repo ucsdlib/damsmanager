@@ -54,7 +54,7 @@ public class Constants {
 	/* begin stats declaration*/
 	public static String CURATOR_ROLE ="";
 	public static DataSource DAMS_DATA_SOURCE = null;
-	public static String STATS_LOG_DIR = "";
+	public static String STATS_WEBLOG_DIR = "";
 	/* end stats declaration*/
 	
 	static {
@@ -121,6 +121,8 @@ public class Constants {
 			DEFAULT_FILESTORE = damsClient.defaultFilestore(); //Default filestore
 			DEFAULT_TRIPLESTORE = damsClient.defaultTriplestore(); //Default triplestore
 
+			// Weblog location
+			STATS_WEBLOG_DIR = props.getProperty("dams.weblog.dir");
 			// DAMS super user role
 			CURATOR_ROLE = props.getProperty("dams.curator.role");
 			// DAMS stats datasource
@@ -138,13 +140,5 @@ public class Constants {
 				in = null;
 			}
 		}
-	}
-
-	public static boolean startRoutine() {
-		// DamsRoutineManager routineManager =
-		// DamsRoutineManager.getInstance(DEFAULT_TRIPLESTORE, DAR_TRIPLESTORE,
-		// DAR_TS_TO_SYNCHRONIZE);
-		// routineManager.start();
-		return true;
 	}
 }

@@ -429,7 +429,7 @@ public class FileIngestionHandler extends CollectionHandler {
 		// Add solr report message
 		exeReport.append(getSOLRReport());
 		exeReport.append("For records, please download the <a href=\""
-				+ Constants.CLUSTER_HOST_NAME
+				+ "https://" + (Constants.CLUSTER_HOST_NAME.indexOf("localhost")>=0?Constants.CLUSTER_HOST_NAME:Constants.CLUSTER_HOST_NAME+".ucsd.edu:8443")
 				+ "/damsmanager/downloadLog.do?log=ingest&category="
 				+ DAMSClient.stripID(collectionId!=null?collectionId:unit!=null?unit:"dams") + "\">Ingest log</a>");
 		String exeInfo = exeReport.toString();

@@ -236,7 +236,7 @@ public class CollectionOperationController implements Controller {
 		}catch(Exception e){
 			e.printStackTrace();
 			try{
-				String logLink = "<a href=\"" + Constants.CLUSTER_HOST_NAME.replace("http://", "https://").replace(":8080/", ":8443/") + "damsmanager/downloadLog.do?sessionId=" + request.getSession().getId() + "\">log</a>";
+				String logLink = "https://" + (Constants.CLUSTER_HOST_NAME.indexOf("localhost")>=0?Constants.CLUSTER_HOST_NAME:Constants.CLUSTER_HOST_NAME+".ucsd.edu:8443") + "/damsmanager/downloadLog.do?sessionId=" + request.getSession().getId() + "\">log</a>";
 				response.sendRedirect(request.getContextPath() + forwardToUrl.substring(forwardToUrl.indexOf("&message=")) + "Execution finished. For details, please view " + logLink);
 			}catch(Exception e1){
 				e.printStackTrace();
@@ -279,7 +279,7 @@ public class CollectionOperationController implements Controller {
 		operations[19] = getParameter(paramsMap, "jhoveReport") != null;
 
 		int submissionId = (int)System.currentTimeMillis();
-		String logLink = "https://" + (Constants.CLUSTER_HOST_NAME.indexOf("localhost")>=0?Constants.CLUSTER_HOST_NAME:Constants.CLUSTER_HOST_NAME+".ucsd.edu") + "/damsmanager/downloadLog.do?submissionId=" + submissionId;
+		String logLink = "https://" + (Constants.CLUSTER_HOST_NAME.indexOf("localhost")>=0?Constants.CLUSTER_HOST_NAME:Constants.CLUSTER_HOST_NAME+".ucsd.edu:8443") + "/damsmanager/downloadLog.do?submissionId=" + submissionId;
 		
 		String ds = getParameter(paramsMap, "ts");
 		String dsDest = null;
