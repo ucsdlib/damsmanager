@@ -36,7 +36,7 @@ public class LogAnalyzer{
 	private static Logger log = Logger.getLogger(LogAnalyzer.class);
 	private Calendar calendar = null;
 	private DAMStatistic pasStats = null;
-	private DAMStatistic casStats = null;
+	//private DAMStatistic casStats = null;
 	private boolean update = false;
 	
 	public LogAnalyzer () throws Exception{
@@ -45,9 +45,9 @@ public class LogAnalyzer{
 	
 	public LogAnalyzer (Map<String, String> collsMap) throws Exception{
 		pasStats = new DAMStatistic("pas");
-		casStats = new DAMStatistic("cas");
+		//casStats = new DAMStatistic("cas");
 		pasStats.setCollsMap(collsMap);
-		casStats.setCollsMap(collsMap);
+		//casStats.setCollsMap(collsMap);
 	}
 	
 	public void analyze(File logFile) throws IOException{
@@ -59,7 +59,7 @@ public class LogAnalyzer{
 		Reader reader = null;
 		
 		BufferedReader bReader = null;
-		int idx = -1;
+		//int idx = -1;
 		calendar = Calendar.getInstance();
 		calendar.set(Calendar.HOUR, 0);
 		calendar.set(Calendar.MINUTE, 0);
@@ -87,19 +87,12 @@ public class LogAnalyzer{
 				spIdx = line.indexOf("GET /dc");
 				if(spIdx > 0 && line.indexOf(Constants.CLUSTER_HOST_NAME) > 0 && line.indexOf("/assets") < 0){
 					uri = getUri(line);
-					//System.out.println(uri + "=>" + line);
 					if(uri != null){
-						idx = uri.indexOf("&user=");
+						//idx = uri.indexOf("&user=");
 						String[] uriParts = uri.substring(1).split("/");
 						if(uriParts.length>1 && uriParts[1].equals("object")){
 							//Object access: /dc/object/oid/cid/_fid
-							idx = uri.indexOf("&casTest");
-							if(idx > 0 || uri.indexOf("&gams")>0){
-								casStats.addObject(uri);
-							}else{
 								pasStats.addObject(uri);
-							}
-							//System.out.println("Object: " + uri);
 						}else{
 							//Home Page: /dc //
 							//Search: /dc/search?utf8=%E2%9C%93&q=wagner
@@ -109,13 +102,8 @@ public class LogAnalyzer{
 							//DLP Collections page: /dc/dlp/collections
 							//RCI collections page: /dc/rci/collections
 							//Collections access: /dc/dams_collections/bb2936476d?counter=1
-							if(idx > 0)
-								//CAS access
-								casStats.addAccess(uri);
-							else
-								pasStats.addAccess(uri);
+							pasStats.addAccess(uri);
 							
-							System.out.println("PAS/CAS use: " + uri);
 						}
 							
 					}
@@ -174,16 +162,16 @@ public class LogAnalyzer{
 	
 	public void export(Connection con) throws SQLException {
 		pasStats.setCalendar(calendar);
-		casStats.setCalendar(calendar);
+		//casStats.setCalendar(calendar);
 		pasStats.setUpdate(update);
-		casStats.setUpdate(update);
+		//casStats.setUpdate(update);
 		pasStats.export(con);
-		casStats.export(con);
+		//casStats.export(con);
 	}
 	
 	public void print() {
 		pasStats.print();
-		casStats.print();
+		//casStats.print();
 	} 
 	
 	public boolean isUpdate() {
