@@ -118,6 +118,8 @@ public class StatsPopularController implements Controller {
 				updateData(dlpObject, resultDoc, i);
 
 				dlpObjects.add(dlpObject);
+				if(dlpObjects.size() == 100)
+					break;
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
