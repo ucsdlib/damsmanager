@@ -64,7 +64,7 @@ public class StatsQuantityAnalyzerController implements Controller {
 		if(successful)
 			message = "Processed collection statistic on " +  Constants.CLUSTER_HOST_NAME + " successfully: " + Statistics.getDatabaseDateFormater().format(sCal.getTime()) + ". \n" + message;
 		else
-			message = "Failed to calculate the size for following objects for " + Statistics.getDatabaseDateFormater().format(sCal.getTime()) + " on " +  Constants.CLUSTER_HOST_NAME + " : \n" + message;
+			message = "Failed to calculate the object size for period " + Statistics.getDatabaseDateFormater().format(sCal.getTime()) + " on " +  Constants.CLUSTER_HOST_NAME + " : \n" + message;
 		
 		OutputStream out = response.getOutputStream();
 		logger.info(message);

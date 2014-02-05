@@ -1,5 +1,6 @@
 package edu.ucsd.library.xdre.collection;
 
+import java.net.URLEncoder;
 import java.util.Iterator;
 import java.util.List;
 
@@ -49,7 +50,7 @@ public class StatsCollectionQuantityHandler extends CollectionHandler{
 					}
 				}else{
 					int idx = subject.lastIndexOf("/");
-					String numFound = damsClient.solrLookup("q=id:" + (idx<0?subject:subject.substring(idx+1)) + "+AND+has_model_ssim:\"info:fedora/afmodel:DamsObject\"").selectSingleNode("//result/@numFound").getStringValue();
+					String numFound = damsClient.solrLookup("q=" + URLEncoder.encode("id:" + (idx<0?subject:subject.substring(idx+1)) + " AND has_model_ssim:\"info:fedora/afmodel:DamsObject\"", "UTF-8")).selectSingleNode("//result/@numFound").getStringValue();
 					if(!numFound.equals("0"))
 						objectsCount++;
 				}
