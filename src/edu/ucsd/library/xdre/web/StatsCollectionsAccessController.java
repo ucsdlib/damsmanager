@@ -147,6 +147,7 @@ public class StatsCollectionsAccessController implements Controller {
 			model.put("isCas", isCas);
 			model.put("message", message);
 			model.put("start", dbFormat.format(sCal.getTime()));
+			model.put("clusterHost", "//" + Constants.CLUSTER_HOST_NAME + ".ucsd.edu");
 			return new ModelAndView(templete, "model", model);
 		}else{
 			if(message != null && message.length() > 0)

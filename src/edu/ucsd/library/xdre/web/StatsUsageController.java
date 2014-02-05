@@ -88,6 +88,7 @@ public class StatsUsageController implements Controller {
 		
 		model.put("isCas", isCas);
 		model.put("message", message);
+		model.put("clusterHost", "//" + Constants.CLUSTER_HOST_NAME + ".ucsd.edu");
 		
 		return new ModelAndView(templete, "model", model);
     }  	

@@ -143,6 +143,7 @@ public class StatsKeywordsController implements Controller {
 		model.put("page", pageNum);
 		model.put("searchKeyword", searchKeyword);
 		model.put("isCas", isCas);
+		model.put("clusterHost", "//" + Constants.CLUSTER_HOST_NAME + ".ucsd.edu");
 
 		if(type == null)
 			return new ModelAndView(templete, "model", model);

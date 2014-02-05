@@ -78,8 +78,8 @@
 	<div id="tdr_crumbs_content">
 		<span class="location" style="float:right;display:cell;vertical-align:top;"><c:choose><c:when test="${model.isCas}"><a href="logout.do?loginPage=stats.do">Log out&nbsp;&nbsp;</a></c:when><c:otherwise><a href="loginPas.do?loginPage=stats.do">Log in&nbsp;&nbsp;</a></c:otherwise></c:choose></span>
 		<ul>
-			<li><a href="http://libraries.ucsd.edu">Home</a></li>
-			<li><a href="/dc">Digital Library Collections</a></li>
+			<li><a href="http://libraries.ucsd.edu">Library Home</a></li>
+			<li><a href="${model.clusterHost}/dc">Digital Library Collections</a></li>
 			<li>DAMS Statistics</li>
 		</ul>
 	</div><!-- /tdr_crumbs_content -->

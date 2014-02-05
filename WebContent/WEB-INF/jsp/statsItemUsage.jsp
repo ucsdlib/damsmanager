@@ -72,8 +72,8 @@
 <div id="tdr_crumbs">
 	<div id="tdr_crumbs_content">
 		<ul>
-			<li><a href="http://libraries.ucsd.edu">Home</a></li>
-			<li><a href="/dc">Digital Library Collections</a></li>
+			<li><a href="http://libraries.ucsd.edu">Library Home</a></li>
+			<li><a href="${model.clusterHost}/dc">Digital Library Collections</a></li>
 			<li><a href="/damsmanager/stats.do">DAMS Statistics</a></li>
 			<li>Item Usage</li>
 		</ul>
