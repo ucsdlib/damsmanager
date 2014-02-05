@@ -104,7 +104,7 @@ public class StatsQuantityAnalyzerController implements Controller {
 				successful = quanStats.getFailedItems().length()==0;
 				if(!successful){
 					String failedItems = quanStats.getFailedItems();
-					throw new Exception("DAMS quantity statics analyed failed for time " + Statistics.getDatabaseDateFormater().format(sCal.getTime()) + ": " + failedItems.toString());
+					throw new Exception("DAMS quantity statistics analyst failed on " + Statistics.getDatabaseDateFormater().format(sCal.getTime()) + ": " + failedItems.toString());
 				}
 			}finally{
 				Statistics.close(con);
@@ -118,6 +118,6 @@ public class StatsQuantityAnalyzerController implements Controller {
 				}
 			}
 		}else
-			throw new Exception("Can't generate DAMS Quantity statistics for the current month: " + sCal.toString());
+			throw new Exception("Can't generate DAMS Quantity statistics for the current month: " + Statistics.getDatabaseDateFormater().format(sCal.getTime()));
 	}
 }

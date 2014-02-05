@@ -124,7 +124,7 @@ public class StatsWeblogAnalyzerController implements Controller {
 					sCal.add(Calendar.DATE, 1);
 				}while(sCal.before(eCal));
 				if(weblogDone.length() > 0)
-					throw new Exception("Weblog(s) records existed for " + weblogDone + ".");
+					throw new Exception("Statistics records existed for weblog(s) " + weblogDone);
 			}
 		}finally{
 			if(con != null){
