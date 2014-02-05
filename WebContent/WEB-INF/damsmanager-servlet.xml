@@ -69,6 +69,10 @@
 	<bean name="/statsKeywords.do" class="edu.ucsd.library.xdre.web.StatsKeywordsController"></bean>
 	<bean name="/statsCollections.do" class="edu.ucsd.library.xdre.web.StatsCollectionsAccessController"></bean>		
 
+	<bean id="force-init" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+  		<property name="staticMethod"><value>edu.ucsd.library.xdre.utils.DAMSRoutineManager.startRoutine</value></property>
+	</bean>
+	
 	<!--<bean name="/tsAnalyzer.do" class="edu.ucsd.library.xdre.web.SparqlAnalyzerController"></bean>-->
 	<!--<bean name="/statusUpload.do" class="edu.ucsd.library.xdre.web.MerrittStatusUploadController"></bean>-->
 	
