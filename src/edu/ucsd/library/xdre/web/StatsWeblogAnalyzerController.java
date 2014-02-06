@@ -67,7 +67,7 @@ public class StatsWeblogAnalyzerController implements Controller {
 				successful = true;
 			} catch (Exception e) {
 				e.printStackTrace();
-				message += e.getMessage() + " -- ";
+				message += (message.length()>0?"; ":"") + e.getMessage();
 			}finally{
 				if(Constants.CLUSTER_HOST_NAME.indexOf("library") >= 0){
 					String sender = Constants.MAILSENDER_DAMSSUPPORT;
@@ -100,6 +100,7 @@ public class StatsWeblogAnalyzerController implements Controller {
 		eCal.setTime(endDate);
 		Connection con = null;
 		String weblogDone = "";
+		String weblogMissing = "";
 		try {
 			synchronized(logger){
 				con = Constants.DAMS_DATA_SOURCE.getConnection();
@@ -108,9 +109,9 @@ public class StatsWeblogAnalyzerController implements Controller {
 					String dateString = dFormat.format(sCal.getTime());
 					File logFile = getLogFile(dateString);
 					if(!logFile.exists()){
-						String message = "Weblog doesn't exist: " + logFile.getAbsolutePath();
-						logger.error(message);
-						throw new Exception(message);
+						weblogMissing += (weblogMissing.length()>0?", ":"") + logFile.getAbsolutePath();
+						logger.error("Weblog doesn't exist: " + logFile.getAbsolutePath());
+						//throw new Exception(message);
 					}else{
 						LogAnalyzer analyzer = new LogAnalyzer();
 						if(update || !analyzer.isRecordExist(con, dateString)){
@@ -123,8 +124,14 @@ public class StatsWeblogAnalyzerController implements Controller {
 					}
 					sCal.add(Calendar.DATE, 1);
 				}while(sCal.before(eCal));
+				
+				String message = "";
 				if(weblogDone.length() > 0)
-					throw new Exception("Statistics records existed for weblog(s) " + weblogDone);
+					message = "Statistics records existed for weblog(s) " + weblogDone;
+				if(weblogMissing.length() > 0)
+					message += (message.length()>0?"; ":"") + "Missing weblog(s): " + weblogMissing;
+				if(message.length() > 0)
+					throw new Exception(message);
 			}
 		}finally{
 			if(con != null){
