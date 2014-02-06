@@ -4,13 +4,16 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import edu.ucsd.library.xdre.statistic.analyzer.Statistics;
 import edu.ucsd.library.xdre.statistic.beans.StatSummary;
 
 /**
@@ -91,7 +94,26 @@ public class DAMSAppUsage extends StatsUsage{
 				}catch(SQLException e){}
 			}
 		}
-		
+		int pSize = periodsList.size();
+		if(pSize < 12){
+			tmpVal = "0";
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(digitFormatMonthly.parse(periodsList.get(0)));
+			cal.add(Calendar.DATE, 1);
+			
+			for(int i=0; i<12-pSize; i++){
+				graphData = tmpVal + (graphData.length()>0?", ":" ") + graphData;
+				cal.add(Calendar.MONTH, -1);
+				
+				periods = "'" + outFormatMonthly.format(cal.getTime()) + (periods.length()>0?"', ":"'") + periods;
+				periodsList.add(0, digitFormatMonthly.format(cal.getTime()));
+				usageList.add(0, tmpVal);	
+				searchList.add(0, tmpVal);
+				browseList.add(0, tmpVal);
+				homePageList.add(0, tmpVal);
+				colPageList.add(0, tmpVal);
+			}
+		}
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("periodsList", periodsList);
 		map.put(appName + "UsageList", usageList);

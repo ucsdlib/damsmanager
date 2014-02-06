@@ -49,8 +49,8 @@ public class StatsUsageController implements Controller {
 		}
 	
 		try {
-			if(isCas)
-				apps2sum[0] = "dlp";
+			//if(isCas)
+			//	apps2sum[0] = "dlp";
 			con = Constants.DAMS_DATA_SOURCE.getConnection();
 			StatsUsage statsUsage = null;
 
@@ -61,8 +61,8 @@ public class StatsUsageController implements Controller {
 					model.putAll(statsUsage.getGraphData());
 				}
 			}else{
-				if(isCas)
-					apps2sum = APPS;
+				//if(isCas)
+				//	apps2sum = APPS;
 				
 				templete = "statsUsage";
 				

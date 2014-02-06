@@ -5,6 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -116,6 +117,25 @@ public class DAMSItemUsage extends StatsUsage{
 			}
 		}
 		
+		int pSize = monthsList.size();
+		if(pSize < 12){
+			tmpVal = "0";
+			Calendar cal = Calendar.getInstance();
+			cal.setTime(digitFormatMonthly.parse(monthsList.get(0)));
+			cal.add(Calendar.DATE, 1);
+			
+			for(int i=0; i<12-pSize; i++){
+				graphData = tmpVal + (graphData.length()>0?", ":" ") + graphData;
+				cal.add(Calendar.MONTH, -1);
+				
+				months = "'" + outFormatMonthly.format(cal.getTime()) + (months.length()>0?"', ":"'") + months;
+				monthsList.add(0, digitFormatMonthly.format(cal.getTime()));
+				accessList.add(0, tmpVal);	
+				viewList.add(0, tmpVal);
+				objectList.add(0, tmpVal);
+				objectViewList.add(0, tmpVal);
+			}
+		}
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("periodsList", monthsList);
 		map.put(appName + "ObjectList", objectList);
