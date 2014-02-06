@@ -95,7 +95,7 @@ public class DAMSAppUsage extends StatsUsage{
 			}
 		}
 		int pSize = periodsList.size();
-		if(pSize < 12){
+		if(statsFormat.equals(MONTHLY_FORMAT) && pSize < 12){
 			tmpVal = "0";
 			Calendar cal = Calendar.getInstance();
 			if(periodsList.size() > 0){

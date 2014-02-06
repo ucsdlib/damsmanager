@@ -15,8 +15,7 @@
 		<div id="tdr_crumbs">
 			<div id="tdr_crumbs_content">
 				<ul>
-					<li><a href="http://libraries.ucsd.edu/index.html">Home</a></li>
-					<li><a href="/digital">Digital Library Collections</a></li>
+					<li><a href="http://libraries.ucsd.edu/index.html">Library Home</a></li>
 					<li>DAMS Manager</li>
 				</ul>
 			</div><!-- /tdr_crumbs_content -->
