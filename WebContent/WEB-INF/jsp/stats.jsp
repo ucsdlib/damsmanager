@@ -89,7 +89,7 @@
 	</div>
 </div><!-- /tdr_crumbs -->
 <div id="main" class="gallery" align="center">
-	<div class="main-title">UCSD Libraries Digital Asset Management System Statistics</div>
+	<div class="main-title">UCSD Library Digital Asset Management System Statistics</div>
 	<div id="container" style="margin-bottom:10px;"></div>
 	<div id="stats-links">
 		<ul class="index-list">

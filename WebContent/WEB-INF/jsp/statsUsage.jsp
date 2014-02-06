@@ -87,7 +87,7 @@
 	</div>
 </div><!-- /tdr_crumbs -->
 <div id="main" class="gallery" align="center">
-	<div class="main-title">UCSD Libraries Digital Asset Management System Statistics</div>
+	<div class="main-title">UCSD Library Digital Asset Management System Statistics</div>
 	<div id="container"></div>
 	<div class="tab-container">
 		<div class="tab-title">DAMS Usage By Month</div>

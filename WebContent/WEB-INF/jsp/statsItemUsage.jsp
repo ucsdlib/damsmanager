@@ -84,10 +84,10 @@
 	</div>
 </div><!-- /tdr_crumbs -->
 <div id="main" class="gallery" align="center">
-	<div class="main-title">UCSD Libraries Digital Asset Management System Statistics</div>
+	<div class="main-title">UCSD Library Digital Asset Management System Statistics</div>
 	<div id="container"></div>
 	<div class="tab-container">
-		<div class="tab-title">DAMS Item Usage by Month</div>
+		<div class="tab-title">DAMS Items Usage by Month</div>
 		<table cellspacing=0 cellpadding=3 border=0 width=100%>
 			<tbody id="stats-tab">
 				<tr class="tab-banner">

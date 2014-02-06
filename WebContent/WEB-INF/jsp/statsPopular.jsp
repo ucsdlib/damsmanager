@@ -25,7 +25,7 @@
 	</div>
 </div><!-- /tdr_crumbs -->
 <div id="main" class="gallery" align="center">
-	<div class="main-title">UCSD Libraries Digital Asset Management System Statistics</div>
+	<div class="main-title">UCSD Library Digital Asset Management System Statistics</div>
 	<div class="tab-container">	
 		<table cellspacing=0 cellpadding=3 border=0>
 			<tbody style="color:#505050;font-size:12px;display:table-cell;text-align:left;">
