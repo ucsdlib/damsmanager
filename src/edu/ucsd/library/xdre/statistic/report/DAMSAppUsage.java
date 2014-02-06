@@ -98,8 +98,11 @@ public class DAMSAppUsage extends StatsUsage{
 		if(pSize < 12){
 			tmpVal = "0";
 			Calendar cal = Calendar.getInstance();
-			cal.setTime(digitFormatMonthly.parse(periodsList.get(0)));
-			cal.add(Calendar.DATE, 1);
+			if(periodsList.size() > 0){
+				cal.setTime(digitFormatMonthly.parse(periodsList.get(0)));
+				cal.add(Calendar.DATE, 1);
+			}
+
 			
 			for(int i=0; i<12-pSize; i++){
 				graphData = tmpVal + (graphData.length()>0?", ":" ") + graphData;
