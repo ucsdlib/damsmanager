@@ -89,7 +89,7 @@ public class LogAnalyzer{
 					uri = getUri(line);
 					if(uri != null){
 						//idx = uri.indexOf("&user=");
-						String[] uriParts = uri.substring(1).split("/");
+						String[] uriParts = (uri.length()>1?uri.substring(1):uri).split("/");
 						if(uriParts.length>1 && uriParts[1].equals("object")){
 							//Object access: /dc/object/oid/cid/_fid
 								pasStats.addObject(uri);
