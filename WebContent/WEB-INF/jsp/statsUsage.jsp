@@ -131,39 +131,6 @@
 						<td style="border-bottom:2px solid #ccc;"><fmt:formatNumber value="${cItem}" pattern="#,###" /></td>
 					</c:forEach>
 				</tr>
-				<c:if test="${model.isCas}">
-				<tr style="background-color:#f8f8f8;">
-					<td rowspan="5" class="stats-tab-text" style="border-bottom:2px solid #999;color:#e8e8e8;">CAS</td>
-					<td class="stats-tab-text"><span title="Number of times DLC CAS were accessed" style="color:#e8e8e8;">Usage</span></td>
-					<c:forEach var="cItem" items="${model.casUsageList}">
-						<td><fmt:formatNumber value="${cItem}" pattern="#,###" /></td>
-					</c:forEach>
-				</tr>
-				<tr style="background-color:#f8f8f8;">
-					<td class="stats-tab-text"><span title="Number of queries conducted by searching in CAS" style="color:#e8e8e8;">Search</span></td>
-					<c:forEach var="cItem" items="${model.casSearchList}">
-						<td><fmt:formatNumber value="${cItem}" pattern="#,###" /></td>
-					</c:forEach>
-				</tr>
-				<tr style="background-color:#f8f8f8;">
-					<td class="stats-tab-text"><span title="Number of queries conducted by browsing" style="color:#e8e8e8;">Browse</span></td>
-					<c:forEach var="cItem" items="${model.casBrowseList}">
-						<td><fmt:formatNumber value="${cItem}" pattern="#,###" /></td>
-					</c:forEach>
-				</tr>
-				<tr style="background-color:#f8f8f8;">
-					<td class="stats-tab-text"><span title="Number of times DLC home page were accessed" style="color:#e8e8e8;">Home Page</span></td>
-					<c:forEach var="cItem" items="${model.casHomePageList}">
-						<td><fmt:formatNumber value="${cItem}" pattern="#,###" /></td>
-					</c:forEach>
-				</tr>
-				<tr style="background-color:#f8f8f8;">
-					<td class="stats-tab-text" style="border-bottom:2px solid #999;"><span title="Number of times DLC CAS collection page were accessed" style="color:#e8e8e8;">Collection Page</span></td>
-					<c:forEach var="cItem" items="${model.casColPageList}">
-						<td style="border-bottom:2px solid #999;"><fmt:formatNumber value="${cItem}" pattern="#,###" /></td>
-					</c:forEach>
-				</tr>
-				</c:if>
 			</tbody>
 		</table>
 	</div>
