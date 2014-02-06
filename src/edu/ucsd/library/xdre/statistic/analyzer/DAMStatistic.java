@@ -106,7 +106,7 @@ public class DAMStatistic extends Statistics{
 										isColAccess = true;
 								}else if (tokens[0].equals("id")){
 									id = tokens[1].trim();
-								}else if (tokens[0].equals("page")){
+								}else if (tokens[0].equals("page") && tokens.length > 1){
 									try{
 										page = Integer.parseInt(tokens[1].trim());
 									}catch(NumberFormatException e){}
