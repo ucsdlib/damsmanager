@@ -106,7 +106,7 @@ public class DAMStatistic extends Statistics{
 										isColAccess = true;
 								}else if (tokens[0].equals("id")){
 									id = tokens[1].trim();
-								}else if (tokens[0].equals("page")){
+								}else if (tokens[0].equals("page") && tokens.length > 1){
 									try{
 										page = Integer.parseInt(tokens[1].trim());
 									}catch(NumberFormatException e){}
@@ -145,7 +145,7 @@ public class DAMStatistic extends Statistics{
 				}else
 					System.out.println("DAMS stats unknown search uri: " + uri);
 				
-			}else if (parts[1].equalsIgnoreCase("dams_collections")) {
+			}else if (parts[1].equalsIgnoreCase("dams_collections") && parts.length > 2 && parts[2] != null) {
 				// Collections: /dc/dams_collections/bbxxxxxxxx?counter=1
 				increaseCollectionAccess(parts[2], collsAccessMap, collsMap);
 			}else {
