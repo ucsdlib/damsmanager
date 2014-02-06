@@ -98,7 +98,7 @@ public class DAMSQuantityStats {
 						}
 					}
 				}else
-					log.info(colTitle + "(" + colId + ") exists for period " + Statistics.getDatabaseDateFormater().format(calendar.getTime()));
+					log.info(colTitle + "(" + colId + ") exists for month ended on " + Statistics.getDatabaseDateFormater().format(calendar.getTime()));
 			}
 		}
 	}

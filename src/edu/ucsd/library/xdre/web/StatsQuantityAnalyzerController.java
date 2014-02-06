@@ -47,7 +47,8 @@ public class StatsQuantityAnalyzerController implements Controller {
 				daysDeferred = Integer.parseInt(numOfDaysDefered);
 			sCal.add(Calendar.DATE, -daysDeferred);
 			
-			statsAnalyze(sCal.getTime());				
+			statsAnalyze(sCal.getTime());
+			successful = true;
 		}catch(NumberFormatException ne){
 			message += "Invalid number " + numOfDaysDefered + " for day defered: " + ne.getMessage();
 		} catch (NamingException e) {
@@ -62,9 +63,9 @@ public class StatsQuantityAnalyzerController implements Controller {
 		}
 			
 		if(successful)
-			message = "Processed collection statistic on " +  Constants.CLUSTER_HOST_NAME + " successfully: " + Statistics.getDatabaseDateFormater().format(sCal.getTime()) + ". \n" + message;
+			message = "Processed collection statistic on " +  Constants.CLUSTER_HOST_NAME + " successfully: " + Statistics.getDatabaseDateFormater().format(sCal.getTime()) + ". \n";
 		else
-			message = "Failed to calculate the object size for period " + Statistics.getDatabaseDateFormater().format(sCal.getTime()) + " on " +  Constants.CLUSTER_HOST_NAME + " : \n" + message;
+			message = "Failed to calculate the object size for month ended at " + Statistics.getDatabaseDateFormater().format(sCal.getTime()) + " on " +  Constants.CLUSTER_HOST_NAME + " : \n" + message;
 		
 		OutputStream out = response.getOutputStream();
 		logger.info(message);
