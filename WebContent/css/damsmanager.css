@@ -3,6 +3,12 @@ a {color: #336699;}
 	padding-right: 5px;
 	font-weight: normal;
 }
+.gallery {       
+	background: #FFFFFF;
+	min-height:540px;
+	padding-bottom:30px;
+	overflow:auto;
+}
 #controlpanel{
 	padding-top:30px;
 	width:650px;
@@ -446,7 +452,7 @@ a {color: #336699;}
 	height:24px;
 	border-bottom:1px solid #ccc;
 	text-align:right;
-	padding-right:15px;
+	padding-right:10px;
 	color:#404040;
 }
 #stats-sum tr{
@@ -454,13 +460,15 @@ a {color: #336699;}
 }
 #stats-sum th{
 	cursor:pointer;
+	text-align:right;
+	padding:10px;
 }
 #stats-tab td{
 	height:22px;
 	border-bottom:1px solid #ccc;
 	font-size:12px;
 	text-align:right;
-	padding-right:6px;
+	padding-right:10px;
 	color:#404040;
 }
 .stats-tab-text{
@@ -536,6 +544,7 @@ a {color: #336699;}
 	background:url('../images/arrow.gif') no-repeat right center;
 	padding:0.8em 0.5em;
 	border-bottom:1px solid #ccc;
+	font-size:14px;
 }
 #main .main-title {
 	font-size:18px;

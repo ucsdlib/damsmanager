@@ -456,6 +456,8 @@ public class DAMStatistic extends Statistics{
 	public static void increaseCollectionAccess(String colid, Map<String, Integer> collsAccessMap, Map<String, String> collsMap){
 		Integer count = null;
 		if(colid != null){
+			colid = colid.trim().replaceAll("[;:,?'\" ]*", "");
+				
 			count = collsAccessMap.get(colid);
 			if(count == null)
 				collsAccessMap.put(colid, 1);
