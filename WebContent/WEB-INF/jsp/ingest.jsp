@@ -81,9 +81,9 @@
 				return false;
 	    	}
 	    }
-	    var message = "Are you sure to ingest files in the following path/paths from the Staging Area? \n" + stagingAreaPath;
+	    var message = "Are you sure to ingest files from DAMS staging? \n" + stagingAreaPath;
 	    if(collectionIndex == 0){
-	    	message = "No collections selected for staging ingest! \nAre you sure to go ahead and ingest the files from the Staging Area (" + stagingAreaPath + ")?";
+	    	message = "No collections selected for DAMS staging ingest! \nAre you OK to go ahead and ingest the files from " + stagingAreaPath + "?";
 	    }
 	    var exeConfirm = confirm(message);
 	    if(!exeConfirm)
@@ -131,7 +131,7 @@
 		var unitName = unitOpt.options[unitOpt.selectedIndex].text;
 		var fsOpts = document.mainForm.fs.options;
 		var fsSelected = fsDefault;
-		if(unitName == "rci" || unitName == "RCI")
+		if(unitName == "rci" || unitName == "RCI" || unitName.indexOf("Research Data Curation") == 0)
 			fsSelected = "openStack";
 		for(var i=0; i<fsOpts.length; i++){
 			if(fsOpts[i].value == fsSelected){
@@ -179,8 +179,12 @@
 			<span><select id="category" name="category" onChange="selectCollection(this);" class="inputText" >
 						<option value=""> -- collections -- </option>
 						<c:forEach var="entry" items="${model.categories}">
+							<c:set var="colNameLen"> ${fn:length(entry.key)}</c:set>
 							<option value="${entry.value}" <c:if test="${model.category == entry.value}">selected</c:if>>
-                       			<c:out value="${entry.key}" />
+                       			<c:choose>
+									<c:when test="${colNameLen > 75}"><c:out value="${fn:substring(entry.key, 0, 71)}" /> ...</c:when>
+									<c:otherwise><c:out value="${entry.key}" /></c:otherwise>
+								</c:choose>
                         	</option>
 						</c:forEach>
 					</select>
@@ -219,7 +223,7 @@
 			<td height="25px">
 				<span class="submenuText"><b>Staging Area: </b></span>
 				</td><td>
-				<span class="submenuText">
+				<span class="submenuText" title="Enter a filter path for the location to speek up the search. From the popup, click on the folder to select/deselect a location. Multiple loations allowed.">
 					<input type="text" id="filePath" name="filePath" size="45" value="${model.filePath}">&nbsp;<input type="button" onclick="showFilePicker('filePath', event)" value="&nbsp;...&nbsp;">
 				</span>
 			</td>

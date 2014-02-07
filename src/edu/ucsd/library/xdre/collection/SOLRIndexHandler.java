@@ -65,29 +65,25 @@ public class SOLRIndexHandler extends CollectionHandler{
 	 */
 	public boolean execute() throws Exception {
 
-		String eMessage;
 		String subjectURI = null;
+		if(collectionId != null && collectionId.length() > 0){
+			// Update SOLR for the collection record
+			String[] colIds = collectionId.split(",");
+			for(int i=0; i< colIds.length; i++){
+				String colId = colIds[i];
+				if( colId != null && !colId.equalsIgnoreCase("all")){
+					setStatus("Adding collection record " + collectionId  + " for SOLR update ... " );
+					updateSOLR(colId);
+				}
+			}
+		}
 		
 		for(int i=0; i<itemsCount && !interrupted; i++){
 			count++;
 			subjectURI = items.get(i);
-			try{
-				setStatus("Processing SOLR index for subject " + subjectURI  + " (" + (i+1) + " of " + itemsCount + ") ... " ); 
-				boolean suceeded = damsClient.solrUpdate(subjectURI);
-				if(!suceeded){
-					failedCount++;
-					logError("SOLR index for subject " + subjectURI  + " failed (" + (i+1) + " of " + itemsCount + "). ");
-				}else{
-					String iMessage = "SOLR index for subject " + subjectURI  + " succeeded (" + (i+1) + " of " + itemsCount + "). ";
-					log.info(iMessage);
-					logMessage(iMessage);
-				}
-			
-			} catch (Exception e) {
+			setStatus("Processing SOLR index for subject " + subjectURI  + " (" + (i+1) + " of " + itemsCount + ") ... " );
+			if(!updateSOLR(subjectURI))
 				failedCount++;
-				e.printStackTrace();
-				logError("SOLR index failed: (" +(i+1)+ " of " + itemsCount + "): " + e.getMessage());
-			}
 			setProgressPercentage( ((i + 1) * 100) / itemsCount);
 			
 			try{

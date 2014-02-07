@@ -11,8 +11,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -35,15 +38,18 @@ import javax.xml.transform.stream.StreamSource;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.dom4j.Attribute;
+import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
+import org.dom4j.Node;
 
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.DomUtil;
 import edu.ucsd.library.xdre.utils.ProcessHandler;
 import edu.ucsd.library.xdre.utils.RequestOrganizer;
+import edu.ucsd.library.xdre.utils.RightsAction;
 
 /**
  * Class CollectionHandler, a class for procedure handling
@@ -51,6 +57,9 @@ import edu.ucsd.library.xdre.utils.RequestOrganizer;
  * @author lsitu@ucsd.edu
  */
 public abstract class CollectionHandler implements ProcessHandler {
+	public static final String INFO_MODEL_PREFIX = "info:fedora/afmodel:";
+	public static final String HAS_FILE = "hasFile";
+	
 	private static Logger log = Logger.getLogger(CollectionHandler.class);
 
 	protected int submissionId = -1;
@@ -77,6 +86,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 	protected Map<String, String> collectionsMap = null;
 	protected Map<String, String> unitsMap = null;
 	protected int itemsCount = 0; //Total number of items in the collection/batch
+	protected List<String> solrFailed = new ArrayList<String>();
 
 	/**
 	 * Empty constructor
@@ -142,13 +152,32 @@ public abstract class CollectionHandler implements ProcessHandler {
 	}
 
 	/**
-	 * Retrieve the embargoed objects in the collection
+	 * Retrieve embargoed objects in the collection
 	 * @param collectionId
 	 * @return
+	 * @throws Exception 
 	 */
-	public List<String> getEmbargoedItems(String collectionId){
-		//XXX
-		return null;
+	public List<String> getEmbargoedItems(String collectionId) throws Exception{
+		List<String> embargoes = new ArrayList<String>();
+		List<RightsAction> embargoList = listEmbargoes(collectionId, null);
+		for(Iterator<RightsAction> it=embargoList.iterator(); it.hasNext();){
+			embargoes.add(it.next().getOid());
+		}
+		return embargoes;
+	}
+	
+	/**
+	 * Retrieve embargoed objects in a group like collection, unit, etc.
+	 * @param collectionId
+	 * @param group - Unit, Collection etc.
+	 * @return
+	 * @throws Exception 
+	 */
+	public List<RightsAction> listEmbargoes(String id, String group) throws Exception{
+		if(group != null && group.equalsIgnoreCase("unit")){
+			return damsClient.getUnitEmbargoeds(id);
+		}else
+			return damsClient.getCollectionEmbargoeds(id);
 	}
 	
 	/**
@@ -570,7 +599,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 		return excludeEmbargoed;
 	}
 
-	public void excludeEmbargoedObjects() {
+	public void excludeEmbargoedObjects() throws Exception {
 		List<String> embargoItems = getEmbargoedItems(collectionId);
 		int idx = -1;
 		if (embargoItems.size() > 0) {
@@ -581,6 +610,144 @@ public abstract class CollectionHandler implements ProcessHandler {
 			}
 		}
 		excludeEmbargoed = true;
+	}
+	
+	/**
+	 * Check for image file
+	 * @param fileName
+	 * @return
+	 */
+	public boolean isImage(String fileName, String use){
+		fileName = fileName.toLowerCase();
+		String mimeType = DAMSClient.getMimeType(fileName);
+		if((use!=null && use.toLowerCase().startsWith("image")) || 
+				mimeType.indexOf("image")>=0 || fileName.endsWith(".tif") || fileName.endsWith(".png"))
+			return true;
+		else
+			return false;
+	}
+	
+	/**
+	 * Check for document file
+	 * @param fileName
+	 * @return
+	 */
+	public boolean isDocument(String fileName, String use){
+		fileName = fileName.toLowerCase();
+		String mimeType = DAMSClient.getMimeType(fileName);
+		if((use!=null && use.toLowerCase().startsWith("document")) || 
+				mimeType.indexOf("pdf")>=0 || fileName.endsWith(".pdf"))
+			return true;
+		else
+			return false;
+	}
+	
+	/**
+	 * Update a record in SOLR 
+	 * @param oid
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean solrIndex(String oid) throws Exception{
+		return damsClient.solrUpdate(oid);
+	}
+	
+	/**
+	 * Remove a record from SOLR
+	 * @param oid
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean solrDelete(String oid) throws Exception{
+		return damsClient.solrDelete(oid);
+	}
+	
+	/**
+	 * Update SOLR with logging.
+	 * @param oid
+	 */
+	protected boolean updateSOLR(String oid){
+		String message = "";
+		setStatus("SOLR update for record " + oid  + " ... " );
+		boolean succeeded = false;
+		try{
+			succeeded = solrIndex(oid);
+			if(!succeeded){
+				solrFailed.add(oid);
+				message = "SOLR update failed for object " + oid  + ".";
+				setStatus(message); 
+				logError(message);
+			}else{
+				message = "SOLR update succeeded for object " + oid  + ". ";
+				setStatus(message); 
+				logMessage(message);
+				log.info(message);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			solrFailed.add(oid);
+			message = "SOLR update failed for " + oid + ": " + e.getMessage();
+			setStatus(message); 
+			logError(message);
+		}
+		return succeeded;
+	}
+	
+	/**
+	 * Generate error message for SOLR update. 
+	 * @return
+	 */
+	protected String getSOLRReport(){
+		StringBuilder builder = new StringBuilder();
+		int iLen = solrFailed.size();
+		if(iLen > 0){
+			builder.append("SOLR update failed for the following record" + (iLen>1?"s":"") + ": \n");
+			for(int i=0; i<iLen; i++){
+				builder.append(solrFailed.get(i) + ", \n");
+			}
+		}
+		
+		return builder.toString();
+	}
+	
+	/**
+	 * List all the files recursively.
+	 * @param file
+	 * @throws Exception 
+	 */
+	public static void listFile(Map<String, File> fMap, File file) throws Exception{
+		List<File> files = new ArrayList<File> ();
+		listFiles(files, file);
+		String fName = null;
+		for(int i=0; i<files.size(); i++){
+			file = files.get(i);
+			fName = file.getName();
+			if(fMap.get(fName) != null){
+				String message = "Duplicate source file name found: " + file.getAbsoluteFile() + "(" + fMap.get(fName).getAbsolutePath() + ").";
+				// XXX ignore the files for validation, manifest, bagit, bag etc.
+				if(file.getAbsolutePath().indexOf("/siogeocoll/Master_Files_Bag/") > 0 || fName.equals("CLMR_RCI_Apr2013.xls") || fName.equalsIgnoreCase("Thumbs.db") || fName.equals(".DS_Store") || ((fName.indexOf("validation") >=0 || fName.indexOf("manifest") >= 0 || fName.startsWith("bagit") || fName.startsWith("bag-info")) && fName.endsWith(".txt")))
+					log.warn(message);
+				else
+					throw new Exception(message);
+			}else if(file.getAbsolutePath().indexOf("/siogeocoll/Master_Files_Bag/") < 0)
+				fMap.put(fName, file);
+		}
+	}
+	
+	/**
+	 * List files
+	 * @param files
+	 * @param file
+	 */
+	public static void listFiles(List<File> files, File file){
+		if(file.isDirectory()){
+			File[] filesArr = file.listFiles();
+			for(int i=0; i<filesArr.length; i++){
+				listFiles(files, filesArr[i]);
+			}
+		}else{
+			files.add(file);
+		}
 	}
 
 	/**
@@ -624,6 +791,175 @@ public abstract class CollectionHandler implements ProcessHandler {
 			items.addAll(damsClient.listUnitObjects(unitId));
 		}
 		return items; 
+	}
+	
+	/**
+	 * Look up record from dams
+	 * @param value
+	 * @param modelName
+	 * @return
+	 * @throws Exception
+	 */
+	public static String lookupRecord(DAMSClient damsClient, String field, String value, String modelName) throws Exception{
+		return lookupRecord(damsClient, field, value, modelName, null);
+	}
+	
+	/**
+	 * Look up copyrights record from dams
+	 * @param value
+	 * @param modelName
+	 * @return
+	 * @throws Exception
+	 */
+	public static String lookupRecord(DAMSClient damsClient, String field, String value, String modelName, Map<String, String> properties) throws Exception{
+		List<String> recordIds = lookupRecords(damsClient, field, value, modelName, properties);
+		if(recordIds.size() > 0)
+			return recordIds.get(0);
+		else
+			return null;
+	}
+	
+	/**
+	 * Look up copyrights record from dams
+	 * @param value
+	 * @param modelName
+	 * @return
+	 * @throws Exception
+	 */
+	public static List<String> lookupRecords(DAMSClient damsClient, String field, String value, String modelName, Map<String, String> properties) throws Exception{
+		List<String> recordIds = new ArrayList<String>();
+		if(properties != null && properties.containsKey(field))
+			properties.remove(field);
+		
+		// XXX No scheme_code_tesim lookup, need handle scheme_code_tesim to disable it for solr search???
+		String scheme_code_tesim_key = "scheme_code_tesim";
+		String scheme_code_tesim_value = properties.get(scheme_code_tesim_key);
+		if(properties.containsKey(scheme_code_tesim_key)){
+			properties.put(scheme_code_tesim_key, null);
+		}
+		String scheme_name_tesim_key = "scheme_name_tesim";
+		String scheme_name_tesim_value = properties.get(scheme_name_tesim_key);
+		if(properties.containsKey(scheme_name_tesim_key)){
+			properties.put(scheme_name_tesim_key, null);
+		}
+		
+		//String modelParam = "(\"" + INFO_MODEL_PREFIX + "Dams" + modelName + "\" OR \"" + INFO_MODEL_PREFIX + (modelName.startsWith("Mads")?"":"Mads") + modelName + "\")";
+		String modelParam = INFO_MODEL_PREFIX + modelName;
+		String propsParams = toSolrQuery(properties);
+		String query = "q=" + URLEncoder.encode(field + ":\"" + StringEscapeUtils.escapeJava(value) + "\" AND has_model_ssim:" + modelParam, "UTF-8") + "&rows=1000" + (propsParams.length()>0?"&fq="+ URLEncoder.encode(propsParams, "UTF-8"):"");
+		Document doc = damsClient.solrLookup(query);
+		int numFound = Integer.parseInt(doc.selectSingleNode("/response/result/@numFound").getStringValue());
+		if(numFound <= 0)
+			return recordIds;
+		else {
+			Node record = null;
+			Node propNode = null;
+			boolean matched = false;
+			List<Node> records = doc.selectNodes("/response/result/doc");
+			if(properties == null || properties.size() == 0){
+				// If no additional properties provided, just return the first record.
+				for(Iterator<Node> it=records.iterator(); it.hasNext();){
+					record = it.next();
+					propNode = record.selectSingleNode("*[@name='" + field + "']/str");
+					if(propNode.getText().equalsIgnoreCase(value)){
+						recordIds.add(record.selectSingleNode("*[@name='id']").getText());
+						//matched = true;
+						//break;
+					}
+				}
+			}else{
+				String key = null;
+				String propValue = null;
+
+				// Matching all the properties to discover the record
+				for(Iterator<Node> it=records.iterator(); it.hasNext();){
+					record = it.next();
+					propNode = record.selectSingleNode("*[@name='" + field + "']/str");
+					if(propNode.getText().equalsIgnoreCase(value) || Normalizer.normalize(propNode.getText(), Normalizer.Form.NFD).equalsIgnoreCase(value)){
+						matched = true;
+						for(Iterator<String> pit=properties.keySet().iterator(); pit.hasNext();){
+							key = pit.next();
+							propValue = properties.get(key);
+							
+							if(key.equalsIgnoreCase(scheme_code_tesim_key)){
+								propNode = record.selectSingleNode("*[@name='scheme_code_tesim']/str");
+								if(propNode != null){
+									String scheme_code = propNode.getText();
+									if((scheme_code_tesim_value == null && scheme_code.length()>0) || !scheme_code.equalsIgnoreCase(scheme_code_tesim_value)){
+										matched = false;
+										break;
+									}
+								}else{
+									//  XXX No scheme_code_tesim lookup, need second lookup for scheme_tesim???
+									propNode = record.selectSingleNode("*[@name='scheme_tesim']/str");
+									String authority_scheme_id = propNode==null?"":propNode.getText();
+									String scheme_id = lookupRecord(damsClient, "code_tesim", scheme_code_tesim_value, "MadsScheme", new HashMap<String, String>());
+									if(authority_scheme_id == null || scheme_id == null || !authority_scheme_id.endsWith(scheme_id)){
+										matched = false;
+										break;
+									}
+								}
+							}else if(key.equalsIgnoreCase(scheme_name_tesim_key)){
+								propNode = record.selectSingleNode("*[@name='scheme_name_tesim']/str");
+								if(propNode != null){
+									String scheme_name = propNode.getText();
+									if((scheme_name_tesim_value == null && scheme_name.length()>0) || !scheme_name.equalsIgnoreCase(scheme_name_tesim_value)){
+										matched = false;
+										break;
+									}
+								}else{
+									//  XXX No scheme_name_tesim lookup, need second lookup for scheme_tesim???
+									propNode = record.selectSingleNode("*[@name='scheme_tesim']/str");
+									String authority_scheme_id = propNode==null?"":propNode.getText();
+									String scheme_id = lookupRecord(damsClient, "name_tesim", scheme_name_tesim_value, "MadsScheme", new HashMap<String, String>());
+									if(authority_scheme_id == null || scheme_id == null || !authority_scheme_id.endsWith(scheme_id)){
+										matched = false;
+										break;
+									}
+								}
+							}else{
+								propNode = record.selectSingleNode("*[@name='"+key+"']/str");
+								if(propValue == null || propValue.length() == 0){
+									if(propNode != null && propNode.getText().length() > 0){
+										matched = false;
+										break;
+									}
+								}else{
+									if(propNode == null || !(propValue.equalsIgnoreCase(propNode.getText()) || Normalizer.normalize(propNode.getText(), Normalizer.Form.NFD).equalsIgnoreCase(value))){
+										matched = false;
+										break;
+									}	
+								}
+							}
+						}
+						if(matched)
+							recordIds.add(record.selectSingleNode("*[@name='id']").getText());
+							//break;
+					}
+				}
+			}
+			
+			return recordIds;
+		}
+	}
+	
+	private static String toSolrQuery(Map<String, String> properties) throws UnsupportedEncodingException{
+		String solrParams = "";
+		String key = null;
+		String value = null;
+		if(properties != null){
+			for(Iterator<String> it=properties.keySet().iterator(); it.hasNext();){
+				key = it.next();
+				value = properties.get(key);
+				if(value != null && value.length() > 0)
+					solrParams += key+ ":\"" + StringEscapeUtils.escapeJava(value) + "\"" + " AND ";
+			}
+			
+			int len = solrParams.length();
+			if(len > 0)
+				solrParams = solrParams.substring(0, len-5);
+		}
+		return solrParams;
 	}
 
 	/**

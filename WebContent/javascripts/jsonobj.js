@@ -30,6 +30,7 @@ function renderObject(obj, element, depth) {
  	 toggle.setAttribute("title",obj);
  	 var folder = document.createElement('img');
  	 folder.setAttribute("src","/damsmanager/images/dir.gif");
+ 	 folder.style.paddingRight = '2';
  	 toggle.appendChild(folder);
  	 toggle.appendChild(document.createTextNode(obj));
  	 toggle.className = 'dbg-toggle';
@@ -126,9 +127,11 @@ function createToggleElement(obj, target, label, depth) {
   var toggle = document.createElement('div');
   var folder = document.createElement('img');
   folder.setAttribute("src","/damsmanager/images/dir.gif");
+  folder.style.paddingRight = '2';
   toggle.appendChild(folder);
   toggle.appendChild(document.createTextNode(label));
   toggle.className = 'dbg-toggle';
+
   var wrapper = document.createElement('div');
 
   wrapper.className = 'dbg-toggle-closed';
@@ -168,6 +171,7 @@ function createToggleElement(obj, target, label, depth) {
     }
     paths = "/" + paths;
     addDir(paths);
+    loadPicker(target, paths);
     //document.getElementById("dir").value = paths;
    // }
   };
@@ -214,29 +218,31 @@ function addDir(directory){
     var toAdd = true;
     for(var i=0; i<dirArr.length; i++){
     	var iDir = dirArr[i];
-    	if(iDir != null &&  iDir == directory){
-    		// Remove it when click on the folder again
-    		dirArr[i] = "";
-    		toAdd = false;
-    		break;
-    	}else if(iDir.indexOf(directory + "/") == 0){
-    		// Choose parent directory need clear all child directory
-    		if(toAdd){
-    			dirArr[i] = directory;
-    			toAdd = false;
-    		}else
-    			dirArr[i] = "";
-
-    	}else if(directory.indexOf(iDir + "/") == 0){
-    		// Choose child directory, replace it
-    		dirArr[i] = directory;
-    		toAdd = false;
-    		break;
+    	if(iDir != null && iDir.length > 0){
+	    	if(iDir == directory){
+	    		// Remove it when click on the folder again
+	    		dirArr[i] = "";
+	    		toAdd = false;
+	    		break;
+	    	}else if(iDir.indexOf(directory + "/") == 0){
+	    		// Choose parent directory need clear all child directory
+	    		if(toAdd){
+	    			dirArr[i] = directory;
+	    			toAdd = false;
+	    		}else
+	    			dirArr[i] = "";
+	
+	    	}else if(directory.indexOf(iDir + "/") == 0){
+	    		// Choose child directory, replace it
+	    		dirArr[i] = directory;
+	    		toAdd = false;
+	    		break;
+	    	}
     	}
     }
-    if(toAdd)
+    if(toAdd){
     	dirValues += directory + ";";
-    else {
+    }else {
 		dirValues = ""; 
     	// Re-assemble the path string.
     	for(var i=0; i<dirArr.length; i++){
@@ -254,10 +260,14 @@ DebuggableObject.prototype = {
 
   render : function (element) {
     while (element.firstChild) element.removeChild(element.firstChild);
-    var cell = document.createElement('div');
-    cell.className = 'dbg-value';
-    renderObject(this.obj, cell, 1);
-    element.appendChild(cell);
+    if(element.id == dirRoot){
+	    var cell = document.createElement('div');
+	    cell.className = 'dbg-value';
+	    renderObject(this.obj, cell, 1);
+	    element.appendChild(cell);
+    }else{
+    	renderObjectDetails(this.obj, element, 1);
+    }
   }
   ,
 

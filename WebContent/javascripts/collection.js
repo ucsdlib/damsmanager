@@ -6,7 +6,7 @@
    var currServletId;
    var url = "/damsmanager/operationHandler.do";
    var progressUrl = "/damsmanager/progressHandler.do";
-   var fileUseArr = ["image-source", "image-service", "image-preview", "image-thumbnail", "image-icon", "image-alternate", "video-source", "video-service", "video-alternate", "document-source", "document-service", "document-alternate", "audio-source", "audio-service", "audio-alternate", "data-source", "data-service", "data-alternate"];
+   var fileUseArr = ["image-source", "image-service", "image-preview", "image-thumbnail", "image-icon", "image-large", "image-huge", "image-alternate", "video-source", "video-service", "video-alternate", "document-source", "document-service", "document-alternate", "audio-source", "audio-service", "audio-alternate", "data-source", "data-service", "data-alternate"];
    var progressBarWidth = 500;
    var progress = {
 	 success: dispMessage,
@@ -27,12 +27,14 @@
     
    function submitForm(){
       var formObj = document.mainForm;
-      var collectionIndex = document.mainForm.category.selectedIndex;
+      var filestore = formObj.fs.options[formObj.fs.selectedIndex].text;
+      var collectionIndex = formObj.category.selectedIndex;
       var collectionName = "";
       operations = "";
       
       var rdfExport = formObj.metadataExport.checked;
       var rdfImport = formObj.rdfImport.checked;
+      var externalImport = formObj.externalImport.checked;
       var jhoveReport = formObj.jhoveReport.checked;
       var urlParams = "activeButton=" + formObj.activeButton.value; 
       var validateFileCount = formObj.validateFileCount.checked;
@@ -43,7 +45,7 @@
       var sendToCDL = formObj.sendToCDL.checked;
       var luceneIndex = formObj.luceneIndex.checked;
       
-      if((checkedCount > 1 && collectionIndex == 0) || (checkedCount == 1 && collectionIndex == 0 && (!(rdfImport || (rdfImport && (formObj.tsRepopulation.checked || formObj.samePredicatesReplacement.checked)) || (jhoveReport && formObj.bsJhoveReport.checked))))){
+      if((checkedCount > 1 && collectionIndex == 0) || (checkedCount == 1 && collectionIndex == 0 && (!(externalImport || rdfImport || (rdfImport && (formObj.tsRepopulation.checked || formObj.samePredicatesReplacement.checked)) || (jhoveReport && formObj.bsJhoveReport.checked))))){
          alert("Please choose a collection.");
          return false;
       } else if(collectionIndex != 0) {
@@ -70,11 +72,20 @@
        }
        
        if(jhoveReport == true){ 
-       		if(formObj.bsJhoveUpdate.checked && !formObj.bsJhoveReport.checked){
-       			alert("Option Jhove report for BYTESTREAM files only need to check for Jhove format update as well!");
-       			return false;
-       		}  
-          	operations += "- Jhove Report \n";
+       		if(formObj.bsJhoveUpdate.checked){
+       			var updateModes = formObj.jhoveUpdate;
+	       	    for(var i=0; i<updateModes.length; i++){
+	       	    	if(updateModes[i].checked) {
+	       	    		var updateMode = updateModes[i].value;
+	       	    		if(updateMode == "ByteStream"  && !formObj.bsJhoveReport.checked){
+	       	    			alert("Jhove format update only apply to BYTESTREAM files only. Please check option Jhove report for BYTESTREAM files only!");
+	       	       			return false;
+	       	    		}else
+	       	    			operations += "- Jhove update: " + updateMode + "\n";
+	       	    	}
+	       	    }
+       		}else 
+       			operations += "- Jhove Report \n";
        }
        
        if(createDerivatives == true){
@@ -107,11 +118,29 @@
 	       alert("Please choose a data file.");
 	       return false;      
 	    }
-         operations += "- Metadata Import \n";
+		 var importModes = formObj.importMode;
+	     for(var i=0; i<importModes.length; i++){
+	    	 if(importModes[i].checked) {
+	    		 var importMode = importModes[i].value;
+	    		 if(importMode == "delete")
+	    			 operations += "- Delete all records/resources referenced by rdf:about \n";
+	    		 else
+	    			 operations += "- Metadata Import: " + importMode + "\n";
+	    	 }
+	     }
          formObj.enctype = "multipart/form-data";
       }
      
-      var exeConfirm = confirm("Are you sure you want to perform the following operations on the " + collectionName + " collection? \n" + operations);
+     if(externalImport == true){
+     	var fileName = formObj.dataPath.value;
+ 	    if(fileName == null || trim(fileName).length == 0){
+ 	       alert("Please choose the data path to the external files.");
+ 	       return false;      
+ 	    }
+          operations += "- External Objects Import \n";
+       }
+     
+      var exeConfirm = confirm("Are you sure to perform the following operations for " + collectionName + (filestore!=null?" to filestore " + filestore:"") + "? \n" + operations);
        if(!exeConfirm){
            return false;
       }
@@ -126,10 +155,11 @@
       var formObj = document.mainForm;
       var collectionIndex = formObj.category.selectedIndex;
       var rdfImport = formObj.rdfImport.checked;
+      var externalImport = formObj.externalImport.checked;
       var jhoveReport = formObj.jhoveReport.checked;
       
      if(checkboxObj.checked == true){
-     	if((collectionIndex == 0 && !(rdfImport || jhoveReport)) || (rdfImport && collectionIndex == 0 && checkedCount == 1)){
+     	if((collectionIndex == 0 && !(rdfImport || externalImport || jhoveReport)) || (rdfImport && collectionIndex == 0 && checkedCount == 1)){
      	    checkboxObj.checked = false;
      		alert("Please select a collection to start the operations.");
      		return false;

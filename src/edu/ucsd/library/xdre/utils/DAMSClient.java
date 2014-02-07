@@ -12,6 +12,8 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -29,14 +31,28 @@ import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import javax.security.auth.login.LoginException;
 
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpException;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.ParseException;
+import org.apache.http.auth.AuthScheme;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.AuthState;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
@@ -44,15 +60,24 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.protocol.ClientContext;
+import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.BasicHttpParams;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
@@ -83,36 +108,23 @@ public class DAMSClient {
 	public static final int MAX_SIZE = 1000000;
 	public static enum DataFormat {rdf, xml, json, mets, html};
 	private static final Logger log = Logger.getLogger(DAMSClient.class);
+	
+	private static SimpleDateFormat damsDateFormat = new SimpleDateFormat(DAMS_DATE_FORMAT);
+	private static SimpleDateFormat damsDateFormatAlt = new SimpleDateFormat(DAMS_DATE_FORMAT_ALT);
 
-	private Properties prop = null; // Properties for DAMS REST API
 	private String storageURL = null; // DAMS REST URL
-	private DefaultHttpClient client = null; // Httpclient object
+	private HttpClient client = null; // Httpclient object
 	private HttpRequestBase request = null; // HTTP request
 	private HttpResponse response = null; // HTTP response
 	private HttpContext httpContext = null;
-	private SimpleDateFormat damsDateFormat = null;
-	private SimpleDateFormat damsDateFormatAlt = null;
 	private String fileStore = null;
 	private String tripleStore = null;
+	private String solrURLBase = null; // SOLR URL
 
 	/**
-	 * Constructor for DAMSClient.
-	 * 
-	 * @param storageURL
-	 * @throws IOException
-	 * @throws LoginException
+	 * Construct a DAMSClient object.
 	 */
-	public DAMSClient() throws IOException, LoginException {
-		// disable retries and timeouts
-		BasicHttpParams params = new BasicHttpParams();
-		params.setParameter("http.socket.timeout", new Integer(0));
-		params.setParameter("http.connection.timeout", new Integer(0));
-		DefaultHttpRequestRetryHandler x = new DefaultHttpRequestRetryHandler(0, false);
-		client = new DefaultHttpClient(new PoolingClientConnectionManager(), params);
-		client.setHttpRequestRetryHandler(x);
-		this.damsDateFormat = new SimpleDateFormat(DAMS_DATE_FORMAT);
-		this.damsDateFormatAlt = new SimpleDateFormat(DAMS_DATE_FORMAT_ALT);
-	}
+	public DAMSClient() {}
 	
 	/**
 	 * Construct a DAMSClient object using storage URL.
@@ -122,15 +134,25 @@ public class DAMSClient {
 	 * @throws LoginException
 	 */
 	public DAMSClient(String storageURL) throws IOException, LoginException {
-		this();
+		this(storageURL, Constants.DAMS_STORAGE_USER, Constants.DAMS_STORAGE_PWD);
+	}
+	
+	/**
+	 * Construct a DAMSClient object using storage URL, username and password.
+	 * 
+	 * @param storageURL
+	 * @throws IOException
+	 * @throws LoginException
+	 */
+	public DAMSClient(String storageURL, String user, String password) throws IOException, LoginException {
 		if(storageURL.endsWith("/"))
 			storageURL = storageURL.substring(0, storageURL.length() -1);
 		this.storageURL = storageURL;
-
+		client = createHttpClient(user, password);
 	}
 
 	/**
-	 * Construct DAMSClient object and authenticate using the auth account
+	 * Construct DAMSClient object and authenticate using the dams repository properties
 	 * information provided.
 	 * 
 	 * @param account
@@ -138,15 +160,86 @@ public class DAMSClient {
 	 * @throws IOException
 	 * @throws LoginException
 	 */
-	public DAMSClient(Properties prop) throws IOException, LoginException {
-		this();
-		this.prop = prop;
-		if (prop != null && prop.size() > 0) {
-			storageURL = prop.getProperty("storageUrl");
-			if(storageURL.endsWith("/"))
-				storageURL = storageURL.substring(0, storageURL.length() -1);
-		}
+	public DAMSClient(Properties props) throws IOException, LoginException {
+		this((String)props.get("xdre.damsRepo"), (String)props.get("xdre.damsRepo.user"), (String)props.get("xdre.damsRepo.pwd"));
 	}
+    
+	/**
+	 * Method to create a new DAMSClient instance
+	 * @return
+	 * @throws IOException 
+	 * @throws LoginException 
+	 */
+	public static DAMSClient getInstance() throws LoginException, IOException{
+		return new DAMSClient(Constants.DAMS_STORAGE_URL);
+	}
+	
+    /**
+     * Create HttpClient with PreemptiveAuth when user and password provide 
+     * @param userName
+     * @param password
+     * @return
+     */
+    private HttpClient createHttpClient(String userName, String password) {
+		// disable timeouts
+		BasicHttpParams params = new BasicHttpParams();
+		params.setParameter( "http.socket.timeout",     new Integer(0) );
+		params.setParameter( "http.connection.timeout", new Integer(0) );
+      
+		DefaultHttpClient client = new DefaultHttpClient( getConnectionManager(), params );
+
+		// disable retries
+		DefaultHttpRequestRetryHandler x = new DefaultHttpRequestRetryHandler(0, false);
+		client.setHttpRequestRetryHandler( x );
+        
+        if (userName != null && userName.length() > 0) {
+            client.getCredentialsProvider().setCredentials(
+                    new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT),
+                    new UsernamePasswordCredentials(userName, password)
+            );
+            
+            httpContext = new BasicHttpContext();
+
+            // Generate BASIC scheme object and stick it to the local execution context
+            BasicScheme basicAuth = new BasicScheme();
+            httpContext.setAttribute("preemptive-auth", basicAuth);
+
+            // Add as the first request interceptor
+            client.addRequestInterceptor(new PreemptiveAuthInterceptor(), 0);
+        }
+
+        return client;
+    }
+    
+    /**
+     * Initiate ClientConnectionManager for http and https connections
+     * @return
+     */
+    private ClientConnectionManager getConnectionManager(){
+
+        ClientConnectionManager ccm = new PoolingClientConnectionManager();
+		try {
+			// Accept all SSL certificates
+        	X509TrustManager tm = new X509TrustManager() {
+            	public void checkClientTrusted(X509Certificate[] xcs, String string) throws CertificateException { }
+            	public void checkServerTrusted(X509Certificate[] xcs, String string) throws CertificateException { }
+            	public X509Certificate[] getAcceptedIssuers() { return null; }
+        	};
+
+			SSLContext ctx = SSLContext.getInstance("TLS");
+        	ctx.init(null, new TrustManager[]{tm}, null);
+        	SSLContext.setDefault(ctx);
+        	
+        	SSLSocketFactory ssf = new SSLSocketFactory(ctx,SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+        	SchemeRegistry sr = ccm.getSchemeRegistry();
+        	sr.register(new Scheme("https", 443, ssf));
+        	sr.register(new Scheme("http", 80, new PlainSocketFactory()));
+			
+		} catch ( Exception ex ){
+			ex.printStackTrace();
+		}
+		return ccm;
+    }
 
 	/**
 	 * Mint an ark ID
@@ -326,10 +419,16 @@ public class DAMSClient {
 		JSONArray colArr = (JSONArray) resObj.get("collections");
 		JSONObject col = null;
 		map = new TreeMap<String, String>();
-		for(Iterator it= colArr.iterator(); it.hasNext();){
-			col = (JSONObject)it.next();
+		for(Iterator<JSONObject> it= colArr.iterator(); it.hasNext();){
+			col = it.next();
 			// Collection title, collection URL
-			map.put((String)col.get("title"), (String)col.get("collection"));
+			String title = (String)col.get("title");
+			String colId = (String)col.get("collection");
+			String type = (String)col.get("type");
+			if(map.get(title) != null)
+				title += " (" + stripID(colId) + ")";
+			title += " [" + type + "]";
+			map.put(title, colId);
 		}
 
 		return map;
@@ -344,6 +443,24 @@ public class DAMSClient {
 		HttpGet get = new HttpGet(url);
 		Document doc = getXMLResult(get);
 		List<Node> objectNodes = doc.selectNodes(DOCUMENT_RESPONSE_ROOT_PATH + "/objects/value/obj");
+		Node valNode= null;
+		List<String> objectsList = new ArrayList<String>();
+		for(Iterator<Node> it= objectNodes.iterator(); it.hasNext();){
+			valNode = it.next();
+			objectsList.add(valNode.getText());
+		}
+		return objectsList;
+	}
+	
+	/**
+	 * Get a list of objects in the whole repository.
+	 * @throws Exception 
+	 **/
+	public List<String> listAllRecords() throws Exception {
+		String url = getRecordsURL("xml");
+		HttpGet get = new HttpGet(url);
+		Document doc = getXMLResult(get);
+		List<Node> objectNodes = doc.selectNodes(DOCUMENT_RESPONSE_ROOT_PATH + "/records/value/obj");
 		Node valNode= null;
 		List<String> objectsList = new ArrayList<String>();
 		for(Iterator it= objectNodes.iterator(); it.hasNext();){
@@ -407,7 +524,7 @@ public class DAMSClient {
 			if (!(status == 200 || status == 201))
 				handleError(format);
 		}finally{
-			post.reset();
+			post.releaseConnection();
 		}
 		return new HttpContentInputStream(response.getEntity().getContent(), request);
 	}
@@ -455,7 +572,7 @@ public class DAMSClient {
 			Document doc = getXMLResult(req);
 			fileURIs = getFiles(doc, srcPath, srcFileName);
 		}finally{
-			req.reset();
+			req.releaseConnection();
 		}
 		return fileURIs;
 	}
@@ -554,7 +671,7 @@ public class DAMSClient {
 			if (!success)
 				handleError(format);
 		} finally {
-			req.reset();
+			req.releaseConnection();
 		}
 
 		return success;
@@ -602,7 +719,7 @@ public class DAMSClient {
 			if (!success)
 				handleError(format);
 		} finally {
-			post.reset();
+			post.releaseConnection();
 		}
 
 		return success;
@@ -631,7 +748,7 @@ public class DAMSClient {
 			if (!success)
 				handleError(format);
 		} finally {
-			del.reset();
+			del.releaseConnection();
 		}
 		return success;
 	}
@@ -684,6 +801,50 @@ public class DAMSClient {
 		int status = -1;
 		return status == 200;
 	}
+	
+	public List<RightsAction> getUnitEmbargoeds(String unitId) throws Exception{
+		String url = getUnitsURL(unitId, "embargo", "xml");
+		HttpGet get = new HttpGet(url);
+		Document doc = getXMLResult(get);
+		System.out.println(doc.asXML());
+		List<Node> objectNodes = doc.selectNodes(DOCUMENT_RESPONSE_ROOT_PATH + "/embargoed/value");
+		Node valNode= null;
+		Node oidNode = null;
+		Node startDateNode = null;
+		Node endDateNode = null;
+		
+		List<RightsAction> objectsList = new ArrayList<RightsAction>();
+		for(Iterator<Node> it= objectNodes.iterator(); it.hasNext();){
+			valNode = (Node)it.next();
+			startDateNode = valNode.selectSingleNode("startDate");
+			endDateNode = valNode.selectSingleNode("endDate");
+			oidNode = valNode.selectSingleNode("oid");
+			objectsList.add(new RightsAction(null, startDateNode==null?null:startDateNode.getText(), endDateNode==null?null:endDateNode.getText(), null, oidNode.getText()));
+		}
+		return objectsList;
+	}
+	
+	public List<RightsAction> getCollectionEmbargoeds(String collectionId) throws Exception{
+		String url = getCollectionsURL(collectionId, "embargo", "xml");
+		HttpGet get = new HttpGet(url);
+		Document doc = getXMLResult(get);
+		System.out.println(doc.asXML());
+		List<Node> objectNodes = doc.selectNodes(DOCUMENT_RESPONSE_ROOT_PATH + "/embargoed/value");
+		Node valNode= null;
+		Node oidNode = null;
+		Node startDateNode = null;
+		Node endDateNode = null;
+		
+		List<RightsAction> objectsList = new ArrayList<RightsAction>();
+		for(Iterator<Node> it= objectNodes.iterator(); it.hasNext();){
+			valNode = (Node)it.next();
+			startDateNode = valNode.selectSingleNode("startDate");
+			endDateNode = valNode.selectSingleNode("endDate");
+			oidNode = valNode.selectSingleNode("oid");
+			objectsList.add(new RightsAction(null, startDateNode==null?null:startDateNode.getText(), endDateNode==null?null:endDateNode.getText(), null, oidNode.getText()));
+		}
+		return objectsList;
+	}
 
 	/**
 	 * Retrieve metatada of an object
@@ -701,9 +862,12 @@ public class DAMSClient {
 			status = execute(req);
 			if (status != 200)
 				handleError(format);
-			return EntityUtils.toString(response.getEntity());
+			
+			HttpEntity en = response.getEntity();
+			Header encoding = en.getContentEncoding();
+			return EntityUtils.toString(en, (encoding==null?"UTF-8":encoding.getValue()));
 		} finally {
-			req.reset();
+			req.releaseConnection();
 		}
 	}
 
@@ -732,7 +896,7 @@ public class DAMSClient {
 			if (!success)
 				handleError(format);
 		} finally {
-			req.reset();
+			req.releaseConnection();
 		}
 
 		return success;
@@ -764,7 +928,7 @@ public class DAMSClient {
 			if (!success)
 				handleError(format);
 		} finally {
-			req.reset();
+			req.releaseConnection();
 		}
 
 		return success;
@@ -786,7 +950,7 @@ public class DAMSClient {
 			if (mData != null)
 				dfile = DFile.toDFile(mData);
 		} finally {
-			req.reset();
+			req.releaseConnection();
 		}
 
 		return dfile;
@@ -826,7 +990,7 @@ public class DAMSClient {
 		} catch(FileNotFoundException e){
 			exists = false;
 		} finally {
-			req.reset();
+			req.releaseConnection();
 		}
 		return exists;
 	}
@@ -896,23 +1060,10 @@ public class DAMSClient {
 			if(status != 200)
 				handleError(format);
 		}finally{
-			get.reset();
+			get.releaseConnection();
 		}
 
 		return new HttpContentInputStream(response.getEntity().getContent(), get);
-	}
-	
-	/**
-	 * Create a new file.
-	 * @param object
-	 * @param compId
-	 * @param fileName
-	 * @param srcFile
-	 * @return
-	 * @throws Exception
-	 */
-	public boolean createFile(String object, String compId, String fileName, String srcFile) throws Exception {
-		return uploadFile(object, compId, fileName, srcFile, null, false);
 	}
 	
 	/**
@@ -926,51 +1077,70 @@ public class DAMSClient {
 	 * @throws Exception
 	 */
 	public boolean createFile(String object, String compId, String fileName, String srcFile, String use) throws Exception {
-		return uploadFile(object, compId, fileName, srcFile, use, false);
+		Map<String, String> params = new HashMap<String, String>();
+		params.put("oid", object);
+		params.put("cid", compId);
+		params.put("fid", fileName);
+		params.put("local", srcFile);
+		params.put("use", use);
+		
+		// Add field dateCreated, sourceFileName, sourcePath etc.
+		File file = new File(srcFile);
+		params.put("sourcePath", file.getParent());
+		params.put("sourceFileName", file.getName());
+		params.put("dateCreated", damsDateFormat.format(file.lastModified()));
+		return createFile(params);
 	}
-
+	
 	/**
-	 * Create, update/replace a file.
-	 * 
-	 * @param object
-	 * @param fileName
-	 * @param in
-	 * @param len
+	 * Create a new file.
+	 * @param params
 	 * @return
-	 * @throws Exception 
+	 * @throws Exception
 	 */
-	public boolean uploadFile(String object, String compId, String fileName, String srcFile, boolean replace) throws Exception {
-		return uploadFile(object, compId, fileName, srcFile, null, replace);
+	public boolean createFile(Map<String, String> params) throws Exception {
+		return uploadFile(params, false);
 	}
 	
 	/**
 	 * Create, update/replace a file.
-	 * 
-	 * @param object
-	 * @param fileName
-	 * @param in
-	 * @param len
+	 * @param params
+	 * @param replace
 	 * @return
-	 * @throws Exception 
+	 * @throws Exception
 	 */
-	public boolean uploadFile(String object, String compId, String fileName, String srcFile, String use, boolean replace) throws Exception {
-		String format = null;
-		HttpEntityEnclosingRequestBase req = null;
-		//MultipartPostMethod req = new MultipartPostMethod();
-		String url = getFilesURL(object, compId, fileName, null, null);
+	public boolean uploadFile(Map<String, String>params, boolean replace) throws Exception {
+
+		//Retrieve the app parameters that need processing
+		String oid = params.remove("oid");
+		String cid = params.remove("cid");
+		String fid = params.remove("fid");
+		String srcFile = params.remove("local");
+		if(srcFile == null)
+			throw new Exception("Parameter local for the source file is missing.");
+		
+		String format = params.get("format");
+		String url = getFilesURL(oid, cid, fid, null, format);
 		int status = -1;
 		boolean success = false;
+		HttpEntityEnclosingRequestBase req = null;
 		try {
-			if(replace && exists(object, compId, fileName)) {
+			if(replace && exists(oid, cid, fid)) {
 				req = new HttpPut(url);
 			} else {
 				req = new HttpPost(url);
 			}
+			
+			
+			String pName = null;
+			String pValue = null;
 			MultipartEntity ent = toMultiPartEntity(srcFile);
-			File file = new File(srcFile);
-			ent.addPart("dateCreated", new StringBody(damsDateFormat.format(file.lastModified())));
-			if(use != null && use.length() > 0)
-				ent.addPart("use", new StringBody(use));
+			for(Iterator<String> it=params.keySet().iterator(); it.hasNext();){
+				pName = it.next();
+				pValue = params.get(pName);
+				if(pValue != null && (pValue=pValue.trim()).length() > 0)
+					ent.addPart(pName, new StringBody(pValue));
+			}
 			
 			req.setEntity(ent);
 			status = execute(req);
@@ -978,7 +1148,7 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		} finally {
-			req.reset();
+			req.releaseConnection();
 		}
 		return success;
 	}
@@ -1012,7 +1182,7 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		} finally {
-			req.reset();
+			req.releaseConnection();
 		}
 		return success;
 	}
@@ -1051,7 +1221,7 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		} finally {
-			req.reset();
+			req.releaseConnection();
 			close(in);
 		}
 		return success;
@@ -1095,7 +1265,7 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		} finally {
-			req.reset();
+			req.releaseConnection();
 		}
 		return success;
 	}
@@ -1147,7 +1317,7 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		}finally{
-			del.reset();
+			del.releaseConnection();
 		}
 		return success;
 	}
@@ -1181,7 +1351,7 @@ public class DAMSClient {
 			if(!success)
 				handleError(format);
 		} finally {
-			del.reset();
+			del.releaseConnection();
 		}
 		return success;
 	}
@@ -1217,14 +1387,22 @@ public class DAMSClient {
 	public int execute(HttpRequestBase req) throws ClientProtocolException,
 			IOException, LoginException {
 
-		this.request = req;
-		if (httpContext != null) {
-			response = client.execute(request, httpContext);
-		} else {
-			response = client.execute(request);
+		int statusCode = -1;
+		response = null;
+		request = req;
+		try{
+			if (httpContext != null) {
+				response = client.execute(request, httpContext);
+			} else {
+				response = client.execute(request);
+			}
+		}finally{
+			if(response != null)
+				statusCode = response.getStatusLine().getStatusCode();
+			log.info(statusCode + " " + req.getMethod() + " " + req.getURI());
 		}
 
-		return response.getStatusLine().getStatusCode();
+		return statusCode;
 	}
 	
 	/**
@@ -1247,6 +1425,12 @@ public class DAMSClient {
 		String[] parts = {"index"};
 		return toDAMSURL(parts, format);
 	}
+	
+	public String getRecordsURL(String format){
+		String[] parts = {"records"};
+		return toDAMSURL(parts, format);
+	}
+	
 	
 	/**
 	 * Construct REST URL for administration unit
@@ -1308,7 +1492,7 @@ public class DAMSClient {
 	public String toDAMSURL(String[] urlParts, String format){
 		NameValuePair[] params = {new BasicNameValuePair("format", format), new BasicNameValuePair("ts",tripleStore), new BasicNameValuePair("fs", fileStore)};
 		String paramsStr = concatParams(params);
-		System.out.println(storageURL + toUrlPath(urlParts) + (paramsStr.length()>0?"?":"") + paramsStr);
+		//System.out.println(storageURL + toUrlPath(urlParts) + (paramsStr.length()>0?"?":"") + paramsStr);
 		return storageURL + toUrlPath(urlParts) + (paramsStr.length()>0?"?":"") + paramsStr;
 	}
 	
@@ -1334,7 +1518,7 @@ public class DAMSClient {
 				handleError("json");
 			}
 		}finally{
-			req.reset();
+			req.releaseConnection();
 			close(in);
 			close(reader);
 		}
@@ -1362,7 +1546,7 @@ public class DAMSClient {
 				handleError("json");
 			}
 		}finally{
-			req.reset();
+			req.releaseConnection();
 			close(in);
 		}
 		return resObj;
@@ -1415,17 +1599,22 @@ public class DAMSClient {
 	 * @throws Exception 
 	 */
 	public String getContentBodyAsString(String url) throws Exception {
+		String result = "";
 		HttpGet get = new HttpGet(url);
 		int status = -1;
 		try {
 			status = execute(get);
-			if(status != 200)
+			if(status == 200){				
+				HttpEntity en = response.getEntity();
+				Header encoding = en.getContentEncoding();
+				result = EntityUtils.toString(en, (encoding==null?"UTF-8":encoding.getValue()));
+			} else
 				handleError(null);
+		
 		} finally {
-			
-			get.reset();
+			get.releaseConnection();
 		}
-		return EntityUtils.toString(response.getEntity());
+		return result;
 	}
 
 	/**
@@ -1451,8 +1640,31 @@ public class DAMSClient {
 			try{
 				in = ent.getContent();
 				String contentType = ent.getContentType().getValue();
-				if(ent.getContentLength() > MAX_SIZE || !contentType.startsWith("text/xml")
-						&& !(format!=null && format.equals("json"))){
+				if(contentType.indexOf("xml") >= 0){
+					try{
+						SAXReader saxReader = new SAXReader();
+						Document doc = saxReader.read(in);
+						System.out.println(doc.asXML());
+						Node node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/status");
+						
+						if(node != null)
+							respContent += node.getText();
+						node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/statusCode");
+						if(node != null)
+							respContent += " status code " + doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/statusCode").getText();
+						node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/message");
+						if(node != null)
+							respContent += ". Error " + node.getText();
+					}catch (Exception e){
+						e.printStackTrace();
+					}
+				} else if(format.equals("json")){
+					Reader reader = new InputStreamReader(in);
+					JSONObject resultObj = (JSONObject) JSONValue.parse(reader);
+					respContent += resultObj.get("status") + " status code " + resultObj.get("statusCode") + ". Error " + resultObj.get("message");
+					System.out.println(resultObj.toString());
+					reader.close();
+				} else {
 
 					byte[] buf = new byte[4096];
 					StringBuilder strContent = new StringBuilder();
@@ -1462,26 +1674,6 @@ public class DAMSClient {
 						strContent.append((char)bRead);
 					respContent = strContent.toString();
 					System.out.println(respContent);
-				}else if (contentType.startsWith("text/xml")) {
-					SAXReader saxReader = new SAXReader();
-					Document doc = saxReader.read(in);
-					System.out.println(doc.asXML());
-					Node node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/status");
-					
-					if(node != null)
-						respContent += node.getText();
-					node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/statusCode");
-					if(node != null)
-						respContent += " status code " + doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/statusCode").getText();
-					node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/message");
-					if(node != null)
-						respContent += ". " + node.getText();
-				} else if(format.equals("json")){
-					Reader reader = new InputStreamReader(in);
-					JSONObject resultObj = (JSONObject) JSONValue.parse(reader);
-					respContent += resultObj.get("status") + " status code " + resultObj.get("statusCode") + ". " + resultObj.get(status);
-					System.out.println(resultObj.toString());
-					reader.close();
 				}
 			}finally{
 				close(in);
@@ -1522,7 +1714,9 @@ public class DAMSClient {
 	}
 	
 	public String getResponseMessage() throws ParseException, IOException{
-		return EntityUtils.toString(response.getEntity());
+		HttpEntity en = response.getEntity();
+		Header encoding = en.getContentEncoding();
+		return EntityUtils.toString(en, (encoding==null?"UTF-8":encoding.getValue()));
 	}
 
 	/**
@@ -1533,7 +1727,7 @@ public class DAMSClient {
 	public static int copy(InputStream in, OutputStream out) throws IOException {
 		int len = 0;
 		int bytesRead = 0;
-		byte[] buf = new byte[5096];
+		byte[] buf = new byte[5120];
 		while ((bytesRead = in.read(buf)) > 0) {
 			out.write(buf, 0, bytesRead);
 			len += bytesRead;
@@ -1545,7 +1739,7 @@ public class DAMSClient {
 	 * Close up IO resources
 	 * @param closeable
 	 */
-	public void close(Closeable closeable){
+	public static void close(Closeable closeable){
 		if(closeable != null){
 			try{
 				closeable.close();
@@ -1590,6 +1784,22 @@ public class DAMSClient {
 	 */
 	public String getTripleStore() {
 		return tripleStore;
+	}
+
+	/**
+	 * Get SOLR URL base
+	 * @return
+	 */
+	public String getSolrURLBase() {
+		return solrURLBase;
+	}
+
+	/**
+	 * Set SOLR URL base
+	 * @param solrURLBase
+	 */
+	public void setSolrURLBase(String solrURLBase) {
+		this.solrURLBase = solrURLBase;
 	}
 
 	/**
@@ -1638,19 +1848,21 @@ public class DAMSClient {
 	public static MultipartEntity toMultiPartEntity(String srcFile) throws UnsupportedEncodingException{
 		File file = new File(srcFile);
 		MultipartEntity ent = new MultipartEntity();
-		ent.addPart("sourcePath", new StringBody(file.getParent()));
 		String srcAbsPath = file.getAbsolutePath();
 		String stagingAbsPath = new File(Constants.DAMS_STAGING).getAbsolutePath();
 		int idx = srcAbsPath.indexOf(stagingAbsPath);
 		if(idx == 0){
-			ent.addPart("local", new StringBody(srcAbsPath.substring(idx+stagingAbsPath.length())));
-			// Add field sourceFileName
-			ent.addPart("sourceFileName", new StringBody(file.getName()));
+			ent.addPart("local", new StringBody(srcAbsPath.substring(idx+stagingAbsPath.length()).replace("\\", "/")));
 		}else{
 			String contentType = new FileDataSource(srcFile).getContentType();
 			FileBody fileBody = new FileBody(file, contentType);
 			ent.addPart("file", fileBody);
+			// Add field dateCreated, sourceFileName, sourcePath etc.
+			ent.addPart("sourcePath", new StringBody(file.getParent()));
+			ent.addPart("sourceFileName", new StringBody(file.getName()));
+			ent.addPart("dateCreated", new StringBody(damsDateFormat.format(file.lastModified())));
 		}
+			
 		return ent;
 	}
 	
@@ -1722,6 +1934,19 @@ public class DAMSClient {
 	}
 	
 	/**
+	 * Utility function for pairing file path with an ark
+	 * @param value
+	 * @return
+	 */
+	public static String pairPath(String value){
+		String path = "";
+		for(int i=0; i<value.length(); i+=2){
+			path += value.substring(i, (i+2<value.length()?i+2:value.length())) + "/";
+		}
+		return path;
+	}
+	
+	/**
 	 * Mimetype
 	 * @param filename
 	 * @return
@@ -1747,11 +1972,7 @@ public class DAMSClient {
 		String solrQuery = toSolrQuery(unitTitle, collectionTitle);
 		String solrParams = solrQuery + "&rows=" + rows + "&start=" + start + "&fl=id&wt=xml";
 		
-		String url = getIndexURL(null);
-		url += (url.indexOf('?')>0?"&":"?") + solrParams;
-		System.out.println("SOLR URL: " + url);
-		HttpGet req= new HttpGet(url);
-		Document doc = getXMLResult(req);
+		Document doc = solrLookup(solrParams);
 		int numFound = Integer.parseInt(doc.selectSingleNode("/response/result/@numFound").getStringValue());
 		start = Integer.parseInt(doc.selectSingleNode("/response/result/@numFound").getStringValue());
 		List<Node> idNodes = doc.selectNodes("/response/result/doc/str[@name='id']");
@@ -1760,6 +1981,30 @@ public class DAMSClient {
 			items.add(idNode.getText());
 		}
 		return rows+start < numFound; 
+	}
+	
+	/**
+	 * SOLR lookup
+	 * @param solrQuery
+	 * @return
+	 * @throws Exception
+	 */
+	public Document solrLookup(String solrQuery) throws Exception{
+		String url = getSolrURL();
+		url += (url.endsWith("/")?"":"/") + "select?" + solrQuery + "&wt=xml";
+		HttpGet req= new HttpGet(url);
+		return getXMLResult(req);
+	}
+	
+	/**
+	 * Retrieve the URL for the SOLR server
+	 * @return
+	 */
+	private String getSolrURL(){
+		if(solrURLBase == null)
+			return Constants.SOLR_URL_BASE;
+		else
+			return solrURLBase;
 	}
 	
 	public void close(){
@@ -1818,6 +2063,21 @@ public class DAMSClient {
 		return fileURIs;
 	}
 	
+	/**
+	 * Reverse the key/value in a map
+	 * @return
+	 */
+	public static Map<String, String> reverseMap(Map<String, String> m){
+
+		Map<String, String> collsMap = new HashMap<String, String>();
+
+		for(Iterator<String> it=m.keySet().iterator(); it.hasNext();){
+			String key = it.next();
+			collsMap.put(m.get(key), key);
+		}
+		return collsMap;
+	}
+		
 	/**
 	 * Static method to send mail
 	 * @param from
@@ -1882,7 +2142,7 @@ public class DAMSClient {
 				in.close();
 			} finally {
 				// Reset http request
-				request.reset();
+				request.releaseConnection();
 			}
 		}
 
@@ -1892,4 +2152,29 @@ public class DAMSClient {
 		}
 	}
 
+	/**
+	 * PreemptiveAuthInterceptor class for PreemptiveAuth
+	 * @author lsitu
+	 *
+	 */
+    class PreemptiveAuthInterceptor implements HttpRequestInterceptor {
+        public void process(final HttpRequest request, final HttpContext context) throws HttpException, IOException {
+
+            AuthState authState = (AuthState) context.getAttribute(ClientContext.TARGET_AUTH_STATE);
+
+            // If no auth scheme available yet, try to initialize it preemptively
+            if (authState.getAuthScheme() == null) {
+                AuthScheme authScheme = (AuthScheme) context.getAttribute("preemptive-auth");
+                CredentialsProvider credsProvider = (CredentialsProvider) context.getAttribute(ClientContext.CREDS_PROVIDER);
+                HttpHost targetHost = (HttpHost) context.getAttribute(ExecutionContext.HTTP_TARGET_HOST);
+                if (authScheme != null) {
+                    Credentials creds = credsProvider.getCredentials(new AuthScope(targetHost.getHostName(), targetHost.getPort()));
+                    if (creds == null) {
+                        throw new HttpException("No credentials for preemptive authentication");
+                    }
+                    authState.update(authScheme, creds);
+                }
+            }
+        }
+    }
 }

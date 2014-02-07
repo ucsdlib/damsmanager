@@ -70,8 +70,12 @@
 			<span><select id="category" name="category" class="inputText" onChange="requestStats(this);">
 						<option value=""> -- collections -- </option>
 						<c:forEach var="entry" items="${model.collections}">
+							<c:set var="colNameLen"> ${fn:length(entry.key)}</c:set>
 							<option value="${entry.value}" <c:if test="${model.category == entry.value}">selected</c:if>>
-                       			<c:out value="${entry.key}" />
+								<c:choose>
+									<c:when test="${colNameLen > 75}"><c:out value="${fn:substring(entry.key, 0, 71)}" /> ...</c:when>
+									<c:otherwise><c:out value="${entry.key}" /></c:otherwise>
+								</c:choose>
                         	</option>
 						</c:forEach>
 					</select>
@@ -84,10 +88,14 @@
 		    <div id="processesDiv">             
 				<div id="validateButtonDiv" <c:if test="${model.activeButton != 'validateButton'}">style="display:none;"</c:if>>
 				    <div id="fileCountDiv" class="processlayout">
-						<span title="Validate master files for duplicate files, mixed file format, and file count" class="menuText"><input class="pcheckbox" type="checkbox" name="validateFileCount" id="validateFileCount" onClick="checkSelections(this);">
-									<span class="text-special">File Count Validation <c:if test="${model.itemsCount > 0}">(${model.itemsCount} objects)</c:if></span></span><br />  
+						<div title="Validate master files for duplicate files, mixed file format, and file count" class="menuText"><input class="pcheckbox" type="checkbox" name="validateFileCount" id="validateFileCount" onClick="checkSelections(this);">
+							<span class="text-special">File Count Validation <c:if test="${model.itemsCount > 0}">(${model.itemsCount} objects)</c:if></span></div>
+						<div title="Check this checkbox to ingest the file when it's missing." class="specialmenuText"><input type="checkbox" id="ingestFile" name="ingestFile" class="pmcheckbox" onClick="confirmSelection(this, 'ingest the missing files.', 'validateFileCount');">
+							<span class="text-special"  title="Enter a filter path for the location to speek up the search. From the popup, click on the folder to select/deselect a location. Multiple loations allowed."><span class="text-special">Ingest missing files from staging:&nbsp;</span><input type="text" id="filesLocation" name="filesLocation" size="30" value="">&nbsp;<input type="button" onclick="showFilePicker('filesLocation', event)" value="&nbsp;...&nbsp;"/></span>
+						</div>
+						<div title="Check this checkbox to rename dams3 files to DAMS4 naming conventions." class="specialmenuText"><input type="checkbox" id="dams4FileRename" name="dams4FileRename" class="pmcheckbox" onClick="confirmSelection(this, 'rename DAMS3 files to DAMS4 naming convention.', 'validateFileCount');"><span class="text-special">Rename dams3 files to DAMS4 naming conventions.</span></div>  
 					</div>
-				    <div id="fileCountDiv" class="processlayout">
+				    <div id="jhoveReportDiv" class="processlayout">
 						<span title="Generate Jhove Report" class="menuText">
 							<input class="pcheckbox" type="checkbox" name="jhoveReport" id="jhoveReport" onClick="checkSelections(this);">
 							<span class="text-special">Jhove Report</span>
@@ -100,7 +108,10 @@
 						</div>
 						<div>
 							<fieldset class="groupbox_rdf"><legend class="slegandText" style="padding-left:8px;padding-right:8px;">Update Options</legend>
-								<span title="Check this checkbox to update the format when it's validated by Jhove." class="submenuText" >&nbsp;<input type="radio" name="jhoveUpdate" value="ByteStream" checked>
+								<span title="Check this checkbox to add Jhove metadata when it's missing." class="submenuText">&nbsp;<input type="radio" name="jhoveUpdate" value="addJhove" checked>
+									Extract and add Jhove metadata.
+								</span><br />
+								<span title="Check this checkbox to update the format when it's validated by Jhove." class="submenuText" >&nbsp;<input type="radio" name="jhoveUpdate" value="ByteStream">
 									Correct format and format version.
 								</span><br />
 								<span title="Check this checkbox to update duration when it's available." class="submenuText">&nbsp;<input type="radio" name="jhoveUpdate" value="Duration">
@@ -124,12 +135,15 @@
 								   <span class="text-special">Derivatives Creation</span></span><br/>								   
 						</div>
 						<div>
-								   <fieldset class="groupbox_der"><legend class="slegandText">Image Type</legend>
-									   <span class="submenuText"><input type="radio" name="size" value="" checked> All Derivatives (768px, 450px, 150px, &amp; 65px)</span><br />
-									   <span class="submenuText"><input type="radio" name="size" value="5" > Thumbnail (65px) </span><br />
+								   <fieldset class="groupbox_der"><legend class="slegandText">Derivative Type</legend>
+									   <span class="submenuText"><input type="radio" name="size" value="" checked> All JPEG Derivatives (1600px, 1200px, 768px, 450px, 150px, 65px)</span><br />
+									   <span class="submenuText"><input type="radio" name="size" value="5" > Icon (65px) </span><br />
 									   <span class="submenuText"><input type="radio" name="size" value="4" > Thumbnail (150px)</span><br />
-									   <span class="submenuText"><input type="radio" name="size" value="3" > Medium Resolution (450px)</span><br />
-									   <span class="submenuText"><input type="radio" name="size" value="2" > Medium Resolution (768px)</span><br />
+									   <span class="submenuText"><input type="radio" name="size" value="3" > Preview (450px)</span><br />
+									   <span class="submenuText"><input type="radio" name="size" value="2" > Service (768px)</span><br />
+									   <span class="submenuText"><input type="radio" name="size" value="6" > Large (1200px)</span><br />
+									   <span class="submenuText"><input type="radio" name="size" value="7" > Huge (1600px)</span><br />
+									   <span class="submenuText"><input type="radio" name="size" value="v" > Videos mp4 (720p) </span><br />
 									</fieldset>
 						</div>
 						<div title="Check this checkbox to replace the derivatives if exist." class="specialmenuText"><input type="checkbox" id="derReplace" name="derReplace" class="pmcheckbox" onClick="confirmSelection(this, 'replace the selected derivative type above', 'createDerivatives');">
@@ -145,7 +159,7 @@
 						<div>
 							 <fieldset class="groupbox_ingestOpts"><legend class="slegandText">Special Options</legend>
 								 <div title="Check this checkbox to start a new round of TripleStore population." class="specialmenuText">
-											<input type="radio" id="importMode" name="importMode" value="add">
+											<input type="radio" id="importMode" name="importMode" value="add" checked>
 											 <span class="text-special">Add metadata</span>
 								 </div>
 								 <div title="Check this checkbox to repopulate metadata but keep file characterize metadata for all the subjects included in the file submitted." class="specialmenuText">
@@ -159,6 +173,10 @@
 								  <div title="Check this checkbox for same predicates replacement with the triples included in the submitted RDF." class="specialmenuText">
 											<input type="radio" id="importMode" name="importMode" value="samePredicates">
 											 <span class="text-special">Same predicates replacement with metadata submitted</span>
+								  </div>
+								  <div title="Check this checkbox to delete the subjects and/or files included in the submitted RDF." class="specialmenuText">
+											<input type="radio" id="importMode" name="importMode" value="delete">
+											 <span class="text-special">Delete all submitted records/resources referenced by rdf:about</span>
 								  </div>
 							  </fieldset>
 						  </div>
@@ -174,7 +192,31 @@
 									</div>
 							   </fieldset>
 						   </div>
-					</div>										
+					</div>
+					<div id="externalImportDiv" class="processlayout">
+					   <div title="Import records to DAMS with custom conversion." class="menuText"><input class="pcheckbox" type="checkbox" id="externalImport" name="externalImport" onClick="checkSelections(this);">
+							<span class="text-special">External Import</span>
+						</div>
+						<div>
+							 <fieldset class="groupbox_ingestOpts"><legend class="slegandText">Import Options</legend>
+							 	<div title="Check this checkbox to import metadata and files." class="specialmenuText">
+									<input checked type="radio" name="importOption" value="metadataAndFiles">
+									<span class="text-special">Metadata and files</span>
+								 </div>
+								 <div title="Check this checkbox to import metadata only." class="specialmenuText">
+									<input type="radio" name="importOption" value="metadata">
+									<span class="text-special">Metadata only</span>
+								 </div>
+							  </fieldset>
+						</div>
+															  
+						<div class="specialmenuText" style="margin-top:3px;padding-left:22px;"  title="Enter a filter path for the location to speek up the search. From the popup, click on the folder to select/deselect a location. Multiple loations allowed.">Data location:
+							<input type="text" id="dataPath" name="dataPath" size="40" value="">&nbsp;<input type="button" onclick="showFilePicker('dataPath', event)" value="&nbsp;...&nbsp;">
+						</div>
+						<div class="specialmenuText" style="margin-top:3px;padding-left:22px;"  title="Enter a filter path for the location to speek up the search. From the popup, click on the folder to select/deselect a location. Multiple loations allowed.">Files location: 
+							<input type="text" id="filesPath" name="filesPath" size="40" value="">&nbsp;<input type="button" onclick="showFilePicker('filesPath', event)" value="&nbsp;...&nbsp;">
+						</div>
+					</div>									
 				</div>
 				<div id="metadataButtonDiv" <c:if test="${model.activeButton != 'metadataButton'}">style="display:none;"</c:if>>
 					<div id="solrIndexDiv" class="processlayout">
@@ -191,7 +233,7 @@
 									<span class="text-special">RDF Creation &amp; uploading</span></span><br />
 						 </div>	
 						 <div>
-							<fieldset class="groupbox_rdf"><legend class="slegandText">Meta Data</legend>
+							<fieldset class="groupbox_rdf"><legend class="slegandText">Metadata</legend>
    						        <span class="submenuText"><input disabled type="radio" name="rdfXmlDataType" value="all" checked>All</span><br />
 						        <span class="submenuText"><input disabled type="radio" name="rdfXmlDataType" value="jhove" >JHOVE extracted metadata only</span><br />
 						   </fieldset>
@@ -214,12 +256,17 @@
 					<div id="metadataExportDiv" class="processlayout">
 						<div class="menuText"><input class="pcheckbox" type="checkbox" id="metadataExport" name="metadataExport" onClick="checkSelections(this, 'metadataExport');"><span class="text-special"><strong>Metadata Export: </strong></span><br />
 						    <div style="padding-left:18px;">
-							    <div title="Export metadata with namespaces limitation." class="specialmenuText">
-								    <span class="text-special">&nbsp;In Namespace(s): <input type="text" name="nsInput" size="30" class="inputText" />&nbsp; (<span style="color:red;font-size:12px;">*</span>delimited by comma)</span> 
-								</div>
 								<div class="specialmenuText"><input type="radio" name="exportFormat" value="RDF/XML-ABBREV" checked><span class="text-special">RDF XML</span></div>
 								<div class="specialmenuText"><input type="radio" name="exportFormat" value="N-TRIPLE"><span class="text-special">N-Triples</span></div>
 								<!-- <div class="specialmenuText"><input disabled type="radio" name="exportFormat" value="csv"><span class="text-special">CSV Export</span></div> -->
+							</div>
+							<div>
+								<fieldset class="groupbox_emOptions"><legend class="slegandText">Special Options</legend>
+									<div title="Export metadata with namespaces limitation." class="specialmenuText"><span style="color:red;font-size:12px;padding-left:5px;">*</span>&nbsp;Namespace(s) delimited by comma: <input type="text" name="nsInput" size="35" class="inputText" /></div> 
+									<div title="Check this checkbox to exclude metadata in the components and files." class="specialmenuText"><input type="checkbox" id="exComponents" name="exComponents" onClick="confirmSelection(this, 'exclude metadata in components and files', 'metadataExport');">
+										<span class="text-special">Exclude metadata in components and files.</span>
+									</div>
+								</fieldset>
 							</div>
 						</div>
 					</div>

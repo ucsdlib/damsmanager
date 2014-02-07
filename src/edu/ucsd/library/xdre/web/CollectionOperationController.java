@@ -40,6 +40,7 @@ import edu.ucsd.library.xdre.collection.JhoveReportHandler;
 import edu.ucsd.library.xdre.collection.MetadataExportHandler;
 import edu.ucsd.library.xdre.collection.MetadataImportHandler;
 import edu.ucsd.library.xdre.collection.SOLRIndexHandler;
+import edu.ucsd.library.xdre.imports.RDFDAMS4ImportHandler;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.RequestOrganizer;
@@ -148,7 +149,7 @@ public class CollectionOperationController implements Controller {
 
 		String[] emails = null;
 		String user = request.getRemoteUser();
-		if(( !(isBSJhoveReport || isDevUpload) && getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "dataConvert") == null )&& 
+		if(( !(isBSJhoveReport || isDevUpload) && getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "externalImport") == null && getParameter(paramsMap, "dataConvert") == null )&& 
 				(collectionId == null || (collectionId=collectionId.trim()).length() == 0)){
 			message = "Please choose a collection ...";
 		}else{
@@ -235,7 +236,7 @@ public class CollectionOperationController implements Controller {
 		}catch(Exception e){
 			e.printStackTrace();
 			try{
-				String logLink = "<a href=\"" + Constants.CLUSTER_HOST_NAME.replace("http://", "https://").replace(":8080/", ":8443/") + "damsmanager/downloadLog.do?sessionId=" + request.getSession().getId() + "\">log</a>";
+				String logLink = "https://" + (Constants.CLUSTER_HOST_NAME.indexOf("localhost")>=0?Constants.CLUSTER_HOST_NAME:Constants.CLUSTER_HOST_NAME+".ucsd.edu:8443") + "/damsmanager/downloadLog.do?sessionId=" + request.getSession().getId() + "\">log</a>";
 				response.sendRedirect(request.getContextPath() + forwardToUrl.substring(forwardToUrl.indexOf("&message=")) + "Execution finished. For details, please view " + logLink);
 			}catch(Exception e1){
 				e.printStackTrace();
@@ -261,7 +262,7 @@ public class CollectionOperationController implements Controller {
 		operations[2] = getParameter(paramsMap, "rdfImport") != null;
 		operations[3] = getParameter(paramsMap, "createDerivatives") != null;
 		operations[4] = getParameter(paramsMap, "uploadRDF") != null;
-		operations[5] = getParameter(paramsMap, "cacheThumbnails") != null;
+		operations[5] = getParameter(paramsMap, "externalImport") != null;
 		operations[6] = getParameter(paramsMap, "createMETSFiles") != null;
 		operations[7] = getParameter(paramsMap, "luceneIndex") != null || getParameter(paramsMap, "solrDump") != null;
 		operations[8] = getParameter(paramsMap, "sendToCDL") != null;
@@ -278,7 +279,7 @@ public class CollectionOperationController implements Controller {
 		operations[19] = getParameter(paramsMap, "jhoveReport") != null;
 
 		int submissionId = (int)System.currentTimeMillis();
-		String logLink = (Constants.CLUSTER_HOST_NAME.indexOf(":8080/")>0?Constants.CLUSTER_HOST_NAME.replaceFirst("http://", "https://").replace(":8080/", ":8443/"):Constants.CLUSTER_HOST_NAME) + "/damsmanager/downloadLog.do?submissionId=" + submissionId;
+		String logLink = "https://" + (Constants.CLUSTER_HOST_NAME.indexOf("localhost")>=0?Constants.CLUSTER_HOST_NAME:Constants.CLUSTER_HOST_NAME+".ucsd.edu:8443") + "/damsmanager/downloadLog.do?submissionId=" + submissionId;
 		
 		String ds = getParameter(paramsMap, "ts");
 		String dsDest = null;
@@ -351,7 +352,18 @@ public class CollectionOperationController implements Controller {
 			
 			 if(i == 0){
 				 session.setAttribute("status", opMessage + "File Count Validation for FileStore " + fileStore + " ...");
+				 boolean ingestFile = getParameter(paramsMap, "ingestFile") != null;
+				 boolean dams4FileRename = getParameter(paramsMap, "dams4FileRename") != null;
 				 handler = new FileCountValidaionHandler(damsClient, collectionId);
+				 ((FileCountValidaionHandler)handler).setDams4FileRename(dams4FileRename);
+				 if(ingestFile){
+					 String[] filesPaths = getParameter(paramsMap, "filesLocation").split(";");
+					  List<String> ingestFiles = new ArrayList<String>();
+					  for(int j=0; j<filesPaths.length; j++)
+						  ingestFiles.add(new File(Constants.DAMS_STAGING + "/" + filesPaths[j]).getAbsolutePath());
+					 ((FileCountValidaionHandler)handler).setIngestFile(ingestFile);
+					 ((FileCountValidaionHandler)handler).setFilesPaths(ingestFiles.toArray(new String[ingestFiles.size()]));
+				 }
 			 }else if (i == 1){
 				   session.setAttribute("status", opMessage + "Checksum Validation for FileStore " + fileStore + " ...");
 				   handler = new ChecksumsHandler(damsClient, collectionId, null);
@@ -376,7 +388,29 @@ public class CollectionOperationController implements Controller {
 				 boolean rdfXmlReplace = getParameter(paramsMap, "rdfXmlReplace") != null;
 	             
 				 handler = new MetaDataStreamUploadHandler(damsClient, collectionId, "rdf", rdfXmlReplace);
-			 } else if (i == 6){	
+			 }*/else if (i == 5){	
+				  session.setAttribute("status", opMessage + "Importing objects ...");
+				  String[] dataPaths = getParameter(paramsMap, "dataPath").split(";");
+				  String[] filesPaths = getParameter(paramsMap, "filesPath").split(";");
+				  String importOption = getParameter(paramsMap, "importOption");
+				  List<File> dFiles = new ArrayList<File>();
+				  for(int j=0; j<dataPaths.length; j++){
+					  String dataPath = dataPaths[j];
+					  if(dataPath != null && (dataPath=dataPath.trim()).length() > 0){
+						  File file = new File(Constants.DAMS_STAGING + "/" + dataPath);
+						  CollectionHandler.listFiles(dFiles, file);
+					  }
+				  }
+				  
+				  List<String> ingestFiles = new ArrayList<String>();
+				  for(int j=0; j<filesPaths.length; j++){
+					  if((filesPaths[j]=filesPaths[j].trim()).length() > 0)
+						  ingestFiles.add(new File(Constants.DAMS_STAGING + "/" + filesPaths[j]).getAbsolutePath());
+				  }
+				  
+				  handler = new RDFDAMS4ImportHandler(damsClient, dFiles.toArray(new File[dFiles.size()]), importOption);
+				  ((RDFDAMS4ImportHandler)handler).setFilesPaths(ingestFiles.toArray(new String[ingestFiles.size()]));
+			 }/*else if (i == 6){	
 				   session.setAttribute("status", opMessage + "METS File Creation &amp; File Store Upload ...");
 				   boolean metsReplace = getParameter(paramsMap, "metsReplace") != null;
 				   handler = new MetaDataStreamUploadHandler(damsClient, collectionId, "mets", metsReplace);
@@ -387,22 +421,26 @@ public class CollectionOperationController implements Controller {
 					 String collIDs = collectionId;
 					 String[] collArr = collectionId.split(",");
 					 List<String> items = new ArrayList<String>();
-					 System.out.println("SOLR indexing collections: " + collectionId);
 					 String collNames = "";
 					 for(int j=0; j<collArr.length; j++){
 						 if(collArr[j] != null && (collArr[j]=collArr[j].trim()).length()>0){
 							 collectionId = collArr[j];
-							 try{
-								 handler = new SOLRIndexHandler( damsClient, collectionId );
-								 items.addAll(handler.getItems());
-								 collNames += handler.getCollectionTitle() + "(" + handler.getFilesCount() + "), ";
-								 if(j>0 && j%5==0)
-									 collNames += "\n";
-							 }finally{
-								 if(handler != null){
-									 handler.release();
-									 handler = null;
-								 } 
+							 if(collectionId.equalsIgnoreCase("all")){
+								 items.addAll(damsClient.listAllRecords());
+								 collNames += "All Records (" + items.size() + "), ";
+							 }else{
+								 try{
+									 handler = new SOLRIndexHandler( damsClient, collectionId );
+									 items.addAll(handler.getItems());
+									 collNames += handler.getCollectionTitle() + "(" + handler.getFilesCount() + "), ";
+									 if(j>0 && j%5==0)
+										 collNames += "\n";
+								 }finally{
+									 if(handler != null){
+										 handler.release();
+										 handler = null;
+									 } 
+								 }
 							 }
 						 }
 					 }
@@ -410,9 +448,13 @@ public class CollectionOperationController implements Controller {
 					 handler.setItems(items);
 					 handler.setCollectionTitle(collNames.substring(0, collNames.lastIndexOf(",")));
 					 handler.setCollectionId(collIDs);
-				 }else
-					 handler = new SOLRIndexHandler(damsClient, collectionId, update);
-
+				 }else{
+					 if(collectionId.equalsIgnoreCase("all")){
+						 handler = new SOLRIndexHandler(damsClient, null, update);
+						 handler.setItems(damsClient.listAllRecords());
+					 }else
+						 handler = new SOLRIndexHandler(damsClient, collectionId, update);
+				 }
 			 }/*else if (i == 8){	
 				    //session.setAttribute("status", opMessage + "CDL Sending ...");
 				    int operationType = 0;
@@ -554,6 +596,7 @@ public class CollectionOperationController implements Controller {
 					 session.setAttribute("status", opMessage + "Manifest Valification ...");
 			     handler = new LocalStoreManifestHandler(tsUtils, collectionId, validateManifest, writeManifest);
 			 }*/ else if (i == 18){
+				 boolean components = getParameter(paramsMap, "exComponents") == null;
 				 String exFormat = getParameter(paramsMap, "exportFormat");
 				 String xslSource = getParameter(paramsMap, "xsl");
 				 if(xslSource == null || (xslSource=xslSource.trim()).length() == 0){
@@ -576,6 +619,7 @@ public class CollectionOperationController implements Controller {
 			     fileOut = new FileOutputStream(outputFile);
 				 handler = new MetadataExportHandler(damsClient, collectionId, nsInputs, componentsIncluded, exFormat, fileOut);
 				 ((MetadataExportHandler)handler).setFileUri(logLink + "&file=" + outputFile.getName());
+				 ((MetadataExportHandler)handler).setComponents(components);
 			    
 			 }else if (i == 19){
 				 session.setAttribute("status", opMessage + "Jhove report ...");

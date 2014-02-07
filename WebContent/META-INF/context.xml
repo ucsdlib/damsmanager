@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Context docBase="damsmanager.war" path="/damsmanager">
 	<ResourceLink global="damsmanager/home" name="damsmanager/home" type="java.lang.String"/>
+	<ResourceLink global="jdbc/dams" name="jdbc/dams" type="javax.sql.DataSource"/>
 </Context>

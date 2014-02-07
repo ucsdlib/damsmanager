@@ -4,7 +4,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -59,5 +61,20 @@ public class DomUtil {
 		DOMBuilder domBuilder = new DOMBuilder();
 		//builder.setValidation(false);
 		return domBuilder.build(w3cDoc);
+	}
+	
+	public static String toXml(String root, Map<String, String> info){
+		Document doc = createDocument();
+		Element elem = doc.addElement(root);
+		String key = null;
+		String value = null;
+		Element elemTmp = null;
+		for(Iterator<String> it=info.keySet().iterator(); it.hasNext();){
+			key = it.next();
+			value = info.get(key);
+			elemTmp = elem.addElement(key.replace(" ", "_"));
+			elemTmp.setText(value);
+		}
+		return doc.asXML();
 	}
 }

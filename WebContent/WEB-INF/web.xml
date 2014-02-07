@@ -69,6 +69,7 @@
     	<web-resource-collection>
 	        <web-resource-name>Protected Area</web-resource-name>
 	        <url-pattern>/ingest.do</url-pattern>
+	        <url-pattern>/derivative.do</url-pattern>
 	        <url-pattern>/collectionUpdate.do</url-pattern>
 	        <url-pattern>/controlPanel.do</url-pattern>
 	        <url-pattern>/metaDataImport.do</url-pattern>
@@ -79,10 +80,14 @@
 	        <url-pattern>/devUpload.do</url-pattern>
 	        <url-pattern>/statusUpload.do</url-pattern>
 	        <url-pattern>/rdfExport.do</url-pattern>
+	        <url-pattern>/solrDump.do</url-pattern>
+	        <url-pattern>/statsWebLogAnalyzer.do</url-pattern>
+	        <url-pattern>/statsQuantytyAnalyzer.do</url-pattern>
+	        <url-pattern>/collectionsReport.do</url-pattern>
     	</web-resource-collection>
     	<auth-constraint>
         	<role-name>4708</role-name>
-        	<role-name>LIB-Users</role-name>
+        	<role-name>dams-manager-admin</role-name>
       	</auth-constraint>
         <user-data-constraint>
             <transport-guarantee>CONFIDENTIAL</transport-guarantee>
@@ -101,7 +106,8 @@
     	</web-resource-collection>
     	<auth-constraint>
         	<role-name>32</role-name>
-        	<role-name>LIB-Users</role-name>
+        	<role-name>4708</role-name>
+        	<role-name>dams-manager-admin</role-name>
       	</auth-constraint>
         <user-data-constraint>
             <transport-guarantee>CONFIDENTIAL</transport-guarantee>
@@ -117,7 +123,6 @@
 	</security-role>	
 
 	<security-role>
-		<role-name>LIB-Users</role-name>
-	</security-role>	
-
+		<role-name>dams-manager-admin</role-name>
+	</security-role>
 </web-app>

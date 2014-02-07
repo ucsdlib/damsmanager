@@ -1,7 +1,7 @@
 package edu.ucsd.library.xdre.web;
 
 import java.io.File;
-import java.io.FilenameFilter;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,26 +29,33 @@ public class DirectoryController implements Controller {
 
 	
 	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		String dirFilter = request.getParameter("filter");
+		String dirFilter = request.getParameter("filter"); 
+		boolean subList = request.getParameter("subList") !=null;   // When parameter subList provided, listing the child directories only and return it in JSON data format.
+		boolean listOnly = request.getParameter("listOnly") !=null; // When parameter listOnly provided, won't recursively list the whole directories but children and parent.
 		String damsStaging = Constants.DAMS_STAGING;
 		
 		File saFile = null;
 		String[] saFiles = null;
 		// With wildcard filtering
 		if(dirFilter != null && (dirFilter=dirFilter.trim()).length() > 0){
-			List<String> filteredFiles = new ArrayList<String>();
-			damsStaging += "/" + dirFilter;
+			damsStaging += (dirFilter.startsWith("/")?"":"/") + dirFilter;
 			saFile = new File(damsStaging);
 			final String dirName = saFile.getName();
-			saFile = saFile.getParentFile();
-			String[] lFiles = saFile.list();
-			int len = lFiles.length;
-			for(int i=0; i<len; i++){
-				if(FilenameUtils.wildcardMatchOnSystem(lFiles[i].toLowerCase(), dirName))
-					filteredFiles.add(lFiles[i]);
+			if(subList){
+				saFiles = saFile.list();
+			}else{
+				saFile = saFile.getParentFile();
+				String[] lFiles = saFile.list();
+				int len = lFiles.length;
+				List<String> filteredFiles = new ArrayList<String>();
+				for(int i=0; i<len; i++){
+					if(FilenameUtils.wildcardMatchOnSystem(lFiles[i].toLowerCase(), dirName))
+						filteredFiles.add(lFiles[i]);
+				}
+				saFiles = filteredFiles.toArray(new String[filteredFiles.size()]);
 			}
 			
-			saFiles = filteredFiles.toArray(new String[filteredFiles.size()]);
+			
 		}else{
 			saFile = new File(damsStaging);
 			saFiles = saFile.list();
@@ -58,26 +65,31 @@ public class DirectoryController implements Controller {
 		JSONObject saObj = new JSONObject();
 		JSONArray dirsArr = new JSONArray();
 		String rootMessage = "[Staging Area]";
-		if(saFiles == null || saFiles.length == 0)
-			rootMessage = "[No results: " + saFile.getAbsolutePath() + "]";
+		
+		if(!saFile.equals(new File(Constants.DAMS_STAGING))){
+			rootMessage = saFile.getName();
+		}
+		
 		saObj.put(rootMessage, dirsArr);
 		
-		File sDir = new File(Constants.DAMS_STAGING);
-		File pFile = saFile;
-		if(pFile.compareTo(sDir) > 0){
-			List<String> folders = new ArrayList<String>();
-			do{
-				folders.add(0, pFile.getName());
-				pFile = pFile.getParentFile();
-			}while(pFile.compareTo(sDir) > 0);
-			
-			String curFolder = null;
-			for(int i=0; i<folders.size(); i++){
-				curFolder = folders.get(i);
-				tmpFile = new File(pFile.getPath() + File.separatorChar + curFolder);
-				appendFolder(dirsArr, tmpFile, false);
-				dirsArr = (JSONArray) ((JSONObject)dirsArr.get(0)).get(curFolder);
-				pFile = tmpFile;
+		if(!subList){
+			File sDir = new File(Constants.DAMS_STAGING);
+			File pFile = saFile;
+			if(pFile.compareTo(sDir) > 0){
+				List<String> folders = new ArrayList<String>();
+				do{
+					folders.add(0, pFile.getName());
+					pFile = pFile.getParentFile();
+				}while(pFile.compareTo(sDir) > 0);
+				
+				String curFolder = null;
+				for(int i=0; i<folders.size(); i++){
+					curFolder = folders.get(i);
+					tmpFile = new File(pFile.getPath() + File.separatorChar + curFolder);
+					appendFolder(dirsArr, tmpFile, false);
+					dirsArr = (JSONArray) ((JSONObject)dirsArr.get(0)).get(curFolder);
+					pFile = tmpFile;
+				}
 			}
 		}
 		
@@ -86,15 +98,23 @@ public class DirectoryController implements Controller {
 			for(int i = 0; i<saFiles.length; i++){
 				tmpFile = new File(saFile.getPath() + File.separatorChar + saFiles[i]);
 				if(tmpFile.isDirectory()){
-					appendFolder(dirsArr, tmpFile, true);
+					appendFolder(dirsArr, tmpFile, !listOnly);
 				}
 			}
 		}
-		//System.out.println("Directory Tree: " + saObj.toString());
-		Map dataMap = new HashMap();
-		dataMap.put("stagingArea", Constants.DAMS_STAGING);
-		dataMap.put("dirPaths", saObj.toString());
-		return new ModelAndView("directory", "model", dataMap);
+		if(subList){
+			response.setContentType("text/plain");
+			OutputStream out = response.getOutputStream();
+			out.write(saObj.get(rootMessage).toString().getBytes("UTF-8"));
+			out.close();
+			return null;
+		}else{
+			//System.out.println("Directory Tree: " + saObj.toString());
+			Map dataMap = new HashMap();
+			dataMap.put("stagingArea", Constants.DAMS_STAGING);
+			dataMap.put("dirPaths", saObj.toString());
+			return new ModelAndView("directory", "model", dataMap);
+		}
 	}
 	
 	private void appendFolder(JSONArray parent, File file, boolean listAll){
