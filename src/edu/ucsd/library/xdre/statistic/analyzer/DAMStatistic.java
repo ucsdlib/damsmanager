@@ -374,9 +374,10 @@ public class DAMStatistic extends Statistics{
 	}
 	
 	
-	public static void parseKeywords(String keywordsStr, Map<String, Integer> keywordsMap, Map<String, Integer> phrasesMap){
+	public static void parseKeywords(String keywordsStr, Map<String, Integer> keywordsMap, Map<String, Integer> phrasesMap) throws UnsupportedEncodingException{
 		String tmp = "";
 		int i = 0;
+		keywordsStr = URLDecoder.decode(keywordsStr, "UTF-8");
 		char[] str = keywordsStr.trim().toCharArray();
 		int len = str.length;
 		while(i < len){
@@ -425,7 +426,7 @@ public class DAMStatistic extends Statistics{
 				if(keyword.equals("\"\"") || keyword.equals("\""))
 					keyword = "";
 				else {
-					keyword = keyword.substring(1, keyword.length()-1);
+					keyword = keyword.substring(1, keyword.length()-1).trim();
 					if(keyword.indexOf(" ") > 0)
 						increaseWordCount(keyword, phrasesMap);
 					else
