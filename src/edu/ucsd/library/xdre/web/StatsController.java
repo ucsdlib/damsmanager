@@ -43,7 +43,6 @@ public class StatsController implements Controller {
 		String[] apps2sum = {"pas"};
 		if(request.isUserInRole(Constants.CURATOR_ROLE)){
 			isCas = true;
-			apps2sum = APPS;
 		}
 
 		try {
