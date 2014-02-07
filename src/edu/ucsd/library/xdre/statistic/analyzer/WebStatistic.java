@@ -2,9 +2,7 @@ package edu.ucsd.library.xdre.statistic.analyzer;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 import org.apache.log4j.Logger;
 
@@ -47,10 +45,8 @@ public class WebStatistic extends Statistics{
 				returnValue = ps.executeUpdate();
 				log.info("Deleted " + appName + " statistics record for date " + dateFormat.format(calendar.getTime()));
 			}finally{
-				if(ps != null){
-					ps.close();
-					ps = null;
-				}
+				Statistics.close(ps);
+				ps = null;
 			}
 		}
 		//WEB_STATS insert
@@ -62,10 +58,8 @@ public class WebStatistic extends Statistics{
 			ps.setString(4, appName);
 			returnValue = ps.executeUpdate();
 		}finally{
-			if(ps != null){
-				ps.close();
-				ps = null;
-			}
+			Statistics.close(ps);
+			ps = null;
 		}
 		log.info("Inserted " + appName + " statistics record for " + dateFormat.format(calendar.getTime()));
 	}

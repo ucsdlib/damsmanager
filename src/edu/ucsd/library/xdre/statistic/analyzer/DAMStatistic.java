@@ -218,10 +218,8 @@ public class DAMStatistic extends Statistics{
 				returnValue = ps.executeUpdate();
 				log.info("Deleted " + appName + " statistics record for date " + dateFormat.format(calendar.getTime()));
 			}finally{
-				if(ps != null){
-					ps.close();
-					ps = null;
-				}
+				Statistics.close(ps);
+				ps = null;
 			}
 		}
 		//WEB_STATS insert
@@ -233,10 +231,8 @@ public class DAMStatistic extends Statistics{
 			ps.setString(4, appName);
 			returnValue = ps.executeUpdate();
 		}finally{
-			if(ps != null){
-				ps.close();
-				ps = null;
-			}
+			Statistics.close(ps);
+			ps = null;
 		}
 		
 		//STATS_DLP insert
@@ -249,10 +245,8 @@ public class DAMStatistic extends Statistics{
 			ps.setInt(5, numHomePage);
 			returnValue = ps.executeUpdate();
 		}finally{
-			if(ps != null){
-				ps.close();
-				ps = null;
-			}
+			Statistics.close(ps);
+			ps = null;
 		}
 		
 		//STATS_DLP_COLLECTION_ACCESS_INSERT insert
@@ -271,10 +265,8 @@ public class DAMStatistic extends Statistics{
 				ps.clearParameters();
 			}
 		}finally{
-			if(ps != null){
-				ps.close();
-				ps = null;
-			}
+			Statistics.close(ps);
+			ps = null;
 		}
 		
 		//STATS_DLP_OBJECT_ACCESS_INSERT insert
@@ -291,10 +283,8 @@ public class DAMStatistic extends Statistics{
 				ps.clearParameters();
 			}
 		}finally{
-			if(ps != null){
-				ps.close();
-				ps = null;
-			}
+			Statistics.close(ps);
+			ps = null;
 		}
 		
 		//Keywords/Phrases STATS_DLC_KEYWORDS_INSERT insert
@@ -325,10 +315,8 @@ public class DAMStatistic extends Statistics{
 				ps.clearParameters();
 			}
 		}finally{
-			if(ps != null){
-				ps.close();
-				ps = null;
-			}
+			Statistics.close(ps);
+			ps = null;
 		}
 		log.info("Inserted " + appName + " statistics record for " + dateFormat.format(calendar.getTime()));
 	}

@@ -13,6 +13,7 @@ import java.util.Map;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.log4j.Logger;
 
+import edu.ucsd.library.xdre.statistic.analyzer.Statistics;
 import edu.ucsd.library.xdre.statistic.beans.DAMSKeywordsSummary;
 import edu.ucsd.library.xdre.statistic.beans.StatSummary;
 
@@ -100,18 +101,10 @@ public class DAMSKeywordsUsage extends StatsUsage {
 				}
 			}
 		}finally{
-			if(rs != null){
-				try{
-					rs.close();
-					rs = null;
-				}catch(SQLException e){}
-			}
-			if(ps != null){
-				try{
-					ps.close();
-					ps = null;
-				}catch(SQLException e){}
-			}
+			Statistics.close(rs);
+			Statistics.close(ps);
+			rs = null;
+			ps = null;
 		}
 		
 		int returnSize = dlpSum.size();
@@ -152,18 +145,10 @@ public class DAMSKeywordsUsage extends StatsUsage {
 				count = rs.getInt(1);
 			}
 		}finally{
-			if(rs != null){
-				try{
-					rs.close();
-					rs = null;
-				}catch(SQLException e){}
-			}
-			if(ps != null){
-				try{
-					ps.close();
-					ps = null;
-				}catch(SQLException e){}
-			}
+			Statistics.close(rs);
+			Statistics.close(ps);
+			rs = null;
+			ps = null;
 		}
 		return count;
 	}

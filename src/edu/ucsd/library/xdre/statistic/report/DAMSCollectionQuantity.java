@@ -3,7 +3,6 @@ package edu.ucsd.library.xdre.statistic.report;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
@@ -11,6 +10,7 @@ import java.util.TreeMap;
 
 import org.apache.log4j.Logger;
 
+import edu.ucsd.library.xdre.statistic.analyzer.Statistics;
 import edu.ucsd.library.xdre.statistic.beans.DAMSCollectionStats;
 import edu.ucsd.library.xdre.statistic.beans.StatSummary;
 
@@ -48,18 +48,10 @@ public class DAMSCollectionQuantity extends StatsUsage {
 				dlpSum.put(statSum.getPeriod(), statSum);
 			}
 		}finally{
-			if(rs != null){
-				try{
-					rs.close();
-					rs = null;
-				}catch(SQLException e){}
-			}
-			if(ps != null){
-				try{
-					ps.close();
-					ps = null;
-				}catch(SQLException e){}
-			}
+			Statistics.close(rs);
+			Statistics.close(ps);
+			rs = null;
+			ps = null;
 		}
 		
 		return dlpSum.values();

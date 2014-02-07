@@ -11,6 +11,7 @@ import java.util.TreeMap;
 
 import org.apache.log4j.Logger;
 
+import edu.ucsd.library.xdre.statistic.analyzer.Statistics;
 import edu.ucsd.library.xdre.statistic.beans.DAMSItemSummary;
 import edu.ucsd.library.xdre.statistic.beans.DAMSummary;
 import edu.ucsd.library.xdre.statistic.beans.StatSummary;
@@ -67,18 +68,10 @@ public class DAMSUsage extends StatsUsage {
 				dlpSum.put(statSum.getPeriod(), statSum);
 			}
 		}finally{
-			if(rs != null){
-				try{
-					rs.close();
-					rs = null;
-				}catch(SQLException e){}
-			}
-			if(ps != null){
-				try{
-					ps.close();
-					ps = null;
-				}catch(SQLException e){}
-			}
+			Statistics.close(rs);
+			Statistics.close(ps);
+			rs = null;
+			ps = null;
 		}
 		
 		//DAMS unique items usage

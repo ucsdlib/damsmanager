@@ -192,18 +192,10 @@ public class LogAnalyzer{
 			if(rs.next() && rs.getInt(1) > 0)
 				return true;
 		}finally{
-			if(rs != null){
-				try {
-					rs.close();
-					rs = null;
-				} catch (SQLException e) {}
-			}
-			if(ps != null){
-				try {
-					ps.close();
-					ps = null;
-				} catch (SQLException e) {}
-			}
+			Statistics.close(rs);
+			Statistics.close(ps);
+			rs = null;
+			ps = null;
 		}
 		return false;
 	}

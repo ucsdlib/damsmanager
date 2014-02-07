@@ -7,8 +7,6 @@ import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.Date;
 
-import javax.mail.MessagingException;
-import javax.mail.internet.AddressException;
 import javax.naming.NamingException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -109,6 +107,7 @@ public class StatsQuantityAnalyzerController implements Controller {
 				}
 			}finally{
 				Statistics.close(con);
+				con = null;
 				if(damsClient != null){
 					try {
 						damsClient.close();

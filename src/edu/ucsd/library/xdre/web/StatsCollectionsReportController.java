@@ -43,7 +43,6 @@ public class StatsCollectionsReportController implements Controller {
 	
 	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
-		DAMSClient damsClient = null;
 		String message = "";
 		boolean successful = true;
 		boolean current = request.getParameter("current")!=null;
@@ -58,11 +57,6 @@ public class StatsCollectionsReportController implements Controller {
 				e.printStackTrace();
 				successful = false;
 				message += "Failed to generate report. Internal error: " + e.getMessage();
-			}finally{
-				if(damsClient != null){
-					damsClient.close();
-					damsClient = null;
-				}
 			}
 		}
 		OutputStream out = null;
@@ -290,6 +284,7 @@ public class StatsCollectionsReportController implements Controller {
 			}
 		}finally{
 			Statistics.close(rs);
+			Statistics.close(ps);
 			Statistics.close(con);
 			rs = null;
 			ps = null;

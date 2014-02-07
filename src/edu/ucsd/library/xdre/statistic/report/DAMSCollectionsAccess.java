@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import edu.ucsd.library.xdre.statistic.analyzer.Statistics;
 import edu.ucsd.library.xdre.statistic.beans.DAMSCollectionAccess;
 import edu.ucsd.library.xdre.statistic.beans.StatSummary;
 
@@ -82,18 +83,10 @@ public class DAMSCollectionsAccess extends StatsUsage{
 				colStats.put(period, dlpColAccess);
 			}
 		}finally{
-			if(rs != null){
-				try{
-					rs.close();
-					rs = null;
-				}catch(SQLException e){}
-			}
-			if(ps != null){
-				try{
-					ps.close();
-					ps = null;
-				}catch(SQLException e){}
-			}
+			Statistics.close(rs);
+			Statistics.close(ps);
+			rs = null;
+			ps = null;
 		}
 		
 		int idx = -1;
