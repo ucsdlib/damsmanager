@@ -69,8 +69,11 @@ public class DAMSQuantityStats {
 					rs = getQueryResult(con, Statistics.COLLECTION_STATS_RECORD_EXIST, params);
 					exists = rs.next();
 				}finally{
-					Statistics.close(rs);
-					rs = null;
+					if(rs != null){
+						Statistics.close(rs.getStatement());	
+						Statistics.close(rs);
+						rs = null;
+					}
 				}
 				
 				if(!exists){
@@ -123,12 +126,8 @@ public class DAMSQuantityStats {
 				it.next().export(ps, WebStatistic.getNextId(con));
 			}
 		}finally{
-			if(ps != null){
-				try{
-					ps.close();
-				}catch(Exception e){e.printStackTrace();}
-				ps = null;
-			}
+			Statistics.close(ps);
+			ps = null;
 		}
 	}
 	
@@ -149,11 +148,10 @@ public class DAMSQuantityStats {
 			rs = ps.executeQuery();
 		}catch(SQLException e){
 			e.printStackTrace();
-			if(rs != null){
-				Statistics.close(rs);
-				rs = null;
-				ps = null;
-			}
+			Statistics.close(rs);
+			Statistics.close(ps);
+			rs = null;
+			ps = null;
 			throw e;
 		}
 		return rs;

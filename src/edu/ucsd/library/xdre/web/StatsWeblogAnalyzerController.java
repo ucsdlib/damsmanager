@@ -1,7 +1,6 @@
 package edu.ucsd.library.xdre.web;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -134,12 +133,9 @@ public class StatsWeblogAnalyzerController implements Controller {
 					throw new Exception(message);
 			}
 		}finally{
-			if(con != null){
-				try{
-					con.close();
-				}catch(SQLException e){}
-				con = null;
-			}
+			con.setAutoCommit(true);
+			Statistics.close(con);
+			con = null;
 		}
 	}
 	

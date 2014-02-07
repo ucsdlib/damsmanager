@@ -26,6 +26,7 @@ import org.json.simple.JSONValue;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
+import edu.ucsd.library.xdre.statistic.analyzer.Statistics;
 import edu.ucsd.library.xdre.statistic.beans.DAMSItem;
 import edu.ucsd.library.xdre.statistic.report.StatsUsage;
 import edu.ucsd.library.xdre.utils.Constants;
@@ -78,24 +79,12 @@ public class StatsPopularController implements Controller {
 			e.printStackTrace();
 			message += "Error: " + e.getMessage();
 		}finally{
-			if(rs != null){
-				try{
-					rs.close();
-					rs = null;
-				}catch(SQLException e){}
-			}
-			if(ps != null){
-				try{
-					ps.close();
-					ps = null;
-				}catch(SQLException e){}
-			}
-			if(con != null){
-				try{
-					con.close();
-					con = null;
-				}catch(SQLException e){}
-			}
+			Statistics.close(rs);
+			Statistics.close(ps);
+			Statistics.close(con);
+			rs = null;
+			ps = null;
+			con = null;
 		}
 		
 		String data = "";

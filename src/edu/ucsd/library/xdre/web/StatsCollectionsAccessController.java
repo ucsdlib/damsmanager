@@ -56,7 +56,7 @@ public class StatsCollectionsAccessController implements Controller {
 		String[] apps2sum = {"pas"};
 		if(request.isUserInRole(Constants.CURATOR_ROLE)){
 			isCas = true;
-			apps2sum = APPS;
+			//apps2sum = APPS;
 		}
 		
 		DAMSClient damsClient = null;
@@ -130,12 +130,8 @@ public class StatsCollectionsAccessController implements Controller {
 			e.printStackTrace();
 			message += "Error: " + e.getMessage();
 		}finally{
-			if(con != null){
-				try{
-					con.close();
-					con = null;
-				}catch(SQLException e){}
-			}
+			Statistics.close(con);
+			con=null;
 			if(damsClient != null){
 				try{
 					damsClient.close();

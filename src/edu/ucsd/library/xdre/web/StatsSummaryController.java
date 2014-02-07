@@ -68,7 +68,7 @@ public class StatsSummaryController implements Controller {
 		String[] apps2sum = {"pas"};
 		if(request.isUserInRole(Constants.CURATOR_ROLE)){
 			isCas = true;
-			apps2sum = APPS;
+			//apps2sum = APPS;
 		}else{
 			solrParams += "q=has_model_ssim:\"info:fedora/afmodel:DamsProvenanceCollection\"+OR+has_model_ssim:\"info:fedora/afmodel:DamsProvenanceCollectionPart\"+OR+has_model_ssim:\"info:fedora/afmodel:DamsAssembledCollection\"+OR+has_model_ssim:\"info:fedora/afmodel:DamsCollection\"&fl=id&rows=500";
 			SAXReader saxReader = new SAXReader();
@@ -133,12 +133,8 @@ public class StatsSummaryController implements Controller {
 			e.printStackTrace();
 			message += "Error: " + e.getMessage();
 		}finally{
-			if(con != null){
-				try{
-					con.close();
-					con = null;
-				}catch(SQLException e){}
-			}
+			Statistics.close(con);
+			con = null;
 		}
 		if(export == null){
 			model.put("isCas", isCas);

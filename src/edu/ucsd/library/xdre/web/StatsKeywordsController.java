@@ -58,7 +58,7 @@ public class StatsKeywordsController implements Controller {
 		String apps2sum = "pas";
 		if(request.isUserInRole(Constants.CURATOR_ROLE)){
 			isCas = true;
-			apps2sum = "dlp";
+			//apps2sum = "dlp";
 		}
 		
 		boolean moreKeywords = false;
@@ -127,12 +127,8 @@ public class StatsKeywordsController implements Controller {
 			e.printStackTrace();
 			message += "Error: " + e.getMessage();
 		}finally{
-			if(con != null){
-				try{
-					con.close();
-					con = null;
-				}catch(SQLException e){}
-			}
+			Statistics.close(con);
+			con=null;
 		}
 
 		if(startDate != null && startDate.length() > 0)

@@ -3,7 +3,6 @@ package edu.ucsd.library.xdre.statistic.report;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
@@ -12,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import edu.ucsd.library.xdre.statistic.analyzer.Statistics;
 import edu.ucsd.library.xdre.statistic.beans.StatSummary;
 
 /**
@@ -79,18 +79,10 @@ public class DAMSAppUsage extends StatsUsage{
 				colPageList.add(rs.getString("num_colpage"));
 			}
 		}finally{
-			if(rs != null){
-				try{
-					rs.close();
-					rs = null;
-				}catch(SQLException e){}
-			}
-			if(ps != null){
-				try{
-					ps.close();
-					ps = null;
-				}catch(SQLException e){}
-			}
+			Statistics.close(rs);
+			Statistics.close(ps);
+			rs = null;
+			ps = null;
 		}
 		int pSize = periodsList.size();
 		if(statsFormat.equals(MONTHLY_FORMAT) && pSize < 12){

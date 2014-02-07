@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
+import edu.ucsd.library.xdre.statistic.analyzer.Statistics;
 import edu.ucsd.library.xdre.statistic.report.DAMSAppUsage;
 import edu.ucsd.library.xdre.statistic.report.DAMSItemUsage;
 import edu.ucsd.library.xdre.statistic.report.StatsUsage;
@@ -78,12 +79,8 @@ public class StatsUsageController implements Controller {
 			e.printStackTrace();
 			message += "Error: " + e.getMessage();
 		}finally{
-			if(con != null){
-				try{
-					con.close();
-					con = null;
-				}catch(SQLException e){}
-			}
+			Statistics.close(con);
+			con = null;
 		}
 		
 		model.put("isCas", isCas);
