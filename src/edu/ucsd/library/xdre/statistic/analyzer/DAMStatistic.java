@@ -100,7 +100,7 @@ public class DAMStatistic extends Statistics{
 								//System.out.println(tokens[0] + " => " + tokens[1]);
 								if( tokens[0].equals("q") ){
 									searchParams.add(tokens);
-								}else if( tokens[0].startsWith("f[") || tokens[0].startsWith("f%5B") ){
+								}else if( tokens[0].startsWith("f[") || tokens[0].startsWith("f%5B")){
 									browseParams.add(tokens);
 									if( tokens[0].indexOf("collection_sim") > 0 )
 										isColAccess = true;
@@ -116,27 +116,31 @@ public class DAMStatistic extends Statistics{
 					}
 					if(isColAccess && id != null){
 						//Collection access
+						numBrowse++;
 						increaseCollectionAccess(id, collsAccessMap, collsMap);
 					}else if(browseParams.size() > 0 || page > 0){
 						//Facet browse
 						numBrowse++;
 						isBrowse = true;
-					}else
+					}else{
 						//Search
 						numSearch++;
+					}
 					
-					if(searchParams.size() > 0 && isBrowse){
-						String keywords = searchParams.get(0)[1];
-						if(keywords != null && keywords.length() > 0)
-						try {
-							keywords = URLDecoder.decode(keywords, "UTF-8");
-							parseKeywords(keywords, keywordsMap, phrasesMap);
-						} catch (UnsupportedEncodingException e) {
-							System.out.println("Unsupported UTF-8 encoding for keywords: '" + keywords + "' in " + uri );
-							e.printStackTrace();
-						} catch (Exception e) {
-							System.out.println("Invalid URL encoding for keywords: '" + keywords + "' in " + uri );
-							e.printStackTrace();
+					if(searchParams.size() > 0 && !isBrowse){
+						String[] tokens = searchParams.get(0);
+						String keywords = tokens.length==2?tokens[1]:null;
+						if(keywords != null && keywords.length() > 0){
+							try {
+								keywords = URLDecoder.decode(keywords, "UTF-8");
+								parseKeywords(keywords, keywordsMap, phrasesMap);
+							} catch (UnsupportedEncodingException e) {
+								System.out.println("Unsupported UTF-8 encoding for keywords: '" + keywords + "' in " + uri );
+								e.printStackTrace();
+							} catch (Exception e) {
+								System.out.println("Invalid URL encoding for keywords: '" + keywords + "' in " + uri );
+								e.printStackTrace();
+							}
 						}
 					}
 				}else if (parts.length >= 3 && parts[2].equals("facet")){
