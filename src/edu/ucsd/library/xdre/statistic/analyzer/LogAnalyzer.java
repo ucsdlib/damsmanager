@@ -85,16 +85,17 @@ public class LogAnalyzer{
 			int spIdx = -1;
 			while((line=bReader.readLine()) != null){
 				spIdx = line.indexOf("GET /dc");
-				if(spIdx > 0 && line.indexOf(Constants.CLUSTER_HOST_NAME) > 0 && line.indexOf("/assets") < 0){
+				if(spIdx > 0 && line.indexOf(Constants.CLUSTER_HOST_NAME) > 0 
+						&& line.indexOf("/assets/") < 0 && line.indexOf("/get_data/") < 0 && line.indexOf("/users/") < 0){
 					uri = getUri(line);
 					if(uri != null){
 						//idx = uri.indexOf("&user=");
 						String[] uriParts = (uri.length()>1?uri.substring(1):uri).split("/");
 						if(uriParts.length>1 && uriParts[1].equals("object")){
 							//Object access: /dc/object/oid/cid/_fid
-								pasStats.addObject(uri);
+							pasStats.addObject(uri);
 						}else{
-							//Home Page: /dc //
+							//Home Page: /dc
 							//Search: /dc/search?utf8=%E2%9C%93&q=wagner
 							//Facet Browse: /dc/search?utf8=%E2%9C%93&f%5Bcollection_sim%5D%5B%5D=Dr.+Seuss+Political+Cartoons&q=some+people
 							//Collections Browser: /dc/search?utf8=%E2%9C%93 ?????????????????
