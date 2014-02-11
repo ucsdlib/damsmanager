@@ -18,6 +18,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -74,7 +75,8 @@ public class StatsKeywordsController implements Controller {
 		if(searchKeyword != null && (searchKeyword=searchKeyword.trim()).length() > 0){
 			//query = StatsUsage.DLC_KEYWORDS_LIKE_QUERY;
 			searchKeyword = URLDecoder.decode(searchKeyword, "UTF-8");
-		}
+		}else
+			searchKeyword = null;
 		
 		try {
 			con = Constants.DAMS_DATA_SOURCE.getConnection();
@@ -166,17 +168,20 @@ public class StatsKeywordsController implements Controller {
 			}
 			response.setContentType("text/plain;charset=UTF-8");
 			OutputStream out = response.getOutputStream();
-			out.write(jsonObj.toString().getBytes());
+			out.write(jsonObj.toJSONString().getBytes());
 			return null;
 		}
     }
 	
-	public static JSONObject toJson(Collection<StatSummary> keywordSums){
-		JSONObject keywords = new JSONObject();
+	public static JSONArray toJson(List<StatSummary> keywordSums){
+		JSONArray keywords = new JSONArray();
+		JSONObject keyword = null;
 		DAMSKeywordsSummary keywordSum = null;
-		for(Iterator it=keywordSums.iterator();it.hasNext();){
-			keywordSum = (DAMSKeywordsSummary)it.next();
-			keywords.put(keywordSum.getKeyword(), keywordSum.getNumOfUsage());
+		for(int i=0; i<keywordSums.size();i++){
+			keyword = new JSONObject();
+			keywordSum = (DAMSKeywordsSummary)keywordSums.get(i);
+			keyword.put(keywordSum.getKeyword(), keywordSum.getNumOfUsage());
+			keywords.add(keyword);
 		}
 		return keywords;
 	}
