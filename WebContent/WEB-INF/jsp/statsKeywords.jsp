@@ -47,11 +47,13 @@
 					 }else
 					 	$("#kPagingNext").addClass("pagingNone");
 					
-					var count = 0;
-					for (var propName in keywords) {
-						count++;
-						dispVal = wrapWords(propName, 35);
-						keywordsHtml += "<li>" + dispVal + " (" + keywords[propName] + ")</li>";
+					var count = keywords.length;
+					for (var i=0; i<count; i++) {
+						var item = keywords[i];
+						for (var propName in item){
+							dispVal = wrapWords(propName, 35);
+							keywordsHtml += "<li>" + dispVal + " (" + item[propName] + ")</li>";
+						}
 					}
 					var resulrText = "<div class=\"resultText\">" + ((page-1)*20+1) + " to " + ((page-1)*20+count) + " of " + jsondata["keywordsTotal"] + ": </div>";		
 					keywordsHtml = resulrText + "<ul>" + keywordsHtml + "</ul>";
@@ -80,11 +82,13 @@
 					 }else
 					 	$("#pPagingNext").addClass("pagingNone");
 					
-					var count = 0;
-					for (var propName in keywords) {
-						count++;
-						dispVal = wrapWords(propName, 35);
-						keywordsHtml += "<li>" + dispVal + " (" + keywords[propName] + ")</li>";
+					var count = keywords.length;
+					for (var i=0; i<count; i++) {
+						var item = keywords[i];
+						for (var propName in item){
+							dispVal = wrapWords(propName, 35);
+							keywordsHtml += "<li>" + dispVal + " (" + item[propName] + ")</li>";
+						}
 					}
 					var resulrText = "<div class=\"resultText\">" + ((page-1)*20+1) + " to " + ((page-1)*20+count) + " of " + jsondata["phrasesTotal"] + ": </div>";	
 					keywordsHtml =  resulrText + "<ul>" + keywordsHtml + "</ul>";
