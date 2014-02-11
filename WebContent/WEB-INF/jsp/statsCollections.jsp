@@ -54,7 +54,7 @@
 				</c:forEach>
 			</tbody>
 		</table>
-		<div class="export"><a href="/damsmanager/statsDlpColls.do?start=${model.start}&export"><img src="images/excel-icon.png" border="0" width="16px" /><span style="display:table-cell;vertical-align:top;font-size:11ps;font-weight:bold;">&nbsp;Export to Excel</span></a></div>
+		<div class="export"><a href="/damsmanager/statsCollections.do?start=${model.start}&export"><img src="images/excel-icon.png" border="0" width="16px" /><span style="display:table-cell;vertical-align:top;font-size:11ps;font-weight:bold;">&nbsp;Export to Excel</span></a></div>
 	</div>
 	<div id="message" align="left" class="errorBody">${model.message}</div>
 </div>

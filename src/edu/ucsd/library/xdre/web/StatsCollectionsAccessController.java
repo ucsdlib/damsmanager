@@ -110,6 +110,8 @@ public class StatsCollectionsAccessController implements Controller {
 					for(Iterator<String> it=colStatsData.keySet().iterator(); it.hasNext();){
 						colId = (String)it.next();
 						colTitle = colMap.get(colId);
+						if(colTitle == null)
+							colTitle = colId;
 						idx = colTitle.lastIndexOf("[");
 						colStatsArr = (int[])colStatsData.get(colId);
 						strBuf.append(colTitle.substring(0, (idx>0?idx:colTitle.length())) + "\t");
