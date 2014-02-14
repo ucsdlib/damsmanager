@@ -190,8 +190,8 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 								props = licenseProperties(parentNode);
 							}  else if (nName.endsWith(RELATEDRESOURCE)){
 								// Copyright records use dams:copyrightStatus, plus other properties in the next step.
-								field = "type_tesim";
-								xPath = "dams:type";
+								field = "description_tesim";
+								xPath = "dams:description";
 								tNode = parentNode.selectSingleNode(xPath);
 								props = relatedResourceProperties(parentNode);
 							} else if(elemXPath.indexOf("mads", elemXPath.lastIndexOf('/') + 1) >= 0){
@@ -640,7 +640,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	
 	private Map<String, String> getRelatedResourcePropNames(){
 		Map<String, String> propNames = new HashMap<String, String>();
-		propNames.put("dams:description", "description_tesim");
+		propNames.put("dams:type", "type_tesim");
 		propNames.put("dams:uri", "uri_tesim");
 		return propNames;
 	}
