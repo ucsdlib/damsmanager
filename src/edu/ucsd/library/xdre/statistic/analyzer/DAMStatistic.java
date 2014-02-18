@@ -28,6 +28,9 @@ import org.apache.log4j.Logger;
 public class DAMStatistic extends Statistics{
 	private static Logger log = Logger.getLogger(DAMStatistic.class);
 	
+	public static String NEW_FORM_URL = "/new";
+	public static String EDIT_FORM_URL = "/edit";
+	
 	protected int numSearch =0;
 	protected int numBrowse =0;
 	protected int numColPage =0;
@@ -59,7 +62,7 @@ public class DAMStatistic extends Statistics{
 	}
 
 	public void addAccess(String uri) throws UnsupportedEncodingException{
-		numAccess++;
+		
 		int idx = uri.indexOf("?");
 		String uriPart = null;
 		String paramsPart = null;
@@ -71,6 +74,7 @@ public class DAMStatistic extends Statistics{
 			uriPart = uri;
 		String[] parts = uriPart.substring(1).split("/");
 		if(parts.length >=1 && parts.length <=4){
+			numAccess++;
 			if ( parts.length == 1 ){
 				// home page access.
 				numHomePage++;
@@ -116,8 +120,9 @@ public class DAMStatistic extends Statistics{
 					}
 					if(isColAccess && id != null){
 						//Collection access
+						isBrowse = true;
 						numBrowse++;
-						increaseCollectionAccess(id, collsAccessMap, collsMap);
+						//increaseCollectionAccess(id, collsAccessMap, collsMap);
 					}else if(browseParams.size() > 0 || page > 0){
 						//Facet browse
 						numBrowse++;
@@ -135,10 +140,10 @@ public class DAMStatistic extends Statistics{
 								keywords = URLDecoder.decode(keywords, "UTF-8");
 								parseKeywords(keywords, keywordsMap, phrasesMap);
 							} catch (UnsupportedEncodingException e) {
-								System.out.println("Unsupported UTF-8 encoding for keywords: '" + keywords + "' in " + uri );
+								log.info("Unsupported UTF-8 encoding for keywords: '" + keywords + "' in " + uri );
 								e.printStackTrace();
 							} catch (Exception e) {
-								System.out.println("Invalid URL encoding for keywords: '" + keywords + "' in " + uri );
+								log.info("Invalid URL encoding for keywords: '" + keywords + "' in " + uri );
 								e.printStackTrace();
 							}
 						}
@@ -147,17 +152,17 @@ public class DAMStatistic extends Statistics{
 					// Facet browse: /dc/search/facet/subject_topic_sim?facet.sort=index
 					numBrowse++;
 				}else
-					System.out.println("DAMS stats unknown search uri: " + uri);
+					log.info("DAMS stats unknown search uri: " + uri);
 				
-			}else if (parts[1].equalsIgnoreCase("dams_collections") && parts.length > 2 && parts[2] != null) {
+			}else if (parts[1].endsWith("collections") && parts.length > 2 && parts[2] != null) {
 				// Collections: /dc/dams_collections/bbxxxxxxxx?counter=1
 				increaseCollectionAccess(parts[2], collsAccessMap, collsMap);
 			}else {
 				// other pages? skip for now.
-				System.out.println("DAMS stats access skip uri: " + uri);
+				log.info("DAMS stats access skip uri: " + uri);
 			}
 		}else
-			System.out.println("DAMS stats invalid uri: " + uri);
+			log.info("DAMS stats invalid uri: " + uri);
 	}
 	
 	public void addObject(String uri){
@@ -176,11 +181,17 @@ public class DAMStatistic extends Statistics{
 		String[] parts = uriPart.substring(1).split("/");
 		int len = parts.length;
 		for(int i=1;i<len;i++){
-			// /dc/object/oid/cid/_fid
 			if(parts.length >= 3 && parts.length <=5 && parts[2] !=null)
+				// /dc/object/oid/cid/_fid
 				subjectId = parts[2];
-			else
+			else if(uri.endsWith(NEW_FORM_URL)){
+				// Count new/edit object form for access: /dc/object/new, /dc/object/oid/edit
+				numAccess++;
+				return;
+			}else{
 				System.out.println("DAMS stats unknown uri: " + uri);
+				return;
+			}
 			
 			if(parts.length == 4 && parts[3] != null && parts[3].startsWith("_"))
 				fileName = parts[3];
@@ -450,12 +461,14 @@ public class DAMStatistic extends Statistics{
 		Integer count = null;
 		if(colid != null){
 			colid = colid.trim().replaceAll("[;:,?'\" ]*", "");
-				
-			count = collsAccessMap.get(colid);
-			if(count == null)
-				collsAccessMap.put(colid, 1);
-			else
-				collsAccessMap.put(colid, ++count);
+			// Only counting the ark ids for now
+			if(colid.length() == 10){
+				count = collsAccessMap.get(colid);
+				if(count == null)
+					collsAccessMap.put(colid, 1);
+				else
+					collsAccessMap.put(colid, ++count);
+			}
 		}
 	}
 	
@@ -469,8 +482,12 @@ public class DAMStatistic extends Statistics{
 		}
 		public void increaseCounter(String file){
 			access++;
-			if(file != null && file.length()>0 && !(isThumbnail(file) || isIcon(file)))
+			if(file != null && file.length()>0 && !(isThumbnail(file) || isIcon(file))){
+				// Count edit form as application access
+				if(file.endsWith(EDIT_FORM_URL))
+					numAccess++;
 				view++;
+			}
 		}
 		
 		public int getAccess() {
