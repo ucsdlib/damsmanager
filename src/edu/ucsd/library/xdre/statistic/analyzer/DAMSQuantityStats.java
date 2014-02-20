@@ -6,10 +6,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
@@ -34,9 +36,11 @@ public class DAMSQuantityStats {
 	private DAMSClient damsClient = null;
 	private Map<String, String> collectionsMap = null;
 	private List<DAMSCollectionStats> collectionStatsList = null;
+	private Set<String> collectionsTodo = null;
 	private Calendar calendar = null;
 	private SimpleDateFormat dbFormat = null;
 	private StringBuilder failedItems = new StringBuilder();
+	private boolean update = false;
 	
 	public DAMSQuantityStats(DAMSClient damsClient) throws Exception{
 		this.damsClient = damsClient;
@@ -57,7 +61,9 @@ public class DAMSQuantityStats {
 		boolean exists = false;
 		int idx = -1;
 		synchronized(log){
-			for(Iterator<String> it=collectionsMap.keySet().iterator(); it.hasNext();){
+			if(collectionsTodo == null || collectionsTodo.size() == 0)
+				collectionsTodo = collectionsMap.keySet();
+			for(Iterator<String> it=collectionsTodo.iterator(); it.hasNext();){
 				colId = it.next();
 				colTitle = (String)collectionsMap.get(colId);
 				idx = colId.lastIndexOf("/");
@@ -76,9 +82,16 @@ public class DAMSQuantityStats {
 					}
 				}
 				
-				if(!exists){
+				if(!exists || update){
 					try{
 						System.out.println("Process collection: " + colTitle + "(" + colId + ") ... ");
+						
+						if(update && exists){
+							String[] params = {Statistics.getDatabaseMonthFormater().format(calendar.getTime()), colId};
+							int returnValue = executeUpdate(con, Statistics.COLLECTION_STATS_DELETE_RECORD, params);
+							log.info("Deleted collection quantity statistics for " + colId + " month " + Statistics.getDatabaseMonthFormater().format(calendar.getTime()) + ". Return value: " + returnValue);
+						}
+						
 						colHandler = new StatsCollectionQuantityHandler(damsClient, colId);
 
 						if(!colHandler.execute()){
@@ -118,6 +131,22 @@ public class DAMSQuantityStats {
 		return failedItems.toString();
 	}
 	
+	public boolean isUpdate() {
+		return update;
+	}
+
+	public void setUpdate(boolean update) {
+		this.update = update;
+	}
+
+	public Set<String> getCollectionsTodo() {
+		return collectionsTodo;
+	}
+
+	public void setCollectionsTodo(Set<String> collectionsTodo) {
+		this.collectionsTodo = collectionsTodo;
+	}
+
 	public void export(Connection con) throws SQLException{
 		PreparedStatement ps = null;
 		try{
@@ -157,6 +186,22 @@ public class DAMSQuantityStats {
 		return rs;
 	}
 	
+	public static int executeUpdate(Connection con, String sql, String[] params) throws SQLException{
+		PreparedStatement ps = null;
+		int returnValue = -1;
+		try{
+			ps = con.prepareStatement(sql);
+			for(int i=0; i<params.length; i++){
+				ps.setString(i+1, params[i]);
+			}
+			returnValue = ps.executeUpdate();
+			
+		}finally{
+			Statistics.close(ps);
+			ps = null;
+		}
+		return returnValue;
+	}
 	public static long getItemsCount(DAMSClient damsClient, String collectionId) throws Exception{
 		return damsClient.listAllRecords().size();
 	}

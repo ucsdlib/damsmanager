@@ -6,6 +6,8 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.naming.NamingException;
 import javax.servlet.ServletException;
@@ -36,6 +38,8 @@ public class StatsQuantityAnalyzerController implements Controller {
 			
 		boolean successful = false;
 		String message = "";
+		boolean update = request.getParameter("update") != null;
+		String collection = request.getParameter("collection");
 		String numOfDaysDefered = request.getParameter("deferred");
 		int daysDeferred = 1;
 
@@ -44,8 +48,15 @@ public class StatsQuantityAnalyzerController implements Controller {
 			if(numOfDaysDefered != null && (numOfDaysDefered=numOfDaysDefered.trim()).length() > 0)
 				daysDeferred = Integer.parseInt(numOfDaysDefered);
 			sCal.add(Calendar.DATE, -daysDeferred);
-			
-			statsAnalyze(sCal.getTime());
+			Set<String> collections = null;
+			if(collection != null && (collection=collection.trim()).length()>0){
+				collections = new HashSet<String>();
+				String[] tokens = collection.split(",");
+				for(int i=0; i<tokens.length; i++){
+					collections.add(tokens[i].trim());
+				}
+			}
+			statsAnalyze(sCal.getTime(), update, collections);
 			successful = true;
 		}catch(NumberFormatException ne){
 			message += "Invalid number " + numOfDaysDefered + " for day defered: " + ne.getMessage();
@@ -78,7 +89,7 @@ public class StatsQuantityAnalyzerController implements Controller {
 		return null;
     }
 	
-	public static synchronized void statsAnalyze(Date statsDate) throws Exception{
+	public static synchronized void statsAnalyze(Date statsDate, boolean update, Set<String> collectionsTodo) throws Exception{
 		DAMSClient damsClient = null;
 		Connection con = null;
 		DAMSQuantityStats quanStats = null;
@@ -92,6 +103,8 @@ public class StatsQuantityAnalyzerController implements Controller {
 				
 				quanStats = new DAMSQuantityStats(damsClient);
 				quanStats.setCalendar(sCal);
+				quanStats.setUpdate(update);
+				quanStats.setCollectionsTodo(collectionsTodo);
 				quanStats.doStatistics(con);
 				quanStats.print();
 				Statistics.close(con);

@@ -28,6 +28,7 @@ public abstract class Statistics {
 	public static String WEB_STATS_DELETE_RECORD = "DELETE FROM WEB_STATS WHERE STAT_DATE=to_date(?,'" + DATE_FORMAT + "') AND APP_NAME=?";
 	public static String WEB_STATS_RECORD_EXIST = "SELECT COUNT(*) FROM WEB_STATS WHERE STAT_DATE=to_date(?,'" + DATE_FORMAT + "')";
 	public static String COLLECTION_STATS_RECORD_EXIST = "SELECT * FROM STATS_DLC_QUAN WHERE to_char(STAT_DATE, '" + MONTH_FORMAT + "')=? AND COLLECTION_ID=?";
+	public static String COLLECTION_STATS_DELETE_RECORD = "DELETE FROM STATS_DLC_QUAN WHERE to_char(STAT_DATE, '" + MONTH_FORMAT + "')=? AND COLLECTION_ID=?";
 	private static Logger log = Logger.getLogger(Statistics.class);
 	
 	protected int numAccess =0;
