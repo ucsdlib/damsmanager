@@ -228,7 +228,7 @@ public class StatsCollectionsReportController implements Controller {
 	
 	public static List<String> getCulturallySensitiveItems(DAMSClient damsClient, String collectionId) throws Exception{
 		String field = "id";
-		String solrQuery = "fl=" + field + "&qf=note_tesim&q=" + URLEncoder.encode("\"culturally+sensitive\"", "UTF-8") + "&fq=" + URLEncoder.encode("collections_tesim:"+collectionId, "UTF-8");
+		String solrQuery = "fl=" + field + "&q=" + URLEncoder.encode("\"cultural sensitivity\"", "UTF-8") + "&qf=otherRights_tesim&fq=" + URLEncoder.encode("collections_tesim:" + collectionId, "UTF-8");
 		return getSOLRResults(damsClient, solrQuery, field);
 	}
 	
