@@ -9,9 +9,12 @@ import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import javax.servlet.http.HttpServletRequest;
@@ -24,6 +27,8 @@ import org.dom4j.Node;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
+import edu.ucsd.library.xdre.collection.CollectionHandler;
+import edu.ucsd.library.xdre.collection.StatsCollectionQuantityHandler;
 import edu.ucsd.library.xdre.statistic.analyzer.Statistics;
 import edu.ucsd.library.xdre.statistic.report.StatsUsage;
 import edu.ucsd.library.xdre.utils.Constants;
@@ -40,6 +45,7 @@ public class StatsCollectionsReportController implements Controller {
 	private static Logger log = Logger.getLogger(StatsCollectionsReportController.class);
 	private static String STATUSREPORT = null;
 	private static NumberFormat NUM_FORMATER = new DecimalFormat("#,###");
+	private static String UNIT = "unit";
 	
 	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
@@ -93,6 +99,8 @@ public class StatsCollectionsReportController implements Controller {
 		strBuf.append("UCSD Library DAMS Collections Report - " + ReportFormater.getCurrentTimestamp() + "\n");
 		strBuf.append("Collection\tType\tUnit\tSearchable Items\tItems Count\tSize(MB)\tView\tPublic\tUCSD\tCurator\tRestricted\tCulturally Sensitive\tNotes" + "\n");
 
+		Map<String, String> unitsMap = null;
+		Map<String, Set<String>> unitsRecordsMap = new HashMap<String, Set<String>>();
 		Map<String, String> colRows = new TreeMap<String, String>();
 
 		try{
@@ -106,11 +114,38 @@ public class StatsCollectionsReportController implements Controller {
 			Document doc = null;
 			damsClient = DAMSClient.getInstance();
 			Map<String, String> colMap = damsClient.listCollections();
+			
+			CollectionHandler colHandler = null;
+			unitsMap = DAMSClient.reverseMap(damsClient.listUnits());
+			for(Iterator<String> it=unitsMap.keySet().iterator(); it.hasNext();){
+				String unitId = it.next();
+				Set<String> uRecords = new HashSet<String>();
+				uRecords.addAll(damsClient.listUnitObjects(unitId));
+				unitsRecordsMap.put(unitId, uRecords);
+			}
 			for(Iterator<String> iter=colMap.keySet().iterator();iter.hasNext();){
 				visibility = "";
 				unit = "";
 				colTitle = iter.next();
 				colId = colMap.get(colTitle);
+				
+				// Remove records from all units
+				try{
+					colHandler = new StatsCollectionQuantityHandler(damsClient, colId);
+					if(unitsRecordsMap.size() > 0){				
+						for(Iterator<Set<String>> uit=unitsRecordsMap.values().iterator(); uit.hasNext();){
+							Set<String> uRecords = uit.next();
+							uRecords.remove(colId);
+							uRecords.removeAll(colHandler.getItems());
+						}
+					}
+				}finally{
+					if(colHandler != null){
+						colHandler.release();
+						colHandler = null;
+					}
+				}
+				
 				colId = colId.substring(colId.lastIndexOf("/")+1);
 				int idx = colTitle.lastIndexOf("[");
 				if( idx > 0){
@@ -125,7 +160,32 @@ public class StatsCollectionsReportController implements Controller {
 				values = getValues(doc, "//*[@name='unit_code_tesim']/str");
 				for(Iterator<String> it=values.iterator(); it.hasNext();)
 					unit += (unit.length()>0?" ":"") + it.next();
-				rowVal = getRow(damsClient, colTitle, colId, colType, unit, visibility, colMap);
+				rowVal = getRow(damsClient, colTitle, colId, colType, unit, visibility, colMap, null);
+				if(rowVal != null && rowVal.length() > 0)
+					colRows.put(colTitle, rowVal + "\n");
+			}
+			
+			// Orphans in each unit
+			for(Iterator<String> uit=unitsRecordsMap.keySet().iterator(); uit.hasNext();){
+				colId = uit.next();
+				colTitle = unitsMap.get(colId);
+				Set<String> uRecords = unitsRecordsMap.get(colId);
+				List<String> items = new ArrayList<String>();
+				items.addAll(uRecords);
+				colType = "Unit";
+				colId = colId.substring(colId.lastIndexOf("/")+1);
+				
+				doc = damsClient.solrLookup("q=" + URLEncoder.encode("id:" + colId, "UTF-8"));
+				visibility = "";
+				values = getValues(doc, "//*[@name='visibility_tesim']/str");
+				for(Iterator<String> it=values.iterator(); it.hasNext();)
+					visibility += (visibility.length()>0?" ":"") + it.next();
+				
+				unit = "";
+				values = getValues(doc, "//*[@name='unit_code_tesim']/str");
+				for(Iterator<String> it=values.iterator(); it.hasNext();)
+					unit += (unit.length()>0?" ":"") + it.next();
+				rowVal = getRow(damsClient, colTitle, colId, colType, unit, visibility, colMap, items);
 				if(rowVal != null && rowVal.length() > 0)
 					colRows.put(colTitle, rowVal + "\n");
 			}
@@ -152,20 +212,30 @@ public class StatsCollectionsReportController implements Controller {
 		return val;
 	}
 	
-	public static String getRow(DAMSClient damsClient, String colTitle, String colId, String colType, String unit, String visibility, Map<String, String> colMap) throws Exception{
+	public static String getRow(DAMSClient damsClient, String colTitle, String colId, String colType, String unit, String visibility, Map<String, String> colMap, List<String> items) throws Exception{
+		boolean isUnit = colType.equalsIgnoreCase(UNIT);
 		String rowVal = null;
-		long itemsCount = damsClient.countObjects(colId);;
+		String solrQuery = "";
+		long itemsCount = 0;
+		if(isUnit){
+			itemsCount = items!=null?items.size():0;
+		}else
+			itemsCount = damsClient.countObjects(colId);;
 		
 		String solrBase = "start=0&rows=1&";
 		String[] views = {"discover_access_group_ssim:public", "discover_access_group_ssim:local", "discover_access_group_ssim:dams-manager-admin AND NOT(discover_access_group_ssim:public OR discover_access_group_ssim:local)"};
-		String solrQuery = solrBase + "q=" + URLEncoder.encode("collections_tesim:" + colId + " OR collection_sim:\""+colTitle+ "\"", "UTF-8") + "&fq=" + URLEncoder.encode("has_model_ssim:\"info:fedora/afmodel:DamsObject\"", "UTF-8");
+		if(isUnit){
+			solrQuery = solrBase + "q=" + URLEncoder.encode("unit_code_tesim:" + unit + " OR unit_json_tesim:\""+colTitle+ "\"", "UTF-8") + "&fq=" + URLEncoder.encode("has_model_ssim:\"info:fedora/afmodel:DamsObject\"", "UTF-8") + "&fq=" + URLEncoder.encode("-collections_tesim:[* TO *]", "UTF-8");
+		}else
+			solrQuery = solrBase + "q=" + URLEncoder.encode("collections_tesim:" + colId + " OR collection_sim:\""+colTitle+ "\"", "UTF-8") + "&fq=" + URLEncoder.encode("has_model_ssim:\"info:fedora/afmodel:DamsObject\"", "UTF-8");
 		Document doc = damsClient.solrLookup(solrQuery);
 		String numFound = doc.selectSingleNode("/response/result/@numFound").getStringValue();
 		long size = getDiskSize(colId);
 		
 		if(size == 0 || itemsCount != Integer.parseInt(numFound)){
 			//Collection counted
-			List<String> items = damsClient.listObjects(colId);
+			if(items == null || items.size() == 0)
+				items = damsClient.listObjects(colId);
 			int recordSize = items.size();
 			String item = null;
 			itemsCount = 0;
@@ -178,7 +248,10 @@ public class StatsCollectionsReportController implements Controller {
 		}
 		rowVal = colTitle + "\t" + colType + "\t" + unit + "\t" + numFound + "\t" + itemsCount + "\t" + NUM_FORMATER.format(size/1000000.0) + "\t" + visibility;
 		for(int j=0;j<views.length;j++){
-			solrQuery = solrBase + "q=" + URLEncoder.encode("collections_tesim:" + colId + " OR collection_sim:\""+colTitle+ "\"", "UTF-8") + "&fq=" + URLEncoder.encode(views[j], "UTF-8");
+			if(isUnit){
+				solrQuery = solrBase + "q=" + URLEncoder.encode("unit_code_tesim:" + unit + " OR unit_json_tesim:\""+colTitle+ "\"", "UTF-8") + "&fq=" + URLEncoder.encode("has_model_ssim:\"info:fedora/afmodel:DamsObject\"", "UTF-8") + "&fq=" + URLEncoder.encode("-collections_tesim:[* TO *]", "UTF-8") + "&fq=" + URLEncoder.encode(views[j], "UTF-8");
+			}else
+				solrQuery = solrBase + "q=" + URLEncoder.encode("collections_tesim:" + colId + " OR collection_sim:\""+colTitle+ "\"", "UTF-8") + "&fq=" + URLEncoder.encode("has_model_ssim:\"info:fedora/afmodel:DamsObject\"", "UTF-8") + "&fq=" + URLEncoder.encode(views[j], "UTF-8");
 			doc = damsClient.solrLookup(solrQuery);;
 			numFound = doc.selectSingleNode("/response/result/@numFound").getStringValue();
 			rowVal += "\t" + (numFound.equals("0")?" ":numFound);
@@ -188,8 +261,10 @@ public class StatsCollectionsReportController implements Controller {
 		List<String> restrictedItems = null;
 		List<String> sensitiveItems = null;
 		
-		restrictedItems = getRestrictedItems(damsClient, colId);
-		sensitiveItems = getCulturallySensitiveItems(damsClient, colId);
+		if(!isUnit){
+			restrictedItems = getRestrictedItems(damsClient, colId);
+			sensitiveItems = getCulturallySensitiveItems(damsClient, colId);
+		}
 		
 		if(restrictedItems != null && restrictedItems.size() > 0){
 			rowVal += "\t" + restrictedItems.size();
@@ -202,7 +277,7 @@ public class StatsCollectionsReportController implements Controller {
 			rowVal += "\t ";
 	
 		rowVal += "\t ";			
-		if(restrictedItems.size() > 0){
+		if(restrictedItems != null && restrictedItems.size() > 0){
 			String restricted = "";
 			for(Iterator<String> it1=restrictedItems.iterator();it1.hasNext();){
 				restricted += (restricted.length()>0?", ":"") + it1.next();
@@ -210,12 +285,21 @@ public class StatsCollectionsReportController implements Controller {
 			rowVal += "Restricted items: [" + restricted + "]";
 		}
 		
-		if(sensitiveItems.size() > 0){
+		if(restrictedItems != null && sensitiveItems.size() > 0){
 			String sensitive = "";
 			for(Iterator<String> it1=sensitiveItems.iterator();it1.hasNext();){
 				sensitive += (sensitive.length()>0?", ":"") + it1.next(); 
 			}
 			rowVal += " Culturally sensitive items: [" + sensitive + "]";
+		}
+		
+		if(isUnit && items != null && items.size() > 0){
+			String itemsStr = "";
+			for(Iterator<String> it1=items.iterator();it1.hasNext();){
+				String oid = it1.next();
+				itemsStr += (itemsStr.length()>0?", ":"") + oid.substring(oid.lastIndexOf("/")+1); 
+			}
+			rowVal += itemsStr;
 		}
 		return rowVal;
 	}
