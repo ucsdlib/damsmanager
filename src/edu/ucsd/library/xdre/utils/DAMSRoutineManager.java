@@ -46,10 +46,10 @@ public class DAMSRoutineManager{
 			try{
 				logger.info("DAMS Mananger generating gollections report ... ");
 				StatsCollectionsReportController.generateReport();
-				logger.info("Collections report generated on " + Calendar.getInstance() + ".");
+				logger.info("Collections report generated on " + Statistics.getDatabaseDateFormater().format(Calendar.getInstance().getTime()) + ".");
 			}catch(Exception e){
 				e.printStackTrace();
-				logger.error("Failed to generate collections report on " + Calendar.getInstance() + ".");
+				logger.error("Failed to generate collections report on " + Statistics.getDatabaseDateFormater().format(Calendar.getInstance().getTime()) + ".");
 			}
 		}
 		
