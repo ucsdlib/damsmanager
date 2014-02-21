@@ -46,10 +46,10 @@ public class DAMSRoutineManager{
 			try{
 				logger.info("DAMS Mananger generating gollections report ... ");
 				StatsCollectionsReportController.generateReport();
-				logger.info("Collections report generated on " + Calendar.getInstance() + ".");
+				logger.info("Collections report generated on " + Statistics.getDatabaseDateFormater().format(Calendar.getInstance().getTime()) + ".");
 			}catch(Exception e){
 				e.printStackTrace();
-				logger.error("Failed to generate collections report on " + Calendar.getInstance() + ".");
+				logger.error("Failed to generate collections report on " + Statistics.getDatabaseDateFormater().format(Calendar.getInstance().getTime()) + ".");
 			}
 		}
 		
@@ -106,17 +106,17 @@ public class DAMSRoutineManager{
 			// DAMS collection reports
 			try{
 				StatsCollectionsReportController.generateReport();
-				logger.info("Collections report generated on " + Calendar.getInstance() + ".");
+				logger.info("Collections report generated on " +  Statistics.getDatabaseDateFormater().format(cal.getTime()) + ".");
 			}catch(Exception e){
 				e.printStackTrace();
-				logger.error("Failed to generate collections report on " + Calendar.getInstance() + ".");
+				logger.error("Failed to generate collections report on " +  Statistics.getDatabaseDateFormater().format(cal.getTime()) + ".");
 			}
 			
 			// DAMS statistics quantity monthly analyzing
 			if(cal.get(Calendar.DAY_OF_MONTH) == 1){
 				try{
 					cal.add(Calendar.DATE, -1);
-					StatsQuantityAnalyzerController.statsAnalyze(cal.getTime());
+					StatsQuantityAnalyzerController.statsAnalyze(cal.getTime(), false, null);
 					logger.info("DAMS quantity statistics generated on " +  Statistics.getDatabaseDateFormater().format(cal.getTime()) + ".");
 				}catch(Exception e){
 					e.printStackTrace();

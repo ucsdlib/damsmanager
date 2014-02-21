@@ -38,6 +38,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	public static final String LICENSE = "License";
 	public static final String PERMISSION = "Permission";
 	public static final String RELATEDRESOURCE = "RelatedResource";
+	public static final String SOURCECAPTURE = "SourceCapture";
 	public static final String COPYRIGHT = "Copyright";
 	public static final String MADSSCHEME = "MADSScheme";
 	public static final String LANGUAGE = "Language";
@@ -183,17 +184,23 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 								tNode = parentNode.selectSingleNode(xPath);
 								props = copyrightProperties(parentNode);
 							} else if (nName.endsWith(LICENSE)){
-								// Copyright records use dams:copyrightStatus, plus other properties in the next step.
+								// License records use dams:LicenseNote, plus other properties in the next step.
 								field = "note_tesim";
 								xPath = "dams:licenseNote";
 								tNode = parentNode.selectSingleNode(xPath);
 								props = licenseProperties(parentNode);
-							}  else if (nName.endsWith(RELATEDRESOURCE)){
-								// Copyright records use dams:copyrightStatus, plus other properties in the next step.
-								field = "type_tesim";
-								xPath = "dams:type";
+							} else if (nName.endsWith(RELATEDRESOURCE)){
+								// RelatedResource records use dams:description, plus other properties in the next step.
+								field = "description_tesim";
+								xPath = "dams:description";
 								tNode = parentNode.selectSingleNode(xPath);
 								props = relatedResourceProperties(parentNode);
+							} else if (nName.endsWith(SOURCECAPTURE)){
+								// SourceCapture records use dams:sourceType, plus other properties in the next step.
+								field = "sourceType_tesim";
+								xPath = "dams:sourceType";
+								tNode = parentNode.selectSingleNode(xPath);
+								props = sourceCaptureProperties(parentNode);
 							} else if(elemXPath.indexOf("mads", elemXPath.lastIndexOf('/') + 1) >= 0){
 								// MADSScheme and Language
 								if(nName.endsWith(MADSSCHEME) || nName.equals(LANGUAGE)){
@@ -352,7 +359,6 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				if(importOption.equalsIgnoreCase("metadataAndFiles")){
 					uploadFiles(rdf, currFile);
 				}
-
 			}catch(Exception e){
 				e.printStackTrace();
 				failedCount++;
@@ -598,6 +604,10 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		return getProperties(record, getRelatedResourcePropNames());
 	}
 	
+	private Map<String, String> sourceCaptureProperties(Node record){
+		return getProperties(record, getSourceCapturePropNames());
+	}
+	
 	private Map<String, String> getProperties(Node record, Map<String, String> propNames){
 		Map<String, String> props = new TreeMap<String, String>();
 		String key = null;
@@ -640,8 +650,17 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	
 	private Map<String, String> getRelatedResourcePropNames(){
 		Map<String, String> propNames = new HashMap<String, String>();
-		propNames.put("dams:description", "description_tesim");
+		propNames.put("dams:type", "type_tesim");
 		propNames.put("dams:uri", "uri_tesim");
+		return propNames;
+	}
+	
+	private Map<String, String> getSourceCapturePropNames(){
+		Map<String, String> propNames = new HashMap<String, String>();
+		propNames.put("dams:imageProducer", "imageProducer_tesim");
+		propNames.put("dams:captureSource", "captureSource_tesim");
+		propNames.put("dams:scannerManufacturer", "scannerManufacturer_tesim");
+		propNames.put("dams:scannerModelName", "scannerModelName_tesim");
 		return propNames;
 	}
 	

@@ -71,9 +71,9 @@ public class StatsWeblogAnalyzerController implements Controller {
 				if(Constants.CLUSTER_HOST_NAME.indexOf("library") >= 0){
 					String sender = Constants.MAILSENDER_DAMSSUPPORT;
 					if(successful)
-						message = "Processed weblog for DAMS statistics successfully: " + startDate + (startDate.equals(endDate)?"":" to " + endDate) + (update?" updated":" processed") + ". \n" + message;
+						message = "Processed weblog for DAMS statistics successfully: " + dFormat.format(sDate) + (sDate.equals(eDate)?"":" to " +  dFormat.format(eDate)) + (update?" updated":" processed") + ". \n" + message;
 					else
-						message = "Failed to " + (update?"update":"processe") + " statistics data: " + startDate + (startDate.equals(endDate)?"":" to " + endDate) + ". \n" + message;
+						message = "Failed to " + (update?"update":"processe") + " statistics data: " + dFormat.format(sDate) + (sDate.equals(eDate)?"":" to " + dFormat.format(eDate)) + ". \n" + message;
 					logger.info(message);
 					DAMSClient.sendMail(sender, new String[] {sender}, "DAMS Statistics Weblog Analyzer", message, "text/html", "smtp.ucsd.edu");
 				}
