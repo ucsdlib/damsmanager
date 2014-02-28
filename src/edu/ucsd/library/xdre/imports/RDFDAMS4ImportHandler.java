@@ -40,6 +40,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	public static final String RELATEDRESOURCE = "RelatedResource";
 	public static final String SOURCECAPTURE = "SourceCapture";
 	public static final String COPYRIGHT = "Copyright";
+	public static final String OTHERRIGHTS = "OtherRights";
 	public static final String MADSSCHEME = "MADSScheme";
 	public static final String LANGUAGE = "Language";
 	private static Logger log = Logger.getLogger(RDFDAMS4ImportHandler.class);
@@ -187,6 +188,12 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 								// License records use dams:LicenseNote, plus other properties in the next step.
 								field = "note_tesim";
 								xPath = "dams:licenseNote";
+								tNode = parentNode.selectSingleNode(xPath);
+								props = licenseProperties(parentNode);
+							} else if (nName.endsWith(OTHERRIGHTS)){
+								// Copyright records use dams:copyrightStatus, plus other properties in the next step.
+								field = "otherRightsBasis_tesim";
+								xPath = "dams:otherRightsBasis";
 								tNode = parentNode.selectSingleNode(xPath);
 								props = licenseProperties(parentNode);
 							} else if (nName.endsWith(RELATEDRESOURCE)){
