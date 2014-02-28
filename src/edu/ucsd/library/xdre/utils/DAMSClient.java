@@ -1431,6 +1431,13 @@ public class DAMSClient {
 		return toDAMSURL(parts, format);
 	}
 	
+	public String getSparqlURL(String sparql, String format) throws UnsupportedEncodingException{
+		String[] parts = {"sparql"};
+		String sparqlUrl = toDAMSURL(parts, format);
+		int idx = sparqlUrl.indexOf("?");
+		return sparqlUrl + (idx>0?"&":"?") + "query=" + URLEncoder.encode(sparql, "UTF-8");
+	}
+	
 	
 	/**
 	 * Construct REST URL for administration unit
@@ -2029,12 +2036,57 @@ public class DAMSClient {
 	}
 	
 	/**
+	 * Execute SPARQL
+	 * @param sparql
+	 * @return
+	 * @throws Exception
+	 */
+	public List<Map<String, String>> sparqlLookup(String sparql) throws Exception{
+		List<Map<String, String>> results = new ArrayList<Map<String, String>>();
+		String url = getSparqlURL(sparql, "xml");
+		
+		String variable = null;
+		String value = null;
+		Map<String, String> binding = null;
+		HttpGet req = new HttpGet(url);
+		
+		try {
+			Document doc = getXMLResult(req);
+			List<Node> vNodes = doc.selectNodes("//head/variable");
+			List<Node> rNodes = doc.selectNodes("//results/result");
+			List<String> variables = new ArrayList<String>();
+			for(Iterator<Node> it=vNodes.iterator(); it.hasNext();){
+				variables.add(it.next().selectSingleNode("@name").getStringValue());
+			}
+			
+			for(Iterator<Node> it=rNodes.iterator(); it.hasNext();){
+				Node rNode = it.next();
+				if(rNode.hasContent()){
+					binding = new HashMap<String, String>();
+					for(Iterator<String> vit=variables.iterator(); vit.hasNext();){
+						variable = vit.next();
+						value = rNode.selectSingleNode("binding[@name='" + variable + "']/*").getText();
+						binding.put(variable, value);
+					}
+					results.add(binding);
+				}
+				
+			}
+			
+		} finally {
+			req.releaseConnection();
+		}
+		
+		return results;
+	}
+	
+	/**
 	 * Retrieve the files that have the same source fileName and source path
 	 * @param doc
 	 * @param srcPath
 	 * @param srcFileName
 	 * @return
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	public static List<DamsURI> getFiles(Document doc, String srcPath, String srcFileName) throws Exception{
 		List<DamsURI> fileURIs = new ArrayList<DamsURI>();

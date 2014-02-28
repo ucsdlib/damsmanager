@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 
 import javax.servlet.http.HttpSession;
 import javax.xml.transform.OutputKeys;
@@ -61,7 +62,8 @@ public abstract class CollectionHandler implements ProcessHandler {
 	public static final String HAS_FILE = "hasFile";
 	
 	private static Logger log = Logger.getLogger(CollectionHandler.class);
-
+	protected static Random random = new Random();
+	
 	protected int submissionId = -1;
 	protected String collectionId = null;
 	protected List<String> items = null;
@@ -87,7 +89,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 	protected Map<String, String> unitsMap = null;
 	protected int itemsCount = 0; //Total number of items in the collection/batch
 	protected List<String> solrFailed = new ArrayList<String>();
-
+	
 	/**
 	 * Empty constructor
 	 */
@@ -941,6 +943,150 @@ public abstract class CollectionHandler implements ProcessHandler {
 			
 			return recordIds;
 		}
+	}
+
+	public static String lookupRecordFromTs(DAMSClient damsClient, String field, String value, String modelName, Map<String, String> properties) throws Exception{
+		List<String> variables = new ArrayList<String>();
+		if(properties == null)
+			properties = new HashMap<String, String>();
+		
+		properties.put(field, value);
+		variables.add("subject");
+		List<Map<String, String>> solutions = sparqlLookup(damsClient, modelName, properties, variables);
+		if(solutions.size() > 0){
+			return solutions.get(0).get("subject");
+		}else
+			return null;
+	}
+	
+	public static List<Map<String, String>> sparqlLookup(DAMSClient damsClient, String modelName, Map<String, String> properties, List<String> variables) throws Exception{
+		// http://gimili.ucsd.edu:8080/dams/api/sparql?query=select ?o ?type where { ?o <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?t . ?t <http://www.w3.org/1999/02/22-rdf-syntax-ns#label> ?type .?o <http://www.loc.gov/mads/rdf/v1#authoritativeLabel> '"Seuss, Dr."' }
+		String sparql = buildSparql(modelName, properties, variables);
+		return damsClient.sparqlLookup(sparql);
+	}
+	
+	public static String buildSparql(String modelName, Map<String, String> properties, List<String> variables){
+		String sub = variables==null||variables.size()>0?variables.get(0):"soluction";
+		String sparql = "SELECT";
+		if(variables != null && variables.size() > 0){
+			for (Iterator<String> it=variables.iterator(); it.hasNext();)
+				sparql += " ?" + it.next();
+		}else
+			sparql += " ?" + sub; 
+		sparql += " WHERE { ";
+		
+		Map<String, String> prefixMap = new HashMap<String, String>();
+		
+		if(modelName != null && modelName.length() > 0){
+			boolean caseSensitive = true;
+			String bnId = nextBlankNodeId();
+			sparql += buildClause ("?"+sub, "rdf:type", "?"+bnId, prefixMap, caseSensitive);
+			sparql += " . " + buildClause ("?"+bnId, "rdf:label", modelName, prefixMap, caseSensitive);		
+		}
+		
+		// build clause for properties
+		if(properties != null){
+			for(Iterator<String> it=properties.keySet().iterator(); it.hasNext();){
+				String pre = it.next();
+				String obj = properties.get(pre);
+				if(!sparql.endsWith(" WHERE ") && obj != null && obj.length() > 0)
+					sparql += " . ";
+				
+				if(pre.indexOf("/") > 0 && obj != null){
+					String[] pres = pre.split("/");
+					String lastVariable = "?"+sub;
+					String bnObj = null;
+					for(int i=0; i<pres.length; i++){
+						if(pres[i] != null){
+							if(!(sparql.endsWith(" WHERE ") || sparql.endsWith(" . ")))
+								sparql += " . ";
+							
+							if(i < pres.length - 1)
+								bnObj = "?" + nextBlankNodeId();
+							else
+								bnObj = obj;
+							
+							sparql += buildClause (lastVariable, pres[i], bnObj, prefixMap, false);
+							lastVariable = bnObj;
+						}
+					}
+				}else
+					//sparql += buildClause ("?"+sub, pre, obj, prefixMap);
+					sparql += buildClause ("?"+sub, pre, obj, prefixMap, false);
+			}
+		}
+		
+		sparql += " }";
+		
+		// build SPARQL prefix
+		String prefix = "";
+		for(Iterator<String> it=prefixMap.keySet().iterator(); it.hasNext();){
+			String nsPrefix = it.next();
+			prefix += "PREFIX " + nsPrefix + ": " + "<" + prefixMap.get(nsPrefix) + "> ";
+		}
+		
+		return prefix + "\n" + sparql;
+	}
+	
+	public static String buildClause (String sub, String pre, String obj, Map<String, String> prefixMap, boolean caseSensitive){
+		String subQuery = "";
+		if(obj != null){
+			if(caseSensitive || obj.length() == 0 || obj.startsWith("?") || obj.startsWith("<") && obj.endsWith(">"))
+				subQuery = subjectPart(sub) + " " + predicatePart(pre, prefixMap) + " " + objectPart(obj);
+			else
+				subQuery = buildFilterClause (sub, pre, obj, prefixMap);
+		}
+		
+		return subQuery;
+	}
+	
+	public static String buildFilterClause (String sub, String pre, String obj, Map<String, String> prefixMap){
+		String subQuery = "";
+		if(obj != null){
+			String bnVariable = "?" + nextBlankNodeId();
+			subQuery += buildClause (sub, pre, bnVariable, prefixMap, true);
+			subQuery += " . FILTER ( lcase(" + bnVariable + ") =  lcase('" + obj + "'))";
+		}
+		return subQuery;
+	}
+	
+	
+	public static String subjectPart(String symbol){
+		return (symbol.startsWith("?")||symbol.startsWith("<")&&symbol.endsWith(">")?symbol:"<" + symbol +">");
+	}
+
+	public static String predicatePart(String symbol, Map<String, String> prefixMap){
+		if (symbol.startsWith("?")||symbol.startsWith("<")&&symbol.endsWith(">"))
+			return symbol;
+		if(symbol.startsWith("http")){
+			for(Iterator<String> it=Constants.NS_PREFIX_MAP.keySet().iterator(); it.hasNext();){
+				String key = it.next();
+				String value = Constants.NS_PREFIX_MAP.get(key);
+				if(symbol.indexOf(value) == 0){
+					prefixMap.put(key, value);
+					symbol = symbol.replace(value, key + ":");
+					return symbol;
+				}
+			}
+		}else{
+			String[] tokens = symbol.split(":");
+			if(tokens.length == 2){
+				String ns = Constants.NS_PREFIX_MAP.get(tokens[0]);
+				if(ns != null){
+					prefixMap.put(tokens[0], ns);
+					return symbol;
+				}
+			}
+		}
+		return "<" + symbol + ">";
+	}
+	
+	public static String objectPart(String symbol){
+		return (symbol.startsWith("?")||symbol.startsWith("<")&&symbol.endsWith(">")?symbol:"'" + symbol +"'");
+	}
+	
+	public static String nextBlankNodeId(){
+		return "_" + (""+random.nextInt()).replace("-", "n");
 	}
 	
 	private static String toSolrQuery(Map<String, String> properties) throws UnsupportedEncodingException{
