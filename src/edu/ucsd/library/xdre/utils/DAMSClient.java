@@ -870,6 +870,24 @@ public class DAMSClient {
 			req.releaseConnection();
 		}
 	}
+	
+	/**
+	 * Retrieve metatada for a record
+	 * @param object
+	 * @return
+	 * @throws Exception 
+	 */
+	public Document getRecord(String object)
+			throws Exception {
+		String format = "xml";
+		String url = getObjectsURL(object, null, null, format);
+		HttpGet req = new HttpGet(url);
+		try {
+			return getXMLResult(req);
+		} finally {
+			req.releaseConnection();
+		}
+	}
 
 	/**
 	 * Extract technical metadata with Jhove extraction and additional

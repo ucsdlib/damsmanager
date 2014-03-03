@@ -945,22 +945,27 @@ public abstract class CollectionHandler implements ProcessHandler {
 		}
 	}
 
-	public static String lookupRecordFromTs(DAMSClient damsClient, String field, String value, String modelName, Map<String, String> properties) throws Exception{
+	/**
+	 * Perform actions to lookup records from the triplestore with SPARQL
+	 * @param damsClient
+	 * @param field
+	 * @param value
+	 * @param modelName
+	 * @param properties
+	 * @return
+	 * @throws Exception
+	 */
+	public List<Map<String, String>> lookupRecordsFromTs(String field, String value, String modelName, Map<String, String> properties) throws Exception{
 		List<String> variables = new ArrayList<String>();
 		if(properties == null)
 			properties = new HashMap<String, String>();
 		
 		properties.put(field, value);
-		variables.add("subject");
-		List<Map<String, String>> solutions = sparqlLookup(damsClient, modelName, properties, variables);
-		if(solutions.size() > 0){
-			return solutions.get(0).get("subject");
-		}else
-			return null;
+		variables.add("soluction");
+		return sparqlLookup(damsClient, modelName, properties, variables);
 	}
 	
 	public static List<Map<String, String>> sparqlLookup(DAMSClient damsClient, String modelName, Map<String, String> properties, List<String> variables) throws Exception{
-		// http://gimili.ucsd.edu:8080/dams/api/sparql?query=select ?o ?type where { ?o <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> ?t . ?t <http://www.w3.org/1999/02/22-rdf-syntax-ns#label> ?type .?o <http://www.loc.gov/mads/rdf/v1#authoritativeLabel> '"Seuss, Dr."' }
 		String sparql = buildSparql(modelName, properties, variables);
 		return damsClient.sparqlLookup(sparql);
 	}
@@ -997,7 +1002,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 					String lastVariable = "?"+sub;
 					String bnObj = null;
 					for(int i=0; i<pres.length; i++){
-						if(pres[i] != null){
+						if(pres[i] != null && (pres[i]=pres[i].trim()).length() > 0){
 							if(!(sparql.endsWith(" WHERE ") || sparql.endsWith(" . ")))
 								sparql += " . ";
 							
