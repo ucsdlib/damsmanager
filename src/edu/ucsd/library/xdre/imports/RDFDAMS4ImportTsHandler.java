@@ -226,22 +226,23 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 								props = dateProperties(parentNode);
 							} else if(elemXPath.indexOf("mads", elemXPath.lastIndexOf('/') + 1) >= 0){
 								// MADSScheme and Language
-								if(nName.endsWith(MADSSCHEME) || nName.equals(LANGUAGE)){
+								if(nName.endsWith(MADSSCHEME)){
 									field = "mads:code";
 									xPath = "mads:code";
 									tNode = parentNode.selectSingleNode(xPath);
 									if(tNode == null){
 										field = "rdfs:label";
 										xPath = "rdfs:label";
+										tNode = parentNode.selectSingleNode("*[name()='" + xPath + "']");
+									}
+								} else if(nName.endsWith(LANGUAGE)){
+									field = "mads:code";
+									xPath = "mads:code";
+									tNode = parentNode.selectSingleNode(xPath);
+									if(tNode == null){
+										field = "mads:authoritativeLabel";
+										xPath = "mads:authoritativeLabel";
 										tNode = parentNode.selectSingleNode(xPath);
-										if(tNode == null){
-											// Loop through to locate the rdfs:label if not selected by xPath.
-											for(Iterator<Element> it=((Element)parentNode).elementIterator(); it.hasNext();){
-												Element elem = it.next();
-												if(elem.getNamespacePrefix().equals("rdfs") && elem.getName().equals("label"))
-													tNode = elem;
-											}
-										}
 									}
 								} else {
 									// Subject, Authority records use mads:authoritativeLabel
