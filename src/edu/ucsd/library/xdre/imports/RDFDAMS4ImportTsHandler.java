@@ -654,11 +654,11 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 				// Create the record
 				oid = getNewId();
 				aboutAttr.setText(oid);
-				idsMap.put(nKey, oid);
 			}else{
-				// Record found. Add linking, remove it.
+				// Record found. Add to the map, link and remove it.
 				toResourceLinking(oid, record);
-			}			
+			}
+			idsMap.put(nKey, oid);
 		}else{	
 			// Record added. Add linking, remove it.
 			toResourceLinking(oid, record);
