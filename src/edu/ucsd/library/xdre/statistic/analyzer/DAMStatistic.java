@@ -154,8 +154,8 @@ public class DAMStatistic extends Statistics{
 				}else
 					log.info("DAMS stats unknown search uri: " + uri);
 				
-			}else if (parts[1].endsWith("collections") && parts.length > 2 && parts[2] != null) {
-				// Collections: /dc/dams_collections/bbxxxxxxxx?counter=1
+			}else if ((parts[1].endsWith("collections") || parts[1].endsWith("collection")) && parts.length > 2 && parts[2] != null) {
+				// Collections: /dc/dams_collections/bbxxxxxxxx?counter=1 or /dc/collection/bbxxxxxxxx?counter=1
 				increaseCollectionAccess(parts[2], collsAccessMap, collsMap);
 			}else {
 				// other pages? skip for now.
@@ -235,6 +235,11 @@ public class DAMStatistic extends Statistics{
 			}finally{
 				Statistics.close(ps);
 				ps = null;
+			}
+		} else {
+			if(isRecordExist(con, calendar.getTime())){
+				log.debug(appName + " statistics record for date " + dateFormat.format(calendar.getTime()) + " exists.");
+				return;
 			}
 		}
 		//WEB_STATS insert

@@ -1,6 +1,7 @@
 package edu.ucsd.library.xdre.statistic.analyzer;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -133,5 +134,24 @@ public abstract class Statistics {
 		}
 		
 		return nextId;
+	}
+	
+	public static boolean isRecordExist(Connection con, Date date) throws SQLException{
+		PreparedStatement ps = null;
+		ResultSet rs = null;
+		SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);;
+		try{
+			ps = con.prepareStatement(DAMStatistic.WEB_STATS_RECORD_EXIST);
+			ps.setString(1, dateFormat.format(date));
+			rs = ps.executeQuery();
+			if(rs.next() && rs.getInt(1) > 0)
+				return true;
+		}finally{
+			Statistics.close(rs);
+			Statistics.close(ps);
+			rs = null;
+			ps = null;
+		}
+		return false;
 	}
 }

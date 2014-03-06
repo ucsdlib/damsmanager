@@ -86,17 +86,8 @@ public class DAMSQuantityStats {
 				
 				if(idx >= 0)
 					colId = colId.substring(idx+1);
-				try{
-					String[] params = {Statistics.getDatabaseMonthFormater().format(calendar.getTime()), colId};
-					rs = getQueryResult(con, Statistics.COLLECTION_STATS_RECORD_EXIST, params);
-					exists = rs.next();
-				}finally{
-					if(rs != null){
-						Statistics.close(rs.getStatement());	
-						Statistics.close(rs);
-						rs = null;
-					}
-				}
+				
+				exists = recordExists(con, colId) ;
 				
 				colHandler = new StatsCollectionQuantityHandler(damsClient, colId);
 				if(unitsRecordsMap.size() > 0){				
@@ -228,13 +219,34 @@ public class DAMSQuantityStats {
 	public void setCollectionsTodo(Set<String> collectionsTodo) {
 		this.collectionsTodo = collectionsTodo;
 	}
+	
+	public boolean recordExists(Connection con, String colId) throws SQLException{
+		ResultSet rs = null;
+		try{
+			String[] params = {Statistics.getDatabaseMonthFormater().format(calendar.getTime()), colId};
+			rs = getQueryResult(con, Statistics.COLLECTION_STATS_RECORD_EXIST, params);
+			return rs.next();
+		}finally{
+			if(rs != null){
+				Statistics.close(rs.getStatement());	
+				Statistics.close(rs);
+				rs = null;
+			}
+		}
+	}
 
-	public void export(Connection con) throws SQLException{
+	public void export(Connection con) throws Exception{
+		
 		PreparedStatement ps = null;
+		DAMSCollectionStats stats = null;
 		try{
 			ps = con.prepareStatement(Statistics.COLLECTION_STATS_INSERT);
 			for(Iterator<DAMSCollectionStats> it= collectionStatsList.iterator(); it.hasNext();){
-				it.next().export(ps, WebStatistic.getNextId(con));
+				stats = it.next();
+				if(!recordExists(con, stats.getCollectionId()))
+					stats.export(ps, WebStatistic.getNextId(con));
+				else
+					log.debug("Quantity statistics exists for " + stats.getCollectionTitle() + " (" + stats.getCollectionId() + "). Period " + stats.getPeriod());
 			}
 		}finally{
 			Statistics.close(ps);
