@@ -41,6 +41,7 @@ import edu.ucsd.library.xdre.collection.MetadataExportHandler;
 import edu.ucsd.library.xdre.collection.MetadataImportHandler;
 import edu.ucsd.library.xdre.collection.SOLRIndexHandler;
 import edu.ucsd.library.xdre.imports.RDFDAMS4ImportHandler;
+import edu.ucsd.library.xdre.imports.RDFDAMS4ImportTsHandler;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.RequestOrganizer;
@@ -408,8 +409,8 @@ public class CollectionOperationController implements Controller {
 						  ingestFiles.add(new File(Constants.DAMS_STAGING + "/" + filesPaths[j]).getAbsolutePath());
 				  }
 				  
-				  handler = new RDFDAMS4ImportHandler(damsClient, dFiles.toArray(new File[dFiles.size()]), importOption);
-				  ((RDFDAMS4ImportHandler)handler).setFilesPaths(ingestFiles.toArray(new String[ingestFiles.size()]));
+				  handler = new RDFDAMS4ImportTsHandler(damsClient, dFiles.toArray(new File[dFiles.size()]), importOption);
+				  ((RDFDAMS4ImportTsHandler)handler).setFilesPaths(ingestFiles.toArray(new String[ingestFiles.size()]));
 			 }/*else if (i == 6){	
 				   session.setAttribute("status", opMessage + "METS File Creation &amp; File Store Upload ...");
 				   boolean metsReplace = getParameter(paramsMap, "metsReplace") != null;

@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import javax.naming.InitialContext;
@@ -56,6 +58,10 @@ public class Constants {
 	public static DataSource DAMS_DATA_SOURCE = null;
 	public static String STATS_WEBLOG_DIR = "";
 	/* end stats declaration*/
+	
+	//Namespace prefix
+	public static String NS_PREFIX = "";
+	public static Map<String, String> NS_PREFIX_MAP = null;
 	
 	static {
 		InputStream in = null;
@@ -115,8 +121,19 @@ public class Constants {
 			
 			// FFMPEG command
 			VIDEO_SIZE = props.getProperty("video.size");
+
+			// Namespace prefix
+			NS_PREFIX = props.getProperty("ns.prefix");
+			NS_PREFIX_MAP = new HashMap<String, String>();
+			if(NS_PREFIX != null){
+				String[] nsPrefixes = NS_PREFIX.split(",");
+				for(int i=0; i<nsPrefixes.length; i++){
+					String nsPrefix = nsPrefixes[i].trim();
+					NS_PREFIX_MAP.put(nsPrefix, props.getProperty("ns.prefix." + nsPrefix));
+				}
+			}
 			
-			//Retrieve the default triplestore and filestore
+			// Retrieve the default triplestore and filestore
 			DAMSClient damsClient = new DAMSClient(DAMS_STORAGE_URL);		
 			DEFAULT_FILESTORE = damsClient.defaultFilestore(); //Default filestore
 			DEFAULT_TRIPLESTORE = damsClient.defaultTriplestore(); //Default triplestore

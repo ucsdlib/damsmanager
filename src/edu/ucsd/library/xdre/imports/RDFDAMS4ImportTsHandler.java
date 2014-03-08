@@ -4,13 +4,16 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.dom4j.Document;
 import org.dom4j.Element;
@@ -31,19 +34,21 @@ import edu.ucsd.library.xdre.utils.RDFStore;
 
 /**
  * 
- * DFDAMS4ImportHandler: Import objects (metadata and files) in DAMS4 RDF/XML format.
+ * RDFDAMS4ImportTsHandler: Import objects (metadata and files) in DAMS4 RDF/XML format with support to lookup records from the triplestore.
  * @author lsitu@ucsd.edu
  */
-public class RDFDAMS4ImportHandler extends MetadataImportHandler{
+public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 	public static final String LICENSE = "License";
 	public static final String PERMISSION = "Permission";
+	public static final String RESTRICTION = "Restriction";
 	public static final String RELATEDRESOURCE = "RelatedResource";
 	public static final String SOURCECAPTURE = "SourceCapture";
 	public static final String COPYRIGHT = "Copyright";
 	public static final String OTHERRIGHTS = "OtherRights";
+	public static final String NOTE = "Note";
 	public static final String MADSSCHEME = "MADSScheme";
 	public static final String LANGUAGE = "Language";
-	private static Logger log = Logger.getLogger(RDFDAMS4ImportHandler.class);
+	private static Logger log = Logger.getLogger(RDFDAMS4ImportTsHandler.class);
 
 	private Map<String, String> idsMap = new HashMap<String, String>();
 	private Map<String, File> filesMap = new HashMap<String, File>();
@@ -74,7 +79,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 	 * @param mode
 	 * @throws Exception
 	 */
-	public RDFDAMS4ImportHandler(DAMSClient damsClient, File[] rdfFiles, String importOption) throws Exception {
+	public RDFDAMS4ImportTsHandler(DAMSClient damsClient, File[] rdfFiles, String importOption) throws Exception {
 		super(damsClient, null);
 		this.damsClient = damsClient;
 		this.rdfFiles = rdfFiles;
@@ -161,7 +166,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 							String elemXPath = parentNode.getPath();
 							if (nName.endsWith("Collection") || nName.endsWith("CollectionPart")){
 								// Retrieve the Collection record
-								field = "title_tesim";
+								field = "dams:title/mads:authoritativeLabel";
 								xPath = "dams:title/mads:Title/mads:authoritativeLabel";
 								tNode = parentNode.selectSingleNode(xPath);
 								if(tNode == null){
@@ -180,63 +185,78 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 								tNode = parentNode.selectSingleNode(xPath);
 							} */else if (nName.endsWith(COPYRIGHT)){
 								// Copyright records use dams:copyrightStatus, plus other properties in the next step.
-								field = "status_tesim";
+								field = "dams:copyrightStatus";
 								xPath = "dams:copyrightStatus";
 								tNode = parentNode.selectSingleNode(xPath);
 								props = copyrightProperties(parentNode);
 							} else if (nName.endsWith(LICENSE)){
 								// License records use dams:LicenseNote, plus other properties in the next step.
-								field = "note_tesim";
+								field = "dams:licenseNote";
 								xPath = "dams:licenseNote";
 								tNode = parentNode.selectSingleNode(xPath);
 								props = licenseProperties(parentNode);
 							} else if (nName.endsWith(OTHERRIGHTS)){
 								// Copyright records use dams:copyrightStatus, plus other properties in the next step.
-								field = "otherRightsBasis_tesim";
+								field = "dams:otherRightsBasis";
 								xPath = "dams:otherRightsBasis";
 								tNode = parentNode.selectSingleNode(xPath);
-								props = licenseProperties(parentNode);
+								props = otherRightsProperties(parentNode);
 							} else if (nName.endsWith(RELATEDRESOURCE)){
 								// RelatedResource records use dams:description, plus other properties in the next step.
-								field = "description_tesim";
+								field = "dams:description";
 								xPath = "dams:description";
 								tNode = parentNode.selectSingleNode(xPath);
 								props = relatedResourceProperties(parentNode);
 							} else if (nName.endsWith(SOURCECAPTURE)){
 								// SourceCapture records use dams:sourceType, plus other properties in the next step.
-								field = "sourceType_tesim";
+								field = "dams:sourceType";
 								xPath = "dams:sourceType";
 								tNode = parentNode.selectSingleNode(xPath);
 								props = sourceCaptureProperties(parentNode);
+							} else if (nName.endsWith(NOTE)){
+								// Note records use rdf:value, dams:type, dams:displayLabel.
+								field = "rdf:value";
+								xPath = "rdf:value";
+								tNode = parentNode.selectSingleNode(xPath);
+								props = noteProperties(parentNode);
+							} else if(nName.endsWith(PERMISSION) || nName.equals(RESTRICTION)){
+								field = "dams:type";
+								xPath = "dams:type";
+								tNode = parentNode.selectSingleNode(xPath);
+								props = dateProperties(parentNode);
 							} else if(elemXPath.indexOf("mads", elemXPath.lastIndexOf('/') + 1) >= 0){
 								// MADSScheme and Language
-								if(nName.endsWith(MADSSCHEME) || nName.equals(LANGUAGE)){
-									field = "code_tesim";
+								if(nName.endsWith(MADSSCHEME)){
+									field = "mads:code";
 									xPath = "mads:code";
 									tNode = parentNode.selectSingleNode(xPath);
 									if(tNode == null){
-										field = "name_tesim";
+										field = "rdfs:label";
 										xPath = "rdfs:label";
+										tNode = parentNode.selectSingleNode("*[name()='" + xPath + "']");
+									}
+								} else if(nName.endsWith(LANGUAGE)){
+									field = "mads:code";
+									xPath = "mads:code";
+									tNode = parentNode.selectSingleNode(xPath);
+									if(tNode == null){
+										field = "mads:authoritativeLabel";
+										xPath = "mads:authoritativeLabel";
 										tNode = parentNode.selectSingleNode(xPath);
-										if(tNode == null){
-											// Loop through to locate the rdfs:label if not selected by xPath.
-											for(Iterator<Element> it=((Element)parentNode).elementIterator(); it.hasNext();){
-												Element elem = it.next();
-												if(elem.getNamespacePrefix().equals("rdfs") && elem.getName().equals("label"))
-													tNode = elem;
-											}
-										}
 									}
 								} else {
 									// Subject, Authority records use mads:authoritativeLabel
-									field = "name_tesim";
+									field = "mads:authoritativeLabel";
 									xPath = "mads:authoritativeLabel";
 									tNode = parentNode.selectSingleNode(xPath);
 									if(tNode == null){
 										// Try to use the mads:code for mapping when mads:authoritativeLabel is not available
-										field = "code_tesim";
+										field = "mads:code";
 										xPath = "mads:code";
 										tNode = parentNode.selectSingleNode(xPath);
+									}else{
+										Node diplayLabelNode = parentNode.selectSingleNode("*[name()='dams:displayLabel']");
+										props.put("dams:displayLabel", encodeLiteralValue(diplayLabelNode));
 									}
 									// Mapping for mads:isMemberOfMADSScheme
 									String madsScheme = null;
@@ -245,38 +265,39 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 										Node msValueNode = madsSchemeNode.selectSingleNode("@rdf:resource");
 										if (msValueNode != null){
 											madsScheme = madsSchemeNode.getStringValue();
-											props.put("scheme_tesim", madsScheme);
+											props.put("mads:isMemberOfMADSScheme", "<" + madsScheme + ">");
 										}else if ((madsSchemeNode = madsSchemeNode.selectSingleNode("mads:MADSScheme")) != null && madsSchemeNode.hasContent()){
 											if ((msValueNode=madsSchemeNode.selectSingleNode("mads:code")) != null){
-												madsScheme = msValueNode.getText();
-												props.put("scheme_code_tesim", madsScheme);
+												madsScheme = encodeLiteralValue(msValueNode);
+												props.put("mads:isMemberOfMADSScheme/mads:code", madsScheme);
 											}else if((msValueNode=madsSchemeNode.selectSingleNode("rdfs:label")) != null){
-												madsScheme = msValueNode.getText();
-												props.put("scheme_name_tesim", madsScheme);
+												madsScheme = encodeLiteralValue( msValueNode);
+												props.put("mads:isMemberOfMADSScheme/rdfs:label", madsScheme);
 											}
 										}else{
-											props.put("scheme_tesim", "");
+											props.put("mads:isMemberOfMADSScheme/rdfs:label", "\"\"");
 										}
 									}else{
-										props.put("scheme_tesim", null);
+										props.put("mads:isMemberOfMADSScheme/rdfs:label", null);
 									}
 								}
 								
 							} else {
 								// XXX Other Rights records like Statute, License, Other Rights etc. 
-								field = "value_tesim";
+								field = "rdf:value";
 								xPath = "rdf:value";
 								tNode = parentNode.selectSingleNode(xPath);
-								field = "code_tesim";
+								field = "dams:code";
 								if (tNode == null) {
 									xPath = "dams:code";
 									tNode = parentNode.selectSingleNode(xPath);
 								}
 							}
-							if(tNode == null){
+							if(tNode == null && !field.equals("dams:licenseNote")){
 								throw new Exception("Element " + xPath + " is missing from the " + nName + " record " + iUri + " in file " + currFile + ".");
 							}
-							updateDocument(doc, parentNode, field, tNode.getText(), props);
+							
+							updateDocument(doc, parentNode, field, encodeLiteralValue(tNode), props);
 						}
 					}else if(nName.endsWith("Object")){
 						objRecords.put(iUri, currFile);
@@ -298,7 +319,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				
 				Model iRdf = null;
 				int jLen = items.size();
-
+				//System.out.println(currFile + " records found: " + jLen);
 				for (int j=0; j<jLen&&!interrupted; j++){
 					graph = new RDFStore();
 					recordsCount++;
@@ -366,6 +387,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 				if(importOption.equalsIgnoreCase("metadataAndFiles")){
 					uploadFiles(rdf, currFile);
 				}
+
 			}catch(Exception e){
 				e.printStackTrace();
 				failedCount++;
@@ -561,10 +583,7 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		String xPath = record.getPath();
 		String elemName = xPath.substring(xPath.lastIndexOf("/")+1);
 		
-		// MADSScheme model: MadsScheme
-		if(elemName.endsWith("MADSScheme"))
-			elemName = elemName.replace("MADSScheme", "Scheme");
-		String modelName = (elemName.substring(0, 1).toUpperCase() + elemName.substring(1)).replace(":", "");
+		String modelName = elemName;
 		String nKey = INFO_MODEL_PREFIX + modelName + "::" + title;
 		if(props != null){
 			for(Iterator<String> it=props.keySet().iterator(); it.hasNext();){
@@ -573,25 +592,73 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 			}
 		}
 		String oid = idsMap.get(nKey);
-		// Retrieve the record
+
 		if(oid == null){
-			/*Map<String, String> props = null;
-			if(nName.endsWith(COPYRIGHT)){
-				props = copyrightProperties(record);
-			}*/			
-			oid = lookupRecord(damsClient, field, title, modelName, props);
+			//Lookup records from the triplestore, matching the required properties that are null or empty.
+			List<Map<String,String>> oids = lookupRecordsFromTs(field, title, "\""+ modelName + "\"", props);
+			if(oids != null && oids.size() > 0){
+				
+				String propName = null;
+				String propValue = null;
+				Document recDoc = null;
+				Node cNode = null;
+				if(props != null){
+					List<Map<String,String>> oidsCopy = new ArrayList<Map<String,String>>();
+					oidsCopy.addAll(oids);
+					for(int i=0; i< oidsCopy.size(); i++){
+						
+						Collection<String> propValues = props.values();
+						Map<String,String> resolution = oidsCopy.get(i);
+						String rid = resolution.values().iterator().next();
+						if(rid.startsWith("http")){
+							if(propValues.contains(null)){
+								
+								recDoc = damsClient.getRecord(rid);
+								for(Iterator<String> it=props.keySet().iterator(); it.hasNext();){
+									propName = it.next();
+									propValue = props.get(propName);
+									// Test for the nodes for null properties and remove it from the result
+									if(propValue == null){
+										int idx = propName.indexOf("/", 1);
+										if(idx > 0)
+											cNode = recDoc.selectSingleNode("//" + modelName + "/" + propName);
+										else
+											cNode = recDoc.selectSingleNode("//" + modelName + "/" + propName);
+										
+										if(cNode != null){
+											oids.remove(resolution);
+											break;
+										}
+									}
+								}
+							}
+						}else // removed internal BlankNodes from the results
+							oids.remove(resolution);
+					}
+				}
+				
+				if(oids.size() > 0){
+					oid = oids.get(0).values().iterator().next();
+					if(oids.size() > 1){
+						String duids = "";
+						for(Iterator<Map<String, String>> it=oids.iterator(); it.hasNext();)
+							duids += (duids.length()>0?", ":"") + it.next().values().iterator().next();
+						
+						System.out.println("Duplicated records found for " + title + " (" + field + "): " + duids + ".");
+					}	
+				}
+					
+			}
 			
 			if(oid == null){
 				// Create the record
 				oid = getNewId();
 				aboutAttr.setText(oid);
-				idsMap.put(nKey, oid);
-				log.info("Found new redord " + srcUri + " (" + oid + ": " + field + " -- " + title);
-				
 			}else{
-				// Record found. Add linking, remove it.
+				// Record found. Add to the map, link and remove it.
 				toResourceLinking(oid, record);
-			}			
+			}
+			idsMap.put(nKey, oid);
 		}else{	
 			// Record added. Add linking, remove it.
 			toResourceLinking(oid, record);
@@ -607,6 +674,16 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		return getProperties(record, getLicensePropNames());
 	}
 	
+	private Map<String, String> otherRightsProperties(Node record){
+		List<String> propNames = getOtherRightsPropNames();
+		String propName = "dams:relationship//dams:name";
+		if(record.selectSingleNode(propName + "//mads:authoritativeLabel") != null)
+			propNames.add(propName + "//mads:authoritativeLabel");
+		else
+			propNames.add(propName);		
+		return getProperties(record, propNames);
+	}
+	
 	private Map<String, String> relatedResourceProperties(Node record){
 		return getProperties(record, getRelatedResourcePropNames());
 	}
@@ -615,60 +692,108 @@ public class RDFDAMS4ImportHandler extends MetadataImportHandler{
 		return getProperties(record, getSourceCapturePropNames());
 	}
 	
-	private Map<String, String> getProperties(Node record, Map<String, String> propNames){
+	private Map<String, String> noteProperties(Node record){
+		return getProperties(record, getNotePropNames());
+	}
+	
+	private Map<String, String> dateProperties(Node record){
+		return getProperties(record, getDatePropNames());
+	}
+	
+	private Map<String, String> getProperties(Node record, List<String> propNames){
 		Map<String, String> props = new TreeMap<String, String>();
-		String key = null;
-		String solrName = null;
+		String propName = null;
 		String propValue = null;
-		for(Iterator<String> it=propNames.keySet().iterator(); it.hasNext();){
+		for(Iterator<String> it=propNames.iterator(); it.hasNext();){
 			propValue = null;
-			key = it.next();
-			solrName = propNames.get(key);
-			Node tNode = record.selectSingleNode(key);
-			if(tNode != null)
-				propValue = tNode.getText().trim();
+			propName = it.next();
+			Node tNode = record.selectSingleNode(propName);
+			if(tNode != null){
+				Node resNode = tNode.selectSingleNode("@rdf:resource");
+				if(resNode != null)
+					propValue = encodeIdentifier(resNode.getStringValue());
+				else
+					propValue = encodeLiteralValue(tNode);
+			}
 			
-			props.put(solrName, propValue);
+			props.put(propName, propValue);
 		}
 		return props;
 	}
 	
-	private Map<String, String> getCopyrightPropNames(){
-		Map<String, String> propNames = new HashMap<String, String>();
-		propNames.put("dams:copyrightStatus", "status_tesim");
-		propNames.put("dams:copyrightJurisdiction", "jurisdiction_tesim");
-		propNames.put("dams:copyrightPurposeNote", "purposeNote_tesim");
-		propNames.put("dams:copyrightNote", "note_tesim");
-		propNames.put("dams:beginDate", "beginDate_tesim");
-		propNames.put("dams:endDate", "endDate_tesim");
+	private List<String> getCopyrightPropNames(){
+		List<String> propNames = new ArrayList<String>();
+		propNames.add("dams:copyrightStatus");
+		propNames.add("dams:copyrightJurisdiction");
+		propNames.add("dams:copyrightPurposeNote");
+		propNames.add("dams:copyrightNote");
+		propNames.add("dams:beginDate");
+		propNames.add("dams:endDate");
 		return propNames;
 	}
 	
-	private Map<String, String> getLicensePropNames(){
-		Map<String, String> propNames = new HashMap<String, String>();
-		propNames.put("dams:permission/dams:Permission/dams:type", "permissionType_tesim");
-		propNames.put("dams:permission/dams:Permission/dams:beginDate", "permissionBeginDate_tesim");
-		propNames.put("dams:permission/dams:Permission/dams:endDate", "permissionEndDate_tesim");
-		propNames.put("dams:restriction/dams:Restriction/dams:type", "restrictionType_tesim");
-		propNames.put("dams:restriction/dams:Restriction/dams:beginDate", "restrictionBeginDate_tesim");
-		propNames.put("dams:restriction/dams:Restriction/dams:endDate", "restrictionEndDate_tesim");
+	private List<String> getLicensePropNames(){
+		List<String> propNames = new ArrayList<String>();
+		propNames.add("dams:permission//dams:type");
+		propNames.add("dams:permission//dams:beginDate");
+		propNames.add("dams:permission//dams:endDate");
+		propNames.add("dams:restriction//dams:type");
+		propNames.add("dams:restriction//dams:beginDate");
+		propNames.add("dams:restriction//dams:endDate");
 		return propNames;
 	}
 	
-	private Map<String, String> getRelatedResourcePropNames(){
-		Map<String, String> propNames = new HashMap<String, String>();
-		propNames.put("dams:type", "type_tesim");
-		propNames.put("dams:uri", "uri_tesim");
+	private List<String> getOtherRightsPropNames(){
+		List<String> propNames = getLicensePropNames();
+		propNames.add("dams:otherRightsNote");
 		return propNames;
 	}
 	
-	private Map<String, String> getSourceCapturePropNames(){
-		Map<String, String> propNames = new HashMap<String, String>();
-		propNames.put("dams:imageProducer", "imageProducer_tesim");
-		propNames.put("dams:captureSource", "captureSource_tesim");
-		propNames.put("dams:scannerManufacturer", "scannerManufacturer_tesim");
-		propNames.put("dams:scannerModelName", "scannerModelName_tesim");
+	private List<String> getRelatedResourcePropNames(){
+		List<String> propNames = new ArrayList<String>();
+		propNames.add("dams:type");
+		//propNames.add("dams:uri");
 		return propNames;
+	}
+	
+	private List<String> getNotePropNames(){
+		List<String> propNames = new ArrayList<String>();
+		propNames.add("dams:type");
+		propNames.add("dams:displayLabel");
+		return propNames;
+	}
+	
+	private List<String> getDatePropNames(){
+		List<String> propNames = new ArrayList<String>();
+		propNames.add("dams:beginDate");
+		propNames.add("dams:endDate");
+		return propNames;
+	}
+	
+	private List<String> getSourceCapturePropNames(){
+		List<String> propNames = new ArrayList<String>();
+		propNames.add("dams:imageProducer");
+		propNames.add("dams:captureSource");
+		propNames.add("dams:scannerManufacturer");
+		propNames.add("dams:scannerModelName");
+		propNames.add("dams:scanningSoftware");
+		propNames.add("dams:scanningSoftwareVersion");
+		return propNames;
+	}
+
+	private String encodeIdentifier(String id){
+		return "<" + id + ">";
+	}
+	
+	private String encodeLiteralValue(Node node){
+		String value = null;
+		if(node != null){
+			value = "\"" + StringEscapeUtils.escapeJava(Normalizer.normalize(node.getText(), Normalizer.Form.NFC)).replace("'", "\\'").replace("\"", "\\\"") + "\"";
+			Node langAttr = node.selectSingleNode("@xml:lang");
+			if(langAttr!=null)
+				value += "@" + langAttr.getStringValue();
+		}
+		return value;
 	}
 	
 	/**

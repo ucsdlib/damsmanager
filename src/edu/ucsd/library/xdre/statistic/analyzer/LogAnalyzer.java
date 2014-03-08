@@ -86,7 +86,7 @@ public class LogAnalyzer{
 			while((line=bReader.readLine()) != null){
 				spIdx = line.indexOf("GET /dc");
 				if(spIdx > 0 && line.indexOf(Constants.CLUSTER_HOST_NAME) > 0 
-						&& line.indexOf("/assets/") < 0 && line.indexOf("/get_data/") < 0 && line.indexOf("/users/") < 0){
+						&& line.indexOf("/assets/") < 0 && line.indexOf("/get_data/") < 0 && line.indexOf("/users/") < 0 && line.indexOf("/images/") < 0 ){
 					uri = getUri(line);
 					if(uri != null){
 						//idx = uri.indexOf("&user=");
@@ -182,25 +182,6 @@ public class LogAnalyzer{
 	public void setUpdate(boolean update) {
 		this.update = update;
 	}
-	
-	public boolean isRecordExist(Connection con, String date) throws SQLException{
-		PreparedStatement ps = null;
-		ResultSet rs = null;
-		try{
-			ps = con.prepareStatement(DAMStatistic.WEB_STATS_RECORD_EXIST);
-			ps.setString(1, date);
-			rs = ps.executeQuery();
-			if(rs.next() && rs.getInt(1) > 0)
-				return true;
-		}finally{
-			Statistics.close(rs);
-			Statistics.close(ps);
-			rs = null;
-			ps = null;
-		}
-		return false;
-	}
-
 
 	public static String getAttributeValue(Node node){
 		if(node == null)

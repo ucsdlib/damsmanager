@@ -113,7 +113,7 @@ public class StatsWeblogAnalyzerController implements Controller {
 						//throw new Exception(message);
 					}else{
 						LogAnalyzer analyzer = new LogAnalyzer();
-						if(update || !analyzer.isRecordExist(con, dateString)){
+						if(update || !Statistics.isRecordExist(con, sCal.getTime())){
 							analyzer.setUpdate(update);
 							analyzer.analyze(logFile);
 							analyzer.export(con);
