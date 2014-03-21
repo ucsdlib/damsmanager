@@ -1683,7 +1683,7 @@ public class DAMSClient {
 					}catch (Exception e){
 						e.printStackTrace();
 					}
-				} else if(format.equals("json")){
+				} else if(format != null && format.equals("json")){
 					Reader reader = new InputStreamReader(in);
 					JSONObject resultObj = (JSONObject) JSONValue.parse(reader);
 					respContent += resultObj.get("status") + " status code " + resultObj.get("statusCode") + ". Error " + resultObj.get("message");

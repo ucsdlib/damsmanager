@@ -84,6 +84,7 @@ public class DAMStatistic extends Statistics{
 			}else if (parts[1].equalsIgnoreCase("search")) {
 				
 				if(parts.length == 2){
+					try{
 					
 					// search & browse
 					String id = null;
@@ -147,6 +148,9 @@ public class DAMStatistic extends Statistics{
 								e.printStackTrace();
 							}
 						}
+					}
+					}catch (IllegalArgumentException e){
+						log.warn("Invalid encoding: " + uri, e);
 					}
 				}else if (parts.length >= 3 && parts[2].equals("facet")){
 					// Facet browse: /dc/search/facet/subject_topic_sim?facet.sort=index
