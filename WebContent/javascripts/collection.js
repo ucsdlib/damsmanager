@@ -289,11 +289,27 @@
         currServletId = progressId;             
         formObj.action = action;
         formObj.submit();
-        var url = progressUrl + "?progress=0&formId=" + formId + "&sid="+progressId;
-        timeoutObj = setTimeout(function(){httpcall(url, assignment);},200 );
-       	timeoutReload = setTimeout(
-        	function(){document.location.href = document.location.href;},1000
-        );
+        //var url = progressUrl + "?progress=0&formId=" + formId + "&sid="+progressId;
+        //timeoutObj = setTimeout(function(){httpcall(url, assignment);},200 );
+       	//timeoutReload = setTimeout(
+        //	function(){document.location.href = document.location.href;},1000
+        //);
+        displayStatus(formId, progressId);
+  }
+  
+  function displayStatus(formId, progressId){
+	 document.getElementById('tdr_crumbs').style.display='none';
+	 setDispStyle("main", "none");
+	 setDispStyle("statusDiv", "inline");
+	 displayMessage("status", "Accepting request ...");
+	 var url = progressUrl + "?progress=0&formId=" + formId + "&sid="+progressId;
+	 timeoutObj = setTimeout(function(){httpcall(url , progress);}, 500);
+	 var timeout = 2000;
+	 if(document.getElementById(formId).rdfImport.checked)
+		 timeout = 60000;
+	 timeoutReload = setTimeout(
+     	function(){document.location.href = document.location.href;}, timeout
+     );
   }
   
   function rfailed(resp){
