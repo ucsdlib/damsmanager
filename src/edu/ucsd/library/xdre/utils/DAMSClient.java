@@ -1,6 +1,7 @@
 package edu.ucsd.library.xdre.utils;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -694,6 +695,32 @@ public class DAMSClient {
 		return updateDerivatives(object, compId, fileName, sizes, null, true);
 	}
 
+	public boolean mergeRecords(String object, String[] records2merge) throws Exception {
+		//POST /objects/bb1234567x/index
+		String format = "json";
+		String paramsStr = "";
+		if(records2merge != null && records2merge.length > 0){
+			for(int i=0; i<records2merge.length; i++)
+				paramsStr += "id=" + records2merge[i] + "&";
+			paramsStr = paramsStr.substring(0, paramsStr.length()-1);
+		}
+		String url = getObjectsURL(object, null, "merge", format);
+		if(paramsStr != null && paramsStr.length() > 0)
+			url += (url.indexOf('?')>0?"&":"?") + paramsStr;
+		HttpPut put = new HttpPut(url);
+		int status = -1;
+		boolean success = false;
+		try {
+			status = execute(put);
+			success=(status == 200 || status == 201);
+			if (!success)
+				handleError(format);
+		} finally {
+			put.releaseConnection();
+		}
+
+		return success;
+	}
 	
 	/**
 	 * Push or Update a record in SOLR.
@@ -1692,12 +1719,13 @@ public class DAMSClient {
 				} else {
 
 					byte[] buf = new byte[4096];
-					StringBuilder strContent = new StringBuilder();
+					ByteArrayOutputStream out = new ByteArrayOutputStream();
 					int bRead = -1;
 
-					while((bRead=in.read(buf)) > 0 && strContent.length() < MAX_SIZE)
-						strContent.append((char)bRead);
-					respContent = strContent.toString();
+					while((bRead=in.read(buf)) > 0 && out.size() < MAX_SIZE)
+						out.write(buf, 0, bRead);
+					respContent += out.toString();
+					out.close();
 					System.out.println(respContent);
 				}
 			}finally{
