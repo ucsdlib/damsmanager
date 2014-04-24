@@ -36,11 +36,11 @@ import edu.ucsd.library.xdre.collection.CollectionHandler;
 import edu.ucsd.library.xdre.collection.DerivativeHandler;
 import edu.ucsd.library.xdre.collection.FileCountValidaionHandler;
 import edu.ucsd.library.xdre.collection.FileIngestionHandler;
+import edu.ucsd.library.xdre.collection.FilestoreSerializationHandler;
 import edu.ucsd.library.xdre.collection.JhoveReportHandler;
 import edu.ucsd.library.xdre.collection.MetadataExportHandler;
 import edu.ucsd.library.xdre.collection.MetadataImportHandler;
 import edu.ucsd.library.xdre.collection.SOLRIndexHandler;
-import edu.ucsd.library.xdre.imports.RDFDAMS4ImportHandler;
 import edu.ucsd.library.xdre.imports.RDFDAMS4ImportTsHandler;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
@@ -123,6 +123,7 @@ public class CollectionOperationController implements Controller {
 		boolean isDevUpload = getParameter(paramsMap, "devUpload") != null;
 		boolean isBSJhoveReport = getParameter(paramsMap, "bsJhoveReport") != null;
 		boolean isSolrDump = getParameter(paramsMap, "solrDump") != null;
+		boolean isSerialization = getParameter(paramsMap, "serialize") != null;
 		String fileStore = getParameter(paramsMap, "fs");
 		if(activeButton == null || activeButton.length() == 0)
 			activeButton = "validateButton";
@@ -146,6 +147,8 @@ public class CollectionOperationController implements Controller {
 			forwardTo = "/devUpload.do?" + (fileStore!=null?"&fs=" + fileStore:"");
 		else if(isSolrDump)
 			forwardTo = "/solrDump.do?" + (fileStore!=null?"&fs=" + fileStore:"");
+		else if(isSerialization)
+			forwardTo = "/serialize.do?" + (fileStore!=null?"&fs=" + fileStore:"");
 		forwardTo += "&activeButton=" + activeButton; 
 
 		String[] emails = null;
@@ -269,7 +272,7 @@ public class CollectionOperationController implements Controller {
 		operations[8] = getParameter(paramsMap, "sendToCDL") != null;
 		operations[9] = getParameter(paramsMap, "dataConvert") != null;
 		operations[10] = getParameter(paramsMap, "ingest") != null;
-		operations[11] = getParameter(paramsMap, "srbSyn") != null;
+		operations[11] = getParameter(paramsMap, "serialize") != null;
 		operations[12] = getParameter(paramsMap, "tsSyn") != null;
 		operations[13] = getParameter(paramsMap, "createJson") != null;
 		operations[14] = getParameter(paramsMap, "cacheJson") != null;
@@ -573,6 +576,46 @@ public class CollectionOperationController implements Controller {
 		            ((FileIngestionHandler)handler).setUnit(unit);
 		            ((FileIngestionHandler)handler).setFileUses(fileUses);
 		    	    
+			 } else if (i == 11) {
+				 session.setAttribute("status", opMessage + "Ferialize records RDF/XML to filestore ...");
+				 if(collectionId.indexOf(",") > 0){
+					 String collIDs = collectionId;
+					 String[] collArr = collectionId.split(",");
+					 List<String> items = new ArrayList<String>();
+					 String collNames = "";
+					 for(int j=0; j<collArr.length; j++){
+						 if(collArr[j] != null && (collArr[j]=collArr[j].trim()).length()>0){
+							 collectionId = collArr[j];
+							 if(collectionId.equalsIgnoreCase("all")){
+								 items.addAll(damsClient.listAllRecords());
+								 collNames += "All Records (" + items.size() + "), ";
+							 }else{
+								 try{
+									 handler = new SOLRIndexHandler( damsClient, collectionId );
+									 items.addAll(handler.getItems());
+									 collNames += handler.getCollectionTitle() + "(" + handler.getFilesCount() + "), ";
+									 if(j>0 && j%5==0)
+										 collNames += "\n";
+								 }finally{
+									 if(handler != null){
+										 handler.release();
+										 handler = null;
+									 } 
+								 }
+							 }
+						 }
+					 }
+					 handler = new FilestoreSerializationHandler( damsClient, null );
+					 handler.setItems(items);
+					 handler.setCollectionTitle(collNames.substring(0, collNames.lastIndexOf(",")));
+					 handler.setCollectionId(collIDs);
+				 }else{
+					 if(collectionId.equalsIgnoreCase("all")){
+						 handler = new FilestoreSerializationHandler(damsClient, null);
+						 handler.setItems(damsClient.listAllRecords());
+					 }else
+						 handler = new FilestoreSerializationHandler(damsClient, collectionId);
+				 }
 			 }/* else if (i == 15){	
 				 session.setAttribute("status", opMessage + "Moving files from dev to LocalStore ...");
 				 //localStore = getLocalFileStore();

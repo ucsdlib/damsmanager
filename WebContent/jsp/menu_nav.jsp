@@ -11,6 +11,7 @@
 	<li><a>DAMS</a>
 		<ul>
 			<li><a href='/damsmanager/solrDump.do'>SOLR Dump Utility</a></li>
+			<li><a href='/damsmanager/serialize.do'>Filestore Serialization</a></li>
 		</ul>
 	</li>
 	<li><a>Statistics</a>

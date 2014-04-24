@@ -800,6 +800,32 @@ public class DAMSClient {
 		
 		return items;
 	}
+	
+	/**
+	 * Serialize a record to filestore.
+	 * 
+	 * @param object
+	 * @return
+	 * @throws Exception 
+	 */
+	public boolean serialize2disk(String object) throws Exception {
+		//POST /objects/bb1234567x/serialize
+		String format = "json";
+		String url = getObjectsURL(object, null, "serialize", format);
+		HttpPost post = new HttpPost(url);
+		int status = -1;
+		boolean success = false;
+		try {
+			status = execute(post);
+			success=(status == 200 || status == 201);
+			if (!success)
+				handleError(format);
+		} finally {
+			post.releaseConnection();
+		}
+
+		return success;
+	}
 
 	/**
 	 * Retrieve the metadata elements of an object with the top level predicates
