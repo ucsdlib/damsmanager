@@ -43,6 +43,8 @@ public class FilestoreSerializationHandler extends CollectionHandler{
 
 		String subjectURI = null;
 		String message = null;
+		String filestore = damsClient.getFileStore();
+		filestore = filestore==null?"filestore":filestore;
 		if(collectionId != null && collectionId.length() > 0){
 			// Update SOLR for the collection record
 			String[] colIds = collectionId.split(",");
@@ -56,13 +58,13 @@ public class FilestoreSerializationHandler extends CollectionHandler{
 							faileds.append(colId + "; \n");
 							failedCount++;
 							exeResult = false;
-							message = "Failed to serialized collection record " + colId + " to " + damsClient.getFileStore() + ".";
+							message = "Failed to serialized collection record " + colId + " to " + filestore + ".";
 							exeReport.append(message);
 							log.error(message);
 							log("log", message);
 						}else{
 							count++;
-							message = "Serialized collection record " + colId + " to " + damsClient.getFileStore() + ".";
+							message = "Serialized collection record " + colId + " to " + filestore + ".";
 							log.info(message);
 							log("log", message);
 						}
@@ -70,7 +72,7 @@ public class FilestoreSerializationHandler extends CollectionHandler{
 						faileds.append(colId + "; \n");
 						failedCount++;
 						exeResult = false;
-						message = "Failed to serialize collection record " + colId + " to " + damsClient.getFileStore() + ": " + e.getMessage() + ";";
+						message = "Failed to serialize collection record " + colId + " to " + filestore + ": " + e.getMessage() + ";";
 						log.error(message, e);
 						log("log", message);
 					}
@@ -87,12 +89,12 @@ public class FilestoreSerializationHandler extends CollectionHandler{
 					faileds.append(subjectURI + "; \n");
 					failedCount++;
 					exeResult = false;
-					message = "Failed to serialized record " + subjectURI + " to " + damsClient.getFileStore() + ".";
+					message = "Failed to serialized record " + subjectURI + " to " + filestore + ".";
 					log.error(message);
 					log("log", message);
 				}else{
 					count++;
-					message = "Serialized record " + subjectURI + " to " + damsClient.getFileStore() + ".";
+					message = "Serialized record " + subjectURI + " to " + filestore + ".";
 					log.info(message);
 					log("log", message);
 				}
@@ -100,7 +102,7 @@ public class FilestoreSerializationHandler extends CollectionHandler{
 				faileds.append(subjectURI + "; \n");
 				failedCount++;
 				exeResult = false;
-				message = "Failed to serialize record " + subjectURI + " to " + damsClient.getFileStore() + ": " + e.getMessage() + ";";
+				message = "Failed to serialize record " + subjectURI + " to " + filestore + ": " + e.getMessage() + ";";
 				log.error(message, e);
 				log("log", message);
 			}
