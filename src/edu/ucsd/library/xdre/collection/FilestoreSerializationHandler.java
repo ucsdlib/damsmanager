@@ -37,11 +37,12 @@ public class FilestoreSerializationHandler extends CollectionHandler{
 	}
 
 	/**
-	 * Procedure for rdf/xml to filestore serialization
+	 * Procedure to serialize objects rdf/xml to filestore
 	 */
 	public boolean execute() throws Exception {
 
 		String subjectURI = null;
+		String message = null;
 		if(collectionId != null && collectionId.length() > 0){
 			// Update SOLR for the collection record
 			String[] colIds = collectionId.split(",");
@@ -55,15 +56,23 @@ public class FilestoreSerializationHandler extends CollectionHandler{
 							faileds.append(colId + "; \n");
 							failedCount++;
 							exeResult = false;
+							message = "Failed to serialized collection record " + colId + " to " + damsClient.getFileStore() + ".";
+							exeReport.append(message);
+							log.error(message);
+							log("log", message);
 						}else{
 							count++;
-							log.info("Serialized " + colId + " to filestore " + damsClient.getFileStore() + ".");
+							message = "Serialized collection record " + colId + " to " + damsClient.getFileStore() + ".";
+							log.info(message);
+							log("log", message);
 						}
 					} catch (Exception e){
 						faileds.append(colId + "; \n");
 						failedCount++;
 						exeResult = false;
-						exeReport.append("Failed to serialize " + subjectURI + ": " + e.getMessage() + "; \n");
+						message = "Failed to serialize collection record " + colId + " to " + damsClient.getFileStore() + ": " + e.getMessage() + ";";
+						log.error(message, e);
+						log("log", message);
 					}
 				}
 			}
@@ -78,24 +87,31 @@ public class FilestoreSerializationHandler extends CollectionHandler{
 					faileds.append(subjectURI + "; \n");
 					failedCount++;
 					exeResult = false;
+					message = "Failed to serialized record " + subjectURI + " to " + damsClient.getFileStore() + ".";
+					log.error(message);
+					log("log", message);
 				}else{
 					count++;
-					log.info("Serialized " + subjectURI + " to filestore " + damsClient.getFileStore() + ".");
+					message = "Serialized record " + subjectURI + " to " + damsClient.getFileStore() + ".";
+					log.info(message);
+					log("log", message);
 				}
 			} catch (Exception e){
 				faileds.append(subjectURI + "; \n");
 				failedCount++;
 				exeResult = false;
-				exeReport.append("Failed to serialize " + subjectURI + ": " + e.getMessage() + "; \n");
+				message = "Failed to serialize record " + subjectURI + " to " + damsClient.getFileStore() + ": " + e.getMessage() + ";";
+				log.error(message, e);
+				log("log", message);
 			}
-			setProgressPercentage( ((i + 1) * 100) / itemsCount);
+			setProgressPercentage( ((i + 1) * 100) / (itemsCount+colCount));
 			
 			try{
 				Thread.sleep(10);
 			} catch (InterruptedException e1) {
 				failedCount++;
 				interrupted = true;
-    			logError("SOLR index canceled for subject " + subjectURI  + ". Error: " + e1.getMessage() + ". ");
+    			logError("Filestore serialization canceled on subject " + subjectURI  + ". Error: " + e1.getMessage() + ". ");
 				setStatus("Canceled");
 				clearSession();
 			}
