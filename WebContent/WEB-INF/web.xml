@@ -81,6 +81,7 @@
 	        <url-pattern>/statusUpload.do</url-pattern>
 	        <url-pattern>/rdfExport.do</url-pattern>
 	        <url-pattern>/solrDump.do</url-pattern>
+	        <url-pattern>/serialize.do</url-pattern>
 	        <url-pattern>/statsWeblogAnalyzer.do</url-pattern>
 	        <url-pattern>/statsQuantityAnalyzer.do</url-pattern>
 	        <url-pattern>/collectionsReport.do</url-pattern>

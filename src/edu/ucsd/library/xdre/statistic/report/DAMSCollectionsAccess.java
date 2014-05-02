@@ -71,8 +71,10 @@ public class DAMSCollectionsAccess extends StatsUsage{
 				if(monthsList.indexOf(period)<0)
 					monthsList.add(period);
 				colTitle = collectionsMap.get(colId);
-				if(colTitle == null)
+				if(colTitle == null){
 					colTitle = colId;
+					continue;
+				}
 				
 				dlpColAccess = new DAMSCollectionAccess(period, colId, collectionsMap.get(colId), numAccess);
 				
