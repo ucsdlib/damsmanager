@@ -103,12 +103,14 @@ public class TabularRecord
     {
         // setup object        
         Document doc = new DocumentFactory().createDocument();
-        Element root = addElement(doc,"Object",damsNS);
-        doc.setRootElement(root);
-        root.add( damsNS );
-        root.add( madsNS );
-        root.add( rdfNS );
-        root.add( rdfsNS );
+        Element rdf = addElement(doc,"RDF",rdfNS);
+        doc.setRootElement(rdf);
+        rdf.add( damsNS );
+        rdf.add( madsNS );
+        rdf.add( rdfNS );
+        rdf.add( rdfsNS );
+
+        Element root = addElement(rdf,"Object",damsNS);
 
         // object metadata
         addFields( root, data, 0 );
