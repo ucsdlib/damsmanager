@@ -141,13 +141,13 @@ public class TabularRecord
             addTextElement( e, "typeOfResource", damsNS, type );
         }
 
-        // collection ///////////////////////////////////////////////////////////////////
-        String cols = data.get("Collection");
-        for ( String colName : split(cols) )
-        {
-            Element coll = addVocabElement(e,"collection",damsNS,"Collection",damsNS);
-            addTitle( coll, colName, null, null, null, null, null );
-        }
+        // collections //////////////////////////////////////////////////////////////////
+        addCollection( e, data, "Assembled collection", "assembledCollection",
+            "AssembledCollection" );
+        addCollection( e, data, "Provenance collection", "provenanceCollection",
+            "ProvenanceCollection" );
+        addCollection( e, data, "Provenance collection part", "provenanceCollectionPart",
+            "ProvenanceCollectionPart" );
 
         // title ////////////////////////////////////////////////////////////////////////
         String main  = data.get("Title");
@@ -160,12 +160,14 @@ public class TabularRecord
 
         // date /////////////////////////////////////////////////////////////////////////
         // first create a date element to hold begin/end date if provided
+        String date = data.get("Date");
         String begin = data.get("Begin date");
         String end   = data.get("End date");
         Element d = null;
-        if ( pop(begin) || pop(end) )
+        if ( pop(date) || pop(begin) || pop(end) )
         {
             d = addElement( e, "date", damsNS, "Date", damsNS );
+            addTextElement( d, "value", rdfNS, date );
             addTextElement( d, "beginDate", damsNS, begin );
             addTextElement( d, "endDate", damsNS, end );
         }
@@ -271,8 +273,10 @@ public class TabularRecord
         addSubject( data, e, "Subject:topic", "Topic", madsNS, "topic", damsNS, null );
 
         // rights holder (special case of subject name) /////////////////////////////////
-        addSubject( data, e, "Copyright holder", "PersonalName", madsNS,
-                "rightsHolderPersonal", damsNS, null );
+        addSubject( data, e, "Copyright holder personal name", "PersonalName", madsNS,
+                "rightsHolderPersonal", damsNS, "FullName" );
+        addSubject( data, e, "Copyright holder corporate name", "CorporateName", madsNS,
+                "rightsHolderCorporate", damsNS, "Name" );
 
         // language /////////////////////////////////////////////////////////////////////
         for ( String lang : split(data.get("Language")) )
@@ -336,6 +340,15 @@ public class TabularRecord
     /////////////////////////////////////////////////////////////////////////////////////
     // metadata utilities ////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////
+    private void addCollection( Element e, Map<String,String> data, String header,
+        String pred, String elem )
+    {
+        for ( String colName : split(data.get(header)) )
+        {
+            Element coll = addVocabElement( e, pred, damsNS, elem, damsNS );
+            addTitle( coll, colName, null, null, null, null, null );
+        }
+    }
     private void addRelationship( Map<String,String> data, Element e, String header,
         String type, String pred, String element )
     {
@@ -379,14 +392,19 @@ public class TabularRecord
             addMadsElement( el, element, value );
         }
     }
-    private void addTitle( Element e, String mainTitle, String subTitle,
+    private static void addTitle( Element e, String mainTitle, String subTitle,
         String partName, String partNumber, String translation, String variant )
     {
-        Element t = addElement(e,"title",damsNS,"Title",madsNS);
         String label = mainTitle;
         if ( pop(subTitle) )   { label += "--" + subTitle;   }
         if ( pop(partName) )   { label += "--" + partName;   }
         if ( pop(partNumber) ) { label += "--" + partNumber; }
+        if ( !pop(label) )
+        {
+            // if there's no title provided, don't add the structure
+            return;
+        }
+        Element t = addElement(e,"title",damsNS,"Title",madsNS);
         addElement(t,"authoritativeLabel",madsNS).setText(label);
         Element el = addElement(t,"elementList",madsNS);
         addAttribute( el, "parseType", rdfNS, "Collection" );
@@ -408,7 +426,7 @@ public class TabularRecord
             addTextElement( varElem, "variantLabel", madsNS, trans );
         }
     }
-    private void addMadsElement( Element list, String name, String value )
+    private static void addMadsElement( Element list, String name, String value )
     {
         addTextElement(list,name + "Element", madsNS,"elementValue",madsNS, value);
     }
@@ -416,14 +434,15 @@ public class TabularRecord
     /////////////////////////////////////////////////////////////////////////////////////
     // xml utilities ////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////
-    private void addTextElement( Element e, String name, Namespace ns, String value )
+    private static void addTextElement( Element e, String name, Namespace ns,
+        String value )
     {
         if ( pop(value) )
         {
             addElement( e, name, ns ).setText( value );
         }
     }
-    private void addTextElement( Element e, String name1, Namespace ns1,
+    private static void addTextElement( Element e, String name1, Namespace ns1,
         String name2, Namespace ns2, String value )
     {
         if ( pop(value) )
@@ -431,16 +450,16 @@ public class TabularRecord
             addElement( e, name1, ns1, name2, ns2 ).setText( value );
         }
     }
-    private void addAttribute( Element e, String name, Namespace ns, String value )
+    private static void addAttribute( Element e, String name, Namespace ns, String value )
     {
         e.addAttribute( new QName(name,ns), value );
     }
 
-    private Element addElement( Branch b, String name, Namespace ns )
+    private static Element addElement( Branch b, String name, Namespace ns )
     {
         return b.addElement( new QName(name,ns) );
     }
-    private Element addElement( Branch b, String name1, Namespace ns1,
+    private static Element addElement( Branch b, String name1, Namespace ns1,
         String name2, Namespace ns2 )
     {
         return b.addElement( new QName(name1,ns1) ).addElement( new QName(name2,ns2) );
@@ -456,11 +475,11 @@ public class TabularRecord
     /////////////////////////////////////////////////////////////////////////////////////
     // text processing //////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////
-    private boolean pop( String s )
+    private static boolean pop( String s )
     {
         return ( s != null && !s.trim().equals("") );
     }
-    private List<String> split( String s )
+    private static List<String> split( String s )
     {
         ArrayList<String> list = new ArrayList<>();
         if ( pop(s) )
