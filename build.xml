@@ -63,7 +63,14 @@
 	      <include name="*.jar"/>
 	    </fileset>
 	  </path>
-	
+
+      <path id="execpath">
+        <fileset dir="${lib}" id="lib">
+          <include name="*.jar"/>
+        </fileset>
+        <pathelement location="${webapp}/WEB-INF/classes"/>
+      </path>
+
 	  <!-- clean -->
 	  <target name="clean" description="Delete generated directories">
 	    <delete dir="${tmp}"/>
@@ -74,6 +81,7 @@
 	  	<delete dir="${tmp}"/>
 	    <mkdir dir="${dist}"/>
 	    <mkdir dir="${tmp}"/>
+        <mkdir dir="${tmp}/converted"/>
 	  	<mkdir dir="${webapp}/WEB-INF/classes"/>
 	  </target>
 	  <!-- compile -->
@@ -81,8 +89,8 @@
 	      depends="prepare,version">
 	    <!-- compile -->
 	    <javac destdir="${webapp}/WEB-INF/classes" srcdir="${src}"
-	        deprecation="on" debug="true" debuglevel="lines,source" target="1.5"
-	        includeantruntime="false" source="1.5">
+	        deprecation="on" debug="true" debuglevel="lines,source" target="1.7"
+	        includeantruntime="false" source="1.7">
 	      <classpath refid="classpath"/>
 	      <!-- <compilerarg line="-Xlint:unchecked"/> -->
 	    </javac>
@@ -141,6 +149,11 @@
     <undeploy url="http://${manager.host}:8080/manager/text" path="/${appName}"
           username="${manager.user}" password="${manager.pass}"
           failonerror="false"/>
+  </target>
+  <target name="convert" description="Convert demo excel file" depends="compile">
+    <java classname="edu.ucsd.library.xdre.tab.Demo" classpathref="execpath">
+      <arg line="${web}/files/conversion_demo.xlsx ${tmp}/converted"/>
+    </java>
   </target>
 
 </project>
