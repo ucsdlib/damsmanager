@@ -21,10 +21,22 @@ public class TabularInputStream extends FilterInputStream
     **/
     public TabularInputStream( TabularSource source )
     {
-		super( stream(source) );
-	}
-	private static InputStream stream( TabularSource source )
-	{
+        super( toStream(source) );
+    }
+
+	/**
+	 * Convert a TabularSource to RDF/XML and return the result as a stream.
+	**/
+    public static InputStream toStream( TabularSource source )
+    {
+        return new ByteArrayInputStream( toString(source).getBytes() );
+    }
+
+	/**
+	 * Convert a TabularSource to RDF/XML and return the result as a string.
+	**/
+    public static String toString( TabularSource source )
+    {
         Document doc = null;
         Element root = null;
         for ( TabularRecord rec = null; (rec = source.nextRecord()) != null; )
@@ -48,6 +60,6 @@ public class TabularInputStream extends FilterInputStream
                 }
             }
         }
-        return new ByteArrayInputStream( doc.asXML().getBytes() );
+        return doc.asXML();
     }
 }
