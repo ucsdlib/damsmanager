@@ -3,9 +3,11 @@ package edu.ucsd.library.xdre.web;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,6 +28,9 @@ import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.log4j.Logger;
+import org.dom4j.io.OutputFormat;
+import org.dom4j.io.XMLWriter;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONValue;
 import org.springframework.web.servlet.ModelAndView;
@@ -42,8 +47,12 @@ import edu.ucsd.library.xdre.collection.MetadataExportHandler;
 import edu.ucsd.library.xdre.collection.MetadataImportHandler;
 import edu.ucsd.library.xdre.collection.SOLRIndexHandler;
 import edu.ucsd.library.xdre.imports.RDFDAMS4ImportTsHandler;
+import edu.ucsd.library.xdre.tab.ExcelSource;
+import edu.ucsd.library.xdre.tab.TabularRecord;
+import edu.ucsd.library.xdre.tab.TabularSource;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
+import edu.ucsd.library.xdre.utils.FileUtils;
 import edu.ucsd.library.xdre.utils.RequestOrganizer;
 
 
@@ -53,7 +62,7 @@ import edu.ucsd.library.xdre.utils.RequestOrganizer;
  * @author lsitu@ucsd.edu
  */
 public class CollectionOperationController implements Controller {
-
+	private static Logger log = Logger.getLogger(CollectionOperationController.class);
 	@PostConstruct
 	public void afterPropertiesSet(){
 		
@@ -412,6 +421,57 @@ public class CollectionOperationController implements Controller {
 						  ingestFiles.add(new File(Constants.DAMS_STAGING + "/" + filesPaths[j]).getAbsolutePath());
 				  }
 				  
+				  String[] excelExts = {"xls", "xlsx"};
+				  List<File> excelFiles = FileUtils.filterFiles(dFiles, excelExts);
+				  if (excelFiles.size() > 0) {
+					  // Remove the Excel source that need conversion from the file list
+					  dFiles.removeAll(excelFiles);
+					  
+					  // Directory to hold the converted rdf/xml
+					  File tmpDir = new File (Constants.TMP_FILE_DIR + File.separatorChar + "converted");
+					  if(!tmpDir.exists())
+						  tmpDir.mkdir();
+					  
+					  // Convert Excel source files to DAMS4 rdf/xml
+					  for (File f : excelFiles) {
+						  TabularSource src = new ExcelSource(f);
+
+						  OutputFormat pretty = OutputFormat.createPrettyPrint();
+						  OutputStreamWriter out = null;
+						  XMLWriter writer = null;
+						  for (TabularRecord rec = null; (rec = src.nextRecord()) != null;) {
+							  String id = rec.getData().get("Object Unique ID");
+							  
+							  File convertedFile = new File(tmpDir.getAbsolutePath(), id + ".rdf.xml");
+							  try{
+								  out = new FileWriter(convertedFile);
+								  writer = new XMLWriter(out, pretty);
+								  writer.write(rec.toRDFXML());							  
+							  }finally{
+								  CollectionHandler.close(out);
+								  if(writer != null){
+									  try{
+										  writer.close();
+									  }catch (Exception e) {
+										  e.printStackTrace();
+									   }
+									  writer = null;
+								  }
+								  
+								  if(convertedFile.exists()) {
+									  convertedFile.deleteOnExit();
+									  if(dFiles.indexOf(convertedFile) < 0) {
+										  dFiles.add(convertedFile);
+										  System.out.println("Added converted RDF/XML file " + convertedFile.getAbsolutePath());
+									  }
+								  } else {
+									  log.error("Failed to write converted record to file " +  convertedFile.getName() + ": \n"
+											  + rec.toRDFXML()) ;
+								  }
+							  }  
+				          }
+					  }
+				  }
 				  handler = new RDFDAMS4ImportTsHandler(damsClient, dFiles.toArray(new File[dFiles.size()]), importOption);
 				  ((RDFDAMS4ImportTsHandler)handler).setFilesPaths(ingestFiles.toArray(new String[ingestFiles.size()]));
 			 }/*else if (i == 6){	
