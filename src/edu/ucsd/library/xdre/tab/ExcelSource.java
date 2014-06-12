@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -141,6 +142,11 @@ public class ExcelSource implements TabularSource
             }
             if ( value != null && !value.trim().equals("") )
             {
+            	try {
+					value = new String(value.getBytes("UTF-8"));
+				} catch (UnsupportedEncodingException e) {
+					e.printStackTrace();
+				}
                 String existing = values.get(header);
                 if ( existing == null )
                 {
