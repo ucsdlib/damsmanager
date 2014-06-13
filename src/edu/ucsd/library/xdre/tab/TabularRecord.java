@@ -263,7 +263,8 @@ public class TabularRecord
                 "familyName", damsNS, null );
         addSubject( data, e, "Subject:personal name", "PersonalName", madsNS,
                 "personalName", damsNS, "FullName" );
-        addSubject( data, e, "Subject:genre", "Genre", madsNS, "genre", damsNS, null );
+        addSubject( data, e, "Subject:genre", "GenreForm", madsNS,
+                "genreForm", damsNS, null );
         addSubject( data, e, "Subject:geographic", "Geographic", madsNS,
                 "geographic", damsNS, null );
         addSubject( data, e, "Subject:occupation", "Occupation", madsNS,
