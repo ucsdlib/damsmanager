@@ -87,7 +87,7 @@ public class ReportFormater {
 		for(int i=0; i<tokens.length; i++){
 			cell = row.getCell(i);
 			if(cell == null)
-				cell = row.createCell((short)i);
+				cell = row.createCell(i);
 			//if( i>0 )
 			//	cell.getCellStyle().setAlignment(HSSFCellStyle.ALIGN_CENTER);
 			if(tokens[i] == null)
