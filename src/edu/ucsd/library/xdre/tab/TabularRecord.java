@@ -133,6 +133,7 @@ public class TabularRecord
     private void addFields( Element e, Map<String,String> data, int cmp )
     {
         String id = (cmp > 0) ? "ARK/" + cmp : "ARK";
+        String fileID = (cmp > 0) ? "ARK/" + cmp + "/1": "ARK/0/1";
         addAttribute(e, "about", rdfNS, id);
 
         // typeOfResource ///////////////////////////////////////////////////////////////
@@ -167,6 +168,7 @@ public class TabularRecord
         if ( pop(date) || pop(begin) || pop(end) )
         {
             d = addElement( e, "date", damsNS, "Date", damsNS );
+            addTextElement( d, "encoding", damsNS, "w3cdtf" );
             addTextElement( d, "value", rdfNS, date );
             addTextElement( d, "beginDate", damsNS, begin );
             addTextElement( d, "endDate", damsNS, end );
@@ -195,6 +197,7 @@ public class TabularRecord
             // only one date
             String type = dates.keySet().iterator().next();
             String value = dates.get(type);
+            addTextElement( d, "encoding", damsNS, "w3cdtf" );
             addTextElement( d, "type", damsNS, type );
             addTextElement( d, "value", rdfNS, value );
         }
@@ -206,6 +209,7 @@ public class TabularRecord
                 String type = it.next();
                 String value = dates.get( type );
                 Element e2 = addElement( e, "date", damsNS, "Date", damsNS );
+                addTextElement( e2, "encoding", damsNS, "w3cdtf" );
                 addTextElement( e2, "type", damsNS, type );
                 addTextElement( e2, "value", rdfNS, value );
             }
@@ -321,7 +325,7 @@ public class TabularRecord
         {
             Element f = addElement(e,"hasFile",damsNS,"File",damsNS);
             String ext = (fn.indexOf(".") != -1) ? fn.substring(fn.lastIndexOf(".")) : "";
-            addAttribute( f, "about", rdfNS, id + "/1" + ext );
+            addAttribute( f, "about", rdfNS, fileID + ext );
             addElement(f,"sourceFileName",damsNS).setText(fn);
             if ( pop(use) )
             {
