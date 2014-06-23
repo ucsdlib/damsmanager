@@ -112,15 +112,17 @@ public class TabularRecord
 
         Element root = addElement(rdf,"Object",damsNS);
 
+        // get previously-assigned ark
+        String ark = data.get("ark");
+
         // object metadata
-        addFields( root, data, 0 );
+        addFields( root, data, 0, ark );
 
         // component metadata
         for ( int i = 0; i < cmp.size(); i++ )
         {
-            Element component = addElement( root, "hasComponent", damsNS, "Component",
-                    damsNS );
-            addFields( component, cmp.get(i), (i + 1) ); // 1-based component numbers
+            Element e = addElement(root, "hasComponent", damsNS, "Component", damsNS);
+            addFields(e, cmp.get(i), (i + 1), ark); // 1-based component ids
         }
 
         return doc;
@@ -130,10 +132,11 @@ public class TabularRecord
      * The meat of the metadata processing -- a long sequence of categories of metadata
      * fields with the key mapping between field names and dams4 structure
     **/
-    private void addFields( Element e, Map<String,String> data, int cmp )
+    private void addFields( Element e, Map<String,String> data, int cmp, String ark )
     {
-        String id = (cmp > 0) ? "ARK/" + cmp : "ARK";
-        String fileID = (cmp > 0) ? "ARK/" + cmp + "/1": "ARK/0/1";
+        if ( ark == null ) { ark = "ARK"; }
+        String id = (cmp > 0) ? ark + "/" + cmp : ark;
+        String fileID = ark + "/" + cmp + "/1";
         addAttribute(e, "about", rdfNS, id);
 
         // typeOfResource ///////////////////////////////////////////////////////////////
@@ -142,12 +145,12 @@ public class TabularRecord
             addTextElement( e, "typeOfResource", damsNS, type );
         }
 
-		// unit /////////////////////////////////////////////////////////////////////////
-		if ( cmp == 0 && pop(data.get("unit")) )
-		{
-			Element unit = addElement( e, "unit", damsNS );
+        // unit /////////////////////////////////////////////////////////////////////////
+        if ( cmp == 0 && pop(data.get("unit")) )
+        {
+            Element unit = addElement( e, "unit", damsNS );
             addAttribute( unit, "resource", rdfNS, data.get("unit") );
-		}
+        }
 
         // collections //////////////////////////////////////////////////////////////////
         addCollection( e, data, "assembled collection", "assembledCollection",
@@ -350,15 +353,15 @@ public class TabularRecord
             addTextElement(copy,"copyrightJurisdiction",damsNS, data.get("jurisdiction"));
         }
 
-		// other rights /////////////////////////////////////////////////////////////////
-		if ( pop(data.get("other rights permission")) )
-		{
-			Element other = addElement(e, "otherRights", damsNS, "OtherRights", damsNS);
-			addTextElement( other, "otherRightsBasis",damsNS,
-				data.get("other rights permission basis") );
-			Element perm = addElement(other, "permission", damsNS, "Permission", damsNS);
-			addTextElement( perm, "type", damsNS, data.get("other rights permission") );
-		}
+        // other rights /////////////////////////////////////////////////////////////////
+        if ( pop(data.get("other rights permission")) )
+        {
+            Element other = addElement(e, "otherRights", damsNS, "OtherRights", damsNS);
+            addTextElement( other, "otherRightsBasis",damsNS,
+                data.get("other rights permission basis") );
+            Element perm = addElement(other, "permission", damsNS, "Permission", damsNS);
+            addTextElement( perm, "type", damsNS, data.get("other rights permission") );
+        }
 
     }
 

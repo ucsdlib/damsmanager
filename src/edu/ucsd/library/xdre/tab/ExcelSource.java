@@ -100,6 +100,7 @@ public class ExcelSource implements TabularSource
                     // component record, add to list
                     components.add( cmp );
                     cmpID = null;
+                    cache = null;
                 }
                 else
                 {
@@ -142,11 +143,11 @@ public class ExcelSource implements TabularSource
             }
             if ( value != null && !value.trim().equals("") )
             {
-            	try {
-					value = new String(value.getBytes("UTF-8"));
-				} catch (UnsupportedEncodingException e) {
-					e.printStackTrace();
-				}
+                try {
+                    value = new String(value.getBytes("UTF-8"));
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
                 String existing = values.get(header);
                 if ( existing == null )
                 {
