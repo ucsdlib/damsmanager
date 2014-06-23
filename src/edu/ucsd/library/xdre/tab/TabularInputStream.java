@@ -41,7 +41,7 @@ public class TabularInputStream extends FilterInputStream
         Element root = null;
         for ( TabularRecord rec = null; (rec = source.nextRecord()) != null; )
         {
-            String id = rec.getData().get("Object Unique ID");
+            String id = rec.getData().get("object unique id");
             Document tmp = rec.toRDFXML();
             if ( doc == null )
             {

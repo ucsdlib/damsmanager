@@ -65,7 +65,7 @@ public class ExcelSource implements TabularSource
             Row firstRow = sheet.getRow(0);
             for ( int i = 0; i < firstRow.getLastCellNum(); i++ )
             {
-                headers.add( firstRow.getCell(i).getStringCellValue() );
+                headers.add( firstRow.getCell(i).getStringCellValue().toLowerCase() );
             }
             currRow++;
         }

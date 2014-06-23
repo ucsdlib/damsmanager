@@ -18,7 +18,7 @@ public class Demo
         OutputFormat pretty = OutputFormat.createPrettyPrint();
         for ( TabularRecord rec = null; (rec = src.nextRecord()) != null; )
         {
-            String id = rec.getData().get("Object Unique ID");
+            String id = rec.getData().get("object unique id");
             System.out.println("id: " + id);
             
             FileWriter out = new FileWriter( new File(dir, id + ".rdf.xml"));
