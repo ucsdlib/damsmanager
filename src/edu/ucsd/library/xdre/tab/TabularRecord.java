@@ -142,6 +142,13 @@ public class TabularRecord
             addTextElement( e, "typeOfResource", damsNS, type );
         }
 
+		// unit /////////////////////////////////////////////////////////////////////////
+		if ( cmp == 0 && pop(data.get("Unit")) )
+		{
+			Element unit = addElement( e, "unit", damsNS );
+            addAttribute( unit, "resource", rdfNS, data.get("Unit") );
+		}
+
         // collections //////////////////////////////////////////////////////////////////
         addCollection( e, data, "Assembled collection", "assembledCollection",
             "AssembledCollection" );
@@ -278,10 +285,14 @@ public class TabularRecord
         addSubject( data, e, "Subject:topic", "Topic", madsNS, "topic", damsNS, null );
 
         // rights holder (special case of subject name) /////////////////////////////////
-        addSubject( data, e, "Copyright holder personal name", "PersonalName", madsNS,
-                "rightsHolderPersonal", damsNS, "FullName" );
+        addSubject( data, e, "Copyright holder conference name", "ConferenceName", madsNS,
+                "rightsHolderConference", damsNS, "Name" );
         addSubject( data, e, "Copyright holder corporate name", "CorporateName", madsNS,
                 "rightsHolderCorporate", damsNS, "Name" );
+        addSubject( data, e, "Copyright holder family name", "FamilyName", madsNS,
+                "rightsHolderFamily", damsNS, "Name" );
+        addSubject( data, e, "Copyright holder personal name", "PersonalName", madsNS,
+                "rightsHolderPersonal", damsNS, "FullName" );
 
         // language /////////////////////////////////////////////////////////////////////
         for ( String lang : split(data.get("Language")) )
@@ -340,6 +351,17 @@ public class TabularRecord
             addTextElement(copy,"copyrightStatus",damsNS, data.get("Rights status"));
             addTextElement(copy,"copyrightJurisdiction",damsNS, data.get("Jurisdiction"));
         }
+
+		// other rights /////////////////////////////////////////////////////////////////
+		if ( pop(data.get("other rights permission")) )
+		{
+			Element other = addElement(e, "otherRights", damsNS, "OtherRights", damsNS);
+			addTextElement( other, "otherRightsBasis",damsNS,
+				data.get("other rights permission basis") );
+			Element perm = addElement(other, "permission", damsNS, "Permission", damsNS);
+			addTextElement( perm, "type", damsNS, data.get("other rights permission") );
+		}
+
     }
 
     /////////////////////////////////////////////////////////////////////////////////////
