@@ -440,7 +440,7 @@ public class CollectionOperationController implements Controller {
 						  OutputStreamWriter out = null;
 						  XMLWriter writer = null;
 						  for (TabularRecord rec = null; (rec = src.nextRecord()) != null;) {
-							  String id = rec.getData().get("Object Unique ID");
+							  String id = rec.getData().get("object unique id");
 							  
 							  File convertedFile = new File(tmpDir.getAbsolutePath(), id + ".rdf.xml");
 							  try{
