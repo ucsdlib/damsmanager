@@ -262,7 +262,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 	
 	private String toDams3FileConvention(String cid, String fid){
 		String dams3Name = "1";
-		if(cid != null && cid.length() > 0){
+		if(cid != null && cid.length() > 0 && !cid.equals("0")){
 			//Complex object
 			dams3Name += "-" + cid;
 		}
@@ -270,7 +270,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 		//files like xml in ETD and derivatives like jpeg, mp3, mp4 etc.
 		String fName = dersMap.get(fid);
 		if(fName == null){
-			if(cid != null && cid.length() > 0 && fid.startsWith("1.")){
+			if(cid != null && cid.length() > 0 && !cid.equals("0") && fid.startsWith("1.")){
 				//master file 1-cid.ext
 				dams3Name += fid.substring(1);
 			}else

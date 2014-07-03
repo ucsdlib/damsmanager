@@ -730,7 +730,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 				if(file.getAbsolutePath().indexOf("/siogeocoll/Master_Files_Bag/") > 0 || fName.equals("CLMR_RCI_Apr2013.xls") || fName.equalsIgnoreCase("Thumbs.db") || fName.equals(".DS_Store") || ((fName.indexOf("validation") >=0 || fName.indexOf("manifest") >= 0 || fName.startsWith("bagit") || fName.startsWith("bag-info")) && fName.endsWith(".txt")))
 					log.warn(message);
 				else
-					throw new Exception(message);
+					log.warn(message);
 			}else if(file.getAbsolutePath().indexOf("/siogeocoll/Master_Files_Bag/") < 0)
 				fMap.put(fName, file);
 		}

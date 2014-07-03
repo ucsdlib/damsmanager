@@ -22,7 +22,7 @@ import org.dom4j.QName;
 **/
 public class TabularRecord
 {
-    public static final String OBJECT_ID = "Object Unique ID";
+    public static final String OBJECT_ID = "object unique id";
     public static final String DELIMITER = "|";
 
     // namespaces
@@ -112,15 +112,17 @@ public class TabularRecord
 
         Element root = addElement(rdf,"Object",damsNS);
 
+        // get previously-assigned ark
+        String ark = data.get("ark");
+
         // object metadata
-        addFields( root, data, 0 );
+        addFields( root, data, 0, ark );
 
         // component metadata
         for ( int i = 0; i < cmp.size(); i++ )
         {
-            Element component = addElement( root, "hasComponent", damsNS, "Component",
-                    damsNS );
-            addFields( component, cmp.get(i), (i + 1) ); // 1-based component numbers
+            Element e = addElement(root, "hasComponent", damsNS, "Component", damsNS);
+            addFields(e, cmp.get(i), (i + 1), ark); // 1-based component ids
         }
 
         return doc;
@@ -130,40 +132,48 @@ public class TabularRecord
      * The meat of the metadata processing -- a long sequence of categories of metadata
      * fields with the key mapping between field names and dams4 structure
     **/
-    private void addFields( Element e, Map<String,String> data, int cmp )
+    private void addFields( Element e, Map<String,String> data, int cmp, String ark )
     {
-        String id = (cmp > 0) ? "ARK/" + cmp : "ARK";
-        String fileID = (cmp > 0) ? "ARK/" + cmp + "/1": "ARK/0/1";
+        if ( ark == null ) { ark = "ARK"; }
+        String id = (cmp > 0) ? ark + "/" + cmp : ark;
+        String fileID = ark + "/" + cmp + "/1";
         addAttribute(e, "about", rdfNS, id);
 
         // typeOfResource ///////////////////////////////////////////////////////////////
-        for ( String type : split(data.get("Type of Resource")) )
+        for ( String type : split(data.get("type of resource")) )
         {
             addTextElement( e, "typeOfResource", damsNS, type );
         }
 
+        // unit /////////////////////////////////////////////////////////////////////////
+        if ( cmp == 0 && pop(data.get("unit")) )
+        {
+            Element unit = addElement( e, "unit", damsNS );
+            addAttribute( unit, "resource", rdfNS, data.get("unit") );
+        }
+
         // collections //////////////////////////////////////////////////////////////////
-        addCollection( e, data, "Assembled collection", "assembledCollection",
+        addCollection( e, data, "assembled collection", "assembledCollection",
             "AssembledCollection" );
-        addCollection( e, data, "Provenance collection", "provenanceCollection",
+        addCollection( e, data, "provenance collection", "provenanceCollection",
             "ProvenanceCollection" );
-        addCollection( e, data, "Provenance collection part", "provenanceCollectionPart",
+        addCollection( e, data, "provenance collection part", "provenanceCollectionPart",
             "ProvenanceCollectionPart" );
 
         // title ////////////////////////////////////////////////////////////////////////
-        String main  = data.get("Title");
-        String sub   = data.get("Subtitle");
-        String ptNam = data.get("Part name");
-        String ptNum = data.get("Part number");
-        String trans = data.get("Translation");
-        String var   = data.get("Variant");
+        String main  = data.get("title");
+        String sub   = data.get("subtitle");
+        String ptNam = data.get("part name");
+        String ptNum = data.get("part number");
+        String trans = data.get("translation");
+        String var   = data.get("variant");
         addTitle( e, main, sub, ptNam, ptNum, trans, var );
 
         // date /////////////////////////////////////////////////////////////////////////
         // first create a date element to hold begin/end date if provided
-        String date = data.get("Date");
-        String begin = data.get("Begin date");
-        String end   = data.get("End date");
+        String date = data.get("date");
+        String begin = data.get("begin date");
+        String end   = data.get("end date");
         Element d = null;
         if ( pop(date) || pop(begin) || pop(end) )
         {
@@ -179,7 +189,7 @@ public class TabularRecord
         for ( Iterator<String> it = data.keySet().iterator(); it.hasNext(); )
         {
             String key = it.next();
-            if ( key.startsWith("Date:") )
+            if ( key.startsWith("date:") )
             {
                 String value = data.get( key );
                 if ( pop(value) )
@@ -197,7 +207,6 @@ public class TabularRecord
             // only one date
             String type = dates.keySet().iterator().next();
             String value = dates.get(type);
-            addTextElement( d, "encoding", damsNS, "w3cdtf" );
             addTextElement( d, "type", damsNS, type );
             addTextElement( d, "value", rdfNS, value );
         }
@@ -209,7 +218,6 @@ public class TabularRecord
                 String type = it.next();
                 String value = dates.get( type );
                 Element e2 = addElement( e, "date", damsNS, "Date", damsNS );
-                addTextElement( e2, "encoding", damsNS, "w3cdtf" );
                 addTextElement( e2, "type", damsNS, type );
                 addTextElement( e2, "value", rdfNS, value );
             }
@@ -219,7 +227,7 @@ public class TabularRecord
         for ( Iterator<String> it = data.keySet().iterator(); it.hasNext(); )
         {
             String key = it.next();
-            if ( key.startsWith("Identifier:") )
+            if ( key.startsWith("identifier:") )
             {
                 String value = data.get( key );
                 if ( pop(value) )
@@ -238,7 +246,7 @@ public class TabularRecord
         for ( Iterator<String> it = data.keySet().iterator(); it.hasNext(); )
         {
             String key = it.next();
-            if ( key.startsWith("Note:") )
+            if ( key.startsWith("note:") )
             {
                 String values = data.get( key );
                 for ( String value : split(values) )
@@ -254,49 +262,53 @@ public class TabularRecord
 
         // relationships ////////////////////////////////////////////////////////////////
         // data, elem, header, class/ns, pred/ns, element
-        addRelationship( data, e, "Person", "PersonalName", "personalName", "FullName" );
-        addRelationship( data, e, "Corporate", "CorporateName", "corporateName", "Name" );
+        addRelationship( data, e, "person", "PersonalName", "personalName", "FullName" );
+        addRelationship( data, e, "corporate", "CorporateName", "corporateName", "Name" );
 
         // subjects /////////////////////////////////////////////////////////////////////
         // data, elem, header, class/ns, predicate/ns, element
-        addSubject( data, e, "Subject:conference name", "ConferenceName", madsNS,
+        addSubject( data, e, "subject:conference name", "ConferenceName", madsNS,
                 "conferenceName", damsNS, "Name" );
-        addSubject( data, e, "Subject:corporate name", "CorporateName", madsNS,
+        addSubject( data, e, "subject:corporate name", "CorporateName", madsNS,
                 "corporateName", damsNS, "Name" );
-        addSubject( data, e, "Subject:family name", "FamilyName", madsNS,
-                "familyName", damsNS, null );
-        addSubject( data, e, "Subject:personal name", "PersonalName", madsNS,
+        addSubject( data, e, "subject:family name", "FamilyName", madsNS,
+                "familyName", damsNS, "Name" );
+        addSubject( data, e, "subject:personal name", "PersonalName", madsNS,
                 "personalName", damsNS, "FullName" );
-        addSubject( data, e, "Subject:genre", "GenreForm", madsNS,
+        addSubject( data, e, "subject:genre", "GenreForm", madsNS,
                 "genreForm", damsNS, null );
-        addSubject( data, e, "Subject:geographic", "Geographic", madsNS,
+        addSubject( data, e, "subject:geographic", "Geographic", madsNS,
                 "geographic", damsNS, null );
-        addSubject( data, e, "Subject:occupation", "Occupation", madsNS,
+        addSubject( data, e, "subject:occupation", "Occupation", madsNS,
                 "occupation", damsNS, null );
-        addSubject( data, e, "Subject:temporal", "Temporal", madsNS,
+        addSubject( data, e, "subject:temporal", "Temporal", madsNS,
                 "temporal", damsNS, null );
-        addSubject( data, e, "Subject:topic", "Topic", madsNS, "topic", damsNS, null );
+        addSubject( data, e, "subject:topic", "Topic", madsNS, "topic", damsNS, null );
 
         // rights holder (special case of subject name) /////////////////////////////////
-        addSubject( data, e, "Copyright holder personal name", "PersonalName", madsNS,
-                "rightsHolderPersonal", damsNS, "FullName" );
-        addSubject( data, e, "Copyright holder corporate name", "CorporateName", madsNS,
+        addSubject( data, e, "copyright holder conference name", "ConferenceName", madsNS,
+                "rightsHolderConference", damsNS, "Name" );
+        addSubject( data, e, "copyright holder corporate name", "CorporateName", madsNS,
                 "rightsHolderCorporate", damsNS, "Name" );
+        addSubject( data, e, "copyright holder family name", "FamilyName", madsNS,
+                "rightsHolderFamily", damsNS, "Name" );
+        addSubject( data, e, "copyright holder personal name", "PersonalName", madsNS,
+                "rightsHolderPersonal", damsNS, "FullName" );
 
         // language /////////////////////////////////////////////////////////////////////
-        for ( String lang : split(data.get("Language")) )
+        for ( String lang : split(data.get("language")) )
         {
             Element elem = addVocabElement(e,"language",damsNS,"Language",madsNS);
             addTextElement(elem,"code",madsNS,lang);
         }
 
         // cartographics ////////////////////////////////////////////////////////////////
-        String line  = data.get("Geographic:line");
-        String point = data.get("Geographic:point");
-        String poly  = data.get("Geographic:polygon");
-        String proj  = data.get("Geographic:projection");
-        String ref   = data.get("Geographic:reference system");
-        String scale = data.get("Geographic:scale");
+        String line  = data.get("geographic:line");
+        String point = data.get("geographic:point");
+        String poly  = data.get("geographic:polygon");
+        String proj  = data.get("geographic:projection");
+        String ref   = data.get("geographic:reference system");
+        String scale = data.get("geographic:scale");
         if ( pop(line) || pop(point) || pop(poly) || pop(proj) || pop(ref) || pop(scale) )
         {
             Element cart = addElement(e,"cartographics", damsNS,"Cartographics",damsNS);
@@ -309,8 +321,8 @@ public class TabularRecord
         }
 
         // related resource /////////////////////////////////////////////////////////////
-        String relURI = data.get("Related resource:uri");
-        String relDesc = data.get("Related resource:description");
+        String relURI = data.get("related resource:uri");
+        String relDesc = data.get("related resource:description");
         if ( pop(relURI) || pop(relDesc) )
         {
             Element rel = addElement(e,"relatedResource",damsNS,"RelatedResource",damsNS);
@@ -319,8 +331,8 @@ public class TabularRecord
         }
 
         // files ////////////////////////////////////////////////////////////////////////
-        String fn = data.get("File name");
-        String use = data.get("File use");
+        String fn = data.get("file name");
+        String use = data.get("file use");
         if ( pop(fn) )
         {
             Element f = addElement(e,"hasFile",damsNS,"File",damsNS);
@@ -334,12 +346,23 @@ public class TabularRecord
         }
 
         // copyright ////////////////////////////////////////////////////////////////////
-        if ( pop(data.get("Rights status")) )
+        if ( pop(data.get("rights status")) )
         {
             Element copy = addElement(e,"copyright",damsNS,"Copyright",damsNS);
-            addTextElement(copy,"copyrightStatus",damsNS, data.get("Rights status"));
-            addTextElement(copy,"copyrightJurisdiction",damsNS, data.get("Jurisdiction"));
+            addTextElement(copy,"copyrightStatus",damsNS, data.get("rights status"));
+            addTextElement(copy,"copyrightJurisdiction",damsNS, data.get("jurisdiction"));
         }
+
+        // other rights /////////////////////////////////////////////////////////////////
+        if ( pop(data.get("other rights permission")) )
+        {
+            Element other = addElement(e, "otherRights", damsNS, "OtherRights", damsNS);
+            addTextElement( other, "otherRightsBasis",damsNS,
+                data.get("other rights permission basis") );
+            Element perm = addElement(other, "permission", damsNS, "Permission", damsNS);
+            addTextElement( perm, "type", damsNS, data.get("other rights permission") );
+        }
+
     }
 
     /////////////////////////////////////////////////////////////////////////////////////
