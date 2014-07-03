@@ -262,7 +262,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 	
 	private String toDams3FileConvention(String cid, String fid){
 		String dams3Name = "1";
-		if(cid != null && cid.length() > 0){
+		if(cid != null && cid.length() > 0 && !cid.equals("0")){
 			//Complex object
 			dams3Name += "-" + cid;
 		}
