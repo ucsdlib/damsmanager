@@ -71,7 +71,9 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 	private StringBuilder metadataFailed = new StringBuilder();
 	private StringBuilder derivativesFailed = new StringBuilder();
 	private StringBuilder filesIngested = new StringBuilder();
-	
+
+	private boolean replace = false;
+
 	/**
 	 * Constructor
 	 * @param damsClient
@@ -94,6 +96,14 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		this.filesPaths = filesPaths;
 	}
 	
+	public boolean isReplace() {
+		return replace;
+	}
+
+	public void setReplace(boolean replace) {
+		this.replace = replace;
+	}
+
 	/**
 	 * Procedure to populate the RDF metadata and ingest the files
 	 */
@@ -112,12 +122,14 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		String message = "";
 		Document doc = null;
 		DamsURI damsURI = null;
-		
+
+		List<String> recordsToReplace = null;		
 		String oid = null;
 		int fLen = rdfFiles.length;
 		String currFile = null;
 		SAXReader saxReader = new SAXReader();
 		for(int i=0; i<fLen&&!interrupted; i++){
+			recordsToReplace = new ArrayList<>();
 			currFile = rdfFiles[i].getName();
 			setStatus("Processing external import for file " + currFile + " (" + (i+1) + " of " + fLen + ") ... " );
 			try{
@@ -299,8 +311,11 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 							
 							updateDocument(doc, parentNode, field, encodeLiteralValue(tNode), props);
 						}
-					}else if(nName.endsWith("Object")){
-						objRecords.put(iUri, currFile);
+					}else{
+						if (nName.endsWith("Object"))
+							objRecords.put(iUri, currFile);
+						if (replace && !(nName.endsWith("Component") || nName.endsWith("File")))
+							recordsToReplace.add(iUri);
 					}
 				}			
 
@@ -338,8 +353,10 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 						
 						// Update object
 						//log.info(j + " ingesting record " + subjectId + ":\n" + graph.export(RDFStore.RDFXML_ABBREV_FORMAT) + "\n\n");
-						
-						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), Constants.IMPORT_MODE_ADD);
+						String importMode = Constants.IMPORT_MODE_ADD;
+						if (replace && recordsToReplace.indexOf(subjectId) >= 0)
+							importMode = Constants.IMPORT_MODE_ALL;
+						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), importMode);
 							
 						if(!succeeded){
 							if(metadataFailed.indexOf(currFile) < 0)

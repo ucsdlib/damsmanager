@@ -197,6 +197,9 @@
 					   <div title="Import records to DAMS with custom conversion." class="menuText"><input class="pcheckbox" type="checkbox" id="externalImport" name="externalImport" onClick="checkSelections(this);">
 							<span class="text-special">External Import</span>
 						</div>
+						<div title="Check this checkbox to replace records submitted with ark url assigned [optional]." class="specialmenuText"><input type="checkbox" id="externalImportReplace" name="externalImportReplace" class="pmcheckbox" onClick="confirmSelection(this, 'replace all records submitted that have ark url assigned', 'externalImport');">
+							<span class="text-special">Replace all records submitted that have ark url assigned</span>
+						</div>
 						<div>
 							 <fieldset class="groupbox_ingestOpts"><legend class="slegandText">Import Options</legend>
 							 	<div title="Check this checkbox to import metadata and files." class="specialmenuText">

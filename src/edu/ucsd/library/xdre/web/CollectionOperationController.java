@@ -406,6 +406,7 @@ public class CollectionOperationController implements Controller {
 				  String[] dataPaths = getParameter(paramsMap, "dataPath").split(";");
 				  String[] filesPaths = getParameter(paramsMap, "filesPath").split(";");
 				  String importOption = getParameter(paramsMap, "importOption");
+				  boolean replace = getParameter(paramsMap, "externalImportReplace") != null;
 				  List<File> dFiles = new ArrayList<File>();
 				  for(int j=0; j<dataPaths.length; j++){
 					  String dataPath = dataPaths[j];
@@ -474,6 +475,7 @@ public class CollectionOperationController implements Controller {
 				  }
 				  handler = new RDFDAMS4ImportTsHandler(damsClient, dFiles.toArray(new File[dFiles.size()]), importOption);
 				  ((RDFDAMS4ImportTsHandler)handler).setFilesPaths(ingestFiles.toArray(new String[ingestFiles.size()]));
+				  ((RDFDAMS4ImportTsHandler)handler).setReplace(replace);
 			 }/*else if (i == 6){	
 				   session.setAttribute("status", opMessage + "METS File Creation &amp; File Store Upload ...");
 				   boolean metsReplace = getParameter(paramsMap, "metsReplace") != null;
