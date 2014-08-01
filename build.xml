@@ -4,6 +4,7 @@
 	<!-- deploy and versioning -->
 	  <property name="appName" value="damsmanager"/>
       <property file="${user.home}/build.properties"/>
+      <property file="${basedir}/build.properties"/>
 	  <property name="src"       value="${basedir}/src"/>
 	  <property name="web"   value="${basedir}/WebContent"/>
 	  <property name="lib"   value="${web}/WEB-INF/lib"/>
