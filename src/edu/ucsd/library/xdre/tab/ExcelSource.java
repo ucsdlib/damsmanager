@@ -51,7 +51,18 @@ public class ExcelSource implements TabularSource
         throws IOException, InvalidFormatException
     {
         this.book = WorkbookFactory.create(in);
-        this.sheet = book.getSheetAt(1);
+        
+        // use the the first sheet when there's only one sheet.
+        int numberOfSheets = book.getNumberOfSheets();
+        if (numberOfSheets == 1)
+        {
+        	this.sheet = book.getSheetAt(0);
+        }
+        else
+        {
+            this.sheet = book.getSheetAt(1);
+        }
+        
         this.lastRow = sheet.getLastRowNum();
         if ( this.lastRow == 0 )
         {
