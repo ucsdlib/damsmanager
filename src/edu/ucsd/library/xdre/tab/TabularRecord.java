@@ -321,11 +321,13 @@ public class TabularRecord
         }
 
         // related resource /////////////////////////////////////////////////////////////
+        String relType = data.get("related resource:type");
         String relURI = data.get("related resource:uri");
         String relDesc = data.get("related resource:description");
         if ( pop(relURI) || pop(relDesc) )
         {
             Element rel = addElement(e,"relatedResource",damsNS,"RelatedResource",damsNS);
+            if ( pop(relType) ) { addElement(rel,"type",damsNS).setText(relType); }
             if ( pop(relURI) ) { addElement(rel,"uri",damsNS).setText(relURI); }
             if ( pop(relDesc) ) { addElement(rel,"description",damsNS).setText(relDesc); }
         }
