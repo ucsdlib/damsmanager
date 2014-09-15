@@ -155,7 +155,7 @@ public class ExcelSource implements TabularSource
             if ( value != null && !value.trim().equals("") )
             {
                 try {
-                    value = new String(value.getBytes("UTF-8"));
+                    value = new String(value.trim().getBytes("UTF-8"));
                 } catch (UnsupportedEncodingException e) {
                     e.printStackTrace();
                 }
