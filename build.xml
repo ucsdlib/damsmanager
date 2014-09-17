@@ -152,8 +152,10 @@
           failonerror="false"/>
   </target>
   <target name="convert" description="Convert demo excel file" depends="compile">
+    <property name="convert.source" value="${web}/files/conversion_demo.xlsx"/>
+    <echo message="convert.source: ${convert.source}"/>
     <java classname="edu.ucsd.library.xdre.tab.Demo" classpathref="execpath">
-      <arg line="${web}/files/conversion_demo.xlsx ${tmp}/converted"/>
+      <arg line="${convert.source} ${tmp}/converted"/>
     </java>
   </target>
 
