@@ -2,6 +2,8 @@ package edu.ucsd.library.xdre.tab;
 
 import static edu.ucsd.library.xdre.tab.TabularRecord.OBJECT_ID;
 import static edu.ucsd.library.xdre.tab.TabularRecord.DELIMITER;
+import static edu.ucsd.library.xdre.tab.TabularRecord.OBJECT_COMPONENT_TYPE;
+import static edu.ucsd.library.xdre.tab.TabularRecord.COMPONENT;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -105,8 +107,9 @@ public class ExcelSource implements TabularSource
                 currRow++;
                 Map<String,String> cmp = parseRow( currRow );
                 cmpID = cmp.get(OBJECT_ID);
-                if ( cmpID == null || cmpID.trim().equals("")
-                    || cmpID.equals(objID) )
+                String objectComponentType = cmp.get(OBJECT_COMPONENT_TYPE);
+                if ( objectComponentType != null && objectComponentType.equalsIgnoreCase(COMPONENT) 
+                		&& (cmpID == null || cmpID.trim().equals("") || cmpID.equals(objID)) )
                 {
                     // component record, add to list
                     components.add( cmp );
@@ -117,6 +120,7 @@ public class ExcelSource implements TabularSource
                 {
                     // this is the next object record, save for next time
                     cache = cmp;
+                    break;
                 }
             }
 
