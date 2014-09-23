@@ -23,7 +23,7 @@ import org.dom4j.QName;
  * @author escowles
  * @since 2014-06-05
 **/
-public class TabularRecord
+public class TabularRecord implements Record
 {
     public static final String OBJECT_ID = "object unique id";
     public static final String OBJECT_COMPONENT_TYPE = "object/component";
@@ -102,6 +102,14 @@ public class TabularRecord
     public List<Map<String,String>> getComponents()
     {
         return cmp;
+    }
+
+    /**
+     * Get the record's identifier.
+    **/
+    public String recordID()
+    {
+        return getData().get(OBJECT_ID);
     }
 
     /**

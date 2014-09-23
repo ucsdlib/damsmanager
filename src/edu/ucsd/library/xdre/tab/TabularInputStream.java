@@ -21,7 +21,7 @@ public class TabularInputStream extends FilterInputStream
      * document.
      * @throws ParseException 
     **/
-    public TabularInputStream( TabularSource source ) throws ParseException
+    public TabularInputStream( ExcelSource source ) throws ParseException
     {
         super( toStream(source) );
     }
@@ -30,22 +30,22 @@ public class TabularInputStream extends FilterInputStream
 	 * Convert a TabularSource to RDF/XML and return the result as a stream.
 	 * @throws ParseException 
 	**/
-    public static InputStream toStream( TabularSource source ) throws ParseException
+    public static InputStream toStream( ExcelSource source ) throws ParseException
     {
         return new ByteArrayInputStream( toString(source).getBytes() );
     }
 
 	/**
 	 * Convert a TabularSource to RDF/XML and return the result as a string.
-	 * @throws ParseException 
+	 * Convert a ExcelSource to RDF/XML and return the result as a string.
 	**/
-    public static String toString( TabularSource source ) throws ParseException
+    public static String toString( ExcelSource source ) throws ParseException
     {
         Document doc = null;
         Element root = null;
         for ( TabularRecord rec = null; (rec = source.nextRecord()) != null; )
         {
-            String id = rec.getData().get("object unique id");
+            String id = rec.recordID();
             Document tmp = rec.toRDFXML();
             if ( doc == null )
             {

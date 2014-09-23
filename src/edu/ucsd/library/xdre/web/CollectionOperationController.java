@@ -51,8 +51,9 @@ import edu.ucsd.library.xdre.collection.MetadataImportHandler;
 import edu.ucsd.library.xdre.collection.SOLRIndexHandler;
 import edu.ucsd.library.xdre.imports.RDFDAMS4ImportTsHandler;
 import edu.ucsd.library.xdre.tab.ExcelSource;
+import edu.ucsd.library.xdre.tab.Record;
+import edu.ucsd.library.xdre.tab.RecordSource;
 import edu.ucsd.library.xdre.tab.TabularRecord;
-import edu.ucsd.library.xdre.tab.TabularSource;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.FileUtils;
@@ -461,10 +462,10 @@ public class CollectionOperationController implements Controller {
 					  int filesCount = 0;
 					  for (File f : excelFiles) {
 						  filesCount++;
-						  TabularSource src = new ExcelSource(f);
+						  RecordSource src = new ExcelSource(f);
 
-						  for (TabularRecord rec = null; (rec = src.nextRecord()) != null;) {
-							  String id = rec.getData().get("object unique id");
+						  for (Record rec = null; (rec = src.nextRecord()) != null;) {
+							  String id = rec.recordID();
 							  handler.logMessage("Pre-processing record with ID " + id + " ... ");
 							  
 							  if(ids.indexOf(id) < 0) {

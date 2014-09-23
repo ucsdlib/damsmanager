@@ -24,12 +24,12 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 
 /**
- * TabularSource implementation that uses Apache POI to read Excel (OLE or XML)
+ * RecordSource implementation that uses Apache POI to read Excel (OLE or XML)
  * files.
  * @author escowles
  * @since 2014-06-05
 **/
-public class ExcelSource implements TabularSource
+public class ExcelSource implements RecordSource
 {
     private Workbook book;
     private Sheet sheet;
