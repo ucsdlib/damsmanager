@@ -202,13 +202,17 @@
 						</div>
 						<div>
 							 <fieldset class="groupbox_ingestOpts"><legend class="slegandText">Import Options</legend>
+							    <div title="Check this checkbox for no ingest but pre-processing only." class="specialmenuText">
+									<input checked type="radio" name="importOption" value="pre-processing" checked>
+									<span class="text-special">Pre-processing only, no ingest.</span>
+								</div>
 							 	<div title="Check this checkbox to import metadata and files." class="specialmenuText">
-									<input checked type="radio" name="importOption" value="metadataAndFiles">
-									<span class="text-special">Metadata and files</span>
+									<input type="radio" name="importOption" value="metadataAndFiles">
+									<span class="text-special">Ingest metadata and files</span>
 								 </div>
 								 <div title="Check this checkbox to import metadata only." class="specialmenuText">
 									<input type="radio" name="importOption" value="metadata">
-									<span class="text-special">Metadata only</span>
+									<span class="text-special">Ingest metadata only</span>
 								 </div>
 							  </fieldset>
 						</div>

@@ -1,5 +1,8 @@
 package edu.ucsd.library.xdre.tab;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -23,7 +26,12 @@ import org.dom4j.QName;
 public class TabularRecord
 {
     public static final String OBJECT_ID = "object unique id";
+    public static final String OBJECT_COMPONENT_TYPE = "object/component";
+    public static final String COMPONENT = "component";
     public static final String DELIMITER = "|";
+    public static final String[] ACCEPTED_DATE_FORMATS = {"yyyy-MM-dd", "yyyy-MM", "yyyy"};
+    private static DateFormat[] dateFormats = {new SimpleDateFormat(ACCEPTED_DATE_FORMATS[0]), 
+    	new SimpleDateFormat(ACCEPTED_DATE_FORMATS[1]), new SimpleDateFormat(ACCEPTED_DATE_FORMATS[2])};
 
     // namespaces
     private static final Namespace rdfNS  = new Namespace(
@@ -98,17 +106,13 @@ public class TabularRecord
 
     /**
      * Convert the record to RDF/XML.
+     * @throws ParseException 
     **/
-    public Document toRDFXML()
+    public Document toRDFXML() throws ParseException
     {
-        // setup object        
-        Document doc = new DocumentFactory().createDocument();
-        Element rdf = addElement(doc,"RDF",rdfNS);
-        doc.setRootElement(rdf);
-        rdf.add( damsNS );
-        rdf.add( madsNS );
-        rdf.add( rdfNS );
-        rdf.add( rdfsNS );
+        // setup object
+    	Document doc = new DocumentFactory().createDocument();
+    	Element rdf = createRdfRoot (doc);
 
         Element root = addElement(rdf,"Object",damsNS);
 
@@ -125,14 +129,14 @@ public class TabularRecord
             addFields(e, cmp.get(i), (i + 1), ark); // 1-based component ids
         }
 
-        return doc;
+        return rdf.getDocument();
     }
 
     /**
      * The meat of the metadata processing -- a long sequence of categories of metadata
      * fields with the key mapping between field names and dams4 structure
     **/
-    private void addFields( Element e, Map<String,String> data, int cmp, String ark )
+    private void addFields( Element e, Map<String,String> data, int cmp, String ark ) throws ParseException
     {
         if ( ark == null ) { ark = "ARK"; }
         String id = (cmp > 0) ? ark + "/" + cmp : ark;
@@ -171,12 +175,16 @@ public class TabularRecord
 
         // date /////////////////////////////////////////////////////////////////////////
         // first create a date element to hold begin/end date if provided
+        String objectID = data.get("object unique id");
         String date = data.get("date");
         String begin = data.get("begin date");
         String end   = data.get("end date");
         Element d = null;
         if ( pop(date) || pop(begin) || pop(end) )
         {
+        	testDateValue ( objectID, begin, "begin date" );
+        	testDateValue ( objectID, end, "end date" );
+        	
             d = addElement( e, "date", damsNS, "Date", damsNS );
             addTextElement( d, "encoding", damsNS, "w3cdtf" );
             addTextElement( d, "value", rdfNS, date );
@@ -528,5 +536,43 @@ public class TabularRecord
             }
         }
         return list;
+    }
+    
+    private static void testDateValue ( String objectID, String dateValue, String dateType ) throws ParseException 
+    {
+    	if(pop( dateValue )) {
+    		int len = dateValue.length();
+    		if(len == 4 || len == 7 || len == 10) {
+	    		for(DateFormat dateFormat : dateFormats) {
+		    		try{
+		    			dateFormat.parse(dateValue);
+		    			return;
+		    		}catch(ParseException ex){
+		    		}
+	    		}
+    		}
+    		String dateFormatString = "";
+    		for (String format : ACCEPTED_DATE_FORMATS) {
+    			dateFormatString += (dateFormatString.length() > 0 ? ", " : "") + format.toLowerCase();
+    		}
+    		throw new ParseException( "Invalid " + dateType + " " + dateValue + " in record " + objectID
+    				+ ". Formats accepted: " + dateFormatString, 0);
+    	}
+    }
+    
+    /**
+     * Create the RDF root element
+     * @param doc
+     * @return
+     */
+    public static Element createRdfRoot (Document doc)
+    {
+        Element rdf = addElement(doc,"RDF",rdfNS);
+        doc.setRootElement(rdf);
+        rdf.add( damsNS );
+        rdf.add( madsNS );
+        rdf.add( rdfNS );
+        rdf.add( rdfsNS );
+        return rdf;
     }
 }
