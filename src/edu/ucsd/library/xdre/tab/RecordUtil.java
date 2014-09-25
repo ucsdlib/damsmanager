@@ -105,7 +105,7 @@ public class RecordUtil
         String copyrightStatus, String copyrightJurisdiction, String copyrightOwner,
         String program, String access, String endDate )
     {
-        Element o = (Element)doc.selectSingleNode("/rdf:RDF/dams:Object");
+        Element o = (Element)doc.selectSingleNode("//dams:Object");
 
         // unit
         o.addElement("dams:unit",damsURI).addAttribute(rdfResource, unitURI);
@@ -173,7 +173,7 @@ public class RecordUtil
             }
             else if ( access.equals(accessCurator) )
             {
-                addOtherRights( o, null, null, "display" );
+                addOtherRights( o, "curator", null, "display" );
             }
             else if ( access.equals(accessClickthroughSensitivity) )
             {
