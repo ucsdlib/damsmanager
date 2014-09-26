@@ -1,5 +1,6 @@
 package edu.ucsd.library.xdre.web;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -28,6 +29,7 @@ import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.log4j.Logger;
 import org.dom4j.Document;
 import org.dom4j.DocumentFactory;
@@ -51,6 +53,7 @@ import edu.ucsd.library.xdre.collection.MetadataImportHandler;
 import edu.ucsd.library.xdre.collection.SOLRIndexHandler;
 import edu.ucsd.library.xdre.imports.RDFDAMS4ImportTsHandler;
 import edu.ucsd.library.xdre.tab.ExcelSource;
+import edu.ucsd.library.xdre.tab.ModsRecord;
 import edu.ucsd.library.xdre.tab.Record;
 import edu.ucsd.library.xdre.tab.RecordSource;
 import edu.ucsd.library.xdre.tab.TabularRecord;
@@ -89,6 +92,7 @@ public class CollectionOperationController implements Controller {
 			ByteArrayOutputStream out = null;
 			byte[] buf = new byte[4096];
 			List<String> dataItems = new ArrayList<String>();
+			List<String> fileNames = new ArrayList<String>();
 			try {
 				items = upload.parseRequest(request);
 
@@ -100,8 +104,9 @@ public class CollectionOperationController implements Controller {
 				    if (item.isFormField()){
 				    	paramsMap.put(item.getFieldName(), new String[]{item.getString()});
 				    }else{
+				    	fileNames.add(item.getName());
 				    	in = item.getInputStream();
-
+				    	
 				    	int bytesRead = -1;
 						while((bytesRead=in.read(buf)) > 0){
 							out.write(buf, 0, bytesRead);
@@ -125,6 +130,7 @@ public class CollectionOperationController implements Controller {
 			if(dataItems.size() > 0){
 				String[] a = new String[dataItems.size()];
 				paramsMap.put("data", dataItems.toArray(a));
+				paramsMap.put("fileName", fileNames.toArray(new String[dataItems.size()]));
 			}
 		}else
 			paramsMap = request.getParameterMap();
@@ -137,6 +143,7 @@ public class CollectionOperationController implements Controller {
 		boolean isBSJhoveReport = getParameter(paramsMap, "bsJhoveReport") != null;
 		boolean isSolrDump = getParameter(paramsMap, "solrDump") != null;
 		boolean isSerialization = getParameter(paramsMap, "serialize") != null;
+		boolean isModsImport = getParameter(paramsMap, "modsImport") != null;
 		String fileStore = getParameter(paramsMap, "fs");
 		if(activeButton == null || activeButton.length() == 0)
 			activeButton = "validateButton";
@@ -162,11 +169,14 @@ public class CollectionOperationController implements Controller {
 			forwardTo = "/solrDump.do?" + (fileStore!=null?"&fs=" + fileStore:"");
 		else if(isSerialization)
 			forwardTo = "/serialize.do?" + (fileStore!=null?"&fs=" + fileStore:"");
+		else if(isModsImport)
+			forwardTo = "/modsImport.do?" + (fileStore!=null?"&fs=" + fileStore:"");
 		forwardTo += "&activeButton=" + activeButton; 
 
 		String[] emails = null;
 		String user = request.getRemoteUser();
-		if(( !(isBSJhoveReport || isDevUpload) && getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "externalImport") == null && getParameter(paramsMap, "dataConvert") == null )&& 
+		if(( !(isBSJhoveReport || isDevUpload) && getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "externalImport") == null 
+				&& getParameter(paramsMap, "dataConvert") == null ) && getParameter(paramsMap, "modsImport") == null && 
 				(collectionId == null || (collectionId=collectionId.trim()).length() == 0)){
 			message = "Please choose a collection ...";
 		}else{
@@ -240,7 +250,7 @@ public class CollectionOperationController implements Controller {
 		if(collectionId != null)
 			forwardTo += "&category=" + collectionId;
 		
-		forwardTo += "&message=" + URLEncoder.encode(message, "UTF-8");
+		forwardTo += "&message=" + URLEncoder.encode(message.replace("\n", "<br />"), "UTF-8");
 		System.out.println(forwardTo);
 		//String forwardToUrl = "/controlPanel.do?category=" + collectionId + "&message=" + message + "&activeButton=" + activeButton;
 		forwordPage(request, response, response.encodeURL(forwardTo));
@@ -280,7 +290,7 @@ public class CollectionOperationController implements Controller {
 		operations[3] = getParameter(paramsMap, "createDerivatives") != null;
 		operations[4] = getParameter(paramsMap, "uploadRDF") != null;
 		operations[5] = getParameter(paramsMap, "externalImport") != null;
-		operations[6] = getParameter(paramsMap, "createMETSFiles") != null;
+		operations[6] = getParameter(paramsMap, "modsImport") != null;
 		operations[7] = getParameter(paramsMap, "luceneIndex") != null || getParameter(paramsMap, "solrDump") != null;
 		operations[8] = getParameter(paramsMap, "sendToCDL") != null;
 		operations[9] = getParameter(paramsMap, "dataConvert") != null;
@@ -429,11 +439,6 @@ public class CollectionOperationController implements Controller {
 				  String[] excelExts = {"xls", "xlsx"};
 				  List<File> excelFiles = FileUtils.filterFiles(dFiles, excelExts);
 				  
-				  OutputStreamWriter out = null;
-				  File convertedFile = null;
-				  XMLWriter writer = null;
-				  OutputFormat pretty = OutputFormat.createPrettyPrint();
-				  
 				  if (excelFiles.size() > 0) {
 					  // Remove the Excel source that need conversion from the file list
 					  dFiles.removeAll(excelFiles);
@@ -483,33 +488,14 @@ public class CollectionOperationController implements Controller {
 										  // preview when there are no error reported
 										  rdfPreview.add(rec.toRDFXML().selectSingleNode("//dams:Object").detach()); 
 									  } else {
-										  convertedFile = new File(tmpDir.getAbsolutePath(), id + ".rdf.xml");
+										  File convertedFile = new File(tmpDir.getAbsolutePath(), id + ".rdf.xml");
 										  try{
-										  
-											  out = new FileWriter(convertedFile);
-											  writer = new XMLWriter(out, pretty);
-											  writer.write(doc);
-										  } finally {
-											  CollectionHandler.close(out);
-											  if(writer != null){
-												  try{
-													  writer.close();
-												  }catch (Exception e) {
-													  e.printStackTrace();
-												   }
-												  writer = null;
-											  }
-											  
-											  if(convertedFile.exists()) {
-												  convertedFile.deleteOnExit();
-												  if(dFiles.indexOf(convertedFile) < 0) {
-													  dFiles.add(convertedFile);
-													  handler.logMessage("Added converted RDF/XML file " + convertedFile.getAbsolutePath());
-												  }
-											  } else {
-												  log.error("Failed to write converted record to file " +  convertedFile.getName() + ": \n"
-														  + rec.toRDFXML()) ;
-												  handler.logMessage("Failed to write converted record to file " +  convertedFile.getName() + ".\n") ;
+											  writeXml(convertedFile, doc);
+										  } finally {										  
+											  convertedFile.deleteOnExit();
+											  if(dFiles.indexOf(convertedFile) < 0) {
+												  dFiles.add(convertedFile);
+												  handler.logMessage("Added converted RDF/XML file " + convertedFile.getAbsolutePath());
 											  }
 										  }
 									  }
@@ -525,26 +511,12 @@ public class CollectionOperationController implements Controller {
 					  if (errorMessage.length() == 0 && duplicatRecords.length() == 0) {
 							 
 						  if (preprocessing) {
-							  convertedFile = new File(Constants.TMP_FILE_DIR, "preview-" + System.currentTimeMillis() + "-rdf.xml");
-							  try{
-								  
-								  out = new FileWriter(convertedFile);
-								  writer = new XMLWriter(out, pretty);
-								  writer.write(rdfPreview.getDocument());
-							  } finally {
-								  CollectionHandler.close(out);
-								  if(writer != null){
-									  try{
-										  writer.close();
-									  }catch (Exception e) {
-										  e.printStackTrace();
-									   }
-									  writer = null;
-								  }
-							  }
+							  File destFile = new File(Constants.TMP_FILE_DIR, "preview-" + submissionId + "-rdf.xml");
+							  writeXml(destFile, rdfPreview.getDocument());
+
 							  successful = true;
 							  message = "\nPre-processing passed. ";
-							  message += "\nThe converted RDF/XML is ready for <a href=\"" + logLink + "&file=" + convertedFile.getName() + "\">download</a>.";
+							  message += "\nThe converted RDF/XML is ready for <a href=\"" + logLink + "&file=" + destFile.getName() + "\">download</a>.";
 							  //handler.logMessage(message);
 							  handler.release();
 							  handler = null;
@@ -572,11 +544,83 @@ public class CollectionOperationController implements Controller {
 					  ((RDFDAMS4ImportTsHandler)handler).setFilesPaths(ingestFiles.toArray(new String[ingestFiles.size()]));
 					  ((RDFDAMS4ImportTsHandler)handler).setReplace(replace);
 				  }
-			 }/*else if (i == 6){	
-				   session.setAttribute("status", opMessage + "METS File Creation &amp; File Store Upload ...");
-				   boolean metsReplace = getParameter(paramsMap, "metsReplace") != null;
-				   handler = new MetaDataStreamUploadHandler(damsClient, collectionId, "mets", metsReplace);
-			 } */else if (i == 7) {
+			 } else if (i == 6){	
+				  session.setAttribute("status", opMessage + "Import from AT/Mods ...");
+				  String unit = getParameter(paramsMap, "unit");
+				  String source = getParameter(paramsMap, "source");
+				  String bibNumber = getParameter(paramsMap, "bib");
+				  String modsXml = getParameter(paramsMap, "mods");
+				  String copyrightStatus =getParameter(paramsMap, "copyrightStatus");
+				  String copyrightJurisdiction = getParameter(paramsMap, "countryCode");
+				  String copyrightOwner = getParameter(paramsMap, "copyrightOwner");
+				  String program = getParameter(paramsMap, "program");
+				  String access = getParameter(paramsMap, "accessOverride");
+				  String endDate = getParameter(paramsMap, "licenseEndDate");
+				  String[] filesPaths = getParameter(paramsMap, "filesPath").split(";");
+				  String importOption = getParameter(paramsMap, "importOption");
+				  List<String> ingestFiles = new ArrayList<String>();
+				  for(int j=0; j<filesPaths.length; j++){
+					  if((filesPaths[j]=filesPaths[j].trim()).length() > 0)
+						  ingestFiles.add(new File(Constants.DAMS_STAGING + "/" + filesPaths[j]).getAbsolutePath());
+				  }
+				  List<File> dFiles = new ArrayList<File>();
+				  
+				  if (source != null && source.equalsIgnoreCase("bib") || source.equalsIgnoreCase("mods")) {
+					  InputStream in = null;
+					  String sourceID = null;
+					  String[] collections = {collectionId};
+					  
+					  if (source.equalsIgnoreCase("bib")) {
+						  sourceID = bibNumber;
+						  String url = Constants.DAMS_STORAGE_URL.substring(0, Constants.DAMS_STORAGE_URL.indexOf("/dams/")) + "/jollyroger/get?type=bib&mods=true&ns=true&value=" + bibNumber;
+						  HttpGet req = new HttpGet(url);
+						  System.out.println("BIB source: " + req.getURI());
+						  Document doc = damsClient.getXMLResult(req);
+						  modsXml = doc.asXML();
+					  } else {
+						  sourceID = getParameter(paramsMap, "fileName");
+						  modsXml = getParameter(paramsMap, "data");
+					  }
+
+					  try {
+						  File xsl = new File(session.getServletContext().getRealPath("files/mets2dams.xsl"));
+						  in = new ByteArrayInputStream (modsXml.getBytes("UTF-8"));
+						  ModsRecord record = new ModsRecord(xsl, in, sourceID.replaceAll("\\..*",""), collections, unit, 
+									copyrightStatus, copyrightJurisdiction, copyrightOwner,
+									program, access, endDate);
+						  
+						  // Pre-processing
+						  boolean preprocessing = importOption.equalsIgnoreCase("pre-processing");
+						  if (preprocessing) {
+							  File destFile = new File(Constants.TMP_FILE_DIR, "preview-" + sourceID + "-rdf.xml");
+							  writeXml(destFile, record.toRDFXML());
+							  successful = true;
+							  message = "\nPre-processing passed. ";
+							  message += "\nThe converted RDF/XML is ready for <a href=\"" + logLink + "&file=" + destFile.getName() + "\">download</a>.\n";
+						  } else {
+							  // Directory to hold the converted rdf/xml
+							  File tmpDir = new File (Constants.TMP_FILE_DIR + File.separatorChar + "converted");
+							  if(!tmpDir.exists())
+								  tmpDir.mkdir();
+							  File convertedFile = new File(tmpDir.getAbsolutePath(), record.recordID() + ".rdf.xml");
+							  try{
+								  writeXml(convertedFile, record.toRDFXML());
+							  } finally {										  
+								  convertedFile.deleteOnExit();
+								  dFiles.add(convertedFile);
+							  }
+							  // Ingest for RDF/XML files
+							  handler = new RDFDAMS4ImportTsHandler(damsClient, dFiles.toArray(new File[dFiles.size()]), importOption);
+							  ((RDFDAMS4ImportTsHandler)handler).setFilesPaths(ingestFiles.toArray(new String[ingestFiles.size()]));
+						  }
+					  } finally {
+						  CollectionHandler.close(in);
+					  }
+				  } else {
+					  successful = false;
+					  message += "\nUnknown source type: " + source;
+				  }
+			 } else if (i == 7) {
 				 session.setAttribute("status", opMessage + "SOLR Index ...");
 				 boolean update = getParameter(paramsMap, "indexReplace") != null;
 				 if(collectionId.indexOf(",") > 0){
@@ -916,5 +960,32 @@ public class CollectionOperationController implements Controller {
 			paramValue = paramArr[0];
 		}
 		return paramValue;
+	}
+	
+	/**
+	 * Serialize xml document to file
+	 * @param destFile
+	 * @param doc
+	 * @throws IOException
+	 */
+	public static void writeXml (File destFile, Document doc) throws IOException {
+		  OutputStreamWriter out = null;                                                                                                   
+		  XMLWriter writer = null;
+		  OutputFormat pretty = OutputFormat.createPrettyPrint();
+		  try{			  
+			  out = new FileWriter(destFile);
+			  writer = new XMLWriter(out, pretty);
+			  writer.write(doc);
+		  } finally {
+			  CollectionHandler.close(out);
+			  if(writer != null){
+				  try{
+					  writer.close();
+				  }catch (Exception e) {
+					  e.printStackTrace();
+				   }
+				  writer = null;
+			  }
+		  }
 	}
 }
