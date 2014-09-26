@@ -4,6 +4,7 @@
 	<li><a href='/damsmanager/jsp/introduction.jsp'>Collection</a>
 		<ul>
 		 	<li><a href='/damsmanager/jsp/introduction.jsp'>Introduction</a></li>
+		 	<li><a href='/damsmanager/modsImport.do'>MODS Import</a></li>
 			<li><a href='/damsmanager/ingest.do'>Staging Ingest</a></li>
 		 	<li><a href='/damsmanager/controlPanel.do'>Process Manager</a></li>
 		</ul>

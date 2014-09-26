@@ -13,12 +13,12 @@ public class Demo
     {
         File f = new File(args[0]);
         File dir = new File(args[1]);
-        TabularSource src = new ExcelSource(f);
+        RecordSource src = new ExcelSource(f);
 
         OutputFormat pretty = OutputFormat.createPrettyPrint();
-        for ( TabularRecord rec = null; (rec = src.nextRecord()) != null; )
+        for ( Record rec = null; (rec = src.nextRecord()) != null; )
         {
-            String id = rec.getData().get("object unique id");
+            String id = rec.recordID();
             System.out.println("id: " + id);
             
             FileWriter out = new FileWriter( new File(dir, id + ".rdf.xml"));
