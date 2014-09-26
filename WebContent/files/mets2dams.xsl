@@ -15,6 +15,13 @@
   <xsl:param name="unit"/>
   <xsl:param name="col"/>
 
+  <!-- handle bare mods records -->
+  <xsl:template match="/mods:mods">
+    <dams:Object rdf:about="{generate-id()}">
+      <xsl:apply-templates/>
+    </dams:Object>
+  </xsl:template>
+
   <!-- handle modsCollection records as ProvenanceCollections -->
   <xsl:template match="mods:modsCollection">
     <dams:ProvenanceCollection rdf:about="{generate-id()}">
@@ -495,7 +502,7 @@
                 </xsl:for-each>
               </xsl:when>
               <xsl:otherwise>
-                <dams:code>cre</dams:code>
+                <mads:code>cre</mads:code>
                 <rdf:value>Creator</rdf:value>
               </xsl:otherwise>
             </xsl:choose>
