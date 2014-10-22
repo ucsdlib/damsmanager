@@ -27,17 +27,17 @@
 	
         var sourceName = document.mainForm.source.options[source.selectedIndex].value;
         if (sourceName == 'bib') {
-        	var bib = document.mainForm.bib.value;
+        	var bib = document.mainForm.bibInput.value;
         	if (bib.charAt(0) != 'b' && (bib.length != 8 || bib.length != 9)){
     	    	alert("Please type in a valid bib number.");
-    	    	document.mainForm.bib.focus();
+    	    	document.mainForm.bibInput.focus();
     			return false;
         	}
         } else {
-        	var file = document.mainForm.mods.value;
+        	var file = document.mainForm.dataPath.value;
         	if (file == "") {
     	    	alert("Please choose a sourece mods file.");
-    	    	document.mainForm.mods.focus();
+    	    	document.mainForm.dataPath.focus();
     			return false;
         	}
         	document.mainForm.enctype = "multipart/form-data";
@@ -64,7 +64,7 @@
 			return false;
 	    }
         
-	    var message = "Are you sure to import objects from the MODS source? \n";
+	    var message = "Are you sure to import objects from METS/MODS source? \n";
 	    if(collectionIndex == 0){
 	    	message = "No collections selected for DAMS staging ingest! \nAre you sure to continue?";
 	    }
@@ -143,7 +143,7 @@
 		 $( "#licenseEndDate" ).datepicker({dateFormat: "yy-mm-dd", appendText: "(yyyy-mm-dd)", buttonImage: "/damsmanager/images/calendar.jpg"});
 	});
 	
-	var crumbs = [{"Home":"http://libraries.ucsd.edu"}, {"Digital Library Collections":"/curator"},{"DAMS Manager":"/damsmanager/"}, {"MODS Import":""}];
+	var crumbs = [{"Home":"http://libraries.ucsd.edu"}, {"Digital Library Collections":"/curator"},{"DAMS Manager":"/damsmanager/"}, {"METS/MODS Import":""}];
 	drawBreadcrumbNMenu(crumbs, "tdr_crumbs_content", true);
 </script>
 <jsp:include flush="true" page="/jsp/libanner.jsp" />
@@ -165,7 +165,7 @@
 <div id="main" class="mainDiv">
 <form id="mainForm" name="mainForm" method="post" action="/damsmanager/operationHandler.do?atImport" >
 <div class="emBox_ark">
-<div class="emBoxBanner">AT Import</div>
+<div class="emBoxBanner">METS/MODS Import</div>
 <div style="background:#DDDDDD;padding-top:8px;padding-bottom:8px;padding-left:25px;" align="left">
 	<span id="dsSpan" class="menuText" Title="Double click to change the triplestore used for operation." ondblclick="setTriplestore();" onMouseOver="this.style.cursor='pointer'">${fn:toUpperCase(tsNameFl)}${fn:substring(model.triplestore, 1, tsNameLen)} </span>
 		<span id="dsSelectSpan" ondblclick="resetTriplestore();" style="display:none" >
@@ -202,9 +202,11 @@
 			<td>
 				<select id="fs" name="fs" class="inputText">
 					<c:forEach var="entry" items="${model.filestores}">
-						<option value="${entry}" <c:if test="${model.filestore == entry}">selected</c:if>>
-                      			<c:out value="${entry}" /><c:if test="${model.filestoreDefault == entry}"> (default)</c:if>
-                       	</option>
+						<c:if test="${entry != 'isilon-nfs'}">
+							<option value="${entry}" <c:if test="${model.filestore == entry}">selected</c:if>>
+	                      			<c:out value="${entry}" /><c:if test="${model.filestoreDefault == entry}"> (default)</c:if>
+	                       	</option>
+                       	</c:if>
 					</c:forEach>
 				</select>
 		    </td>
@@ -215,7 +217,7 @@
 			</td>
 			<td>
 				<select id="source" name="source" class="inputText" onChange="selectSource(this);">
-					<option value="mods" selected>Mods XML</option>
+					<option value="mods" selected>METS/MODS</option>
 					<option value="bib">Bib</option>
 				</select>
 		    </td>
@@ -225,7 +227,10 @@
 				<span class="submenuText" id="sourceTitle" style="font-weight:bold;">Source File</span><b>: </b>&nbsp;&nbsp;
 			</td>
 			<td  align="left">
-				<span class="submenuText" id="modsSpan"><input type="file" id="mods" name="mods" size="40" /><input type="text" id="bib" name="bib" size="20" value="" style="display:none"></span><br>
+				<div class="submenuText" id="modsSpan">
+					<div id="mods"><input type="text" id="dataPath" name="dataPath" size="48" value="">&nbsp;<input type="button" onclick="showFilePicker('dataPath', event)" value="&nbsp;...&nbsp;"></div>
+					<div id="bib"><input type="text" id="bibInput" name="bibInput" size="20" value="" style="display:none"><span class="note"> (delimiter: ,)</span></div>
+				</div>
 			</td>
 		</tr>
 		<tr align ="left">

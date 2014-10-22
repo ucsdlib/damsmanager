@@ -3,12 +3,14 @@ package edu.ucsd.library.xdre.web;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -490,7 +492,7 @@ public class CollectionOperationController implements Controller {
 									  } else {
 										  File convertedFile = new File(tmpDir.getAbsolutePath(), id + ".rdf.xml");
 										  try{
-											  writeXml(convertedFile, doc);
+											  writeXml(convertedFile, doc.asXML());
 										  } finally {										  
 											  convertedFile.deleteOnExit();
 											  if(dFiles.indexOf(convertedFile) < 0) {
@@ -512,7 +514,7 @@ public class CollectionOperationController implements Controller {
 							 
 						  if (preprocessing) {
 							  File destFile = new File(Constants.TMP_FILE_DIR, "preview-" + submissionId + "-rdf.xml");
-							  writeXml(destFile, rdfPreview.getDocument());
+							  writeXml(destFile, rdfPreview.getDocument().asXML());
 
 							  successful = true;
 							  message = "\nPre-processing passed. ";
@@ -545,17 +547,18 @@ public class CollectionOperationController implements Controller {
 					  ((RDFDAMS4ImportTsHandler)handler).setReplace(replace);
 				  }
 			 } else if (i == 6){	
-				  session.setAttribute("status", opMessage + "Import from AT/Mods ...");
+				  session.setAttribute("status", opMessage + "Import from METS/MODS ...");
 				  String unit = getParameter(paramsMap, "unit");
 				  String source = getParameter(paramsMap, "source");
-				  String bibNumber = getParameter(paramsMap, "bib");
-				  String modsXml = getParameter(paramsMap, "mods");
+				  String bibNumber = getParameter(paramsMap, "bibInput");
+				  String modsXml = getParameter(paramsMap, "modsInput");
 				  String copyrightStatus =getParameter(paramsMap, "copyrightStatus");
 				  String copyrightJurisdiction = getParameter(paramsMap, "countryCode");
 				  String copyrightOwner = getParameter(paramsMap, "copyrightOwner");
 				  String program = getParameter(paramsMap, "program");
 				  String access = getParameter(paramsMap, "accessOverride");
 				  String endDate = getParameter(paramsMap, "licenseEndDate");
+				  String[] dataPaths = getParameter(paramsMap, "dataPath").split(";");
 				  String[] filesPaths = getParameter(paramsMap, "filesPath").split(";");
 				  String importOption = getParameter(paramsMap, "importOption");
 				  List<String> ingestFiles = new ArrayList<String>();
@@ -563,58 +566,136 @@ public class CollectionOperationController implements Controller {
 					  if((filesPaths[j]=filesPaths[j].trim()).length() > 0)
 						  ingestFiles.add(new File(Constants.DAMS_STAGING + "/" + filesPaths[j]).getAbsolutePath());
 				  }
-				  List<File> dFiles = new ArrayList<File>();
 				  
-				  if (source != null && source.equalsIgnoreCase("bib") || source.equalsIgnoreCase("mods")) {
-					  InputStream in = null;
-					  String sourceID = null;
-					  String[] collections = {collectionId};
-					  
-					  if (source.equalsIgnoreCase("bib")) {
-						  sourceID = bibNumber;
-						  String url = Constants.DAMS_STORAGE_URL.substring(0, Constants.DAMS_STORAGE_URL.indexOf("/dams/")) + "/jollyroger/get?type=bib&mods=true&ns=true&value=" + bibNumber;
-						  HttpGet req = new HttpGet(url);
-						  System.out.println("BIB source: " + req.getURI());
-						  Document doc = damsClient.getXMLResult(req);
-						  modsXml = doc.asXML();
-					  } else {
-						  sourceID = getParameter(paramsMap, "fileName");
-						  modsXml = getParameter(paramsMap, "data");
+				  List<File> dataFiles = new ArrayList<File>();
+				  for(int j=0; j<dataPaths.length; j++){
+					  String dataPath = dataPaths[j];
+					  if(dataPath != null && (dataPath=dataPath.trim()).length() > 0){
+						  File file = new File(Constants.DAMS_STAGING + "/" + dataPath);
+						  CollectionHandler.listFiles(dataFiles, file);
 					  }
-
-					  try {
-						  File xsl = new File(session.getServletContext().getRealPath("files/mets2dams.xsl"));
-						  in = new ByteArrayInputStream (modsXml.getBytes("UTF-8"));
-						  ModsRecord record = new ModsRecord(xsl, in, sourceID.replaceAll("\\..*",""), collections, unit, 
-									copyrightStatus, copyrightJurisdiction, copyrightOwner,
-									program, access, endDate);
+				  }
+				  
+				  List<Object> sources = new ArrayList<Object>();
+				  if (source.equalsIgnoreCase("bib")) {
+					  String[] bibs = bibNumber.split(",");
+					  for  (int j=0; j<bibs.length; j++) {
+						  if(bibs[j] != null && (bibs[j]=bibs[j].trim()).length() > 0)
+							  sources.add(bibs[j]);
+					  }
+				  } else {
+					  sources.addAll(dataFiles);
+					  dataFiles.clear();
+				  }
+ 
+				  // Handling pre-processing request
+				  Element rdfPreview = null;
+				  StringBuilder errorMessage = new StringBuilder();
+				  StringBuilder duplicatRecords = new StringBuilder();
+				  List<String> ids = new ArrayList<String>();
+				  boolean preprocessing = importOption.equalsIgnoreCase("pre-processing");
+				  
+				  if (preprocessing) {
+					  Document doc = new DocumentFactory().createDocument();
+					  rdfPreview = TabularRecord.createRdfRoot (doc);
+				  }
+				  
+				  if (source.equalsIgnoreCase("bib") || source.equalsIgnoreCase("mods")) {
+					  // Initiate handler for logging
+					  handler = new MetadataImportHandler(damsClient, null);
+					  handler.setSubmissionId(submissionId);
+		 			  handler.setSession(session);
+		 			  handler.setUserId(userId);
+		 			  
+					  for  (int j=0; j<sources.size(); j++) {
+						  InputStream in = null;
+						  String sourceID = null;
+						  String[] collections = {collectionId};
 						  
-						  // Pre-processing
-						  boolean preprocessing = importOption.equalsIgnoreCase("pre-processing");
-						  if (preprocessing) {
-							  File destFile = new File(Constants.TMP_FILE_DIR, "preview-" + sourceID + "-rdf.xml");
-							  writeXml(destFile, record.toRDFXML());
-							  successful = true;
-							  message = "\nPre-processing passed. ";
-							  message += "\nThe converted RDF/XML is ready for <a href=\"" + logLink + "&file=" + destFile.getName() + "\">download</a>.\n";
+						  Object srcRecord =  sources.get(j);
+						  sourceID = (srcRecord instanceof File ? ((File)srcRecord).getName() : srcRecord.toString());
+						  if (preprocessing)
+							  handler.logMessage("Pre-processing record " + sourceID + " ... ");
+						  else
+							  handler.logMessage("Processing record " + sourceID + " ... ");
+						  
+							  
+						  if (source.equalsIgnoreCase("bib")) {
+							  
+							  String url = Constants.DAMS_STORAGE_URL.substring(0, Constants.DAMS_STORAGE_URL.indexOf("/dams/"))
+									  + "/jollyroger/get?type=bib&mods=true&ns=true&value=" + sourceID;
+
+							  handler.logMessage("Getting MODS XML form bib source: " + url);
+							  HttpGet req = new HttpGet(url);
+							  Document doc = damsClient.getXMLResult(req);
+							  modsXml = doc.asXML();
+							  in = new ByteArrayInputStream (modsXml.getBytes("UTF-8"));
 						  } else {
-							  // Directory to hold the converted rdf/xml
-							  File tmpDir = new File (Constants.TMP_FILE_DIR + File.separatorChar + "converted");
-							  if(!tmpDir.exists())
-								  tmpDir.mkdir();
-							  File convertedFile = new File(tmpDir.getAbsolutePath(), record.recordID() + ".rdf.xml");
-							  try{
-								  writeXml(convertedFile, record.toRDFXML());
-							  } finally {										  
-								  convertedFile.deleteOnExit();
-								  dFiles.add(convertedFile);
+							  // METS/MODS XML from staging area
+							  File srcFile = (File)sources.get(j);
+							  in = new FileInputStream(srcFile);
+						  }
+	
+						  try {
+							  File xsl = new File(session.getServletContext().getRealPath("files/mets2dams.xsl"));
+							  ModsRecord record = new ModsRecord(xsl, in, sourceID.replaceAll("\\..*",""), collections, unit, 
+										copyrightStatus, copyrightJurisdiction, copyrightOwner,
+										program, access, endDate);
+							  
+							  String id = record.recordID();
+							  
+							  if(ids.indexOf(id) < 0) {
+								  ids.add(id);
+							  } else {
+								  successful = false;
+								  duplicatRecords.append(id + ", ");
+								  handler.logError("Found duplicated record with ID " + id + ".");
 							  }
-							  // Ingest for RDF/XML files
-							  handler = new RDFDAMS4ImportTsHandler(damsClient, dFiles.toArray(new File[dFiles.size()]), importOption);
+							  
+							  if (errorMessage.length() == 0 && duplicatRecords.length() == 0) {
+								  if (preprocessing) {
+									 // Pre-processing with rdf preview
+									  rdfPreview.add(record.toRDFXML().selectSingleNode("//dams:Object").detach()); 
+								  } else {
+									  // Write the converted rdf/xml to file system
+									  File tmpDir = new File (Constants.TMP_FILE_DIR + File.separatorChar + "converted");
+									  if(!tmpDir.exists())
+										  tmpDir.mkdir();
+									  File convertedFile = new File(tmpDir.getAbsolutePath(), id + ".rdf.xml");
+									  try{
+										  writeXml(convertedFile, record.toRDFXML().asXML());
+									  } finally {										  
+										  convertedFile.deleteOnExit();
+										  dataFiles.add(convertedFile);
+									  }
+								  }
+							  }
+						  } finally {
+							  CollectionHandler.close(in);
+						  }
+					  }					  
+					  handler.release();
+					  handler = null;
+					  
+					  if (errorMessage.length() == 0 && duplicatRecords.length() == 0) {
+						  if (preprocessing) {
+							  File destFile = new File(Constants.TMP_FILE_DIR, "preview-" + submissionId + "-rdf.xml");
+							  writeXml(destFile, rdfPreview.getDocument().asXML());
+							  successful = true;
+							  message = "\nThe converted RDF/XML is ready for <a href=\"" + logLink
+									  + "&file=" + destFile.getName() + "\">download</a>.\n";
+						  }else{
+							  // Ingest the converted RDF/XML files
+							  handler = new RDFDAMS4ImportTsHandler(damsClient, dataFiles.toArray(new File[dataFiles.size()]), importOption);
 							  ((RDFDAMS4ImportTsHandler)handler).setFilesPaths(ingestFiles.toArray(new String[ingestFiles.size()]));
 						  }
-					  } finally {
-						  CollectionHandler.close(in);
+					  } else {
+						  successful = false;
+						  message = "\nPre-processing issues found:";
+						  if (duplicatRecords.length() > 0)
+							  message += "\nDuplicated records: " + duplicatRecords.substring(0, duplicatRecords.length() - 2).toString();
+						  if (errorMessage.length() > 0)
+							  message += "\nOther Errors: \n" + errorMessage.toString();
 					  }
 				  } else {
 					  successful = false;
@@ -987,5 +1068,25 @@ public class CollectionOperationController implements Controller {
 				  writer = null;
 			  }
 		  }
+	}
+	
+	/**
+	 * Serialize xml string to file
+	 * @param destFile
+	 * @param xml
+	 * @throws UnsupportedEncodingException
+	 * @throws IOException
+	 */
+	public static void writeXml (File destFile, String xml)
+			throws UnsupportedEncodingException, IOException {
+		OutputStream out = null;
+
+		try {
+			out = new FileOutputStream(destFile);
+			out.write(xml.getBytes("UTF-8"));
+		} finally {
+			CollectionHandler.close(out);
+			out = null;
+		}
 	}
 }
