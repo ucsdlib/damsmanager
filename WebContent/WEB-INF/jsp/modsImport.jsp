@@ -19,30 +19,53 @@
 		var dsIdx = document.mainForm.ts.selectedIndex;
 		var ds = document.mainForm.ts.options[dsIdx].value;
 		var collectionIndex = document.mainForm.category.selectedIndex;
-		var unitIndex = document.mainForm.unit.selectedIndex;
-	    if(unitIndex == 0){
-	    	alert("Please select a unit.");
-			return false;
-	    }  
 	
         var sourceName = document.mainForm.source.options[source.selectedIndex].value;
         if (sourceName == 'bib') {
-        	var bib = document.mainForm.bib.value;
-        	if (bib.charAt(0) != 'b' && (bib.length != 8 || bib.length != 9)){
-    	    	alert("Please type in a valid bib number.");
-    	    	document.mainForm.bib.focus();
-    			return false;
+        	var bib = trim(document.mainForm.bibInput.value);
+        	var message = ""; 
+        	if (bib.length == 0) {
+        		message = "Please type in valid bib number(s) delimited by comma (,).";
+        	}else{
+	       		var bibs = bib.split(",");
+	       		var emptyCount = 0;
+	       		for (var i=0; i<bibs.length; i++) {
+	       			var bibVal = trim(bibs[i]);
+	       			if (bibVal.length == 0)
+	       				emptyCount += 1;
+	       			else{
+		       			if (bibVal.charAt(0) != 'b' || !(bibVal.length == 8 || bibVal.length == 9)){
+		       				message = "Invalid bib number at index " + (i + 1) + ": " + bibVal + ". \nPlease type in valid bib number(s) delimited by comma (,).";
+		       				break;
+	       				}
+	       			}
+	       		}
+	       		if(emptyCount == bibs.length)
+	       			message = "Invalid bib number(s): " + bib + ". \nPlease type in valid bib number(s) delimited by comma (,).";
+
+        	}
+        	
+       		if (message.length > 0) {
+	   	    	alert(message);
+	   	    	document.mainForm.bibInput.focus();
+	   			return false;
         	}
         } else {
-        	var file = document.mainForm.mods.value;
+        	var file = document.mainForm.dataPath.value;
         	if (file == "") {
-    	    	alert("Please choose a sourece mods file.");
-    	    	document.mainForm.mods.focus();
+    	    	alert("Please choose metadata source file location.");
+    	    	document.mainForm.dataPath.focus();
     			return false;
         	}
         	document.mainForm.enctype = "multipart/form-data";
         }
-
+        
+		var unitIndex = document.mainForm.unit.selectedIndex;  
+	    if(unitIndex == 0){
+	    	alert("Please select a unit.");
+			return false;
+	    }
+	    
 		var copyrightStatusIndex = document.mainForm.copyrightStatus.selectedIndex;
 	    if(copyrightStatusIndex == 0){
 	    	alert("Please select copyright status.");
@@ -64,7 +87,7 @@
 			return false;
 	    }
         
-	    var message = "Are you sure to import objects from the MODS source? \n";
+	    var message = "Are you sure to import objects from METS/MODS metadata source? \n";
 	    if(collectionIndex == 0){
 	    	message = "No collections selected for DAMS staging ingest! \nAre you sure to continue?";
 	    }
@@ -72,7 +95,7 @@
 	    if(!exeConfirm)
 	    	return false;
 	    
-    	document.mainForm.action = "/damsmanager/operationHandler.do?ds=" + ds + "&modsImport&progress=0&formId=mainForm&sid=" + getSid();
+    	document.mainForm.action = "/damsmanager/operationHandler.do?ds=" + ds + "&metsModsImport&progress=0&formId=mainForm&sid=" + getSid();
     	displayMessage("message", "");
     	getAssignment("mainForm");
 		displayProgressBar(0);
@@ -84,12 +107,12 @@
 		var ds = document.mainForm.ts.options[dsIdx].value;
 		var selectedIndex = selectObj.selectedIndex;
 		if (selectedIndex == 0) {
-			document.mainForm.action = "/damsmanager/modsImport.do?ts=" + ds;
+			document.mainForm.action = "/damsmanager/metsModsImport.do?ts=" + ds;
 			document.mainForm.submit();
 		}
 		else {
 			var collectionId = selectObj.options[selectedIndex].value;
-			document.mainForm.action = "/damsmanager/modsImport.do?ts=" + ds + "&reset&category=" + collectionId;
+			document.mainForm.action = "/damsmanager/metsModsImport.do?ts=" + ds + "&reset&category=" + collectionId;
 			document.mainForm.submit();
 		}
 	}
@@ -134,16 +157,16 @@
 		
 		$("#" + sourceName).show();
 		if(sourceName == 'bib')
-			$("#sourceTitle").text("Bib number");
+			$("#sourceTitle").text("Bib number(s)");
 		else
-			$("#sourceTitle").text("Source File");
+			$("#sourceTitle").text("Metadata Location");
 	}
 	  
 	$(function() {
 		 $( "#licenseEndDate" ).datepicker({dateFormat: "yy-mm-dd", appendText: "(yyyy-mm-dd)", buttonImage: "/damsmanager/images/calendar.jpg"});
 	});
 	
-	var crumbs = [{"Home":"http://libraries.ucsd.edu"}, {"Digital Library Collections":"/curator"},{"DAMS Manager":"/damsmanager/"}, {"MODS Import":""}];
+	var crumbs = [{"Home":"http://libraries.ucsd.edu"}, {"Digital Library Collections":"/curator"},{"DAMS Manager":"/damsmanager/"}, {"METS/MODS Import":""}];
 	drawBreadcrumbNMenu(crumbs, "tdr_crumbs_content", true);
 </script>
 <jsp:include flush="true" page="/jsp/libanner.jsp" />
@@ -163,21 +186,23 @@
 <tr>
 <td align="center">
 <div id="main" class="mainDiv">
-<form id="mainForm" name="mainForm" method="post" action="/damsmanager/operationHandler.do?atImport" >
+<form id="mainForm" name="mainForm" method="post" action="/damsmanager/operationHandler.do?metsModsImport" >
 <div class="emBox_ark">
-<div class="emBoxBanner">AT Import</div>
+<div class="emBoxBanner">METS/MODS Import</div>
 <div style="background:#DDDDDD;padding-top:8px;padding-bottom:8px;padding-left:25px;" align="left">
-	<span id="dsSpan" class="menuText" Title="Double click to change the triplestore used for operation." ondblclick="setTriplestore();" onMouseOver="this.style.cursor='pointer'">${fn:toUpperCase(tsNameFl)}${fn:substring(model.triplestore, 1, tsNameLen)} </span>
-		<span id="dsSelectSpan" ondblclick="resetTriplestore();" style="display:none" >
-			<select name="ts" id="ts" onChange="reloadPage();"><option value=""> -- Triplestore -- </option>
-					<c:forEach var="entry" items="${model.triplestores}">
-						<option value="${entry}" <c:if test="${model.triplestore == entry}">selected</c:if>>
-                      			<c:out value="${entry}" />
-                       	</option>
-					</c:forEach>
-			</select>&nbsp;
-		</span>
+	<span class="menuText">
+		<span class="requiredLabel">*</span><span id="dsSpan" Title="Double click to change the triplestore used for operation." ondblclick="setTriplestore();" onMouseOver="this.style.cursor='pointer'">${fn:toUpperCase(tsNameFl)}${fn:substring(model.triplestore, 1, tsNameLen)} </span>
+			<span id="dsSelectSpan" ondblclick="resetTriplestore();" style="display:none" >
+				<select name="ts" id="ts" onChange="reloadPage();"><option value=""> -- Triplestore -- </option>
+						<c:forEach var="entry" items="${model.triplestores}">
+							<option value="${entry}" <c:if test="${model.triplestore == entry}">selected</c:if>>
+	                      			<c:out value="${entry}" />
+	                       	</option>
+						</c:forEach>
+				</select>&nbsp;
+			</span>
 		<span class="menuText">Collection Chooser:&nbsp;</span>
+		</span>
 		<span>
 			<select id="category" name="category" onChange="selectCollection(this);" class="inputText" >
 				<option value=""> -- collections -- </option>
@@ -197,40 +222,47 @@
 	<table>
 		<tr align ="left">
 			<td height="25px">
-				<span class="submenuText"><b>FileStore to use: </b></span>
+				<span class="submenuText"><span class="requiredLabel">*</span><b>FileStore to use: </b></span>
 			</td>
 			<td>
 				<select id="fs" name="fs" class="inputText">
 					<c:forEach var="entry" items="${model.filestores}">
-						<option value="${entry}" <c:if test="${model.filestore == entry}">selected</c:if>>
-                      			<c:out value="${entry}" /><c:if test="${model.filestoreDefault == entry}"> (default)</c:if>
-                       	</option>
+						<c:if test="${entry != 'isilon-nfs'}">
+							<option value="${entry}" <c:if test="${model.filestore == entry}">selected</c:if>>
+	                      			<c:out value="${entry}" /><c:if test="${model.filestoreDefault == entry}"> (default)</c:if>
+	                       	</option>
+                       	</c:if>
 					</c:forEach>
 				</select>
 		    </td>
 		</tr>
 		<tr align="left">
 			<td height="25px">
-				<span class="submenuText"><b>Source: </b></span>&nbsp;&nbsp;
+				<span class="submenuText"><span class="requiredLabel">*</span><b>Metadata Source: </b></span>&nbsp;&nbsp;
 			</td>
 			<td>
 				<select id="source" name="source" class="inputText" onChange="selectSource(this);">
-					<option value="mods" selected>Mods XML</option>
-					<option value="bib">Bib</option>
+					<option value="mods" selected>METS/MODS</option>
+					<option value="bib">Roger Record</option>
 				</select>
 		    </td>
 		</tr>
 		<tr align="left">
 			<td height="25px">
-				<span class="submenuText" id="sourceTitle" style="font-weight:bold;">Source File</span><b>: </b>&nbsp;&nbsp;
+				<span class="submenuText">
+					<span class="requiredLabel">*</span><span id="sourceTitle" style="font-weight:bold;">Metadata Location</span><b>: </b>&nbsp;&nbsp;
+				</span>
 			</td>
 			<td  align="left">
-				<span class="submenuText" id="modsSpan"><input type="file" id="mods" name="mods" size="40" /><input type="text" id="bib" name="bib" size="20" value="" style="display:none"></span><br>
+				<div class="submenuText" id="modsSpan">
+					<div id="mods"><input type="text" id="dataPath" name="dataPath" size="48" value="">&nbsp;<input type="button" onclick="showFilePicker('dataPath', event)" value="&nbsp;...&nbsp;"></div>
+					<div id="bib" style="display:none"><input type="text" id="bibInput" name="bibInput" size="50" value=""><span class="note"> (Records delimiter: <strong>,</strong> )</span></div>
+				</div>
 			</td>
 		</tr>
 		<tr align ="left">
 			<td height="25px">
-				<span class="submenuText"><b>Admin Unit: </b></span>
+				<span class="submenuText"><span class="requiredLabel">*</span><b>Admin Unit: </b></span>
 			</td>
 			<td>
 				<select id="unit" name="unit" class="inputText" onChange="selectUnit(this);">
@@ -245,7 +277,7 @@
 		</tr>
 		<tr align ="left">
 			<td height="25px">
-				<span class="submenuText"><b>Copyright Status: </b></span>
+				<span class="submenuText"><span class="requiredLabel">*</span><b>Copyright Status: </b></span>
 			</td>
 			<td>
 				<select id="copyrightStatus" name="copyrightStatus" class="inputText">
@@ -258,7 +290,7 @@
 		</tr>
 		<tr align="left">
 			<td height="25px">
-				<span class="submenuText"><b>Copyright Jurisdiction: </b></span>&nbsp;&nbsp;
+				<span class="submenuText"><span class="requiredLabel">*</span><b>Copyright Jurisdiction: </b></span>&nbsp;&nbsp;
 			</td>
 			<td  align="left">
 				<span class="submenuText"><input type="text" id="countryCode" name="countryCode" size="20"></span>
@@ -266,7 +298,7 @@
 		</tr>
 		<tr align="left">
 			<td height="25px">
-				<span class="submenuText"><b>Copyright Owner: </b></span>&nbsp;&nbsp;
+				<span class="submenuText" style="padding-left: 6px"><b>Copyright Owner: </b></span>&nbsp;&nbsp;
 			</td>
 			<td  align="left">
 				<span class="submenuText"><input type="text" name="fileFilter" size="20"></span>
@@ -274,7 +306,7 @@
 		</tr>
 		<tr align ="left">
 			<td height="25px">
-				<span class="submenuText"><b>Program: </b></span>
+				<span class="submenuText"><span class="requiredLabel">*</span><b>Program: </b></span>
 			</td>
 			<td>
 				<select id="program" name="program" class="inputText">
@@ -287,7 +319,7 @@
 		</tr>
 		<tr align ="left">
 			<td height="25px">
-				<span class="submenuText"><b>Access Override: </b></span>
+				<span class="submenuText" style="padding-left: 6px"><b>Access Override: </b></span>
 			</td>
 			<td>
 				<select id="accessOverride" name="accessOverride" class="inputText">
@@ -300,7 +332,7 @@
 		</tr>
 		<tr align="left">
 			<td height="25px">
-				<span class="submenuText"><b>License End Date: </b></span>&nbsp;&nbsp;
+				<span class="submenuText" style="padding-left: 6px"><b>License End Date: </b></span>&nbsp;&nbsp;
 			</td>
 			<td  align="left">
 				<span class="submenuText"><input type="text" id="licenseEndDate" name="licenseEndDate" size="20" value="${model.licenseEndDate}"></span>
@@ -312,12 +344,12 @@
 					 <fieldset class="groupbox_modsIngestOpts"><legend class="slegandText">Import Options</legend>
 					    <div title="Check this checkbox for no ingest but pre-processing only." class="specialmenuText">
 							<input checked type="radio" name="importOption" value="pre-processing" checked>
-							<span class="text-special">Pre-processing only, no ingest.</span>
+							<span class="text-special">Preview converted RDF/XML only, no ingest.</span>
 						</div>
 					 	<div title="Check this checkbox to import metadata and files." class="specialmenuText">
 							<input type="radio" name="importOption" value="metadataAndFiles">
 							<span class="text-special">Ingest metadata and files</span>
-							<div class="specialmenuText" style="margin-top:3px;padding-left:22px;"  title="Enter a filter path for the location to speek up the search. From the popup, click on the folder to select/deselect a location. Multiple loations allowed.">Files location: 
+							<div class="specialmenuText" style="margin-top:3px;padding-left:22px;"  title="Enter a filter path for the location to speek up the search. From the popup, click on the folder to select/deselect a location. Multiple loations allowed.">Master Files location: 
 								<input type="text" id="filesPath" name="filesPath" size="40" value="">&nbsp;<input type="button" onclick="showFilePicker('filesPath', event)" value="&nbsp;...&nbsp;">
 							</div>
 						 </div>
@@ -330,6 +362,7 @@
 													  
 			</td>
 		</tr>
+		<tr><td colspan="2" style="color:#333;size=12px;padding-left:6px;"><span class="requiredLabel">*</span> required field</td>
 	</table>
 </div>
 <div class="buttonDiv">
