@@ -68,7 +68,7 @@ public class ModsRecord implements Record {
 		for (int j=0; j<nodes.size();j++) {
 			Node rdfAbout = nodes.get(j);
 			//Assigned CID for components: http://library.ucsd.edu/ark:/20775/OID/CID
-			rdfAbout.setText(rdfAbout.getStringValue().replace("/CID", "/" + cid++));
+			rdfAbout.setText(rdfAbout.getStringValue().replace("/CID", "/" + cid));
 			Node cNode = rdfAbout.getParent();
 			//Assigned FID for files
 			List<Node> fNodes = cNode.selectNodes("dams:hasFile/dams:File/@rdf:about");
@@ -94,6 +94,8 @@ public class ModsRecord implements Record {
 					fidNode.setText(fid);
 				}
 			}
+
+			cid += 1;
 		} 
 	}
 }

@@ -45,7 +45,7 @@
 </HEAD>
 <body onload="loadPicker()" style="margin: 0px;">
 <div style="padding:5px;background:#DDDDDD;"><span class="menuText"><b>Path:&nbsp;&nbsp;</b></span><span class="menuText">[Staging Area] <input id="dir" name="dir" type="text" size="40" value=""/></span></div>
-<div style="padding-left:20px;padding-top:3px;padding-bottom:3px;background:#F8F8F8;color:#336699;"><span class="menuText"><b>Please click to select:</b></span></div>
+<div style="padding-left:20px;padding-top:3px;padding-bottom:3px;background:#F8F8F8;color:#336699;"><span class="menuText"><b>Please click to select /deselect:</b></span></div>
 <table cellspacing=0 cellpadding=0 border=0><tr><td>
 <tr><td height="178px" valign="top">
 	<div id="dirPanel" style="margin-left:20px;"></div>

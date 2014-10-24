@@ -130,14 +130,16 @@
   function showFilePicker(id, event){
 	  gField = id;
 	  var dirFilter = trim(document.getElementById(id).value);
+	  if (dirFilter.indexOf(";") == dirFilter.length - 1)
+		  dirFilter = dirFilter.substr(0, dirFilter.length - 1);
 	  if(dirFilter.length > 0){
 		  if(dirFilter.split(";").length > 1){
-			  alert("Invalid directory filter: " + dirFilter);
+			  alert("Multiple directories are not allow for directory lookup: " + dirFilter + ". \nPlease remove the directories in the text box.");
 			  return false;
 		  }
 		  dirFilter = "filter=" + dirFilter;
 	  }
-	  var popwin = window.open("/damsmanager/directory.do?listOnly&"+dirFilter, "dirPicker", "toolbar=0,scrollbars=1,location=0,statusbar=0,menubar=0,resizable=0,width=450,height=300,left=400,top=184");
+	  var popwin = window.open("/damsmanager/directory.do?listOnly&"+dirFilter, "dirPicker", "toolbar=0,scrollbars=1,location=0,statusbar=0,menubar=0,resizable=0,width=500,height=420,left=400,top=184");
 	  popwin.focus();
   }
   
