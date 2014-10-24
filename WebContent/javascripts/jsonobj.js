@@ -221,9 +221,14 @@ function addDir(directory){
     	if(iDir != null && iDir.length > 0){
 	    	if(iDir == directory){
 	    		// Remove it when click on the folder again
-	    		dirArr[i] = "";
-	    		toAdd = false;
-	    		break;
+    	    	var res = confirm("Are you sure to remove directory: " + dirArr[i] + "?");
+    	    	if (res == true) {
+    	    		dirArr[i] = "";
+    	    		toAdd = false;
+    	    		break;
+    	    	}else
+    	    		return;
+
 	    	}else if(iDir.indexOf(directory + "/") == 0){
 	    		// Choose parent directory need clear all child directory
 	    		if(toAdd){
@@ -241,7 +246,14 @@ function addDir(directory){
     	}
     }
     if(toAdd){
-    	dirValues += directory + ";";
+    	if (dirValues.indexOf(";") > 0) {
+	    	var res = confirm("Are you sure to add another directory: " + directory + "?");
+	    	if (res == true) {
+	    		dirValues += directory + ";";
+	    	}
+    	}else {
+    		dirValues += directory + ";";
+    	}
     }else {
 		dirValues = ""; 
     	// Re-assemble the path string.

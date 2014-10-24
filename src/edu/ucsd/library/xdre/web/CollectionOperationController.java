@@ -145,7 +145,7 @@ public class CollectionOperationController implements Controller {
 		boolean isBSJhoveReport = getParameter(paramsMap, "bsJhoveReport") != null;
 		boolean isSolrDump = getParameter(paramsMap, "solrDump") != null;
 		boolean isSerialization = getParameter(paramsMap, "serialize") != null;
-		boolean isModsImport = getParameter(paramsMap, "modsImport") != null;
+		boolean isModsImport = getParameter(paramsMap, "metsModsImport") != null;
 		String fileStore = getParameter(paramsMap, "fs");
 		if(activeButton == null || activeButton.length() == 0)
 			activeButton = "validateButton";
@@ -172,13 +172,13 @@ public class CollectionOperationController implements Controller {
 		else if(isSerialization)
 			forwardTo = "/serialize.do?" + (fileStore!=null?"&fs=" + fileStore:"");
 		else if(isModsImport)
-			forwardTo = "/modsImport.do?" + (fileStore!=null?"&fs=" + fileStore:"");
+			forwardTo = "/metsModsImport.do?" + (fileStore!=null?"&fs=" + fileStore:"");
 		forwardTo += "&activeButton=" + activeButton; 
 
 		String[] emails = null;
 		String user = request.getRemoteUser();
 		if(( !(isBSJhoveReport || isDevUpload) && getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "externalImport") == null 
-				&& getParameter(paramsMap, "dataConvert") == null ) && getParameter(paramsMap, "modsImport") == null && 
+				&& getParameter(paramsMap, "dataConvert") == null ) && getParameter(paramsMap, "metsModsImport") == null && 
 				(collectionId == null || (collectionId=collectionId.trim()).length() == 0)){
 			message = "Please choose a collection ...";
 		}else{
@@ -292,7 +292,7 @@ public class CollectionOperationController implements Controller {
 		operations[3] = getParameter(paramsMap, "createDerivatives") != null;
 		operations[4] = getParameter(paramsMap, "uploadRDF") != null;
 		operations[5] = getParameter(paramsMap, "externalImport") != null;
-		operations[6] = getParameter(paramsMap, "modsImport") != null;
+		operations[6] = getParameter(paramsMap, "metsModsImport") != null;
 		operations[7] = getParameter(paramsMap, "luceneIndex") != null || getParameter(paramsMap, "solrDump") != null;
 		operations[8] = getParameter(paramsMap, "sendToCDL") != null;
 		operations[9] = getParameter(paramsMap, "dataConvert") != null;
@@ -625,7 +625,7 @@ public class CollectionOperationController implements Controller {
 							  String url = Constants.DAMS_STORAGE_URL.substring(0, Constants.DAMS_STORAGE_URL.indexOf("/dams/"))
 									  + "/jollyroger/get?type=bib&mods=true&ns=true&value=" + sourceID;
 
-							  handler.logMessage("Getting MODS XML form bib source: " + url);
+							  handler.logMessage("Getting Roger metadata source from URL: " + url);
 							  HttpGet req = new HttpGet(url);
 							  Document doc = damsClient.getXMLResult(req);
 							  modsXml = doc.asXML();

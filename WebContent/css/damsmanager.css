@@ -163,7 +163,7 @@ a {color: #336699;}
 	padding-bottom:30px;
 	margin-top:10px;
 	border: 1px solid #999;
-	width:650px;
+	width:660px;
 	overflow:auto;
 }
 .emBoxBanner{
@@ -353,9 +353,9 @@ a {color: #336699;}
 	width: 380px;	
 }
 .groupbox_modsIngestOpts {
-	margin-left:0px;
+	margin-left:6px;
 	margin-top:10px;
-	width: 450px;	
+	width: 480px;	
 }
 .groupbox_ftype {
 	margin-left:20px;
@@ -436,6 +436,8 @@ a {color: #336699;}
 }
 .requiredLabel {
 	color: #FF0000;
+	font-weight: normal;
+	font-size: 12px;
 }
 #stsDiv {
 	padding-left:20px;
