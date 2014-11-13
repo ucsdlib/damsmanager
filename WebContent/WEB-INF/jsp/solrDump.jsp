@@ -7,24 +7,60 @@
 <c:set var="tsNameFl" scope="page">${fn:substring(model.triplestore, 0, 1)}</c:set> 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
-<jsp:include flush="true" page="/jsp/libhtmlheader.jsp" />
-<body style="background-color:#fff;">
+<head>
+<jsp:include flush="true" page="/jsp/libheader.jsp" />
+<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+<script src="//code.jquery.com/ui/1.11.1/jquery-ui.js"></script>
 <script type="text/javascript">
+	function activateTab(obj){
+			if(obj == null) {
+				var $links = $('#tabs').find('a');
+				obj = $links.filter('[href="' + document.location.hash + '"]')[0] || $links[0];
+				//alert(obj);
+			}
+			
+		var aStateTabs = $('.ui-tabs-active');
+		var aStateTab = aStateTabs[0];
+		// Hide the previous active content
+		$(aStateTab).removeClass('ui-tabs-active');
+		$(aStateTab).removeClass('ui-state-active');
+		$($(aStateTab).children('a').attr('href')).hide();
+		
+		// Show the tab obj
+		$(obj).parent().addClass('ui-tabs-active ui-state-active');
+		var $content = $($(obj).attr('href'));
+		$content.show();
+	}
 
 	function reloadPage(){
-		var dsIdx = document.mainForm.ts.selectedIndex;
-		var ds = document.mainForm.ts.options[dsIdx].value;
-		document.location.href="/damsmanager/solrDump.do?ts=" + ds;
+		document.location.href="/damsmanager/solrDump.do?ts=dams";
+	}
+	
+	function selectSource(){
+		var srcOptions = document.records.source.options;
+		var sourceName = srcOptions[source.selectedIndex].value;
+		for(var i=0; i<srcOptions.length; i++){
+			if(srcOptions[i].value != sourceName)
+				$("#" + srcOptions[i].value).hide();
+		}
+		
+		$("#" + sourceName).show();
+		if(sourceName == 'text')
+			$("#sourceTitle").text("Subjects/ARKs");
+		else
+			$("#sourceTitle").text("Choose File");
 	}
 	
 	function doSelect(obj){
 		var html = $(obj).html();
+		$("#collectionListDiv").html($("#collectionListDiv").html());
 		if(html === 'Select All'){
 			$('input[type="checkbox"]').each(function(){
 				if($(this).val() == 'all')
 					$(this).attr('checked', false);
-				else
+				else {
 			 		$(this).attr('checked', true);
+				}
 				$(this).attr('disabled', false);
 			 });
 			 $(obj).html('Clear All');
@@ -37,10 +73,10 @@
 	}
 	
 	function doSelectAllRecords(obj){
-		if($(obj).attr('checked')==true){
+		if(obj.checked){
 			$('input[type="checkbox"]').each(function(){
 				if($(this).val() != 'all'){
-			 		$(this).attr('checked', false);
+					$(this).attr('checked', false);
 					$(this).attr('disabled', true);
 				}
 			 });
@@ -52,26 +88,48 @@
 		}
 	}
 	
-	function solrUpdate(){
-		 var collections = '';
-		 var collectionNames = '';
-		 var count = 0;
-		 $('input[type="checkbox"]:checked').each(function(){
-		 	count++;
-		 	collections += $(this).val() + ',';
-		 	collectionNames += $(this).next().html() + '\n';
-		 });
-		if(collections.length===0){
-			alert('Please check a collection for SOLR update!');
-			return false;
-		}
-	    var exeConfirm = confirm('Are you sure to update SOLR for the following ' + count + ' collections? \n' + collectionNames);
-	    if(exeConfirm){
-		    mainForm.category.value = collections;
-	    	document.mainForm.action = "/damsmanager/operationHandler.do?solrDump&progress=0&formId=mainForm&sid=" + getSid();
-	    	displayMessage("message", "");
-	    	getAssignment("mainForm");
-			displayProgressBar(0);
+	function solrUpdate(formID){
+		if (formID == 'records') {
+			var srcOptions = document.records.source.options;
+			var sourceName = srcOptions[source.selectedIndex].value;
+			var inputVal = $("#" + sourceName + "Input").val();
+			if (inputVal.trim().length == 0) {
+				if (sourceName == 'file')
+					alert ("Please choose a file containing the records for SOLR indexing.");
+				else
+					alert ("Please type in a record or records delimited by comma.");
+				$("#" + sourceName + "Input").focus();
+				return;
+			}
+			var formObj = document.getElementById(formID);
+		    var exeConfirm = confirm('Are you sure to update the records in ' + inputVal + ' to SOLR? \n');
+		    if(exeConfirm){
+				formObj.action = "/damsmanager/operationHandler.do?ts=dams&solrRecordsDump&progress=0&formId=records&sid=" + getSid();
+		    	displayMessage("message", "");
+		    	getAssignment(formID);
+				displayProgressBar(0);
+			}
+		} else {
+			 var collections = '';
+			 var collectionNames = '';
+			 var count = 0;
+			 $("#collectionListDiv").find('input[type="checkbox"]:checked').each(function(){
+			 	count++;
+			 	collections += $(this).val() + ',';
+			 	collectionNames += $(this).next().html() + '\n';
+			 });
+			if(collections.length===0){
+				alert('Please check a collection for SOLR update!');
+				return false;
+			}
+		    var exeConfirm = confirm('Are you sure to update SOLR for the following ' + count + ' collections? \n' + collectionNames);
+		    if(exeConfirm){
+			    mainForm.category.value = collections;
+		    	document.mainForm.action = "/damsmanager/operationHandler.do?ts=dams&solrDump&progress=0&formId=mainForm&sid=" + getSid();
+		    	displayMessage("message", "");
+		    	getAssignment("mainForm");
+				displayProgressBar(0);
+			}
 		}
 	}
 	
@@ -79,6 +137,19 @@
 	drawBreadcrumbNMenu(crumbs, "tdr_crumbs_content", true);
 	
 </script>
+<style>
+	.ui-widget-content {
+		border: 1px solid #ADBCC5;
+	}
+	.ui-widget-header {
+		background: -moz-linear-gradient(center top , #F0FAFF 0%, #E1ECFF 3%, #BCD6E6 97%, #95AFC9 100%) repeat scroll 0% 0% transparent;
+	    color: #222;
+	    font-weight: bold;
+	}
+
+</style>
+</head>
+<body onload="activateTab()" style="background-color:#fff;">
 <jsp:include flush="true" page="/jsp/libanner.jsp" />
 <table align="center" cellspacing="0px" cellpadding="0px" class="bodytable">
 <tr><td>
@@ -96,21 +167,52 @@
 <tr>
 <td align="center">
 <div id="main" class="gallery" align="center">
+  <div style="font-size:24px;font-weight:bold;color:#336699;margin-bottom:10px;margin-top:10px;">DLP SOLR Index Utility</div>
+  <div id="tabs" class="ui-tabs ui-widget ui-widget-content ui-corner-all">
+	<ul class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">
+		<li class="ui-state-default ui-corner-top"><a href="#recordsTab" class="ui-tabs-anchor" onclick="activateTab(this)">Records</a></li>
+		<li class="ui-state-default ui-corner-top ui-tabs-active ui-state-active"><a href="#colsTab" class="ui-tabs-anchor" onclick="activateTab(this)">Collections</a></li>
+	</ul>
+
+	<div id="recordsTab" class="ui-tabs-panel ui-widget-content ui-corner-bottom" style="display:none">
+	  <form id="records" name="records" method="post" enctype="multipart/form-data">
+		<table style="margin-bottom:10px;text-align:left;margin:30px;">
+		  <tr align="left">
+			<td height="30px" width="120px">
+				<span class="submenuText"><b>Records Source: </b></span>&nbsp;&nbsp;
+			</td>
+			<td width="600px">
+				<select id="source" name="source" class="inputText" onChange="selectSource(this);">
+					<option value="text" selected>Text Input</option>
+					<option value="file">File Attachment</option>
+				</select>
+		    </td>
+		  </tr>
+		  <tr align="left">
+			<td height="30px">
+				<span class="submenuText">
+					<span id="sourceTitle" style="font-weight:bold;">Subjects/ARKs</span><b>: </b>&nbsp;&nbsp;
+				</span>
+			</td>
+			<td  align="left">
+				<div class="submenuText">
+					<div id="text"><input type="text" id="textInput" name="textInput" size="50" value=""><span class="note"> (Delimiter comma (<strong>,</strong>)</span></div>
+					<div id="file" style="display:none"><input type="file" id="fileInput" name="fileInput" size="48"></div>
+				</div>
+			</td>
+		  </tr>
+	    </table>
+	    <div class="buttonDiv">
+		  <input type="button" name="buttonSubmit" value="Submit" onClick="solrUpdate('records');"/>
+	    </div>
+	  </form>
+	</div>
+
+	<div id="colsTab" class="ui-tabs-panel ui-widget-content ui-corner-bottom">
 	<form id="mainForm" name="mainForm" method="post" action="/damsmanager/operationHandler.do?solrDump" >
-	<div style="font-size:24px;font-weight:bold;color:#336699;margin-bottom:10px;margin-top:10px;">DLP Collections SOLR Dump Utility</div>
-	<div style="margin-bottom:10px;text-align:left;width:900px;color:#000;">
+	<div style="margin-bottom:10px;text-align:left;color:#000;">
 	<div class="submenuText" style="padding-bottom:5px;">
-		<span>Please choose a Triplestore: </span>
-		<span id="dsSelectSpan" >
-			<select name="ts" id="ts" onChange="reloadPage();"><option value=""> -- Triplestore -- </option>
-				<c:forEach var="entry" items="${model.triplestores}">
-					<option value="${entry}" <c:if test="${model.triplestore == entry}">selected</c:if>>
-                     			<c:out value="${entry}" />
-                      	</option>
-				</c:forEach>
-			</select>&nbsp;
-		</span>
-		<a style="float:right;cursor:pointer;" onClick="javascript:doSelect(this);" id="selectAll">Select All</a>
+		<a style="float:right;cursor:pointer;color:#336699;width:120px;font-weight:bold;" onClick="javascript:doSelect(this);" id="selectAll">Select All</a>
 	</div>
 	<div id="collectionListDiv">
 	<table style="margin-bottom:10px;text-align:left;">
@@ -119,14 +221,14 @@
 				<div class="colList">
 					<ul style="padding: 0;margin: 0;list-style: none;line-height: 1;">
 						<li>
-							<input type="checkbox" onClick="doSelectAllRecords(this)" name="all" value="all"/><span id="${item.subject}" class="listTitle">All Records</span>
+							<input type="checkbox" name="all" value="all" onclick="doSelectAllRecords(this)"><span id="${item.subject}" class="listTitle">All Records</span>
 						</li>
 					</ul>
 				</div>
 			</td>
 		</tr>
 		<tr>
-			<td valign="top" width="450px">
+			<td valign="top">
 				<div class="colList">
 					<ul style="padding: 0;margin: 0;list-style: none;line-height: 1.2;">
 						<c:forEach var="item" items="${model.collections}" varStatus="status">
@@ -139,7 +241,7 @@
 					</ul>
 				</div>
 			</td>
-			<td valign="top" width="450px">
+			<td valign="top">
 				<div class="colList">
 					<ul style="padding: 0;margin: 0;list-style: none;line-height: 1.2;">
 						<c:forEach var="item" items="${model.collections}" varStatus="status">
@@ -155,12 +257,14 @@
 		</tr>
 	</table>
 	</div>
-<div class="buttonDiv">
-	<input type="hidden" id="category" name="category" value="" />
-	<input type="button" name="update" value="SOLR Update" onClick="solrUpdate();"/>&nbsp;&nbsp;
-</div>
-</div>
-</form>
+    </div>
+    <div class="buttonDiv">
+	  <input type="hidden" id="category" name="category" value="" />
+	  <input type="button" name="update" value="SOLR Update" onClick="solrUpdate('mainForm');"/>&nbsp;&nbsp;
+    </div>
+    </form>	
+    </div>
+  </div>
 </div>
 	<jsp:include flush="true" page="/jsp/status.jsp" />
 	<div id="messageDiv">
