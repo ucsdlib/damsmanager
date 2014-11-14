@@ -264,8 +264,8 @@ public class RecordUtil
         {
             Element rest = e.addElement("dams:restriction",damsURI)
                 .addElement("dams:Restriction",damsURI);
-            rest.addElement("dams:type",damsURI).setText(permission);
-            if ( !isBlank(endDate) && isBlank(permission) )
+            rest.addElement("dams:type",damsURI).setText(restriction);
+            if ( !isBlank(endDate) && isBlank(restriction) )
             {
                 rest.addElement("dams:endDate",damsURI).setText(endDate);
             }

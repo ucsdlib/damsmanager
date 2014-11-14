@@ -897,7 +897,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		
 		if(objectsCount > 0){
 			String key = null;
-			exeReport.append("The following " + objectsCount + " object" + (objectsCount>1?"s are ":" is ") + "found in the source metadata: \n");
+			exeReport.append("\nThe following " + objectsCount + " object" + (objectsCount>1?"s are ":" is ") + "found in the source metadata: \n");
 			for(Iterator<String> it=objRecords.keySet().iterator(); it.hasNext();){
 				key = it.next();
 				exeReport.append(key + " \t" + objRecords.get(key) + "\n");
@@ -906,7 +906,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		
 		int recordSize = recordsIngested.size();
 		if(recordSize > 0){
-			exeReport.append("The following " + recordSize + " record" + (recordSize>1?"s are":" is") + " imported: \n");
+			exeReport.append("\nThe following " + recordSize + " record" + (recordSize>1?"s are":" is") + " imported: \n");
 			for(Iterator<String> it=recordsIngested.iterator(); it.hasNext();){
 				exeReport.append(it.next() + "\n");
 			}

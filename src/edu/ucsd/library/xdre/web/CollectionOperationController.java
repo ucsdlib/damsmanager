@@ -146,7 +146,7 @@ public class CollectionOperationController implements Controller {
 		boolean isBSJhoveReport = getParameter(paramsMap, "bsJhoveReport") != null;
 		boolean isSolrDump = getParameter(paramsMap, "solrDump") != null || getParameter(paramsMap, "solrRecordsDump") != null;
 		boolean isSerialization = getParameter(paramsMap, "serialize") != null;
-		boolean isModsImport = getParameter(paramsMap, "metsModsImport") != null;
+		boolean isMarcModsImport = getParameter(paramsMap, "marcModsImport") != null;
 		String fileStore = getParameter(paramsMap, "fs");
 		if(activeButton == null || activeButton.length() == 0)
 			activeButton = "validateButton";
@@ -155,7 +155,7 @@ public class CollectionOperationController implements Controller {
 		
 		String ds = getParameter(paramsMap, "ts");
 		if(ds == null || ds.length() == 0)
-			throw new ServletException("No triplestore data source provided...");
+			ds = Constants.DEFAULT_TRIPLESTORE;
 		
 		if(fileStore == null || (fileStore=fileStore.trim()).length() == 0)
 			fileStore = null;
@@ -168,19 +168,18 @@ public class CollectionOperationController implements Controller {
 			forwardTo = "/ingest.do?ts=" + ds + (fileStore!=null?"&fs=" + fileStore:"") + (unit!=null?"&unit=" + unit:"");
 		}else if(isDevUpload)
 			forwardTo = "/devUpload.do?" + (fileStore!=null?"&fs=" + fileStore:"");
-		else if(isSolrDump) {
+		else if(isSolrDump)
 			forwardTo = "/solrDump.do" + (StringUtils.isBlank(collectionId) ? "" : "#colsTab");
-		}
 		else if(isSerialization)
 			forwardTo = "/serialize.do?" + (fileStore!=null?"&fs=" + fileStore:"");
-		else if(isModsImport)
-			forwardTo = "/metsModsImport.do?" + (fileStore!=null?"&fs=" + fileStore:"");
+		else if(isMarcModsImport)
+			forwardTo = "/marcModsImport.do?";
 
 		String[] emails = null;
 		String user = request.getRemoteUser();
 		if(( !(getParameter(paramsMap, "solrRecordsDump") != null || isBSJhoveReport || isDevUpload)
 				&& getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "externalImport") == null 
-				&& getParameter(paramsMap, "dataConvert") == null ) && getParameter(paramsMap, "metsModsImport") == null && 
+				&& getParameter(paramsMap, "dataConvert") == null ) && getParameter(paramsMap, "marcModsImport") == null && 
 				(collectionId == null || (collectionId=collectionId.trim()).length() == 0)){
 			message = "Please choose a collection ...";
 		}else{
@@ -259,8 +258,10 @@ public class CollectionOperationController implements Controller {
 			e.printStackTrace();
 		}
 		
-		if(isSolrDump) {
-			session.setAttribute("message", message);
+		if(isSolrDump || isMarcModsImport) {
+			session.setAttribute("message", message.replace("\n", "<br />"));
+			if(collectionId != null && isMarcModsImport)
+				forwardTo += "category=" + collectionId;
 		}else{
 			forwardTo += "&activeButton=" + activeButton;
 			if(collectionId != null)
@@ -307,7 +308,7 @@ public class CollectionOperationController implements Controller {
 		operations[3] = getParameter(paramsMap, "createDerivatives") != null;
 		operations[4] = getParameter(paramsMap, "uploadRDF") != null;
 		operations[5] = getParameter(paramsMap, "externalImport") != null;
-		operations[6] = getParameter(paramsMap, "metsModsImport") != null;
+		operations[6] = getParameter(paramsMap, "marcModsImport") != null;
 		operations[7] = getParameter(paramsMap, "luceneIndex") != null
 				|| getParameter(paramsMap, "solrDump") != null
 				|| getParameter(paramsMap, "solrRecordsDump") != null;
@@ -330,7 +331,7 @@ public class CollectionOperationController implements Controller {
 		String ds = getParameter(paramsMap, "ts");
 		String dsDest = null;
 		if((ds == null || (ds=ds.trim()).length() == 0) && !(operations[15] || operations[16]))
-			throw new ServletException("No triplestore data source provided...");
+			ds = Constants.DEFAULT_TRIPLESTORE;
 		else if (operations[12]){
 			dsDest = getParameter(paramsMap, "dsDest");
 			if (dsDest == null)
@@ -564,7 +565,7 @@ public class CollectionOperationController implements Controller {
 					  ((RDFDAMS4ImportTsHandler)handler).setReplace(replace);
 				  }
 			 } else if (i == 6){	
-				  session.setAttribute("status", opMessage + "Import from METS/MODS ...");
+				  session.setAttribute("status", opMessage + "Import from MARC/MODS ...");
 				  String unit = getParameter(paramsMap, "unit");
 				  String source = getParameter(paramsMap, "source");
 				  String bibNumber = getParameter(paramsMap, "bibInput");
