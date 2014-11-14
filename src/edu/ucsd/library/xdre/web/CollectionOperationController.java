@@ -565,7 +565,7 @@ public class CollectionOperationController implements Controller {
 					  ((RDFDAMS4ImportTsHandler)handler).setReplace(replace);
 				  }
 			 } else if (i == 6){	
-				  session.setAttribute("status", opMessage + "Import from MARC/MODS ...");
+				  session.setAttribute("status", opMessage + "Import from MARC/MODS source ...");
 				  String unit = getParameter(paramsMap, "unit");
 				  String source = getParameter(paramsMap, "source");
 				  String bibNumber = getParameter(paramsMap, "bibInput");
@@ -612,6 +612,7 @@ public class CollectionOperationController implements Controller {
 				  StringBuilder duplicatRecords = new StringBuilder();
 				  List<String> ids = new ArrayList<String>();
 				  boolean preprocessing = importOption.equalsIgnoreCase("pre-processing");
+				  boolean ingestWithFiles = importOption.equalsIgnoreCase("metadataAndFiles");
 				  
 				  if (preprocessing) {
 					  Document doc = new DocumentFactory().createDocument();
@@ -643,7 +644,7 @@ public class CollectionOperationController implements Controller {
 							  String url = Constants.DAMS_STORAGE_URL.substring(0, Constants.DAMS_STORAGE_URL.indexOf("/dams/"))
 									  + "/jollyroger/get?type=bib&mods=true&ns=true&value=" + sourceID;
 
-							  handler.logMessage("Getting Roger metadata source from URL: " + url);
+							  handler.logMessage("Getting MarcXML for Roger record " + sourceID + " from URL: " + url);
 							  HttpGet req = new HttpGet(url);
 							  Document doc = damsClient.getXMLResult(req);
 							  modsXml = doc.asXML();
@@ -660,6 +661,29 @@ public class CollectionOperationController implements Controller {
 										copyrightStatus, copyrightJurisdiction, copyrightOwner,
 										program, access, endDate);
 							  
+							  // Add master file(s) for the bib/Roger record: a PDF or a TIFF, or a PDF + ZIP
+							  List<File> filesToIngest = null;
+							  if (source.equalsIgnoreCase("bib") && ingestWithFiles) {
+								  filesToIngest = getRogerFiles ((String)srcRecord, ingestFiles);
+								  // Processing the master file(s) with error report. 
+								  if (filesToIngest.size() == 0) {
+									  errorMessage.append("Roger record " + srcRecord
+											  + " has no master file(s) for \"Ingest metadata and files\" option.\n");
+								  } else if (filesToIngest.size() > 2 
+										  || (filesToIngest.size() == 2 && !filesToIngest.get(1).getName().endsWith(".zip"))) {
+									  errorMessage.append("Unexpected file(s) for Roger record " + srcRecord + ": ");
+									  for (File file : filesToIngest) {
+										  errorMessage.append((filesToIngest.indexOf(file) > 0 ? ", " : "") + file.getName());
+									  }
+									  errorMessage.append(".\n");
+								  } else {
+									  // Handle the use property for the file(s)
+									  Map<String, String> fileUseMap = getFileUse(filesToIngest);
+									  
+									  record.addFiles(0, filesToIngest, fileUseMap);
+								  }
+							  }
+
 							  String id = record.recordID();
 							  
 							  if(ids.indexOf(id) < 0) {
@@ -1149,5 +1173,45 @@ public class CollectionOperationController implements Controller {
 			CollectionHandler.close(out);
 			out = null;
 		}
+	}
+	
+	private static List<File> getRogerFiles (String bib, List<String> paths) {
+		List<File> fileList = new ArrayList<File>();
+		// List the source files
+		for(String filePath : paths){
+			File file = new File (filePath);
+			if(file.exists()){
+				getRogerFile(fileList, bib, file);
+			}
+		}
+		return fileList;
+	}
+	
+	private static void getRogerFile(List<File> files, String bib, File file) {
+		if(file.isDirectory()){
+			File[] filesArr = file.listFiles();
+			for(int i=0; i<filesArr.length; i++){
+				getRogerFile(files, bib, filesArr[i]);
+			}
+		}else{
+			if (file.getName().startsWith(bib + ".")){
+				files.add(file);
+			}
+		}
+	}
+	
+	private static Map<String, String> getFileUse(List<File> files) {
+		Map<String, String> fileUseMap = new HashMap<String, String>();
+		for (File file : files) {
+			String fileName = file.getName();
+			if (fileName.endsWith(".tif")) {
+				  fileUseMap.put(fileName, "image-master");
+			} else if (fileName.endsWith(".pdf")) {
+				  fileUseMap.put(fileName, "document-service");
+			} else if (fileName.endsWith(".zip")) {
+				  fileUseMap.put(fileName, "document-source");
+			}
+		}
+		return fileUseMap;
 	}
 }
