@@ -16,10 +16,7 @@
 <script type="text/javascript">
 	var letters = /^[A-Za-z]+$/;
 	function confirmImport(){
-		var dsIdx = document.mainForm.ts.selectedIndex;
-		var ds = document.mainForm.ts.options[dsIdx].value;
 		var collectionIndex = document.mainForm.category.selectedIndex;
-	
         var sourceName = document.mainForm.source.options[source.selectedIndex].value;
         if (sourceName == 'bib') {
         	var bib = trim(document.mainForm.bibInput.value);
@@ -95,7 +92,7 @@
 	    if(!exeConfirm)
 	    	return false;
 	    
-    	document.mainForm.action = "/damsmanager/operationHandler.do?ds=" + ds + "&metsModsImport&progress=0&formId=mainForm&sid=" + getSid();
+    	document.mainForm.action = "/damsmanager/operationHandler.do?marcModsImport&progress=0&formId=mainForm&sid=" + getSid();
     	displayMessage("message", "");
     	getAssignment("mainForm");
 		displayProgressBar(0);
@@ -107,24 +104,14 @@
 		var ds = document.mainForm.ts.options[dsIdx].value;
 		var selectedIndex = selectObj.selectedIndex;
 		if (selectedIndex == 0) {
-			document.mainForm.action = "/damsmanager/metsModsImport.do?ts=" + ds;
+			document.mainForm.action = "/damsmanager/marcModsImport.do?ts=" + ds;
 			document.mainForm.submit();
 		}
 		else {
 			var collectionId = selectObj.options[selectedIndex].value;
-			document.mainForm.action = "/damsmanager/metsModsImport.do?ts=" + ds + "&reset&category=" + collectionId;
+			document.mainForm.action = "/damsmanager/marcModsImport.do?ts=" + ds + "&reset&category=" + collectionId;
 			document.mainForm.submit();
 		}
-	}
-	
-	function setTriplestore(){
-		document.getElementById("dsSpan").style.display = "none";
-		document.getElementById("dsSelectSpan").style.display = "inline";
-	}
-	
-	function resetTriplestore(){
-		document.getElementById("dsSpan").style.display = "inline";
-		document.getElementById("dsSelectSpan").style.display = "none";
 	}
 	
 	function reloadPage(){
@@ -135,16 +122,11 @@
 	
 	function selectUnit(unitOpt){
 		var unitName = unitOpt.options[unitOpt.selectedIndex].text;
-		var fsOpts = document.mainForm.fs.options;
+		var unitID = unitOpt.options[unitOpt.selectedIndex].value;
 		var fsSelected = fsDefault;
-		if(unitName == "rci" || unitName == "RCI" || unitName.indexOf("Research Data Curation") == 0)
+		if(unitName == "UCSD Research Data Collections" || unitID.indexOf("bb6827300d") >= 0)
 			fsSelected = "openStack";
-		for(var i=0; i<fsOpts.length; i++){
-			if(fsOpts[i].value == fsSelected){
-				fsOpts[i].selected = true;
-				break;
-			}
-		}
+		document.mainForm.fs.value = fsSelected;
 	}
 	
 	function selectSource(){
@@ -166,7 +148,7 @@
 		 $( "#licenseEndDate" ).datepicker({dateFormat: "yy-mm-dd", appendText: "(yyyy-mm-dd)", buttonImage: "/damsmanager/images/calendar.jpg"});
 	});
 	
-	var crumbs = [{"Home":"http://libraries.ucsd.edu"}, {"Digital Library Collections":"/curator"},{"DAMS Manager":"/damsmanager/"}, {"METS/MODS Import":""}];
+	var crumbs = [{"Home":"http://library.ucsd.edu"}, {"Digital Library Collections":"/dc"},{"DAMS Manager":"/damsmanager/"}, {"MARC/MODS Import":""}];
 	drawBreadcrumbNMenu(crumbs, "tdr_crumbs_content", true);
 </script>
 <jsp:include flush="true" page="/jsp/libanner.jsp" />
@@ -186,24 +168,12 @@
 <tr>
 <td align="center">
 <div id="main" class="mainDiv">
-<form id="mainForm" name="mainForm" method="post" action="/damsmanager/operationHandler.do?metsModsImport" >
+<form id="mainForm" name="mainForm" method="post" action="/damsmanager/operationHandler.do?marcModsImport" >
 <div class="emBox_ark">
-<div class="emBoxBanner">METS/MODS Import</div>
+<div class="emBoxBanner">MARC/MODS Import</div>
 <div style="background:#DDDDDD;padding-top:8px;padding-bottom:8px;padding-left:25px;" align="left">
-	<span class="menuText">
-		<span class="requiredLabel">*</span><span id="dsSpan" Title="Double click to change the triplestore used for operation." ondblclick="setTriplestore();" onMouseOver="this.style.cursor='pointer'">${fn:toUpperCase(tsNameFl)}${fn:substring(model.triplestore, 1, tsNameLen)} </span>
-			<span id="dsSelectSpan" ondblclick="resetTriplestore();" style="display:none" >
-				<select name="ts" id="ts" onChange="reloadPage();"><option value=""> -- Triplestore -- </option>
-						<c:forEach var="entry" items="${model.triplestores}">
-							<option value="${entry}" <c:if test="${model.triplestore == entry}">selected</c:if>>
-	                      			<c:out value="${entry}" />
-	                       	</option>
-						</c:forEach>
-				</select>&nbsp;
-			</span>
-		<span class="menuText">Collection Chooser:&nbsp;</span>
-		</span>
-		<span>
+		<span class="submenuText"><span class="requiredLabel">*</span><b>Collection Selection:&nbsp;</b></span>
+		<span style="padding:0px 5px 0px 7px;">
 			<select id="category" name="category" onChange="selectCollection(this);" class="inputText" >
 				<option value=""> -- collections -- </option>
 				<c:forEach var="entry" items="${model.categories}">
@@ -220,22 +190,6 @@
 </div>
 <div style="margin-top:10px;padding-left:20px;" align="left">
 	<table>
-		<tr align ="left">
-			<td height="25px">
-				<span class="submenuText"><span class="requiredLabel">*</span><b>FileStore to use: </b></span>
-			</td>
-			<td>
-				<select id="fs" name="fs" class="inputText">
-					<c:forEach var="entry" items="${model.filestores}">
-						<c:if test="${entry != 'isilon-nfs'}">
-							<option value="${entry}" <c:if test="${model.filestore == entry}">selected</c:if>>
-	                      			<c:out value="${entry}" /><c:if test="${model.filestoreDefault == entry}"> (default)</c:if>
-	                       	</option>
-                       	</c:if>
-					</c:forEach>
-				</select>
-		    </td>
-		</tr>
 		<tr align="left">
 			<td height="25px">
 				<span class="submenuText"><span class="requiredLabel">*</span><b>Metadata Source: </b></span>&nbsp;&nbsp;
@@ -255,8 +209,8 @@
 			</td>
 			<td  align="left">
 				<div class="submenuText" id="modsSpan">
-					<div id="mods"><input type="text" id="dataPath" name="dataPath" size="48" value="">&nbsp;<input type="button" onclick="showFilePicker('dataPath', event)" value="&nbsp;...&nbsp;"></div>
-					<div id="bib" style="display:none"><input type="text" id="bibInput" name="bibInput" size="50" value=""><span class="note"> (Records delimiter: <strong>,</strong> )</span></div>
+					<div id="mods"><input type="text" id="dataPath" name="dataPath" size="52" value="">&nbsp;<input type="button" onclick="showFilePicker('dataPath', event)" value="&nbsp;...&nbsp;"></div>
+					<div id="bib" style="display:none"><input type="text" id="bibInput" name="bibInput" size="56" value=""><span class="note"> (Records delimiter: <strong>,</strong> )</span></div>
 				</div>
 			</td>
 		</tr>
@@ -290,7 +244,7 @@
 		</tr>
 		<tr align="left">
 			<td height="25px">
-				<span class="submenuText"><span class="requiredLabel">*</span><b>Copyright Jurisdiction: </b></span>&nbsp;&nbsp;
+				<span class="submenuText"><span class="requiredLabel">*</span><b>Copyright Jurisdiction: </b></span>
 			</td>
 			<td  align="left">
 				<span class="submenuText"><input type="text" id="countryCode" name="countryCode" size="20"></span>
@@ -335,37 +289,38 @@
 				<span class="submenuText" style="padding-left: 6px"><b>License End Date: </b></span>&nbsp;&nbsp;
 			</td>
 			<td  align="left">
-				<span class="submenuText"><input type="text" id="licenseEndDate" name="licenseEndDate" size="20" value="${model.licenseEndDate}"></span>
+				<span class="submenuText"><input type="text" id="licenseEndDate" name="licenseEndDate" size="25" style="cursor:pointer;" value="${model.licenseEndDate}"></span>
 			</td>
 		</tr>
 		<tr align="left">
 			<td colspan="2">
 				<div>
 					 <fieldset class="groupbox_modsIngestOpts"><legend class="slegandText">Import Options</legend>
-					    <div title="Check this checkbox for no ingest but pre-processing only." class="specialmenuText">
+					    <div title="Check this checkbox for no ingest but pre-processing only." class="submenuText">
 							<input checked type="radio" name="importOption" value="pre-processing" checked>
-							<span class="text-special">Preview converted RDF/XML only, no ingest.</span>
+							<span class="submenuText">Preview the converted RDF/XML only, no ingest.</span>
 						</div>
-					 	<div title="Check this checkbox to import metadata and files." class="specialmenuText">
+					 	<div title="Check this checkbox to import metadata and files." class="submenuText">
 							<input type="radio" name="importOption" value="metadataAndFiles">
 							<span class="text-special">Ingest metadata and files</span>
-							<div class="specialmenuText" style="margin-top:3px;padding-left:22px;"  title="Enter a filter path for the location to speek up the search. From the popup, click on the folder to select/deselect a location. Multiple loations allowed.">Master Files location: 
-								<input type="text" id="filesPath" name="filesPath" size="40" value="">&nbsp;<input type="button" onclick="showFilePicker('filesPath', event)" value="&nbsp;...&nbsp;">
+							<div class="submenuText" style="margin-top:3px;padding-left:25px;"  title="Enter a filter path for the location to speek up the search. From the popup, click on the folder to select/deselect a location. Multiple loations allowed.">Master Files location: 
+								<input type="text" id="filesPath" name="filesPath" size="48" value="">&nbsp;<input type="button" onclick="showFilePicker('filesPath', event)" value="&nbsp;...&nbsp;">
 							</div>
 						 </div>
-						 <div title="Check this checkbox to import metadata only." class="specialmenuText">
+						 <div title="Check this checkbox to import metadata only." class="submenuText">
 							<input type="radio" name="importOption" value="metadata">
-							<span class="text-special">Ingest metadata only</span>
+							<span class="submenuText">Ingest metadata only</span>
 						 </div>
 					  </fieldset>
 				</div>
 													  
 			</td>
 		</tr>
-		<tr><td colspan="2" style="color:#333;size=12px;padding-left:6px;"><span class="requiredLabel">*</span> required field</td>
+		<tr><td colspan="2" style="padding-left:6px;"><span class="submenuText"><span class="requiredLabel">*</span><b>Required Field</b></span></td>
 	</table>
 </div>
 <div class="buttonDiv">
+	<input type="hidden" name="fs" value=""/>
 	<input type="button" name="atImport" value=" Import " onClick="confirmImport();"/>&nbsp;&nbsp;
 	<input type="button" name="atImportCancel" value=" Cancel " onClick="document.location.href='/damsmanager/'"/>
 </div>
@@ -373,9 +328,7 @@
 </form>
 </div>
 	<jsp:include flush="true" page="/jsp/status.jsp" />
-	<div id="messageDiv">
-		<div id="message" align="left">${model.message}</div>
-	</div>
+	<div id="message" class="submenuText" style="text-align:left;">${model.message}</div>
 </td>
 </tr>
 </table>

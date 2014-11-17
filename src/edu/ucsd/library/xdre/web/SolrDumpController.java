@@ -60,7 +60,10 @@ public class SolrDumpController implements Controller {
 					colObj.put("count", "0");
 					colTitleMap.put((String) colObj.get("title"), colObj);
 				}
-				
+
+				message = !StringUtils.isBlank(message) ? message : (String)request.getSession().getAttribute("message");
+				request.getSession().removeAttribute("message");
+
 				data.put("triplestore", ds);
 				data.put("triplestores", tsSrcs);
 				data.put("filestores", fsSrcs);
