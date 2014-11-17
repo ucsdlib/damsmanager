@@ -167,7 +167,7 @@
 <tr>
 <td align="center">
 <div id="main" class="gallery" align="center">
-  <div style="font-size:24px;font-weight:bold;color:#336699;margin-bottom:10px;margin-top:10px;">DLP SOLR Index Utility</div>
+  <div style="font-size:24px;font-weight:bold;color:#336699;margin-bottom:10px;margin-top:10px;">DAMS SOLR Index Utility</div>
   <div id="tabs" class="ui-tabs ui-widget ui-widget-content ui-corner-all">
 	<ul class="ui-tabs-nav ui-helper-reset ui-helper-clearfix ui-widget-header ui-corner-all">
 		<li class="ui-state-default ui-corner-top"><a href="#recordsTab" class="ui-tabs-anchor" onclick="activateTab(this)">Records</a></li>
@@ -177,9 +177,9 @@
 	<div id="recordsTab" class="ui-tabs-panel ui-widget-content ui-corner-bottom" style="display:none">
 	  <form id="records" name="records" method="post" enctype="multipart/form-data">
 		<table style="margin-bottom:10px;text-align:left;margin:30px;">
-		  <tr align="left">
-			<td height="30px" width="120px">
-				<span class="submenuText"><b>Records Source: </b></span>&nbsp;&nbsp;
+		  <tr>
+			<td height="30px" width="150px" align="right">
+				<span class="submenuText" style="font-weight:bold;font-size:14px;">Records Source: </span>&nbsp;&nbsp;
 			</td>
 			<td width="600px">
 				<select id="source" name="source" class="inputText" onChange="selectSource(this);">
@@ -188,15 +188,15 @@
 				</select>
 		    </td>
 		  </tr>
-		  <tr align="left">
-			<td height="30px">
+		  <tr>
+			<td height="30px" align="right">
 				<span class="submenuText">
-					<span id="sourceTitle" style="font-weight:bold;">Subjects/ARKs</span><b>: </b>&nbsp;&nbsp;
+					<span id="sourceTitle" style="font-weight:bold;font-size:14px;">Subjects/ARKs</span><b>: </b>&nbsp;&nbsp;
 				</span>
 			</td>
 			<td  align="left">
 				<div class="submenuText">
-					<div id="text"><input type="text" id="textInput" name="textInput" size="50" value=""><span class="note"> (Delimiter comma (<strong>,</strong>)</span></div>
+					<div id="text"><input type="text" id="textInput" name="textInput" size="50" value=""><span class="note"> (Delimiter comma <strong>,</strong>)</span></div>
 					<div id="file" style="display:none"><input type="file" id="fileInput" name="fileInput" size="48"></div>
 				</div>
 			</td>
@@ -267,9 +267,7 @@
   </div>
 </div>
 	<jsp:include flush="true" page="/jsp/status.jsp" />
-	<div id="messageDiv">
-		<div id="message" align="left" class="errorBody">${model.message}</div>
-	</div>
+	<div id="message" class="submenuText" style="text-align:left;">${model.message}</div>
 </td>
 </tr>
 </table>

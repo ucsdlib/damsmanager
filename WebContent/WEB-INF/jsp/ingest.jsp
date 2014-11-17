@@ -165,7 +165,7 @@
 <div class="emBox_ark">
 <div class="emBoxBanner">Staging Ingest</div>
 <div style="background:#DDDDDD;padding-top:8px;padding-bottom:8px;padding-left:25px;" align="left">
-		<span id="dsSpan" class="menuText" Title="Double click to change the triplestore used for operation." ondblclick="setTriplestore();" onMouseOver="this.style.cursor='pointer'">${fn:toUpperCase(tsNameFl)}${fn:substring(model.triplestore, 1, tsNameLen)} </span>
+		<span id="dsSpan" class="menuText" Title="Double click to change the triplestore used for operation." ondblclick="setTriplestore();" onMouseOver="this.style.cursor='pointer'"></span>
 			<span id="dsSelectSpan" ondblclick="resetTriplestore();" style="display:none" >
 				<select name="ts" id="ts" onChange="reloadPage();"><option value=""> -- Triplestore -- </option>
 						<c:forEach var="entry" items="${model.triplestores}">
@@ -175,7 +175,7 @@
 						</c:forEach>
 				</select>&nbsp;
 			</span>
-			<span class="menuText">Collection Chooser:&nbsp;</span>
+			<span class="menuText">Collection Selection:</span>
 			<span><select id="category" name="category" onChange="selectCollection(this);" class="inputText" >
 						<option value=""> -- collections -- </option>
 						<c:forEach var="entry" items="${model.categories}">
@@ -294,9 +294,7 @@
 </form>
 </div>
 	<jsp:include flush="true" page="/jsp/status.jsp" />
-	<div id="messageDiv">
-		<div id="message" align="left">${model.message}</div>
-	</div>
+	<div id="message" class="submenuText" style="text-align:left;">${model.message}</div>
 </td>
 </tr>
 </table>
