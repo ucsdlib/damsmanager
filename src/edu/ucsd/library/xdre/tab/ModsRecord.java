@@ -5,12 +5,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.util.List;
+import java.util.Map;
 
 import javax.xml.transform.TransformerException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
+import org.dom4j.Element;
+import org.dom4j.Namespace;
 import org.dom4j.Node;
+import org.dom4j.QName;
 
 public class ModsRecord implements Record {
     protected String id;
@@ -97,5 +102,28 @@ public class ModsRecord implements Record {
 
 			cid += 1;
 		} 
+	}
+	
+	/**
+	 * Adding master file(s) for bib/Roger records: a PDF, a TIFF, or a PDF + a ZIP file 
+	 * @param cid
+	 * @param files
+	 * @param fileUseMap
+	 */
+	public void addFiles(int cid, List<File> files, Map<String, String> fileUseMap) {
+		Element o = (Element) rdf.selectSingleNode("//dams:Object");
+		String objUri = o.selectSingleNode("@rdf:about").getStringValue();
+		for (int i = 0; i< files.size(); i++) {
+			String fileName = files.get(i).getName();
+			String fileUse = fileUseMap.get(fileName);
+			int idx = fileName.indexOf(".");
+			String fileUri = objUri + "/" + cid + "/" + (i + 1) + (idx > 0 ? fileName.substring(fileName.indexOf(".")) : "");
+			Element f = o.addElement("dams:hasFile").addElement("dams:File");
+			f.addAttribute(new QName("about",  rdf.getRootElement().getNamespaceForPrefix("rdf")), fileUri);
+			f.addElement("dams:sourceFileName").setText(fileName);
+			if (!StringUtils.isBlank(fileUse)) {
+				f.addElement("dams:use").setText(fileUse);
+			}
+		}
 	}
 }
