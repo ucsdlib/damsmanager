@@ -3,8 +3,8 @@ package edu.ucsd.library.xdre.tab;
 import java.io.ByteArrayInputStream;
 import java.io.FilterInputStream;
 import java.io.InputStream;
-import java.text.ParseException;
 import java.util.Iterator;
+
 import org.dom4j.Document;
 import org.dom4j.Element;
 
@@ -19,18 +19,18 @@ public class TabularInputStream extends FilterInputStream
     /**
      * Convert all records from a TabularSource and build a single RDF/XML
      * document.
-     * @throws ParseException 
+     * @throws Exception 
     **/
-    public TabularInputStream( ExcelSource source ) throws ParseException
+    public TabularInputStream( ExcelSource source ) throws Exception
     {
         super( toStream(source) );
     }
 
 	/**
 	 * Convert a TabularSource to RDF/XML and return the result as a stream.
-	 * @throws ParseException 
+	 * @throws Exception 
 	**/
-    public static InputStream toStream( ExcelSource source ) throws ParseException
+    public static InputStream toStream( ExcelSource source ) throws Exception
     {
         return new ByteArrayInputStream( toString(source).getBytes() );
     }
@@ -38,8 +38,9 @@ public class TabularInputStream extends FilterInputStream
 	/**
 	 * Convert a TabularSource to RDF/XML and return the result as a string.
 	 * Convert a ExcelSource to RDF/XML and return the result as a string.
+	 * @throws Exception 
 	**/
-    public static String toString( ExcelSource source ) throws ParseException
+    public static String toString( ExcelSource source ) throws Exception
     {
         Document doc = null;
         Element root = null;

@@ -1,6 +1,5 @@
 package edu.ucsd.library.xdre.tab;
 
-import java.text.ParseException;
 import org.dom4j.Document;
 
 /**
@@ -19,5 +18,5 @@ public interface Record
     /**
      * Convert the record to RDF/XML.
     **/
-    public Document toRDFXML() throws ParseException;
+    public Document toRDFXML() throws Exception;
 }

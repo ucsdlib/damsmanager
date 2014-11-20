@@ -4,11 +4,13 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.dom4j.Branch;
 import org.dom4j.Document;
 import org.dom4j.DocumentFactory;
@@ -19,7 +21,7 @@ import org.dom4j.QName;
 /**
  * A bundle of tabular data, consisting of a key-value map for the record, and 0 or more
  * components (also key-value maps).
- *
+ * @author lsitu
  * @author escowles
  * @since 2014-06-05
 **/
@@ -114,9 +116,9 @@ public class TabularRecord implements Record
 
     /**
      * Convert the record to RDF/XML.
-     * @throws ParseException 
+     * @throws Exception 
     **/
-    public Document toRDFXML() throws ParseException
+    public Document toRDFXML() throws Exception
     {
         // setup object
     	Document doc = new DocumentFactory().createDocument();
@@ -143,8 +145,9 @@ public class TabularRecord implements Record
     /**
      * The meat of the metadata processing -- a long sequence of categories of metadata
      * fields with the key mapping between field names and dams4 structure
+     * @throws Exception 
     **/
-    private void addFields( Element e, Map<String,String> data, int cmp, String ark ) throws ParseException
+    private void addFields( Element e, Map<String,String> data, int cmp, String ark ) throws Exception
     {
         if ( ark == null ) { ark = "ARK"; }
         String id = (cmp > 0) ? ark + "/" + cmp : ark;
@@ -301,16 +304,6 @@ public class TabularRecord implements Record
                 "temporal", damsNS, null );
         addSubject( data, e, "subject:topic", "Topic", madsNS, "topic", damsNS, null );
 
-        // rights holder (special case of subject name) /////////////////////////////////
-        addSubject( data, e, "copyright holder conference name", "ConferenceName", madsNS,
-                "rightsHolderConference", damsNS, "Name" );
-        addSubject( data, e, "copyright holder corporate name", "CorporateName", madsNS,
-                "rightsHolderCorporate", damsNS, "Name" );
-        addSubject( data, e, "copyright holder family name", "FamilyName", madsNS,
-                "rightsHolderFamily", damsNS, "Name" );
-        addSubject( data, e, "copyright holder personal name", "PersonalName", madsNS,
-                "rightsHolderPersonal", damsNS, "FullName" );
-
         // language /////////////////////////////////////////////////////////////////////
         for ( String lang : split(data.get("language")) )
         {
@@ -363,24 +356,33 @@ public class TabularRecord implements Record
             }
         }
 
-        // copyright ////////////////////////////////////////////////////////////////////
-        if ( pop(data.get("rights status")) )
-        {
-            Element copy = addElement(e,"copyright",damsNS,"Copyright",damsNS);
-            addTextElement(copy,"copyrightStatus",damsNS, data.get("rights status"));
-            addTextElement(copy,"copyrightJurisdiction",damsNS, data.get("jurisdiction"));
+        // Copyright and Access Override (RightsHolder excluded for more specific predicates) //
+        String copyrightStatus = data.get("rights status");
+        String copyrightJurisdiction = data.get("jurisdiction");
+        String accessOverride = data.get("access override");
+        String beginDate = data.get("access override begin date");
+        String endDate = data.get("access override end date");
+        
+        // Validate the value for Access Override
+        if ( pop(data.get("access override")) ) {
+        	validateAccessOverride ( objectID, accessOverride.trim() );
         }
-
-        // other rights /////////////////////////////////////////////////////////////////
-        if ( pop(data.get("other rights permission")) )
+        
+        if (!StringUtils.isBlank(copyrightStatus) || !StringUtils.isBlank(accessOverride) )
         {
-            Element other = addElement(e, "otherRights", damsNS, "OtherRights", damsNS);
-            addTextElement( other, "otherRightsBasis",damsNS,
-                data.get("other rights permission basis") );
-            Element perm = addElement(other, "permission", damsNS, "Permission", damsNS);
-            addTextElement( perm, "type", damsNS, data.get("other rights permission") );
+        	RecordUtil.addRights(e.getDocument(), null, null, copyrightStatus, copyrightJurisdiction, null,
+        			null, accessOverride, beginDate, endDate);
         }
-
+        
+        // rights holder (special case of subject name) /////////////////////////////////
+        addSubject( data, e, "copyright holder conference name", "ConferenceName", madsNS,
+                "rightsHolderConference", damsNS, "Name" );
+        addSubject( data, e, "copyright holder corporate name", "CorporateName", madsNS,
+                "rightsHolderCorporate", damsNS, "Name" );
+        addSubject( data, e, "copyright holder family name", "FamilyName", madsNS,
+                "rightsHolderFamily", damsNS, "Name" );
+        addSubject( data, e, "copyright holder personal name", "PersonalName", madsNS,
+                "rightsHolderPersonal", damsNS, "FullName" );
     }
 
     /////////////////////////////////////////////////////////////////////////////////////
@@ -391,8 +393,16 @@ public class TabularRecord implements Record
     {
         for ( String colName : split(data.get(header)) )
         {
-            Element coll = addVocabElement( e, pred, damsNS, elem, damsNS );
-            addTitle( coll, colName, null, null, null, null, null );
+        	if ( !(colName.startsWith("http://") || colName.startsWith("https://")) )
+        	{
+	        	// Insert new stub record if it's not a url, otherwise will insert as resource reference
+	            Element coll = addVocabElement( e, pred, damsNS, elem, damsNS );
+	            coll.addElement("dams:visibility").setText("curator");
+	            addTitle( coll, colName, null, null, null, null, null );
+        	} else {
+        		Element coll = addElement( e, "collection", damsNS );
+                addAttribute( coll, "resource", rdfNS, colName );
+        	}
         }
     }
     private void addRelationship( Map<String,String> data, Element e, String header,
@@ -567,7 +577,17 @@ public class TabularRecord implements Record
     				+ ". Formats accepted: " + dateFormatString, 0);
     	}
     }
+
+    private static void validateAccessOverride ( String objectID,String accessOverride ) throws Exception
+    {
+    	List<String> accessValues = Arrays.asList(RecordUtil.ACCESS_VALUES);
+    	if ( accessValues.indexOf(accessOverride) < 0 )
+    	{
+    		throw new Exception( "Invalid access override value \"" + accessOverride + "\" for record " + objectID + ".");
+    	}
     
+    }
+
     /**
      * Create the RDF root element
      * @param doc
