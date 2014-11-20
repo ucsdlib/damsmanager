@@ -70,12 +70,15 @@
 			return false;
 	    }
 	    
-	    var countryCode = document.mainForm.countryCode.value;    
-        if(countryCode == null || countryCode.length != 2 || !countryCode.match(letters)){   
-	        alert('Please enter a valid country code with two characters.'); 
-	        document.mainForm.countryCode.focus();
-	        return false;  
-        }
+	    var countryCode = document.mainForm.countryCode.value.trim(); 
+	    var accessOverrideVal = document.mainForm.accessOverride.options[accessOverride.selectedIndex].value;
+	    if(accessOverrideVal.indexOf ("Creative Commons") < 0){
+	       	if(countryCode.length != 2 || !countryCode.match(letters)){
+		        alert('Please enter a valid country code with two characters.'); 
+		        document.mainForm.countryCode.focus();
+		        return false; 
+	       	}
+       	}
         
 		var programIndex = document.mainForm.program.selectedIndex;
 	    if(programIndex == 0){
@@ -145,7 +148,24 @@
 	}
 	  
 	$(function() {
-		 $( "#licenseEndDate" ).datepicker({dateFormat: "yy-mm-dd", appendText: "(yyyy-mm-dd)", buttonImage: "/damsmanager/images/calendar.jpg"});
+		var beginCal = $( "#licenseBeginDate" );
+		var endCal = $( "#licenseEndDate" );
+		$(beginCal).datepicker({
+			dateFormat: "yy-mm-dd", 
+			appendText: "(yyyy-mm-dd)", 
+			buttonImage: "/damsmanager/images/calendar.jpg",
+			onSelect: function() {
+				$(this).datepicker( "option", "maxDate", $(endCal).datepicker('getDate'));
+			}
+		});
+		$(endCal).datepicker({
+			dateFormat: "yy-mm-dd", 
+			appendText: "(yyyy-mm-dd)", 
+			buttonImage: "/damsmanager/images/calendar.jpg",
+			onSelect: function() {
+				$(this).datepicker( "option", "minDate", $(beginCal).datepicker('getDate'));
+			}
+		 });
 	});
 	
 	var crumbs = [{"Home":"http://library.ucsd.edu"}, {"Digital Library Collections":"/dc"},{"DAMS Manager":"/damsmanager/"}, {"MARC/MODS Import":""}];
@@ -192,7 +212,7 @@
 	<table>
 		<tr align="left">
 			<td height="25px">
-				<span class="submenuText"><span class="requiredLabel">*</span><b>Metadata Source: </b></span>&nbsp;&nbsp;
+				<span class="submenuText"><span class="requiredLabel">*</span><b>Metadata Source: </b></span>
 			</td>
 			<td>
 				<select id="source" name="source" class="inputText" onChange="selectSource(this);">
@@ -204,7 +224,7 @@
 		<tr align="left">
 			<td height="25px">
 				<span class="submenuText">
-					<span class="requiredLabel">*</span><span id="sourceTitle" style="font-weight:bold;">Metadata Location</span><b>: </b>&nbsp;&nbsp;
+					<span class="requiredLabel">*</span><span id="sourceTitle" style="font-weight:bold;">Metadata Location</span><b>: </b>
 				</span>
 			</td>
 			<td  align="left">
@@ -244,7 +264,7 @@
 		</tr>
 		<tr align="left">
 			<td height="25px">
-				<span class="submenuText"><span class="requiredLabel">*</span><b>Copyright Jurisdiction: </b></span>
+				<span class="submenuText" style="padding-left: 6px"><b>Copyright Jurisdiction: </b></span>
 			</td>
 			<td  align="left">
 				<span class="submenuText"><input type="text" id="countryCode" name="countryCode" size="20"></span>
@@ -252,10 +272,10 @@
 		</tr>
 		<tr align="left">
 			<td height="25px">
-				<span class="submenuText" style="padding-left: 6px"><b>Copyright Owner: </b></span>&nbsp;&nbsp;
+				<span class="submenuText" style="padding-left: 6px"><b>Copyright Owner: </b></span>
 			</td>
 			<td  align="left">
-				<span class="submenuText"><input type="text" name="fileFilter" size="20"></span>
+				<span class="submenuText"><input type="text" name="copyrightOwner" size="20"></span>
 			</td>
 		</tr>
 		<tr align ="left">
@@ -286,7 +306,15 @@
 		</tr>
 		<tr align="left">
 			<td height="25px">
-				<span class="submenuText" style="padding-left: 6px"><b>License End Date: </b></span>&nbsp;&nbsp;
+				<span class="submenuText" style="padding-left: 6px"><b>License Begin Date: </b></span>
+			</td>
+			<td  align="left">
+				<span class="submenuText"><input type="text" id="licenseBeginDate" name="licenseBeginDate" size="25" style="cursor:pointer;" value="${model.licenseBeginDate}"></span>
+			</td>
+		</tr>
+		<tr align="left">
+			<td height="25px">
+				<span class="submenuText" style="padding-left: 6px"><b>License End Date: </b></span>
 			</td>
 			<td  align="left">
 				<span class="submenuText"><input type="text" id="licenseEndDate" name="licenseEndDate" size="25" style="cursor:pointer;" value="${model.licenseEndDate}"></span>
