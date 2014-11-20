@@ -1,29 +1,30 @@
 package edu.ucsd.library.xdre.tab;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.transform.TransformerException;
-
 import org.apache.commons.lang3.StringUtils;
 import org.dom4j.Document;
-import org.dom4j.DocumentException;
 import org.dom4j.Element;
-import org.dom4j.Namespace;
 import org.dom4j.Node;
 import org.dom4j.QName;
 
+/**
+ * A Marc/Mods record constructed from the Roger/AT form
+ * @author lsitu
+ * Since Sep. 25, 2014 
+ */
 public class ModsRecord implements Record {
     protected String id;
     protected Document rdf;
 	
 	public ModsRecord(File xsl, File xml, String[] collectionURIs, String unitURI, 
 			String copyrightStatus, String copyrightJurisdiction, String copyrightOwner,
-			String program, String access, String endDate) throws ParseException, IOException, DocumentException, TransformerException {
+			String program, String access, String beginDate, String endDate) 
+					throws Exception {
 		XsltSource xsltSource = new XsltSource( xsl, xml );
 		Record record = xsltSource.nextRecord();
 		this.id = record.recordID();
@@ -31,12 +32,13 @@ public class ModsRecord implements Record {
 		
 		//Assign ID for component and files with symbols /CID or /FID 
 		assignIDs();
-		RecordUtil.addRights(rdf, unitURI, collectionURIs, copyrightStatus, copyrightJurisdiction, copyrightOwner, program, access, endDate);
+		RecordUtil.addRights(rdf, unitURI, collectionURIs, copyrightStatus, copyrightJurisdiction,
+				copyrightOwner, program, access, beginDate, endDate);
 	}
 	
 	public ModsRecord(File xsl, InputStream in, String sourceID, String[] collectionURIs, String unitURI, 
 			String copyrightStatus, String copyrightJurisdiction, String copyrightOwner,
-			String program, String access, String endDate) throws ParseException, IOException, DocumentException, TransformerException {
+			String program, String access, String beginDate, String endDate) throws Exception {
 		XsltSource xsltSource = new XsltSource( xsl, sourceID, in );
 		Record record = xsltSource.nextRecord();
 		this.id = record.recordID();
@@ -44,13 +46,15 @@ public class ModsRecord implements Record {
 		
 		//Assign component ID and file ID for symbols CID, FID 
 		assignIDs();
-		RecordUtil.addRights(rdf, unitURI, collectionURIs, copyrightStatus, copyrightJurisdiction, copyrightOwner, program, access, endDate);
+		RecordUtil.addRights(rdf, unitURI, collectionURIs, copyrightStatus, copyrightJurisdiction, 
+				copyrightOwner, program, access, beginDate, endDate);
 	}
 
 	public void addRights (String unitURI, String[] collectionURIs,
 	        String copyrightStatus, String copyrightJurisdiction, String copyrightOwner,
-	        String program, String access, String endDate){
-		RecordUtil.addRights(rdf, unitURI, collectionURIs, copyrightStatus, copyrightJurisdiction, copyrightOwner, program, access, endDate);
+	        String program, String access, String beginDate, String endDate){
+		RecordUtil.addRights(rdf, unitURI, collectionURIs, copyrightStatus, copyrightJurisdiction, 
+				copyrightOwner, program, access, beginDate, endDate);
 	}
 
 	@Override

@@ -521,6 +521,7 @@ public class CollectionOperationController implements Controller {
 									  }
 								  }
 							  } catch(Exception e) {
+								  log.warn("Excel Input Stream error", e);
 								  errorMessage.append("-" + e.getMessage() + "\n");
 								  handler.logMessage(e.getMessage() + "\n");
 							  }
@@ -575,6 +576,7 @@ public class CollectionOperationController implements Controller {
 				  String copyrightOwner = getParameter(paramsMap, "copyrightOwner");
 				  String program = getParameter(paramsMap, "program");
 				  String access = getParameter(paramsMap, "accessOverride");
+				  String beginDate = getParameter(paramsMap, "licenseBeginDate");
 				  String endDate = getParameter(paramsMap, "licenseEndDate");
 				  String[] dataPaths = getParameter(paramsMap, "dataPath").split(";");
 				  String[] filesPaths = getParameter(paramsMap, "filesPath").split(";");
@@ -659,7 +661,7 @@ public class CollectionOperationController implements Controller {
 							  File xsl = new File(session.getServletContext().getRealPath("files/mets2dams.xsl"));
 							  ModsRecord record = new ModsRecord(xsl, in, sourceID.replaceAll("\\..*",""), collections, unit, 
 										copyrightStatus, copyrightJurisdiction, copyrightOwner,
-										program, access, endDate);
+										program, access, beginDate, endDate);
 							  
 							  // Add master file(s) for the bib/Roger record: a PDF or a TIFF, or a PDF + ZIP
 							  List<File> filesToIngest = null;
