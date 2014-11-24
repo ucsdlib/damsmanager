@@ -37,6 +37,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import javax.security.auth.login.LoginException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
@@ -435,6 +436,27 @@ public class DAMSClient {
 		return map;
 	}	
 
+	/**
+	 * Retrieve the collection type/model
+	 * @return
+	 * @throws Exception 
+	 */
+	public String getCollectionType(String collectionId) throws Exception{
+		String url = getCollectionsURL(null, null, "json");
+		HttpGet get = new HttpGet(url);
+		JSONObject resObj = getJSONResult(get);
+		JSONArray collArr = (JSONArray) resObj.get("collections");
+		JSONObject coll = null;
+
+		for(Iterator<JSONObject> it= collArr.iterator(); it.hasNext();){
+			coll = it.next();
+			String collId = (String)coll.get("collection");
+			if (StringUtils.isNotBlank(collId) && collId.indexOf(collectionId) >= 0) {
+				return (String)coll.get("type");
+			}
+		}
+		return null;
+	}
 	/**
 	 * Get a list of objects in a collection.
 	 * @throws Exception 

@@ -105,6 +105,7 @@
 	        <url-pattern>/dataConverter.do</url-pattern>
 	        <url-pattern>/progressHandler.do</url-pattern>
 	        <url-pattern>/marcModsImport.do</url-pattern>
+	        <url-pattern>/collectionRelease.do</url-pattern>
     	</web-resource-collection>
     	<auth-constraint>
         	<role-name>32</role-name>
