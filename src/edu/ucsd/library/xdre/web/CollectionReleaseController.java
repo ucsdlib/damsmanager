@@ -29,6 +29,7 @@ public class CollectionReleaseController implements Controller {
 		String ds = request.getParameter("ts");
 		String collectionId =  request.getParameter("category");
 		String collectionToMerge =  request.getParameter("collectionToMerge");
+		String collOption =  request.getParameter("option");
 		String message = request.getParameter("message");
 
 
@@ -43,9 +44,16 @@ public class CollectionReleaseController implements Controller {
 			damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
 			damsClient.setTripleStore(ds);
 
-
 			Map<String, String> collectionToMergeMap = damsClient.listCollections();
-			Map<String, String> collectionMap = getNonPublicCollections(collectionToMergeMap, damsClient);
+			Map<String, String> collectionMap = null;
+			if (StringUtils.isNotBlank(collOption) && collOption.equalsIgnoreCase("all")) {
+				collectionMap = collectionToMergeMap;
+				collOption = "";
+			} else {
+				collectionMap = getNonPublicCollections(collectionToMergeMap, damsClient);
+				collOption = "All";
+			}
+
 			List<String> tsSrcs = damsClient.listTripleStores();
 
 			message = (!StringUtils.isBlank(message) ||
@@ -59,6 +67,7 @@ public class CollectionReleaseController implements Controller {
 			dataMap.put("triplestores", tsSrcs);
 			dataMap.put("collectionsToMerge", collectionToMergeMap);
 			dataMap.put("collectionToMerge", collectionToMerge);
+			dataMap.put("collOption", collOption);
 		
 		} catch (Exception e) {
 			e.printStackTrace();

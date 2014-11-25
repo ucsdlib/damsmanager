@@ -82,6 +82,15 @@ a {color: #336699;}
 .colList{
 	width:510px;
 }
+.collOption {
+	color:#1388cd;
+	font-size:12px;
+	font-weight:bold;
+	text-decoration:none;
+	padding-right:2px;
+	cursor:pointer;
+	background:url("../images/sprite.gif") right -950px no-repeat;
+}
 .processlayout{
 	padding-top:10px;
 	text-align:left;

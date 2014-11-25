@@ -3,8 +3,6 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
-<c:set var="tsNameLen"> ${fn:length(model.triplestore)}</c:set>  
-<c:set var="tsNameFl" scope="page">${fn:substring(model.triplestore, 0, 1)}</c:set> 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <head>
@@ -81,7 +79,19 @@
 			$("#mergeTo").hide();
 		}
 	}
-	
+
+	function reload(option){
+		var newUrl = "/damsmanager/collectionRelease.do?";
+		var collIndex = document.mainForm.category.selectedIndex;
+		var category = document.mainForm.category.options[collIndex].value;
+		if (option == 'All')
+			newUrl +=  'option=All';
+		if ( category.length > 0 ) {
+			newUrl += '&category=' + category;
+		}
+		document.location.href = newUrl;
+	}
+
 	$(function() {
 		releaseOptionChange();
 	})
@@ -118,12 +128,23 @@
 					<c:set var="colNameLen"> ${fn:length(entry.key)}</c:set>
 					<option value="${entry.value}" <c:if test="${model.category == entry.value}">selected</c:if>>
                      			<c:choose>
-							<c:when test="${colNameLen > 75}"><c:out value="${fn:substring(entry.key, 0, 71)}" /> ...</c:when>
+							<c:when test="${colNameLen > 75}"><c:out value="${fn:substring(entry.key, 0, 71)}" /> </c:when>
 							<c:otherwise><c:out value="${entry.key}" /></c:otherwise>
 						</c:choose>
                       	</option>
 				</c:forEach>
 			</select>
+		</span>
+		<c:set var="dtitle">
+			<c:choose>
+				<c:when test="${model.collOption == 'All'}">Show all the collections</c:when>
+				<c:otherwise>Show non-publid collections only</c:otherwise>
+			</c:choose>
+		</c:set>
+		<span title="${dtitle}">
+			<a class="collOption" id="collOption" onclick="reload('${model.collOption}')">
+				<img src="images/arrow.gif"/>
+			</a>
 		</span>
 </div>
 <div style="margin-top:10px;padding-left:20px;text-align:left;">
@@ -135,8 +156,8 @@
 			<td>
 				<select id="releaseOption" name="releaseOption" class="inputText" onChange="releaseOptionChange(this);">
 					<option value="" selected> -- Options -- </option>
-					<option value="newRelease" selected>New Collection</option>
-					<option value="mergeRelease">Merge To Collection</option>
+					<option value="newRelease">New Collection</option>
+					<option value="mergeRelease">Merge Collection</option>
 					<option value="one-offsRelease">One-Offs</option>
 				</select>
 		    </td>
