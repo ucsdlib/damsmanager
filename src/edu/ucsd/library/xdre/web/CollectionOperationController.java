@@ -46,6 +46,7 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import edu.ucsd.library.xdre.collection.ChecksumsHandler;
 import edu.ucsd.library.xdre.collection.CollectionHandler;
+import edu.ucsd.library.xdre.collection.CollectionReleaseHandler;
 import edu.ucsd.library.xdre.collection.DerivativeHandler;
 import edu.ucsd.library.xdre.collection.FileCountValidaionHandler;
 import edu.ucsd.library.xdre.collection.FileIngestionHandler;
@@ -147,6 +148,7 @@ public class CollectionOperationController implements Controller {
 		boolean isSolrDump = getParameter(paramsMap, "solrDump") != null || getParameter(paramsMap, "solrRecordsDump") != null;
 		boolean isSerialization = getParameter(paramsMap, "serialize") != null;
 		boolean isMarcModsImport = getParameter(paramsMap, "marcModsImport") != null;
+		boolean isCollectionRelease = getParameter(paramsMap, "collectionRelease") != null;
 		String fileStore = getParameter(paramsMap, "fs");
 		if(activeButton == null || activeButton.length() == 0)
 			activeButton = "validateButton";
@@ -174,6 +176,8 @@ public class CollectionOperationController implements Controller {
 			forwardTo = "/serialize.do?" + (fileStore!=null?"&fs=" + fileStore:"");
 		else if(isMarcModsImport)
 			forwardTo = "/marcModsImport.do?";
+		else if(isCollectionRelease)
+			forwardTo = "/collectionRelease.do?";
 
 		String[] emails = null;
 		String user = request.getRemoteUser();
@@ -191,7 +195,7 @@ public class CollectionOperationController implements Controller {
 				message = e.getMessage();
 			}
 			if(!vRequest){
-				if(isSolrDump)
+				if(isSolrDump || isCollectionRelease)
 					session.setAttribute("message", message);
 				else {
 					forwardTo += "&activeButton=" + activeButton;
@@ -249,7 +253,7 @@ public class CollectionOperationController implements Controller {
 				emails[0] = user + "@ucsd.edu";
 			}
 			if(emails == null)
-				DAMSClient.sendMail(sender, new String[] {"lsitu@ucsd.edu"}, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
+				DAMSClient.sendMail(sender, new String[] {sender}, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
 			else
 				DAMSClient.sendMail(sender, emails, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
 		} catch (AddressException e) {
@@ -258,9 +262,9 @@ public class CollectionOperationController implements Controller {
 			e.printStackTrace();
 		}
 		
-		if(isSolrDump || isMarcModsImport) {
+		if(isSolrDump || isMarcModsImport || isCollectionRelease) {
 			session.setAttribute("message", message.replace("\n", "<br />"));
-			if(collectionId != null && isMarcModsImport)
+			if(collectionId != null && (isMarcModsImport  || isCollectionRelease))
 				forwardTo += "category=" + collectionId;
 		}else{
 			forwardTo += "&activeButton=" + activeButton;
@@ -306,7 +310,7 @@ public class CollectionOperationController implements Controller {
 		operations[1] = getParameter(paramsMap, "validateChecksums") != null;
 		operations[2] = getParameter(paramsMap, "rdfImport") != null;
 		operations[3] = getParameter(paramsMap, "createDerivatives") != null;
-		operations[4] = getParameter(paramsMap, "uploadRDF") != null;
+		operations[4] = getParameter(paramsMap, "collectionRelease") != null;
 		operations[5] = getParameter(paramsMap, "externalImport") != null;
 		operations[6] = getParameter(paramsMap, "marcModsImport") != null;
 		operations[7] = getParameter(paramsMap, "luceneIndex") != null
@@ -429,13 +433,17 @@ public class CollectionOperationController implements Controller {
 					 sizes = reqSize.split(",");
 				 handler = new DerivativeHandler(damsClient, collectionId, sizes, derReplace);
 
-			 }/*else if (i == 4){	
-				 session.setAttribute("status", opMessage + "RDF XML File Creation &amp; File Store Upload ...");
-				 String rdfXmlDataType = getParameter(paramsMap, "rdfXmlDataType");
-				 boolean rdfXmlReplace = getParameter(paramsMap, "rdfXmlReplace") != null;
-	             
-				 handler = new MetaDataStreamUploadHandler(damsClient, collectionId, "rdf", rdfXmlReplace);
-			 }*/else if (i == 5){	
+			 }else if (i == 4){	
+				 session.setAttribute("status", opMessage + " release collection " + collectionId + " ...");
+				 String releaseState = getParameter(paramsMap, "releaseState");
+				 String releaseOption = getParameter(paramsMap, "releaseOption");
+				 String collectionToMerge = getParameter(paramsMap, "collectionToMerge");
+				 
+				 log.info("Collection release:  category =>" + collectionId + ", releaseState => " + releaseState + ", releaseOption => " + releaseOption + ", collectionToMerge => " + collectionToMerge);
+
+				 handler = new CollectionReleaseHandler(damsClient, collectionId, releaseState, releaseOption);			 
+				 ((CollectionReleaseHandler)handler).setCollectionToMerge(collectionToMerge);
+			 }else if (i == 5){	
 				  session.setAttribute("status", opMessage + "Importing objects ...");
 				  String[] dataPaths = getParameter(paramsMap, "dataPath").split(";");
 				  String[] filesPaths = getParameter(paramsMap, "filesPath").split(";");
