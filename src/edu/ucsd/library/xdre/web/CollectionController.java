@@ -105,7 +105,7 @@ public class CollectionController implements Controller {
 						        	// Add child reference to the parent collection
 						        	Document docParent = damsClient.getRecord(parentCollection);
 						        	Node collNode = docParent.selectSingleNode("//*[contains(@rdf:about, '" + parentCollection + "')]");
-						        	((Element)collNode).addElement(new QName("has" + collType, damsNS))
+						        	((Element)collNode).addElement(new QName("has" + collType.replace("ProvenanceCollectionPart", "Part"), damsNS))
 						        			.addAttribute(new QName("resource", rdfNS), collectionId);
 						        	rdf.add(collNode.detach());
 						        }
@@ -117,13 +117,21 @@ public class CollectionController implements Controller {
 						        if (StringUtils.isNotBlank(visibility))
 						        	root.addElement(new QName("visibility", damsNS)).setText(visibility);
 								
-						        boolean successful = false;
-								successful = damsClient.updateObject(collectionId, doc.asXML(), Constants.IMPORT_MODE_ALL);
-								if (successful) {
+								if (damsClient.updateObject(collectionId, doc.asXML(), Constants.IMPORT_MODE_ALL)) {
+									
+									message = "Successfully saved collection " + collectionId + ".";
+									// Update SOLR
+									if (!damsClient.solrUpdate(collectionId))
+										message = "Collection " + collectionId + "saved successfully. But failed to update SOLR.";
+									
+									if (!StringUtils.isNotBlank(parentCollection)) {
+										if (damsClient.solrUpdate(parentCollection)) 
+											message += " Failed to update SOLR for parent collection " + parentCollection + ".";
+									}
 									collTitle = "";
-									message = "Successfully created collection " + collectionId + ".";
-								} else
-									message = "Failed to created collection \"" + collTitle + "\": " + collectionId + ".";
+								} else {
+									message = "Failed to save collection \"" + collTitle + "\": " + collectionId + ".";
+								}
 								action = Action.create.name();
 							}
 						}
