@@ -138,7 +138,7 @@
 		<c:set var="dtitle">
 			<c:choose>
 				<c:when test="${model.collOption == 'All'}">Show all the collections</c:when>
-				<c:otherwise>Show non-publid collections only</c:otherwise>
+				<c:otherwise>Show non-public collections only</c:otherwise>
 			</c:choose>
 		</c:set>
 		<span title="${dtitle}">

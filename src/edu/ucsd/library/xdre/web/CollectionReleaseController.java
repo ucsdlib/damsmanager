@@ -3,6 +3,7 @@ package edu.ucsd.library.xdre.web;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -103,7 +104,7 @@ public class CollectionReleaseController implements Controller {
 	}
 	
 	private <K,V> Map<K, V> cloneMap(Map<K, V> toClone) {
-	    Map<K, V> reverted = new HashMap<K, V>();
+	    Map<K, V> reverted = new TreeMap<K, V>();
 	    for(K k: toClone.keySet()){
 	        reverted.put(k, toClone.get(k));
 	    }
