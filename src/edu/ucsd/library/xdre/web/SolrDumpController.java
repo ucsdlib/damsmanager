@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;
 import javax.servlet.http.HttpServletRequest;
@@ -59,12 +60,15 @@ public class SolrDumpController implements Controller {
 					colObj.put("count", "0");
 					colTitleMap.put((String) colObj.get("title"), colObj);
 				}
-				
+
+				message = !StringUtils.isBlank(message) ? message : (String)request.getSession().getAttribute("message");
+				request.getSession().removeAttribute("message");
+
 				data.put("triplestore", ds);
 				data.put("triplestores", tsSrcs);
 				data.put("filestores", fsSrcs);
 				data.put("collections", colTitleMap.values());
-				data.put("message", message);
+				data.put("message", (!StringUtils.isBlank(message) ? message : request.getSession().getAttribute("message")));
 			}catch (Exception e){
 				e.printStackTrace();
 				message += "Internal error: " + e.getMessage();

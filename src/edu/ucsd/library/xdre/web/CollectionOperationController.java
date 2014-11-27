@@ -31,6 +31,7 @@ import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.log4j.Logger;
 import org.dom4j.Document;
@@ -45,6 +46,7 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import edu.ucsd.library.xdre.collection.ChecksumsHandler;
 import edu.ucsd.library.xdre.collection.CollectionHandler;
+import edu.ucsd.library.xdre.collection.CollectionReleaseHandler;
 import edu.ucsd.library.xdre.collection.DerivativeHandler;
 import edu.ucsd.library.xdre.collection.FileCountValidaionHandler;
 import edu.ucsd.library.xdre.collection.FileIngestionHandler;
@@ -143,9 +145,10 @@ public class CollectionOperationController implements Controller {
 		boolean isIngest = getParameter(paramsMap, "ingest") != null;
 		boolean isDevUpload = getParameter(paramsMap, "devUpload") != null;
 		boolean isBSJhoveReport = getParameter(paramsMap, "bsJhoveReport") != null;
-		boolean isSolrDump = getParameter(paramsMap, "solrDump") != null;
+		boolean isSolrDump = getParameter(paramsMap, "solrDump") != null || getParameter(paramsMap, "solrRecordsDump") != null;
 		boolean isSerialization = getParameter(paramsMap, "serialize") != null;
-		boolean isModsImport = getParameter(paramsMap, "metsModsImport") != null;
+		boolean isMarcModsImport = getParameter(paramsMap, "marcModsImport") != null;
+		boolean isCollectionRelease = getParameter(paramsMap, "collectionRelease") != null;
 		String fileStore = getParameter(paramsMap, "fs");
 		if(activeButton == null || activeButton.length() == 0)
 			activeButton = "validateButton";
@@ -154,7 +157,7 @@ public class CollectionOperationController implements Controller {
 		
 		String ds = getParameter(paramsMap, "ts");
 		if(ds == null || ds.length() == 0)
-			throw new ServletException("No triplestore data source provided...");
+			ds = Constants.DEFAULT_TRIPLESTORE;
 		
 		if(fileStore == null || (fileStore=fileStore.trim()).length() == 0)
 			fileStore = null;
@@ -168,17 +171,19 @@ public class CollectionOperationController implements Controller {
 		}else if(isDevUpload)
 			forwardTo = "/devUpload.do?" + (fileStore!=null?"&fs=" + fileStore:"");
 		else if(isSolrDump)
-			forwardTo = "/solrDump.do?" + (fileStore!=null?"&fs=" + fileStore:"");
+			forwardTo = "/solrDump.do" + (StringUtils.isBlank(collectionId) ? "" : "#colsTab");
 		else if(isSerialization)
 			forwardTo = "/serialize.do?" + (fileStore!=null?"&fs=" + fileStore:"");
-		else if(isModsImport)
-			forwardTo = "/metsModsImport.do?" + (fileStore!=null?"&fs=" + fileStore:"");
-		forwardTo += "&activeButton=" + activeButton; 
+		else if(isMarcModsImport)
+			forwardTo = "/marcModsImport.do?";
+		else if(isCollectionRelease)
+			forwardTo = "/collectionRelease.do?";
 
 		String[] emails = null;
 		String user = request.getRemoteUser();
-		if(( !(isBSJhoveReport || isDevUpload) && getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "externalImport") == null 
-				&& getParameter(paramsMap, "dataConvert") == null ) && getParameter(paramsMap, "metsModsImport") == null && 
+		if(( !(getParameter(paramsMap, "solrRecordsDump") != null || isBSJhoveReport || isDevUpload)
+				&& getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "externalImport") == null 
+				&& getParameter(paramsMap, "dataConvert") == null ) && getParameter(paramsMap, "marcModsImport") == null && 
 				(collectionId == null || (collectionId=collectionId.trim()).length() == 0)){
 			message = "Please choose a collection ...";
 		}else{
@@ -187,9 +192,16 @@ public class CollectionOperationController implements Controller {
 			try{
 				vRequest = RequestOrganizer.setReferenceServlet(session, servletId, Thread.currentThread());
 			}catch (Exception e){
-					forwardTo += "&message=" + e.getMessage();
+				message = e.getMessage();
 			}
 			if(!vRequest){
+				if(isSolrDump || isCollectionRelease)
+					session.setAttribute("message", message);
+				else {
+					forwardTo += "&activeButton=" + activeButton;
+					forwardTo += "&message=" + message;
+				}
+
 				forwordPage(request, response, response.encodeURL(forwardTo));
 				return null;
 			}
@@ -241,7 +253,7 @@ public class CollectionOperationController implements Controller {
 				emails[0] = user + "@ucsd.edu";
 			}
 			if(emails == null)
-				DAMSClient.sendMail(sender, new String[] {"lsitu@ucsd.edu"}, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
+				DAMSClient.sendMail(sender, new String[] {sender}, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
 			else
 				DAMSClient.sendMail(sender, emails, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
 		} catch (AddressException e) {
@@ -249,10 +261,18 @@ public class CollectionOperationController implements Controller {
 		} catch (MessagingException e) {
 			e.printStackTrace();
 		}
-		if(collectionId != null)
-			forwardTo += "&category=" + collectionId;
 		
-		forwardTo += "&message=" + URLEncoder.encode(message.replace("\n", "<br />"), "UTF-8");
+		if(isSolrDump || isMarcModsImport || isCollectionRelease) {
+			session.setAttribute("message", message.replace("\n", "<br />"));
+			if(collectionId != null && (isMarcModsImport  || isCollectionRelease))
+				forwardTo += "category=" + collectionId;
+		}else{
+			forwardTo += "&activeButton=" + activeButton;
+			if(collectionId != null)
+				forwardTo += "&category=" + collectionId;
+			
+			forwardTo += "&message=" + URLEncoder.encode(message.replace("\n", "<br />"), "UTF-8");
+		}
 		System.out.println(forwardTo);
 		//String forwardToUrl = "/controlPanel.do?category=" + collectionId + "&message=" + message + "&activeButton=" + activeButton;
 		forwordPage(request, response, response.encodeURL(forwardTo));
@@ -290,10 +310,12 @@ public class CollectionOperationController implements Controller {
 		operations[1] = getParameter(paramsMap, "validateChecksums") != null;
 		operations[2] = getParameter(paramsMap, "rdfImport") != null;
 		operations[3] = getParameter(paramsMap, "createDerivatives") != null;
-		operations[4] = getParameter(paramsMap, "uploadRDF") != null;
+		operations[4] = getParameter(paramsMap, "collectionRelease") != null;
 		operations[5] = getParameter(paramsMap, "externalImport") != null;
-		operations[6] = getParameter(paramsMap, "metsModsImport") != null;
-		operations[7] = getParameter(paramsMap, "luceneIndex") != null || getParameter(paramsMap, "solrDump") != null;
+		operations[6] = getParameter(paramsMap, "marcModsImport") != null;
+		operations[7] = getParameter(paramsMap, "luceneIndex") != null
+				|| getParameter(paramsMap, "solrDump") != null
+				|| getParameter(paramsMap, "solrRecordsDump") != null;
 		operations[8] = getParameter(paramsMap, "sendToCDL") != null;
 		operations[9] = getParameter(paramsMap, "dataConvert") != null;
 		operations[10] = getParameter(paramsMap, "ingest") != null;
@@ -313,7 +335,7 @@ public class CollectionOperationController implements Controller {
 		String ds = getParameter(paramsMap, "ts");
 		String dsDest = null;
 		if((ds == null || (ds=ds.trim()).length() == 0) && !(operations[15] || operations[16]))
-			throw new ServletException("No triplestore data source provided...");
+			ds = Constants.DEFAULT_TRIPLESTORE;
 		else if (operations[12]){
 			dsDest = getParameter(paramsMap, "dsDest");
 			if (dsDest == null)
@@ -411,13 +433,17 @@ public class CollectionOperationController implements Controller {
 					 sizes = reqSize.split(",");
 				 handler = new DerivativeHandler(damsClient, collectionId, sizes, derReplace);
 
-			 }/*else if (i == 4){	
-				 session.setAttribute("status", opMessage + "RDF XML File Creation &amp; File Store Upload ...");
-				 String rdfXmlDataType = getParameter(paramsMap, "rdfXmlDataType");
-				 boolean rdfXmlReplace = getParameter(paramsMap, "rdfXmlReplace") != null;
-	             
-				 handler = new MetaDataStreamUploadHandler(damsClient, collectionId, "rdf", rdfXmlReplace);
-			 }*/else if (i == 5){	
+			 }else if (i == 4){	
+				 session.setAttribute("status", opMessage + " release collection " + collectionId + " ...");
+				 String releaseState = getParameter(paramsMap, "releaseState");
+				 String releaseOption = getParameter(paramsMap, "releaseOption");
+				 String collectionToMerge = getParameter(paramsMap, "collectionToMerge");
+				 
+				 log.info("Collection release:  category =>" + collectionId + ", releaseState => " + releaseState + ", releaseOption => " + releaseOption + ", collectionToMerge => " + collectionToMerge);
+
+				 handler = new CollectionReleaseHandler(damsClient, collectionId, releaseState, releaseOption);			 
+				 ((CollectionReleaseHandler)handler).setCollectionToMerge(collectionToMerge);
+			 }else if (i == 5){	
 				  session.setAttribute("status", opMessage + "Importing objects ...");
 				  String[] dataPaths = getParameter(paramsMap, "dataPath").split(";");
 				  String[] filesPaths = getParameter(paramsMap, "filesPath").split(";");
@@ -503,6 +529,7 @@ public class CollectionOperationController implements Controller {
 									  }
 								  }
 							  } catch(Exception e) {
+								  log.warn("Excel Input Stream error", e);
 								  errorMessage.append("-" + e.getMessage() + "\n");
 								  handler.logMessage(e.getMessage() + "\n");
 							  }
@@ -547,7 +574,7 @@ public class CollectionOperationController implements Controller {
 					  ((RDFDAMS4ImportTsHandler)handler).setReplace(replace);
 				  }
 			 } else if (i == 6){	
-				  session.setAttribute("status", opMessage + "Import from METS/MODS ...");
+				  session.setAttribute("status", opMessage + "Import from MARC/MODS source ...");
 				  String unit = getParameter(paramsMap, "unit");
 				  String source = getParameter(paramsMap, "source");
 				  String bibNumber = getParameter(paramsMap, "bibInput");
@@ -557,6 +584,7 @@ public class CollectionOperationController implements Controller {
 				  String copyrightOwner = getParameter(paramsMap, "copyrightOwner");
 				  String program = getParameter(paramsMap, "program");
 				  String access = getParameter(paramsMap, "accessOverride");
+				  String beginDate = getParameter(paramsMap, "licenseBeginDate");
 				  String endDate = getParameter(paramsMap, "licenseEndDate");
 				  String[] dataPaths = getParameter(paramsMap, "dataPath").split(";");
 				  String[] filesPaths = getParameter(paramsMap, "filesPath").split(";");
@@ -594,6 +622,7 @@ public class CollectionOperationController implements Controller {
 				  StringBuilder duplicatRecords = new StringBuilder();
 				  List<String> ids = new ArrayList<String>();
 				  boolean preprocessing = importOption.equalsIgnoreCase("pre-processing");
+				  boolean ingestWithFiles = importOption.equalsIgnoreCase("metadataAndFiles");
 				  
 				  if (preprocessing) {
 					  Document doc = new DocumentFactory().createDocument();
@@ -625,7 +654,7 @@ public class CollectionOperationController implements Controller {
 							  String url = Constants.DAMS_STORAGE_URL.substring(0, Constants.DAMS_STORAGE_URL.indexOf("/dams/"))
 									  + "/jollyroger/get?type=bib&mods=true&ns=true&value=" + sourceID;
 
-							  handler.logMessage("Getting Roger metadata source from URL: " + url);
+							  handler.logMessage("Getting MarcXML for Roger record " + sourceID + " from URL: " + url);
 							  HttpGet req = new HttpGet(url);
 							  Document doc = damsClient.getXMLResult(req);
 							  modsXml = doc.asXML();
@@ -640,8 +669,31 @@ public class CollectionOperationController implements Controller {
 							  File xsl = new File(session.getServletContext().getRealPath("files/mets2dams.xsl"));
 							  ModsRecord record = new ModsRecord(xsl, in, sourceID.replaceAll("\\..*",""), collections, unit, 
 										copyrightStatus, copyrightJurisdiction, copyrightOwner,
-										program, access, endDate);
+										program, access, beginDate, endDate);
 							  
+							  // Add master file(s) for the bib/Roger record: a PDF or a TIFF, or a PDF + ZIP
+							  List<File> filesToIngest = null;
+							  if (source.equalsIgnoreCase("bib") && ingestWithFiles) {
+								  filesToIngest = getRogerFiles ((String)srcRecord, ingestFiles);
+								  // Processing the master file(s) with error report. 
+								  if (filesToIngest.size() == 0) {
+									  errorMessage.append("Roger record " + srcRecord
+											  + " has no master file(s) for \"Ingest metadata and files\" option.\n");
+								  } else if (filesToIngest.size() > 2 
+										  || (filesToIngest.size() == 2 && !filesToIngest.get(1).getName().endsWith(".zip"))) {
+									  errorMessage.append("Unexpected file(s) for Roger record " + srcRecord + ": ");
+									  for (File file : filesToIngest) {
+										  errorMessage.append((filesToIngest.indexOf(file) > 0 ? ", " : "") + file.getName());
+									  }
+									  errorMessage.append(".\n");
+								  } else {
+									  // Handle the use property for the file(s)
+									  Map<String, String> fileUseMap = getFileUse(filesToIngest);
+									  
+									  record.addFiles(0, filesToIngest, fileUseMap);
+								  }
+							  }
+
 							  String id = record.recordID();
 							  
 							  if(ids.indexOf(id) < 0) {
@@ -704,43 +756,86 @@ public class CollectionOperationController implements Controller {
 			 } else if (i == 7) {
 				 session.setAttribute("status", opMessage + "SOLR Index ...");
 				 boolean update = getParameter(paramsMap, "indexReplace") != null;
-				 if(collectionId.indexOf(",") > 0){
-					 String collIDs = collectionId;
-					 String[] collArr = collectionId.split(",");
+				 if (getParameter(paramsMap, "solrRecordsDump") != null) {
+					 // Handle single records submission
 					 List<String> items = new ArrayList<String>();
-					 String collNames = "";
-					 for(int j=0; j<collArr.length; j++){
-						 if(collArr[j] != null && (collArr[j]=collArr[j].trim()).length()>0){
-							 collectionId = collArr[j];
-							 if(collectionId.equalsIgnoreCase("all")){
-								 items.addAll(damsClient.listAllRecords());
-								 collNames += "All Records (" + items.size() + "), ";
-							 }else{
-								 try{
-									 handler = new SOLRIndexHandler( damsClient, collectionId );
-									 items.addAll(handler.getItems());
-									 collNames += handler.getCollectionTitle() + "(" + handler.getFilesCount() + "), ";
-									 if(j>0 && j%5==0)
-										 collNames += "\n";
-								 }finally{
-									 if(handler != null){
-										 handler.release();
-										 handler = null;
-									 } 
+					 String txtInput = getParameter(paramsMap, "textInput");
+					 String fileInputValue = getParameter(paramsMap, "data");
+					 if (txtInput != null && (txtInput = txtInput.trim()).length() > 0) {
+						 String[] subjects = txtInput.split(",");
+						 for (String subject : subjects) {
+							 subject = subject.trim();
+							 if (subject.length() > 0) {
+								 items.add(subject);
+							 }
+						 }
+					 }
+					 
+					 // Handle records submitted in file with csv format, in lines or mixed together
+					 if (fileInputValue != null && (fileInputValue = fileInputValue.trim()).length() > 0) {
+						 // Handle record with line input
+						 String[] lines = fileInputValue.split("\n");
+						 for (String line : lines) {
+							 // Handle CSV encoding records and records delimited by comma, whitespace etc.
+							 if (line != null && (line = line.trim().replace("\"", "")).length() > 0) {
+								 String[] tokens = line.split(",");
+								 for (String token : tokens) {
+									 String[] records = token.split(" ");
+									 for (String record : records) {
+										 record = record.trim();
+										 if (record.length() > 0) {
+											 items.add(record);
+										 }
+									 }
 								 }
 							 }
 						 }
 					 }
+					 
+					 // Initiate SOLRIndexHandler to index the records
 					 handler = new SOLRIndexHandler( damsClient, null, update );
 					 handler.setItems(items);
-					 handler.setCollectionTitle(collNames.substring(0, collNames.lastIndexOf(",")));
-					 handler.setCollectionId(collIDs);
-				 }else{
-					 if(collectionId.equalsIgnoreCase("all")){
-						 handler = new SOLRIndexHandler(damsClient, null, update);
-						 handler.setItems(damsClient.listAllRecords());
-					 }else
-						 handler = new SOLRIndexHandler(damsClient, collectionId, update);
+					 handler.setCollectionTitle("SOLR Records");
+				 } else {
+					 // Handle solr update for collections
+					 if(collectionId.indexOf(",") > 0){
+						 String collIDs = collectionId;
+						 String[] collArr = collectionId.split(",");
+						 List<String> items = new ArrayList<String>();
+						 String collNames = "";
+						 for(int j=0; j<collArr.length; j++){
+							 if(collArr[j] != null && (collArr[j]=collArr[j].trim()).length()>0){
+								 collectionId = collArr[j];
+								 if(collectionId.equalsIgnoreCase("all")){
+									 items.addAll(damsClient.listAllRecords());
+									 collNames += "All Records (" + items.size() + "), ";
+								 }else{
+									 try{
+										 handler = new SOLRIndexHandler( damsClient, collectionId );
+										 items.addAll(handler.getItems());
+										 collNames += handler.getCollectionTitle() + "(" + handler.getFilesCount() + "), ";
+										 if(j>0 && j%5==0)
+											 collNames += "\n";
+									 }finally{
+										 if(handler != null){
+											 handler.release();
+											 handler = null;
+										 } 
+									 }
+								 }
+							 }
+						 }
+						 handler = new SOLRIndexHandler( damsClient, null, update );
+						 handler.setItems(items);
+						 handler.setCollectionTitle(collNames.substring(0, collNames.lastIndexOf(",")));
+						 handler.setCollectionId(collIDs);
+					 }else{
+						 if(collectionId.equalsIgnoreCase("all")){
+							 handler = new SOLRIndexHandler(damsClient, null, update);
+							 handler.setItems(damsClient.listAllRecords());
+						 }else
+							 handler = new SOLRIndexHandler(damsClient, collectionId, update);
+					 }
 				 }
 			 }/*else if (i == 8){	
 				    //session.setAttribute("status", opMessage + "CDL Sending ...");
@@ -1088,5 +1183,45 @@ public class CollectionOperationController implements Controller {
 			CollectionHandler.close(out);
 			out = null;
 		}
+	}
+	
+	private static List<File> getRogerFiles (String bib, List<String> paths) {
+		List<File> fileList = new ArrayList<File>();
+		// List the source files
+		for(String filePath : paths){
+			File file = new File (filePath);
+			if(file.exists()){
+				getRogerFile(fileList, bib, file);
+			}
+		}
+		return fileList;
+	}
+	
+	private static void getRogerFile(List<File> files, String bib, File file) {
+		if(file.isDirectory()){
+			File[] filesArr = file.listFiles();
+			for(int i=0; i<filesArr.length; i++){
+				getRogerFile(files, bib, filesArr[i]);
+			}
+		}else{
+			if (file.getName().startsWith(bib + ".")){
+				files.add(file);
+			}
+		}
+	}
+	
+	private static Map<String, String> getFileUse(List<File> files) {
+		Map<String, String> fileUseMap = new HashMap<String, String>();
+		for (File file : files) {
+			String fileName = file.getName();
+			if (fileName.endsWith(".tif")) {
+				  fileUseMap.put(fileName, "image-master");
+			} else if (fileName.endsWith(".pdf")) {
+				  fileUseMap.put(fileName, "document-service");
+			} else if (fileName.endsWith(".zip")) {
+				  fileUseMap.put(fileName, "document-source");
+			}
+		}
+		return fileUseMap;
 	}
 }

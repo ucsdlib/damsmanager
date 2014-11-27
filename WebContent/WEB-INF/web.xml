@@ -69,7 +69,6 @@
     	<web-resource-collection>
 	        <web-resource-name>Protected Area</web-resource-name>
 	        <url-pattern>/ingest.do</url-pattern>
-	        <url-pattern>/metsModsImport.do</url-pattern>
 	        <url-pattern>/derivative.do</url-pattern>
 	        <url-pattern>/collectionUpdate.do</url-pattern>
 	        <url-pattern>/controlPanel.do</url-pattern>
@@ -105,10 +104,14 @@
 	        <url-pattern>/tsAnalyzer.do</url-pattern>
 	        <url-pattern>/dataConverter.do</url-pattern>
 	        <url-pattern>/progressHandler.do</url-pattern>
+	        <url-pattern>/marcModsImport.do</url-pattern>
+	        <url-pattern>/collectionRelease.do</url-pattern>
+	        <url-pattern>/collection.do</url-pattern>
     	</web-resource-collection>
     	<auth-constraint>
         	<role-name>32</role-name>
         	<role-name>4708</role-name>
+        	<role-name>dams-curator</role-name>
         	<role-name>dams-manager-admin</role-name>
       	</auth-constraint>
         <user-data-constraint>
@@ -126,5 +129,8 @@
 
 	<security-role>
 		<role-name>dams-manager-admin</role-name>
+	</security-role>
+	<security-role>
+		<role-name>dams-curator</role-name>
 	</security-role>
 </web-app>

@@ -1,3 +1,4 @@
+body {font-family: Arial, Helvetica, sans-serif;font-size: 12px;}
 a {color: #336699;}
 .padding {
 	padding-right: 5px;
@@ -5,13 +6,13 @@ a {color: #336699;}
 }
 .gallery {       
 	background: #FFFFFF;
-	min-height:540px;
+	min-height:560px;
 	padding-bottom:30px;
 	overflow:auto;
 }
 #controlpanel{
 	padding-top:30px;
-	width:650px;
+	width:700px;
 	overflow:auto;
 }
 .paneltitle{
@@ -78,10 +79,25 @@ a {color: #336699;}
 	border-left: 1px solid #999;
 	border-right: 1px solid #999;
 }
+.colList{
+	width:510px;
+}
+.collOption {
+	color:#1388cd;
+	font-size:12px;
+	font-weight:bold;
+	text-decoration:none;
+	padding-right:2px;
+	cursor:pointer;
+	background:url("../images/sprite.gif") right -950px no-repeat;
+}
 .processlayout{
 	padding-top:10px;
 	text-align:left;
 	padding-left:40px;
+}
+.listTitle{
+	font-size: 13px;
 }
 .bobytext{
 	font-size: 16px;
@@ -112,11 +128,11 @@ a {color: #336699;}
 	text-align:center;
 	border:1px solid #999;
 	background:#F8F8F8;
-	width:680px;
+	width:700px;
 	min-height:500px;
 	overflow:auto;
 }
-#messageDiv {
+#message {
 	padding-bottom:15px;
 	padding-top:10px;
 	padding-left:100px;
@@ -135,7 +151,7 @@ a {color: #336699;}
 	background:#F8F8F8;
 	padding-bottom:50px;
 	border: 1px solid #999;
-	width:650px;
+	width:700px;
 	min-height:300px;
 	overflow:auto;
 }
@@ -144,7 +160,7 @@ a {color: #336699;}
 	background:#F8F8F8;
 	padding-bottom:50px;
 	border: 1px solid #999;
-	width:650px;
+	width:700px;
 	min-height:220px;
 	margin-top:50px;
 	margin-bottom:50px;
@@ -153,7 +169,7 @@ a {color: #336699;}
 	text-align:center;
 	background:#F8F8F8;
 	padding-bottom:30px;
-	width:650px;
+	width:700px;
 	min-height:340px;
 	overflow:auto;
 }
@@ -163,7 +179,7 @@ a {color: #336699;}
 	padding-bottom:30px;
 	margin-top:10px;
 	border: 1px solid #999;
-	width:660px;
+	width:700px;
 	overflow:auto;
 }
 .emBoxBanner{
@@ -197,7 +213,6 @@ a {color: #336699;}
 .logoutButton {  
 	margin-top: 6px; 
 	padding-right: 10px;
-	font-size: 11px;
 	font-weight: bold;
 	cursor: pointer;
 	color:#336699;
@@ -207,7 +222,6 @@ a {color: #336699;}
 	margin-top: 4px;
 	padding-left: 5px;
 	font-weight: normal;
-	font-size:12px;
 	color:#404040;
 	display:table-cell;
 	vertical-align:bottom;
@@ -253,62 +267,43 @@ a {color: #336699;}
 	cursor:pointer;
 	text-decoration:none;
 	width:50px;
-	font-size:12px;
 	font-weight:bold; 
-	font-family:Verdana,Helvetica,sans-serif;
 	background-color:#6e6e6e;
 	border:2px outset #fff;
 }
 
 .status {
-	font-family: Arial, Helvetica, sans-serif;
+	font-family: Arial, Helvetica, sans-serif;font-size: 12px;
 	font-weight: normal;
 	font-size: 14px;
 	color: #003366;
-	padding-left:15px;
+	text-align:left;
+	margin-left:10px;
 }
 
 .statusText {
 	background:#FFFFFF;
-	font-family: times, serif;
 	font-weight: normal;
 	font-size: 18px;
 	color:  #B0E0E6;
 }
 .menuText {
-	font-family: Arial, Helvetica, sans-serif;
 	font-weight: bold;
-	font-size: 12px;
+	font-size: 13px;
 	color: #336699;
 }
-.text-special {
-	vertical-align: 2px;
-	font-size: 12px;
-}
-
-.submenuText {
-	font-family: Arial, Helvetica, sans-serif;
+.submenuText, .specialmenuText, .text-special {
 	font-weight: normal;
 	font-size: 13px;
 	color: #555555;
 }
 .submenuInputText {
-	font-family: Arial, Helvetica, sans-serif;
 	font-weight: normal;
 	font-size: 11px;
-}
-.specialmenuText {
-	font-family: Arial, Helvetica, sans-serif;
-	font-weight: normal;
-	font-size: 11px;
-	color: #333333;
-	margin-left: 2px;
 }
 
 .inputText {
-	font-family: Arial, Helvetica, sans-serif;
 	font-weight: normal;
-	font-size: 12px;
 	background: #FFFFCC;
 }
 
@@ -335,43 +330,43 @@ a {color: #336699;}
 .groupbox_ts {
 	margin-left:25px;
 	margin-top:10px;
-	width: 380px;	
+	width: 400px;	
 }
 .groupbox_fs {
 	margin-left:10px;
 	margin-top:10px;
-	width: 300px;	
+	width: 360px;	
 }
 .groupbox_tss {
 	margin-left:25px;
 	margin-top:10px;
-	width: 380px;	
+	width: 400px;	
 }
 .groupbox_ingestOpts {
 	margin-left:25px;
 	margin-top:10px;
-	width: 380px;	
+	width: 400px;	
 }
 .groupbox_modsIngestOpts {
 	margin-left:6px;
 	margin-top:10px;
-	width: 480px;	
+	width: 520px;	
 }
 .groupbox_ftype {
 	margin-left:20px;
-	width: 60px;	
+	width: 100px;	
 }
 .groupbox_cdl {
 	margin-left:25px;
-	width: 300px;	
+	width: 400px;	
 }
 .groupbox_cdlOptions {
 	margin-left:25px;
-	width: 300px;	
+	width: 400px;	
 }
 .groupbox_rdf {
 	margin-left:25px;
-	width: 300px;	
+	width: 400px;	
 }
 .groupbox_sip {
 	margin-left:45px;
@@ -382,7 +377,7 @@ a {color: #336699;}
 .groupbox_emOptions {
 	font-weight: normal;
 	margin-left:25px;
-	width: 400px;	
+	width: 460px;	
 }
 
 .groupbox_ark {
@@ -394,7 +389,7 @@ a {color: #336699;}
 .groupbox_jetlOptions {
 	margin-left:10px;
 	margin-bottom:2px;
-	width: 450px;	
+	width: 500px;	
 	text-align:left;
 }
 .groupbox_srb {
@@ -403,41 +398,28 @@ a {color: #336699;}
 }
 .groupbox_compOrder {
 	margin-left:35px;
-	width: 430px;	
+	width: 480px;	
 }
 .slegandText{
-	font-family: Arial, Helvetica, sans-serif;
 	font-size: 10px;
 	color: #333333;
 }
 .requiredLabel {
+	font-weight: bold;
 	color: #FF0000;
 }
 .percentageText {
-	font-family: Arial, Helvetica, sans-serif;
 	font-weight: bold;
 	font-size: 12px;
 	color: #006699;
 }
 .label {
-	font-family: Arial, Helvetica, sans-serif;
-	font-size: 12px;
 	font-weight: normal;
-}
-.statusText {
-	font-weight: bold;
-	font-size: 13px;
-	color: #FF0000;
 }
 .errorText {
 	font-weight: bold;
 	font-size: 13px;
 	color: #FF0000;
-}
-.requiredLabel {
-	color: #FF0000;
-	font-weight: normal;
-	font-size: 12px;
 }
 #stsDiv {
 	padding-left:20px;
@@ -606,14 +588,14 @@ a {color: #336699;}
 }
 
 
-.logout {  float:right;font:13px arial,helvetica,clean,sans-serif;/* for IE6/7 */*font-size:small;/* for IE Quirks Mode */*font:x-small;}
+.logout {  float:right;font:13px;/* for IE6/7 */*font-size:small;/* for IE Quirks Mode */*font:x-small;}
 
 #tdr_crumbs{display: inline;}
 /* navigation reset */
 #menu_nav, #menu_nav div, #menu_nav a, #menu_nav ul, #menu_nav li{margin: 0;padding: 0;}
 #menu_nav li {list-style: none;}
 /* navigation fonts */
-#menu_nav {  font:13px arial,helvetica,clean,sans-serif;/* for IE6/7 */*font-size:small;/* for IE Quirks Mode */*font:x-small;}
+#menu_nav {  font:13px;/* for IE6/7 */*font-size:small;/* for IE Quirks Mode */*font:x-small;}
 /* navigation default layout */
 
 #menu_nav {

@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -21,7 +22,7 @@ import edu.ucsd.library.xdre.utils.DAMSClient;
  *
  * @author lsitu@ucsd.edu
  */
-public class ModsImportController implements Controller {
+public class MarcModsImportController implements Controller {
 
 	
 	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -60,7 +61,10 @@ public class ModsImportController implements Controller {
 			String fsDefault = damsClient.defaultFilestore();
 			if(fileStore == null || fileStore.length() == 0)
 				fileStore = fsDefault;
-			
+
+			message = (!StringUtils.isBlank(message) || StringUtils.isBlank(collectionId)) ? message : (String)request.getSession().getAttribute("message");
+			request.getSession().removeAttribute("message");
+
 			dataMap.put("categories", collectionMap);
 			dataMap.put("category", collectionId);
 			dataMap.put("units", unitsMap);
@@ -74,6 +78,7 @@ public class ModsImportController implements Controller {
 			dataMap.put("copyrightStatus", RecordUtil.COPYRIGHT_VALUES);
 			dataMap.put("program", RecordUtil.PROGRAM_VALUES);
 			dataMap.put("accessOverride", RecordUtil.ACCESS_VALUES);
+			dataMap.put("licenseEndDate", licenseEndDate);
 		
 		
 		} catch (Exception e) {
@@ -83,6 +88,6 @@ public class ModsImportController implements Controller {
 			if(damsClient != null)
 				damsClient.close();
 		}
-		return new ModelAndView("modsImport", "model", dataMap);
+		return new ModelAndView("marcModsImport", "model", dataMap);
 	}
  }

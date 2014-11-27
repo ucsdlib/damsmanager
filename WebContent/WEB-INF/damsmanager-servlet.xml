@@ -12,6 +12,7 @@
         <property name="prefix" value="/WEB-INF/jsp/"/>
         <property name="suffix" value=".jsp"/>
     </bean>
+    <bean name="/collection.do" class="edu.ucsd.library.xdre.web.CollectionController"></bean>
     <bean name="/ingest.do" class="edu.ucsd.library.xdre.web.IngestController"></bean>
 	<bean name="/directory.do" class="edu.ucsd.library.xdre.web.DirectoryController"></bean>
     <!--<bean name="/jhove.do" class="edu.ucsd.library.xdre.web.JhoveIngestController" />-->
@@ -21,7 +22,7 @@
 	<bean name="/loginPas.do" class="edu.ucsd.library.xdre.web.LoginPasController" />
 	<bean name="/solrDump.do" class="edu.ucsd.library.xdre.web.SolrDumpController" />
 	<bean name="/serialize.do" class="edu.ucsd.library.xdre.web.CollectionsViewController" />
-	<bean name="/metsModsImport.do" class="edu.ucsd.library.xdre.web.ModsImportController"></bean>
+	<bean name="/marcModsImport.do" class="edu.ucsd.library.xdre.web.MarcModsImportController"></bean>
 	<!--<bean name="/metaDataImport.do" class="edu.ucsd.library.xdre.web.MetadataImportController" />-->
 	<!--<bean name="/solrIndex.do" class="edu.ucsd.library.xdre.web.SolrIndexController" />-->
 	<!--<bean name="/collectionUpdate.do" class="edu.ucsd.library.xdre.web.CollectionUpdateController"></bean>-->
@@ -29,6 +30,7 @@
 	<bean name="/operationHandler.do" class="edu.ucsd.library.xdre.web.CollectionOperationController"></bean>
 	<bean name="/progressHandler.do" class="edu.ucsd.library.xdre.web.ProgressController"></bean>
 	<!--<bean name="/fileUpload.do" class="edu.ucsd.library.xdre.web.FileUploadController"></bean>-->
+	<bean name="/collectionRelease.do" class="edu.ucsd.library.xdre.web.CollectionReleaseController"></bean>
 	
 	<!--<bean name="/cancelConvert.do" class="edu.ucsd.library.xdre.web.CancelDataConvertController"></bean>-->
 	<!--<bean name="/dataConverter.do" class="edu.ucsd.library.xdre.web.DataConverterController"></bean>-->

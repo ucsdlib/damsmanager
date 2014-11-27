@@ -7,6 +7,7 @@ import org.dom4j.QName;
 
 /**
  * Utilities for working with Record instances.
+ * @author lsitu
  * @author escowles
  * @since 2014-09-18
 **/
@@ -103,27 +104,31 @@ public class RecordUtil
     **/
     public static void addRights( Document doc, String unitURI, String[] collectionURIs,
         String copyrightStatus, String copyrightJurisdiction, String copyrightOwner,
-        String program, String access, String endDate )
+        String program, String access, String beginDate, String endDate )
     {
         Element o = (Element)doc.selectSingleNode("//dams:Object");
 
         // unit
-        o.addElement("dams:unit",damsURI).addAttribute(rdfResource, unitURI);
+        if ( !isBlank(unitURI) ) {
+        	o.addElement("dams:unit",damsURI).addAttribute(rdfResource, unitURI);
+        }
 
         // program
-        if ( program.equals(programRDC) )
-        {
-            addProgramNote(o, programRDCnote);
+        if ( !isBlank(program) ) {
+	        if ( program.equals(programRDC) )
+	        {
+	            addProgramNote(o, programRDCnote);
+	        }
+	        else if ( program.equals(programDLP) )
+	        {
+	            addProgramNote(o, programDLPnote);
+	        }
+	        else if ( program.equals(programSCA) )
+	        {
+	            addProgramNote(o, programSCAnote);
+	        }
         }
-        else if ( program.equals(programDLP) )
-        {
-            addProgramNote(o, programDLPnote);
-        }
-        else if ( program.equals(programSCA) )
-        {
-            addProgramNote(o, programSCAnote);
-        }
-
+        
         // collections
         for ( int i = 0; collectionURIs != null && i < collectionURIs.length; i++ )
         {
@@ -132,19 +137,21 @@ public class RecordUtil
         }
 
         // copyright
-        Element c = o.addElement("dams:copyright",damsURI).addElement("dams:Copyright",damsURI);
-        if ( !isBlank(copyrightJurisdiction) )
-        {
-            c.addElement("dams:copyrightJurisdiction",damsURI).setText( copyrightJurisdiction );
-        }
-        c.addElement("dams:copyrightStatus",damsURI).setText( copyrightStatus );
-        if ( copyrightStatus.equals( copyrightRegents ) )
-        {
-            addRightsHolder( o, "UC Regents");
-        }
-        else if ( !isBlank(copyrightOwner) )
-        {
-            addRightsHolder( o, copyrightOwner );
+        if (!isBlank(copyrightStatus)) {
+	        Element c = o.addElement("dams:copyright",damsURI).addElement("dams:Copyright",damsURI);
+	        if ( !isBlank(copyrightJurisdiction) )
+	        {
+	            c.addElement("dams:copyrightJurisdiction",damsURI).setText( copyrightJurisdiction );
+	        }
+	        c.addElement("dams:copyrightStatus",damsURI).setText( copyrightStatus );
+	        if ( copyrightStatus.equals( copyrightRegents ) )
+	        {
+	            addRightsHolder( o, "UC Regents");
+	        }
+	        else if ( !isBlank(copyrightOwner) )
+	        {
+	            addRightsHolder( o, copyrightOwner );
+	        }
         }
 
         // other rights
@@ -152,7 +159,7 @@ public class RecordUtil
         {
             if ( access.equals(accessPublicLicense) )
             {
-                addLicense( o, "granted by rights holder", "display", null, endDate, null );
+                addLicense( o, "Public access granted by rights holder.", "display", null, beginDate, endDate, null );
             }
             else if ( access.equals(accessPublicFairUse) )
             {
@@ -164,54 +171,65 @@ public class RecordUtil
             }
             else if ( access.equals(accessUCSDLicense) )
             {
-                addLicense( o, "restricted by rights holder", "localDisplay", "display", endDate,
-                    null );
+                addLicense( o, "Access granted by rights holder.", "localDisplay", null,
+                		beginDate, endDate, null );
             }
             else if ( access.equals(accessUCSDFairUse) )
             {
-                addOtherRights( o, "fair use (UCSD)", "localDisplay", "display" );
+                addOtherRights( o, "fair use (UCSD)", "localDisplay", null );
             }
             else if ( access.equals(accessCurator) )
             {
-                addOtherRights( o, "curator", null, "display" );
+                addOtherRights( o, null, null, "display" );
             }
             else if ( access.equals(accessClickthroughSensitivity) )
             {
+            	// License
+            	addLicense( o, null, "display", null, beginDate, endDate, null );
+            	// OtherRights
                 addOtherRights( o, "cultural sensitivity", "display", null );
                 addCulturalSensitivityNote(o);
             }
             else if ( access.equals(accessRestrictedSensitivity) )
             {
-                addOtherRights( o, "cultural sensitivity", null, "display" );
+                addOtherRights( o, "cultural sensitivity", "metadataDisplay", "display");
                 addCulturalSensitivityNote(o);
             }
             else if ( access.equals(accessRestrictedLicense) )
             {
-                addLicense( o, "restricted by rights holder", null, "display", endDate, null );
+                addLicense( o, "Display currently prohibited.", null, "display", 
+                		beginDate, endDate, null );
+                addOtherRights( o, "fair use (public)", "metadataDisplay", null);
             }
             else if ( access.equals(accessCcBy) )
             {
-                addLicense( o, access, "display", null, null, creativeCommons + "by/4.0/" );
+                addLicense( o, getCreativeCommonsNote("Attribution"), 
+                		"display", null, beginDate, endDate, creativeCommons + "by/4.0/" );
             }
             else if ( access.equals(accessCcBySa) )
             {
-                addLicense( o, access, "display", null, null, creativeCommons + "by-sa/4.0/" );
+                addLicense( o, getCreativeCommonsNote("Attribution-ShareAlike"),
+                		"display", null, beginDate, endDate, creativeCommons + "by-sa/4.0/" );
             }
             else if ( access.equals(accessCcByNd) )
             {
-                addLicense( o, access, "display", null, null, creativeCommons + "by-nd/4.0/" );
+                addLicense( o, getCreativeCommonsNote("Attribution-NoDerivatives"),
+                		"display", null, beginDate, endDate, creativeCommons + "by-nd/4.0/" );
             }
             else if ( access.equals(accessCcByNc) )
             {
-                addLicense( o, access, "display", null, null, creativeCommons + "by-nc/4.0/" );
+                addLicense( o, getCreativeCommonsNote("Attribution-NonCommercial"),
+                		"display", null, beginDate, endDate, creativeCommons + "by-nc/4.0/" );
             }
             else if ( access.equals(accessCcByNcSa) )
             {
-                addLicense( o, access, "display", null, null, creativeCommons + "by-nc-sa/4.0/" );
+                addLicense( o, getCreativeCommonsNote("Attribution-NonCommercial-ShareAlike"),
+                		"display", null, beginDate, endDate, creativeCommons + "by-nc-sa/4.0/" );
             }
             else if ( access.equals(accessCcByNcNd) )
             {
-                addLicense( o, access, "display", null, null, creativeCommons + "by-nc-nd/4.0/" );
+                addLicense( o,  getCreativeCommonsNote("Attribution-NonCommercial-NoDerivatives"),
+                		"display", null, beginDate, endDate, creativeCommons + "by-nc-nd/4.0/" );
             }
         }
     }
@@ -233,28 +251,37 @@ public class RecordUtil
     {
         Element other = o.addElement("dams:otherRights",damsURI)
             .addElement("dams:OtherRights",damsURI);
-        other.addElement("dams:otherRightsBasis",damsURI).setText(basis);
-        addRightsAction( other, permission, restriction, null );
+        if (!isBlank(basis)) 
+        {
+        	other.addElement("dams:otherRightsBasis",damsURI).setText(basis);
+        }
+        addRightsAction( other, permission, restriction, null, null );
     }
     private static void addLicense( Element o, String note, String permission, String restriction,
-        String endDate, String licenseURI )
+    		String beginDate, String endDate, String licenseURI )
     {
         Element license = o.addElement("dams:license",damsURI).addElement("dams:License",damsURI);
-        license.addElement("dams:licenseNote",damsURI).setText(note);
+        if (!isBlank(note)) {
+        	license.addElement("dams:licenseNote",damsURI).setText(note);
+        }
         if ( !isBlank(licenseURI) )
         {
             license.addElement("dams:licenseURI",damsURI).setText(licenseURI);
         }
-        addRightsAction( license, permission, restriction, endDate );
+        addRightsAction( license, permission, restriction, beginDate, endDate );
     }
     private static void addRightsAction( Element e, String permission, String restriction,
-        String endDate )
+    		String beginDate, String endDate )
     {
         if ( !isBlank(permission) )
         {
             Element perm = e.addElement("dams:permission",damsURI)
                 .addElement("dams:Permission",damsURI);
             perm.addElement("dams:type",damsURI).setText(permission);
+        	if ( !isBlank(beginDate) )
+            {
+        		perm.addElement("dams:beginDate",damsURI).setText(beginDate);
+            }
             if ( !isBlank(endDate) )
             {
                 perm.addElement("dams:endDate",damsURI).setText(endDate);
@@ -264,21 +291,32 @@ public class RecordUtil
         {
             Element rest = e.addElement("dams:restriction",damsURI)
                 .addElement("dams:Restriction",damsURI);
-            rest.addElement("dams:type",damsURI).setText(permission);
-            if ( !isBlank(endDate) && isBlank(permission) )
-            {
-                rest.addElement("dams:endDate",damsURI).setText(endDate);
+            rest.addElement("dams:type",damsURI).setText(restriction);
+            if (!isBlank(permission)) {
+	        	if ( !isBlank(beginDate) )
+	            {
+	                rest.addElement("dams:beginDate",damsURI).setText(beginDate);
+	            }
+	        	if ( !isBlank(endDate) ) 
+	        	{
+	        		rest.addElement("dams:endDate",damsURI).setText(endDate);
+	        	}
             }
         }
     }
     private static void addRightsHolder( Element o, String rightsHolder )
     {
         Element name = o.addElement("dams:rightsHolder",damsURI).addElement("mads:Name",madsURI);
-        name.addElement("mads:authoritativeLabel",damsURI).setText(rightsHolder);
+        name.addElement("mads:authoritativeLabel",madsURI).setText(rightsHolder);
         Element el = name.addElement("mads:elementList");
         el.addAttribute( new QName("parseType",rdfNS), "Collection" );
         el.addElement("mads:NameElement",madsURI).addElement("mads:elementValue",madsURI)
             .setText(rightsHolder);
+    }
+
+    private static String getCreativeCommonsNote( String attribution )
+    {
+    	return "Creative Commons " + attribution + " 4.0 International Public License";
     }
 
     private static boolean isBlank( String s )

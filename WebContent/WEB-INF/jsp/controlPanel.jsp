@@ -55,7 +55,7 @@
 	<div id="controlpanel">
 		<div class="paneltitle">DAMS Control Panel</div>
 		<div id="collectionDiv" align="left">
-			<span id="dsSpan" class="menuText" Title="Double click to choose a triplestore for the operation." ondblclick="setTriplestore();" onMouseOver="this.style.cursor='pointer'">${fn:toUpperCase(tsNameFl)}${fn:substring(model.triplestore, 1, tsNameLen)} </span>
+			<span id="dsSpan" class="menuText" Title="Double click to choose a triplestore for the operation." ondblclick="setTriplestore();" onMouseOver="this.style.cursor='pointer'"></span>
 			<span id="dsSelectSpan" ondblclick="resetTriplestore();" style="display:none" >
 				<select name="ts" id="ts" onChange="reloadPage();"><option value=""> -- Triplestores -- </option>
 						<c:forEach var="entry" items="${model.triplestores}">
@@ -65,7 +65,7 @@
 						</c:forEach>
 				</select>&nbsp;
 			</span>
-			<span class="menuText">Collection Chooser:&nbsp; </span>
+			<span class="menuText">Collection Selection:</span>
 			
 			<span><select id="category" name="category" class="inputText" onChange="requestStats(this);">
 						<option value=""> -- collections -- </option>
@@ -328,9 +328,7 @@
 	</div>
 	<!-- jsp:include flush="true" page="/jsp/fileUpload.jsp" /-->
 	<jsp:include flush="true" page="/jsp/status.jsp" />
-	<div id="messageDiv">
-		<div id="message" align="left">${model.message}</div>
-	</div>
+	<div id="message" class="submenuText" style="text-align:left;">${model.message}</div>
 </td>
 </tr>
 </table>
