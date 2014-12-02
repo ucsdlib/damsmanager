@@ -58,9 +58,25 @@
         <dams:hasComponent>
           <dams:Component rdf:about="{/mets:mets/@OBJID}/CID">
             <dams:order><xsl:value-of select="@ORDER"/></dams:order>
-            <xsl:call-template name="mods">
-              <xsl:with-param name="dmdid" select="$dmdid"/>
-            </xsl:call-template>
+            <xsl:choose>
+              <xsl:when test="$dmdid != ''">
+                <xsl:call-template name="mods">
+                  <xsl:with-param name="dmdid" select="$dmdid"/>
+                </xsl:call-template>
+              </xsl:when>
+              <xsl:when test="@LABEL != ''">
+                <dams:title>
+                  <mads:Title>
+                    <mads:authoritativeLabel><xsl:value-of select="@LABEL"/></mads:authoritativeLabel>
+                    <mads:elementList rdf:parseType="Collection">
+                      <mads:MainTitleElement>
+                        <mads:elementValue><xsl:value-of select="@LABEL"/></mads:elementValue>
+                      </mads:MainTitleElement>
+                    </mads:elementList>
+                  </mads:Title>
+                </dams:title>
+              </xsl:when>
+            </xsl:choose>
             <xsl:for-each select="mets:div">
               <xsl:call-template name="div"/>
             </xsl:for-each>
@@ -80,7 +96,27 @@
     <dams:hasFile>
       <dams:File rdf:about="{/mets:mets/@OBJID}/FID">
         <xsl:for-each select="//mets:file[@ID=$fid]">
-          <dams:use><xsl:value-of select="@USE"/></dams:use>
+          <dams:use>
+            <xsl:choose>
+              <xsl:when test="@USE = 'Audio-Master'">audio-source</xsl:when>
+              <xsl:when test="@USE = 'Audio-Master-Edited'">audio-alternate</xsl:when>
+              <xsl:when test="@USE = 'Audio-Service'">audio-service</xsl:when>
+              <xsl:when test="@USE = 'Application-PDF'">document-service</xsl:when>
+              <xsl:when test="@USE = 'Image-Master'">image-source</xsl:when>
+              <xsl:when test="@USE = 'Image-Master-Edited'">image-alternate</xsl:when>
+              <xsl:when test="@USE = 'Image-Service'">image-service</xsl:when>
+              <xsl:when test="@USE = 'Image-Service-HighRes'">image-large</xsl:when>
+              <xsl:when test="@USE = 'Image-Service-MedRes'">image-preview</xsl:when>
+              <xsl:when test="@USE = 'Image-Service-LowRes'">image-thumbnail</xsl:when>
+              <xsl:when test="@USE = 'Image-Thumbnail'">image-icon</xsl:when>
+              <xsl:when test="@USE = 'Text-Service'">document-service</xsl:when>
+              <xsl:when test="@USE = 'Text-Master'">document-source</xsl:when>
+              <xsl:when test="@USE = 'Text-Data'">data-source</xsl:when>
+              <xsl:when test="@USE = 'Video-Master'">video-source</xsl:when>
+              <xsl:when test="@USE = 'Video-Master-Edited'">video-alternate</xsl:when>
+              <xsl:when test="@USE = 'Video-Service'">video-service</xsl:when>
+            </xsl:choose>
+          </dams:use>
           <dams:sourceFileName>
             <xsl:value-of select="mets:FLocat/@xlink:href"/>
           </dams:sourceFileName>
@@ -93,6 +129,9 @@
     <!-- desc md from dmdSec[@ID=$dmdid] -->
     <xsl:for-each select="//mets:dmdSec[@ID=$dmdid]/mets:mdWrap/mets:xmlData/mods:mods">
       <xsl:apply-templates/>
+
+      <xsl:if test="not(mods:titleInfo)">
+      </xsl:if>
     </xsl:for-each>
   </xsl:template>
   <xsl:template match="mods:mods/mods:titleInfo|mods:relatedItem/mods:titleInfo">
@@ -305,6 +344,10 @@
               <dams:type>identifier</dams:type>
               <dams:displayLabel>ARK</dams:displayLabel>
             </xsl:when>
+            <xsl:when test="@displayLabel = 'identifier:basket'">
+              <dams:type>identifier</dams:type>
+              <dams:displayLabel>basket</dams:displayLabel>
+            </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:collection number'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>collection number</dams:displayLabel>
@@ -316,6 +359,10 @@
             <xsl:when test="@displayLabel = 'identifier:DOI'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>DOI</dams:displayLabel>
+            </xsl:when>
+            <xsl:when test="@displayLabel = 'identifier:EDM'">
+              <dams:type>identifier</dams:type>
+              <dams:displayLabel>EDM</dams:displayLabel>
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:filename'">
               <dams:type>identifier</dams:type>
@@ -336,6 +383,10 @@
             <xsl:when test="@displayLabel = 'identifier:OCLC number'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>OCLC number</dams:displayLabel>
+            </xsl:when>
+            <xsl:when test="@displayLabel = 'identifier:registration number'">
+              <dams:type>identifier</dams:type>
+              <dams:displayLabel>registration number</dams:displayLabel>
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:roger record'">
               <dams:type>identifier</dams:type>
@@ -359,8 +410,9 @@
             </xsl:when>
 
             <!-- displayLabel maps to type -->
-            <xsl:when test="@displayLabel = 'bibliography' or @displayLabel = 'classification'
-               or @displayLabel = 'credits' or @displayLabel = 'digital origin'
+            <xsl:when test="@displayLabel = 'arrangement' or @displayLabel = 'bibliography'
+               or @displayLabel = 'classification' or @displayLabel = 'credits'
+               or @displayLabel = 'digital origin' or @displayLabel = 'edition'
                or @displayLabel = 'extent' or @displayLabel = 'inscription'
                or @displayLabel = 'local attribution' or @displayLabel = 'performers'
                or @displayLabel = 'publication' or @displayLabel = 'series'
@@ -644,10 +696,15 @@
               <xsl:for-each select="*">
                 <xsl:if test="position() &gt; 1">--</xsl:if>
                 <xsl:choose>
-                  <xsl:when test="name() = 'name'">
+                  <xsl:when test="local-name() = 'name'">
                     <xsl:for-each select="mods:namePart">
                       <xsl:if test="position() &gt; 1">, </xsl:if>
-                      <xsl:value-of select="."/>
+                      <xsl:choose>
+                        <xsl:when test="mods:displayForm">
+                          <xsl:value-of select="mods:displayForm"/>
+                        </xsl:when>
+                        <xsl:otherwise><xsl:value-of select="."/></xsl:otherwise>
+                      </xsl:choose>
                     </xsl:for-each>
                   </xsl:when>
                   <xsl:otherwise>
