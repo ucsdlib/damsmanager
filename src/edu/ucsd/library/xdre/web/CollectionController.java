@@ -31,7 +31,7 @@ import edu.ucsd.library.xdre.utils.DAMSClient;
  */
 public class CollectionController implements Controller {
 	public static final String[] COLLECTION_TYPES = {"AssembledCollection", "ProvenanceCollection", "ProvenanceCollectionPart"};
-	public static final String[] VISIBILITY_VALUES = {"curator", "cocal", "public"};
+	public static final String[] VISIBILITY_VALUES = {"curator", "local", "public"};
 	public static enum Action {create, edit, save}
 
     private String madsURI = null;
