@@ -3,8 +3,8 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
-<c:set var="actionNameLen">${fn:length(model.action)}</c:set>  
-<c:set var="actionNameFl">${fn:substring(model.action, 0, 1)}</c:set>
+<c:set var="actionNameLen">${fn:length(model.actionValue)}</c:set>  
+<c:set var="actionNameFl">${fn:substring(model.actionValue, 0, 1)}</c:set>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <head>
@@ -47,7 +47,8 @@
 	    if(!exeConfirm)
 	    	return false;
 	    
-    	document.mainForm.action = "/damsmanager/collection.do?action=save&sid=" + getSid();
+	    document.mainForm.actionValue.value = "save";
+    	document.mainForm.action = "/damsmanager/collection.do";
     	mainForm.submit();
 	}
 	
@@ -77,11 +78,11 @@
 <div id="main" class="mainDiv" style="margin-bottom:50px;margin-top:30px;">
 <form id="mainForm" name="mainForm" method="post" action="/damsmanager/collection.do?create" >
 <div class="emBox_ark">
-<div class="emBoxBanner">Collection <c:out value="${fn:toUpperCase(actionNameFl)}${fn:substring(model.action, 1, actionNameLen)}" /></div>
+<div class="emBoxBanner">Collection <c:out value="${fn:toUpperCase(actionNameFl)}${fn:substring(model.actionValue, 1, actionNameLen)}" /></div>
 
 <div style="background:#DDDDDD;padding-top:8px;padding-bottom:8px;padding-left:25px;" align="left">
 	<c:choose>
-	  <c:when test="${model.action == 'create'}">
+	  <c:when test="${model.actionValue == 'create'}">
 		<span class="submenuText" style="padding-right:15px;"><span class="requiredLabel">*</span><b>Collection Title</b></span>
 		<span class="submenuText"><input type="text" id="collTitle" name="collTitle" size="56" value="${model.collTitle}"></span>
 	  </c:when>
@@ -176,8 +177,9 @@
 	</table>
 </div>
 <div class="buttonDiv">
+    <input type="hidden" name="actionValue" value="${model.actionValue}"/>
 	<input type="button" name="collectionEdit" value=" Submit " onClick="confirmSubmit();"/>&nbsp;&nbsp;
-	<input type="button" name="ActionCancel" value=" Cancel " onClick="document.location.href='/damsmanager/'"/>
+	<input type="button" name="actionCancel" value=" Cancel " onClick="document.location.href='/damsmanager/'"/>
 </div>
 </div>
 </form>

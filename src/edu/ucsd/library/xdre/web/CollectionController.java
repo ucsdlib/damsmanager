@@ -42,7 +42,7 @@ public class CollectionController implements Controller {
     private Namespace rdfNS = null;
 	
 	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		String action = request.getParameter("action");
+		String action = request.getParameter("actionValue");
 		String collectionId =  request.getParameter("category");
 		String parentCollection =  request.getParameter("parentCollection");
 		String collTitle = request.getParameter("collTitle");
@@ -61,11 +61,10 @@ public class CollectionController implements Controller {
 		HttpSession session = request.getSession();
 		DAMSClient damsClient = null;
 		Map dataMap = new HashMap();
+
 		try{
 			damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
 			damsClient.setTripleStore(Constants.DEFAULT_TRIPLESTORE);
-			Map<String, String> collectionMap = damsClient.listCollections();
-			Map<String, String> unitsMap = damsClient.listUnits();
 			Document doc = null;
 			
 			if (StringUtils.isBlank(action)) {
@@ -125,7 +124,7 @@ public class CollectionController implements Controller {
 										message = "Collection " + collectionId + "saved successfully. But failed to update SOLR.";
 									
 									if (StringUtils.isNotBlank(parentCollection)) {
-										if (damsClient.solrUpdate(parentCollection)) 
+										if (!damsClient.solrUpdate(parentCollection)) 
 											message += " Failed to update SOLR for parent collection " + parentCollection + ".";
 									}
 									collTitle = "";
@@ -142,6 +141,9 @@ public class CollectionController implements Controller {
 					break;
 			
 			}
+
+			Map<String, String> collectionMap = damsClient.listCollections();
+			Map<String, String> unitsMap = damsClient.listUnits();
 			
 			message = (StringUtils.isNotBlank(message) || StringUtils.isBlank(collectionId)) ? message : (String)request.getSession().getAttribute("message");
 			session.removeAttribute("message");
@@ -156,7 +158,7 @@ public class CollectionController implements Controller {
 			dataMap.put("visibility", visibility);
 			dataMap.put("parentCollection", parentCollection);
 			dataMap.put("collTitle", collTitle);
-			dataMap.put("action", action);
+			dataMap.put("actionValue", action);
 			dataMap.put("message", message);
 
 		} catch (Exception e) {
