@@ -124,7 +124,7 @@ public class CollectionController implements Controller {
 									if (!damsClient.solrUpdate(collectionId))
 										message = "Collection " + collectionId + "saved successfully. But failed to update SOLR.";
 									
-									if (!StringUtils.isNotBlank(parentCollection)) {
+									if (StringUtils.isNotBlank(parentCollection)) {
 										if (damsClient.solrUpdate(parentCollection)) 
 											message += " Failed to update SOLR for parent collection " + parentCollection + ".";
 									}
