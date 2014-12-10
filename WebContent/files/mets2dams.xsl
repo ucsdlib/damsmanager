@@ -141,7 +141,8 @@
       <xsl:if test="mods:physicalDescription/mods:extent
                  or mods:physicalDescription/mods:note[@displayLabel='General Physical Description note']
                  or mods:physicalDescription/mods:note[@displayLabel='Physical Facet note']
-                 or mods:note[@displayLabel='extent']">
+                 or mods:note[@displayLabel='extent']
+                 or mods:note[@diplayLabel='dimensions']">
         <dams:note>
           <dams:Note>
             <dams:type>physical description</dams:type>
@@ -157,6 +158,9 @@
               </xsl:call-template>
               <xsl:call-template name="physical-description-element">
                 <xsl:with-param name="value" select="mods:physicalDescription/mods:extent"/>
+              </xsl:call-template>
+              <xsl:call-template name="physical-description-element">
+                <xsl:with-param name="value" select="mods:note[@displayLabel='dimensions']"/>
                 <xsl:with-param name="last">true</xsl:with-param>
               </xsl:call-template>
             </rdf:value>
@@ -496,7 +500,7 @@
               <dams:type><xsl:value-of select="@displayLabel"/></dams:type>
               <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
-            <xsl:when test="@displayLabel = 'extent'">
+            <xsl:when test="@displayLabel = 'dimensions' or @displayLabel = 'extent'">
               <!-- see physical-description-note -->
             </xsl:when>
             <xsl:otherwise>
@@ -806,6 +810,9 @@
       <xsl:when test="mods:name">
         <dams:name><xsl:apply-templates/></dams:name>
       </xsl:when>
+      <xsl:when test="mods:geographic">
+        <dams:geographic><xsl:apply-templates/></dams:geographic>
+      </xsl:when>
       <xsl:when test="mods:topic">
         <dams:topic><xsl:apply-templates/></dams:topic>
       </xsl:when>
@@ -836,12 +843,10 @@
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
-  <xsl:template match="mods:genre">
-    <dams:genreForm>
-      <xsl:call-template name="simplesubject"/>
-    </dams:genreForm>
+  <xsl:template match="mods:mods/mods:genre">
+    <dams:genreForm><xsl:call-template name="simplesubject"/></dams:genreForm>
   </xsl:template>
-  <xsl:template name="simplesubject" match="mods:topic">
+  <xsl:template name="simplesubject" match="mods:topic|mods:geographic|mods:genre">
     <xsl:variable name="elemName">
       <xsl:choose>
         <xsl:when test="local-name() = 'topic'">Topic</xsl:when>
@@ -855,7 +860,7 @@
         <xsl:value-of select="generate-id()"/>
       </xsl:attribute>
       <xsl:call-template name="authority">
-        <xsl:with-param name="auth" select="@authority"/>
+        <xsl:with-param name="auth" select="../@authority"/>
       </xsl:call-template>
       <mads:authoritativeLabel>
         <xsl:value-of select="."/>
