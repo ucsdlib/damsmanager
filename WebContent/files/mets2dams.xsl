@@ -810,8 +810,17 @@
       <xsl:when test="mods:name">
         <dams:name><xsl:apply-templates/></dams:name>
       </xsl:when>
+      <xsl:when test="mods:genre">
+        <dams:genreForm><xsl:apply-templates/></dams:genreForm>
+      </xsl:when>
       <xsl:when test="mods:geographic">
         <dams:geographic><xsl:apply-templates/></dams:geographic>
+      </xsl:when>
+      <xsl:when test="mods:occupation">
+        <dams:occupation><xsl:apply-templates/></dams:occupation>
+      </xsl:when>
+      <xsl:when test="mods:temporal">
+        <dams:temporal><xsl:apply-templates/></dams:temporal>
       </xsl:when>
       <xsl:when test="mods:topic">
         <dams:topic><xsl:apply-templates/></dams:topic>
@@ -846,12 +855,14 @@
   <xsl:template match="mods:mods/mods:genre">
     <dams:genreForm><xsl:call-template name="simplesubject"/></dams:genreForm>
   </xsl:template>
-  <xsl:template name="simplesubject" match="mods:topic|mods:geographic|mods:genre">
+  <xsl:template name="simplesubject" match="mods:genre|mods:geographic|mods:occupation|mods:temporal|mods:topic">
     <xsl:variable name="elemName">
       <xsl:choose>
-        <xsl:when test="local-name() = 'topic'">Topic</xsl:when>
-        <xsl:when test="local-name() = 'geographic'">Geographic</xsl:when>
         <xsl:when test="local-name() = 'genre'">GenreForm</xsl:when>
+        <xsl:when test="local-name() = 'geographic'">Geographic</xsl:when>
+        <xsl:when test="local-name() = 'occupation'">Occupation</xsl:when>
+        <xsl:when test="local-name() = 'temporal'">Temporal</xsl:when>
+        <xsl:when test="local-name() = 'topic'">Topic</xsl:when>
         <xsl:otherwise>ZZZ<xsl:value-of select="name()"/></xsl:otherwise>
       </xsl:choose>
     </xsl:variable>
