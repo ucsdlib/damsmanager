@@ -139,22 +139,39 @@
     <!-- desc md from dmdSec[@ID=$dmdid] -->
     <xsl:for-each select="//mets:dmdSec[@ID=$dmdid]/mets:mdWrap/mets:xmlData/mods:mods">
       <xsl:if test="mods:physicalDescription/mods:extent
+                 or mods:physicalDescription/mods:note[@displayLabel='General Physical Description note']
                  or mods:physicalDescription/mods:note[@displayLabel='Physical Facet note']
-                 or mods:note[@displayLabel='General Physical Description note']
                  or mods:note[@displayLabel='extent']">
         <dams:note>
           <dams:Note>
             <dams:type>physical description</dams:type>
             <rdf:value>
-              <xsl:for-each select="mods:note[@displayLabel='General Physical Description note']|mods:physicalDescription/mods:note[@displayLabel='Physical Facet note']|mods:note[@displayLabel='extent']|mods:physicalDescription/mods:extent">
-                <xsl:value-of select="."/>
-                <xsl:if test="position() != last()"><xsl:text>; </xsl:text></xsl:if>
-              </xsl:for-each>
+              <xsl:call-template name="physical-description-element">
+                <xsl:with-param name="value" select="mods:physicalDescription/mods:note[@displayLabel='General Physical Description note']"/>
+              </xsl:call-template>
+              <xsl:call-template name="physical-description-element">
+                <xsl:with-param name="value" select="mods:physicalDescription/mods:note[@displayLabel='Physical Facet note']"/>
+              </xsl:call-template>
+              <xsl:call-template name="physical-description-element">
+                <xsl:with-param name="value" select="mods:note[@displayLabel='extent']"/>
+              </xsl:call-template>
+              <xsl:call-template name="physical-description-element">
+                <xsl:with-param name="value" select="mods:physicalDescription/mods:extent"/>
+                <xsl:with-param name="last">true</xsl:with-param>
+              </xsl:call-template>
             </rdf:value>
           </dams:Note>
         </dams:note>
       </xsl:if>
     </xsl:for-each>
+  </xsl:template>
+  <xsl:template name="physical-description-element">
+    <xsl:param name="value"/>
+    <xsl:param name="last"/>
+    <xsl:if test="$value != ''">
+      <xsl:value-of select="$value"/>
+      <xsl:if test="$last != 'true'"><xsl:text>; </xsl:text></xsl:if>
+    </xsl:if>
   </xsl:template>
   <xsl:template match="mods:mods/mods:titleInfo|mods:relatedItem/mods:titleInfo">
     <dams:title>
