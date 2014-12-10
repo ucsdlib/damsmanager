@@ -129,9 +129,6 @@
     <!-- desc md from dmdSec[@ID=$dmdid] -->
     <xsl:for-each select="//mets:dmdSec[@ID=$dmdid]/mets:mdWrap/mets:xmlData/mods:mods">
       <xsl:apply-templates/>
-
-      <xsl:if test="not(mods:titleInfo)">
-      </xsl:if>
     </xsl:for-each>
   </xsl:template>
   <xsl:template match="mods:mods/mods:titleInfo|mods:relatedItem/mods:titleInfo">
