@@ -39,6 +39,15 @@
 	    	alert("Please select a visibility value.");
 			return false;
 	    }
+	    
+	    var collIndex = document.mainForm.category.selectedIndex;
+		var parentIndex = document.mainForm.parentCollection.selectedIndex;  
+	    if(parentIndex != 0){
+	    	if (category.options[collIndex].value == parentCollection.options[parentIndex].value) {
+	    		alert("Parent collection can't be the same collection. Please select another parent collection.");
+				return false;
+	    	}
+	    }
         
 	    var message = "Are you sure to save the collection record? \n";
 

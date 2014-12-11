@@ -66,7 +66,12 @@ public class CollectionController implements Controller {
 					if (StringUtils.isBlank(collTitle)) {
 						message = "Collection title is missing! Please enter a collection title.";
 					}
-					
+
+					// Parent collection checking
+					if (StringUtils.isNotBlank(parentCollection) && parentCollection.endsWith(collectionId)) {
+						message = "Parent collection can't be the smae collection! Please choose another parent collection.";
+					}
+
 					// check title existing
 					String checkId = checkRecord (collTitle, damsClient);
 					if (StringUtils.isNotBlank(checkId) && (StringUtils.isBlank(collectionId)
