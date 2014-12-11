@@ -184,12 +184,18 @@
           <xsl:value-of select="mods:nonSort"/>
           <xsl:value-of select="mods:title"/>
           <xsl:for-each select="mods:subTitle">
-            <dams:subtitle><xsl:value-of select="."/></dams:subtitle>
+            <xsl:text>, </xsl:text><xsl:value-of select="."/>
           </xsl:for-each>
           <xsl:for-each select="mods:partNumber">
-            <dams:partNumber><xsl:value-of select="."/></dams:partNumber>
+            <xsl:text>, </xsl:text><xsl:value-of select="."/>
           </xsl:for-each>
         </mads:authoritativeLabel>
+        <xsl:for-each select="mods:subTitle">
+          <dams:subtitle><xsl:value-of select="."/></dams:subtitle>
+        </xsl:for-each>
+        <xsl:for-each select="mods:partNumber">
+          <dams:partNumber><xsl:value-of select="."/></dams:partNumber>
+        </xsl:for-each>
         <mads:elementList rdf:parseType="Collection">
           <xsl:apply-templates/>
         </mads:elementList>
