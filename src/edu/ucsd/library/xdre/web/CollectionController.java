@@ -68,8 +68,8 @@ public class CollectionController implements Controller {
 					}
 
 					// Parent collection checking
-					if (StringUtils.isNotBlank(parentCollection) && parentCollection.endsWith(collectionId)) {
-						message = "Parent collection can't be the smae collection! Please choose another parent collection.";
+					if (StringUtils.isNotBlank(parentCollection) && StringUtils.isNotBlank(collectionId) && parentCollection.endsWith(collectionId)) {
+						message = "Parent collection can't be the same collection! Please choose another parent collection.";
 					}
 
 					// check title existing
