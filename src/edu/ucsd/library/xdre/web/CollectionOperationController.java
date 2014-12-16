@@ -516,7 +516,7 @@ public class CollectionOperationController implements Controller {
 										  // preview when there are no error reported
 										  rdfPreview.add(rec.toRDFXML().selectSingleNode("//dams:Object").detach()); 
 									  } else {
-										  File convertedFile = new File(tmpDir.getAbsolutePath(), id + ".rdf.xml");
+										  File convertedFile = new File(tmpDir.getAbsolutePath(), id.replaceAll("[\\//:.*]+","") + ".rdf.xml");
 										  try{
 											  writeXml(convertedFile, doc.asXML());
 										  } finally {										  
@@ -713,7 +713,7 @@ public class CollectionOperationController implements Controller {
 									  File tmpDir = new File (Constants.TMP_FILE_DIR + File.separatorChar + "converted");
 									  if(!tmpDir.exists())
 										  tmpDir.mkdir();
-									  File convertedFile = new File(tmpDir.getAbsolutePath(), id + ".rdf.xml");
+									  File convertedFile = new File(tmpDir.getAbsolutePath(), id.replaceAll("[\\//:.*]+","") + ".rdf.xml");
 									  try{
 										  writeXml(convertedFile, record.toRDFXML().asXML());
 									  } finally {										  
