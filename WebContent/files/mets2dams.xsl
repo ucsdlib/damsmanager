@@ -12,13 +12,12 @@
   <xsl:output method="xml" indent="yes"/>
   <xsl:variable name="madsNS">http://www.loc.gov/mads/rdf/v1#</xsl:variable>
   <xsl:variable name="damsid">http://library.ucsd.edu/ark:/20775/</xsl:variable>
-  <xsl:param name="unit"/>
-  <xsl:param name="col"/>
 
   <!-- handle bare mods records -->
   <xsl:template match="/mods:mods">
     <dams:Object rdf:about="{generate-id()}">
       <xsl:apply-templates/>
+      <xsl:call-template name="physical-description-note"/>
     </dams:Object>
   </xsl:template>
 
@@ -35,20 +34,13 @@
   <xsl:template match="/mets:mets/mets:structMap[@TYPE='logical']/mets:div">
     <xsl:variable name="dmdid" select="@DMDID"/>
     <dams:Object rdf:about="{/mets:mets/@OBJID}">
-<!--
-      <xsl:if test="$col != ''">
-        <dams:collection rdf:resource="{$damsid}{$col}"/>
-      </xsl:if>
--->
-      <xsl:if test="$unit != ''">
-        <dams:unit rdf:resource="{$damsid}{$unit}"/>
-      </xsl:if>
       <xsl:call-template name="mods">
         <xsl:with-param name="dmdid" select="$dmdid"/>
       </xsl:call-template>
-      <xsl:call-template name="physical-description-note">
-        <xsl:with-param name="dmdid" select="$dmdid"/>
-      </xsl:call-template>
+      <!-- desc md from dmdSec[@ID=$dmdid] -->
+      <xsl:for-each select="//mets:dmdSec[@ID=$dmdid]/mets:mdWrap/mets:xmlData/mods:mods">
+        <xsl:call-template name="physical-description-note"/>
+      </xsl:for-each>
       <xsl:for-each select="mets:div">
         <xsl:call-template name="div"/>
       </xsl:for-each>
@@ -135,45 +127,41 @@
     </xsl:for-each>
   </xsl:template>
   <xsl:template name="physical-description-note">
-    <xsl:param name="dmdid"/>
-    <!-- desc md from dmdSec[@ID=$dmdid] -->
-    <xsl:for-each select="//mets:dmdSec[@ID=$dmdid]/mets:mdWrap/mets:xmlData/mods:mods">
-      <xsl:if test="mods:physicalDescription/mods:extent
-                 or mods:physicalDescription/mods:note[@displayLabel='General Physical Description note']
-                 or mods:physicalDescription/mods:note[@displayLabel='Physical Facet note']
-                 or mods:note[@displayLabel='extent']
-                 or mods:note[@diplayLabel='dimensions']">
-        <dams:note>
-          <dams:Note>
-            <dams:type>physical description</dams:type>
-            <rdf:value>
-              <xsl:call-template name="physical-description-element">
-                <xsl:with-param name="value" select="mods:physicalDescription/mods:note[@displayLabel='General Physical Description note']"/>
-              </xsl:call-template>
-              <xsl:call-template name="physical-description-element">
-                <xsl:with-param name="value" select="mods:physicalDescription/mods:note[@displayLabel='Physical Facet note']"/>
-              </xsl:call-template>
-              <xsl:call-template name="physical-description-element">
-                <xsl:with-param name="value" select="mods:note[@displayLabel='extent']"/>
-              </xsl:call-template>
-              <xsl:call-template name="physical-description-element">
-                <xsl:with-param name="value" select="mods:physicalDescription/mods:extent"/>
-              </xsl:call-template>
-              <xsl:call-template name="physical-description-element">
-                <xsl:with-param name="value" select="mods:note[@displayLabel='dimensions']"/>
-                <xsl:with-param name="last">true</xsl:with-param>
-              </xsl:call-template>
-            </rdf:value>
-          </dams:Note>
-        </dams:note>
-      </xsl:if>
-    </xsl:for-each>
+    <xsl:if test="mods:physicalDescription/mods:extent
+               or mods:physicalDescription/mods:note[@displayLabel='General Physical Description note']
+               or mods:physicalDescription/mods:note[@displayLabel='Physical Facet note']
+               or mods:note[@displayLabel='extent']
+               or mods:note[@diplayLabel='dimensions']">
+      <dams:note>
+        <dams:Note>
+          <dams:type>physical description</dams:type>
+          <rdf:value>
+            <xsl:call-template name="physical-description-element">
+              <xsl:with-param name="value" select="mods:physicalDescription/mods:note[@displayLabel='General Physical Description note']"/>
+            </xsl:call-template>
+            <xsl:call-template name="physical-description-element">
+              <xsl:with-param name="value" select="mods:physicalDescription/mods:note[@displayLabel='Physical Facet note']"/>
+            </xsl:call-template>
+            <xsl:call-template name="physical-description-element">
+              <xsl:with-param name="value" select="mods:note[@displayLabel='extent']"/>
+            </xsl:call-template>
+            <xsl:call-template name="physical-description-element">
+              <xsl:with-param name="value" select="mods:physicalDescription/mods:extent"/>
+            </xsl:call-template>
+            <xsl:call-template name="physical-description-element">
+              <xsl:with-param name="value" select="mods:note[@displayLabel='dimensions']"/>
+              <xsl:with-param name="last">true</xsl:with-param>
+            </xsl:call-template>
+          </rdf:value>
+        </dams:Note>
+      </dams:note>
+    </xsl:if>
   </xsl:template>
   <xsl:template name="physical-description-element">
     <xsl:param name="value"/>
     <xsl:param name="last"/>
     <xsl:if test="$value != ''">
-      <xsl:value-of select="$value"/>
+      <xsl:value-of disable-output-escaping="yes" select="$value"/>
       <xsl:if test="$last != 'true'"><xsl:text>; </xsl:text></xsl:if>
     </xsl:if>
   </xsl:template>
@@ -366,7 +354,7 @@
                 <xsl:otherwise>Abstract</xsl:otherwise>
               </xsl:choose>
             </dams:displayLabel>
-            <dams:type>abstract</dams:type>
+            <dams:type>description</dams:type>
           </xsl:otherwise>
         </xsl:choose>
         <rdf:value><xsl:value-of select="."/></rdf:value>
@@ -560,19 +548,38 @@
       <xsl:when test="@displayLabel = 'Conditions Governing Use note'"></xsl:when>
     </xsl:choose>
   </xsl:template>
-  <xsl:template match="mods:relatedItem[@type='host']">
-    <dams:provenanceCollection>
-      <dams:ProvenanceCollection rdf:about="{$damsid}{$col}">
-        <xsl:apply-templates/>
-      </dams:ProvenanceCollection>
-    </dams:provenanceCollection>
-  </xsl:template>
   <xsl:template match="mods:identifier">
     <dams:note>
       <dams:Note>
         <dams:type>identifier</dams:type>
         <dams:displayLabel><xsl:value-of select="@type"/></dams:displayLabel>
-        <rdf:value><xsl:value-of select="."/></rdf:value>
+        <xsl:choose>
+          <xsl:when test="@displayLabel = 'ARK'
+                       or @displayLabel = 'basket'
+                       or @displayLabel = 'collection number'
+                       or @displayLabel = 'call number'
+                       or @displayLabel = 'DOI'
+                       or @displayLabel = 'EDM'
+                       or @displayLabel = 'filename'
+                       or @displayLabel = 'IGSN number'
+                       or @displayLabel = 'local'
+                       or @displayLabel = 'negative'
+                       or @displayLabel = 'OCLC number'
+                       or @displayLabel = 'registration number'
+                       or @displayLabel = 'roger record'
+                       or @displayLabel = 'sample number'
+                       or @displayLabel = 'sequence'">
+            <rdf:value><xsl:value-of select="."/></rdf:value>
+          </xsl:when>
+          <xsl:otherwise>
+            <rdf:value>
+              <xsl:text>identifier:</xsl:text>
+              <xsl:value-of select="@displayLabel"/>
+              <xsl:text>: </xsl:text>
+              <xsl:value-of select="."/>
+            </rdf:value>
+          </xsl:otherwise>
+        </xsl:choose>
       </dams:Note>
     </dams:note>
   </xsl:template>
