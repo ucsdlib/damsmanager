@@ -636,10 +636,15 @@ public class CollectionOperationController implements Controller {
 		 			  handler.setSession(session);
 		 			  handler.setUserId(userId);
 		 			  
+		 			  Map<String, String> collections = new HashMap<String, String>();
+		 			  if (StringUtils.isNotBlank(collectionId)) {
+		 				  String collType = damsClient.getCollectionType(collectionId);
+		 				 collections.put(collectionId, collType);
+		 			  }
+		 			  
 					  for  (int j=0; j<sources.size(); j++) {
 						  InputStream in = null;
 						  String sourceID = null;
-						  String[] collections = {collectionId};
 						  
 						  Object srcRecord =  sources.get(j);
 						  sourceID = (srcRecord instanceof File ? ((File)srcRecord).getName() : srcRecord.toString());

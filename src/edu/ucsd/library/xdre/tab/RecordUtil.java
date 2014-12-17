@@ -1,5 +1,9 @@
 package edu.ucsd.library.xdre.tab;
 
+import java.util.Iterator;
+import java.util.Map;
+
+import org.apache.commons.lang3.StringUtils;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.dom4j.Namespace;
@@ -102,7 +106,7 @@ public class RecordUtil
      * @param access  One value from ACCESS_VALUES.
      * @param endDate End of any license permission or restriction (in YYYY-MM-DD format).
     **/
-    public static void addRights( Document doc, String unitURI, String[] collectionURIs,
+    public static void addRights( Document doc, String unitURI, Map<String, String> collections,
         String copyrightStatus, String copyrightJurisdiction, String copyrightOwner,
         String program, String access, String beginDate, String endDate )
     {
@@ -130,10 +134,12 @@ public class RecordUtil
         }
         
         // collections
-        for ( int i = 0; collectionURIs != null && i < collectionURIs.length; i++ )
+        for ( Iterator<String> it = collections.keySet().iterator(); it.hasNext(); )
         {
-            String uri = collectionURIs[i];
-            o.addElement("dams:collection",damsURI).addAttribute(rdfResource, uri);
+            String uri = it.next();
+            String collType = collections.get(uri);
+            String collPredicate = StringUtils.isNotBlank(collType) ? collType.substring(0, 1).toLowerCase() + collType.substring(1) : "collection";
+            o.addElement("dams:" + collPredicate, damsURI).addAttribute(rdfResource, uri);
         }
 
         // copyright
