@@ -298,7 +298,7 @@ public class RecordUtil
             Element rest = e.addElement("dams:restriction",damsURI)
                 .addElement("dams:Restriction",damsURI);
             rest.addElement("dams:type",damsURI).setText(restriction);
-            if (!isBlank(permission)) {
+            if (isBlank(permission)) {
 	        	if ( !isBlank(beginDate) )
 	            {
 	                rest.addElement("dams:beginDate",damsURI).setText(beginDate);
