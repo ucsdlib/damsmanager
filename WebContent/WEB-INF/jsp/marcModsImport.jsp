@@ -89,6 +89,13 @@
 		        return false; 
 	       	}
 	       	
+		    var rightsHolderTypeIndex = document.mainForm.rightsHolderType.selectedIndex; 
+	       	if(rightsHolderTypeIndex == 0){
+		        alert('Please select a rights holder type.'); 
+		        document.mainForm.rightsHolderType.focus();
+		        return false; 
+	       	}
+	       	
 	       	// License begin/end date validation
 	       	var licenseBeginDate = document.mainForm.licenseBeginDate.value.trim();
 	       	var licenseEndDate = document.mainForm.licenseEndDate.value.trim();
@@ -193,8 +200,8 @@
 		var csSelectedIdx = document.mainForm.copyrightStatus.selectedIndex;
 		var csOptions = document.mainForm.copyrightStatus.options;
 		var csSelectedValue = csOptions[csSelectedIdx].value;
-		var copyrightJurisdictionField = $("#copyrightJurisdictionField");
 		var copyrightOwnerField = $("#copyrightOwnerField");
+		var rightsHolderTypeField = $("#rightsHolderTypeField");
 		var accessOverrideField = $("#accessOverrideField");
 		var licenseBeginDateField = $("#licenseBeginDateField");
 		var licenseEndDateField = $("#licenseEndDateField");
@@ -207,6 +214,7 @@
 		} else if (csSelectedValue == 'Copyright UC Regents') {
 			$(copyrightOwnerField).show();
 			$("#copyrightOwner").val("UC Regents").prop('disabled', true);
+			$(rightsHolderTypeField).hide();
 
 			// access override
 			$(accessOverrideField).show();
@@ -218,6 +226,7 @@
 		} else if (csSelectedValue == 'Copyrighted') {
 			$(copyrightOwnerField).show();
 			$("#copyrightOwner").val("").prop('disabled', false);
+			$(rightsHolderTypeField).show();
 
 			// access override
 			$(accessOverrideField).show();
@@ -385,6 +394,19 @@
 			</td>
 			<td  align="left">
 				<span class="submenuText"><input type="text" id="copyrightOwner" name="copyrightOwner" size="20"></span>
+			</td>
+		</tr>
+		<tr align="left" id="rightsHolderTypeField" style="display:none;">
+			<td height="25px">
+				<span class="submenuText"><span class="requiredLabel" id="rightsHolderType_required">*</span><b>Rights Holder Type: </b></span>
+			</td>
+			<td  align="left">
+				<select id="rightsHolderType" name="rightsHolderType" class="inputText">
+					<option value=""> -- Rights Holder Types -- </option>
+					<c:forEach var="val" items="${model.rightsHolderTypes}">
+						<option value="${val}"><c:out value="${val}" /></option>
+					</c:forEach>
+				</select>
 			</td>
 		</tr>
 		<tr align ="left">

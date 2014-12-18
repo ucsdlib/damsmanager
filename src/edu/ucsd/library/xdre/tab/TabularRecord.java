@@ -370,7 +370,7 @@ public class TabularRecord implements Record
         
         if (!StringUtils.isBlank(copyrightStatus) || !StringUtils.isBlank(accessOverride) )
         {
-        	RecordUtil.addRights(e.getDocument(), null, null, copyrightStatus, copyrightJurisdiction, null,
+        	RecordUtil.addRights(e.getDocument(), null, null, copyrightStatus, copyrightJurisdiction, null, null,
         			null, accessOverride, beginDate, endDate);
         }
         

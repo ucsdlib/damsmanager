@@ -582,6 +582,7 @@ public class CollectionOperationController implements Controller {
 				  String copyrightStatus =getParameter(paramsMap, "copyrightStatus");
 				  String copyrightJurisdiction = getParameter(paramsMap, "countryCode");
 				  String copyrightOwner = getParameter(paramsMap, "copyrightOwner");
+				  String rightsHolderType = getParameter(paramsMap, "rightsHolderType");
 				  String program = getParameter(paramsMap, "program");
 				  String access = getParameter(paramsMap, "accessOverride");
 				  String beginDate = getParameter(paramsMap, "licenseBeginDate");
@@ -673,7 +674,7 @@ public class CollectionOperationController implements Controller {
 						  try {
 							  File xsl = new File(session.getServletContext().getRealPath("files/mets2dams.xsl"));
 							  ModsRecord record = new ModsRecord(xsl, in, sourceID.replaceAll("\\..*",""), collections, unit, 
-										copyrightStatus, copyrightJurisdiction, copyrightOwner,
+										copyrightStatus, copyrightJurisdiction, copyrightOwner, rightsHolderType,
 										program, access, beginDate, endDate);
 							  
 							  // Add master file(s) for the bib/Roger record: a PDF or a TIFF, or a PDF + ZIP

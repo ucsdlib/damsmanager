@@ -81,7 +81,11 @@ public class RecordUtil
     **/
     public static String[] PROGRAM_VALUES = { programRDC, programDLP, programSCA };
 
-
+    /**
+     * Rights holder types.
+    **/
+    public static String[] RIGHTSHOLDER_TYPES = { "Personal", "Corporate", "Family" };
+    
     // namespaces
     private static String damsURI="http://library.ucsd.edu/ontology/dams#";
     private static String madsURI="http://www.loc.gov/mads/rdf/v1#";
@@ -107,7 +111,7 @@ public class RecordUtil
      * @param endDate End of any license permission or restriction (in YYYY-MM-DD format).
     **/
     public static void addRights( Document doc, String unitURI, Map<String, String> collections,
-        String copyrightStatus, String copyrightJurisdiction, String copyrightOwner,
+        String copyrightStatus, String copyrightJurisdiction, String copyrightOwner, String rightsHolderType,
         String program, String access, String beginDate, String endDate )
     {
         Element o = (Element)doc.selectSingleNode("//dams:Object");
@@ -152,11 +156,11 @@ public class RecordUtil
 	        c.addElement("dams:copyrightStatus",damsURI).setText( copyrightStatus );
 	        if ( copyrightStatus.equals( copyrightRegents ) )
 	        {
-	            addRightsHolder( o, "UC Regents");
+	            addRightsHolder( o, "UC Regents", "Corporate");
 	        }
 	        else if ( !isBlank(copyrightOwner) )
 	        {
-	            addRightsHolder( o, copyrightOwner );
+	            addRightsHolder( o, copyrightOwner, rightsHolderType );
 	        }
         }
 
@@ -310,13 +314,14 @@ public class RecordUtil
             }
         }
     }
-    private static void addRightsHolder( Element o, String rightsHolder )
+    private static void addRightsHolder( Element o, String rightsHolder, String rightsHolderType )
     {
-        Element name = o.addElement("dams:rightsHolder",damsURI).addElement("mads:Name",madsURI);
+    	String nameElement = (StringUtils.isNotBlank(rightsHolderType) ? rightsHolderType : "") + "Name";
+        Element name = o.addElement("dams:rightsHolder" + rightsHolderType, damsURI).addElement("mads:" + nameElement, madsURI);
         name.addElement("mads:authoritativeLabel",madsURI).setText(rightsHolder);
         Element el = name.addElement("mads:elementList");
         el.addAttribute( new QName("parseType",rdfNS), "Collection" );
-        el.addElement("mads:NameElement",madsURI).addElement("mads:elementValue",madsURI)
+        el.addElement("mads:FullNameElement", madsURI).addElement("mads:elementValue", madsURI)
             .setText(rightsHolder);
     }
 
