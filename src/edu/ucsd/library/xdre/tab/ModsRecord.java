@@ -105,7 +105,24 @@ public class ModsRecord implements Record {
 			}
 
 			cid += 1;
-		} 
+		}
+		
+		// assigned file id for simple files
+		List<Node> fNodes = rdf.selectNodes("//dams:hasFile/dams:File/@rdf:about[contains(., '/FID')]");
+		for (int k=0; k<fNodes.size(); k++) {
+			Node fidNode = fNodes.get(k);
+			String fid = fidNode.getStringValue();
+			String fileExt = "";
+			Node fileNameNode = fidNode.getParent().selectSingleNode("dams:sourceFileName");
+			if (fileNameNode != null) {
+				String fileName = fileNameNode.getText().trim();
+				if (fileName.indexOf(".") > 0) {
+					fileExt = fileName.substring(fileName.indexOf("."));
+				}
+			}
+			fid = fid.replace("/FID", "/" + (k + 1) + fileExt);			
+			fidNode.setText(fid);
+		}
 	}
 	
 	/**
