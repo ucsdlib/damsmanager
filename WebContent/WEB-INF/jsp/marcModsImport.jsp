@@ -200,14 +200,11 @@
 		var licenseEndDateField = $("#licenseEndDateField");
 
 		if (csSelectedValue == '' || csSelectedValue == 'Public domain') {
-			$(copyrightJurisdictionField).hide();
 			$(copyrightOwnerField).hide();
 			$(accessOverrideField).hide();
 			$(licenseBeginDateField).hide();
 			$(licenseEndDateField).hide();
 		} else if (csSelectedValue == 'Copyright UC Regents') {
-			$(copyrightJurisdictionField).show();
-			$("#countryCode").val("us").prop('disabled', true);
 			$(copyrightOwnerField).show();
 			$("#copyrightOwner").val("UC Regents").prop('disabled', true);
 
@@ -219,8 +216,6 @@
 			$(licenseBeginDateField).hide();
 			$(licenseEndDateField).hide();
 		} else if (csSelectedValue == 'Copyrighted') {
-			$(copyrightJurisdictionField).show();
-			$("#countryCode").val("").prop('disabled', false);
 			$(copyrightOwnerField).show();
 			$("#copyrightOwner").val("").prop('disabled', false);
 
@@ -231,7 +226,6 @@
 			$(licenseBeginDateField).show();
 			$(licenseEndDateField).show();
 		} else if (csSelectedValue == 'Unknown') {
-			$(copyrightJurisdictionField).hide();
 			$(copyrightOwnerField).hide();
 
 			// access override
@@ -377,12 +371,12 @@
 				</select>
 			</td>
 		</tr>
-		<tr align="left" id="copyrightJurisdictionField" style="display:none;">
+		<tr align="left" id="copyrightJurisdictionField">
 			<td height="25px" style="width:160px nowrap">
 				<span class="submenuText"><span class="requiredLabel" id="copyrightJurisdiction_required">*</span><b>Copyright Jurisdiction: </b></span>
 			</td>
 			<td  align="left">
-				<span class="submenuText"><input type="text" id="countryCode" name="countryCode" size="20"></span>
+				<span class="submenuText"><input type="text" id="countryCode" name="countryCode" size="20" value="us"></span>
 			</td>
 		</tr>
 		<tr align="left" id="copyrightOwnerField" style="display:none;">
