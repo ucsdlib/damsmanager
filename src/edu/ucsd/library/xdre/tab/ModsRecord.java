@@ -138,7 +138,7 @@ public class ModsRecord implements Record {
 			String fileName = files.get(i).getName();
 			String fileUse = fileUseMap.get(fileName);
 			int idx = fileName.indexOf(".");
-			String fileUri = objUri + "/" + (cid == 0 ? cid + "/" : "") + (i + 1) + (idx > 0 ? fileName.substring(fileName.indexOf(".")) : "");
+			String fileUri = objUri + "/" + (cid != 0 ? cid + "/" : "") + (i + 1) + (idx > 0 ? fileName.substring(fileName.indexOf(".")) : "");
 			Element f = o.addElement("dams:hasFile").addElement("dams:File");
 			f.addAttribute(new QName("about",  rdf.getRootElement().getNamespaceForPrefix("rdf")), fileUri);
 			f.addElement("dams:sourceFileName").setText(fileName);
