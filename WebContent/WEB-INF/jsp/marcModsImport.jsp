@@ -71,7 +71,7 @@
 			return false;
 	    }
 	    
-	    if (copyrightStatusValue == 'Copyrighted') {
+	    if (copyrightStatusValue == 'Copyrighted (Person)' || csSelectedValue == 'Copyrighted (Corporate)' || csSelectedValue == 'Copyrighted (Other)') {
 		    var countryCode = document.mainForm.countryCode.value.trim(); 
 		    var accessOverrideVal = document.mainForm.accessOverride.options[accessOverride.selectedIndex].value;
 		    if(accessOverrideVal.indexOf ("Creative Commons") < 0){
@@ -223,7 +223,7 @@
 
 			$(licenseBeginDateField).hide();
 			$(licenseEndDateField).hide();
-		} else if (csSelectedValue == 'Copyrighted') {
+		} else if (csSelectedValue == 'Copyrighted (Person)' || csSelectedValue == 'Copyrighted (Corporate)' || csSelectedValue == 'Copyrighted (Other)') {
 			$(copyrightOwnerField).show();
 			$("#copyrightOwner").val("").prop('disabled', false);
 			$(rightsHolderTypeField).show();
