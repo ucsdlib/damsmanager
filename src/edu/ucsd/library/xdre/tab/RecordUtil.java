@@ -20,7 +20,9 @@ public class RecordUtil
     // private type values
     private static String copyrightPublic  = "Public domain";
     private static String copyrightRegents = "Copyright UC Regents";
-    private static String copyrightOther   = "Copyrighted";
+    private static String copyrightPerson = "Copyrighted (Person)";
+    private static String copyrightCorporate = "Copyrighted (Corporate)";
+    private static String copyrightOther = "Copyrighted (Other)";
     private static String copyrightUnknown = "Unknown";
 
     private static String accessPublicLicense           = "Public - granted by rights holder";
@@ -63,7 +65,8 @@ public class RecordUtil
      * Copyright values.
     **/
     public static String[] COPYRIGHT_VALUES = {
-        copyrightPublic, copyrightRegents, copyrightOther, copyrightUnknown
+        copyrightPublic, copyrightRegents, copyrightPerson, copyrightCorporate,
+        copyrightOther, copyrightUnknown
     };
 
     /**
@@ -149,14 +152,21 @@ public class RecordUtil
 	        {
 	            c.addElement("dams:copyrightJurisdiction",damsURI).setText( copyrightJurisdiction );
 	        }
-	        c.addElement("dams:copyrightStatus",damsURI).setText( copyrightStatus );
+            if ( copyrightStatus.startsWith("Copyrighted (") )
+            {
+	            c.addElement("dams:copyrightStatus",damsURI).setText( "Copyrighted" );
+            }
+            else
+            {
+	            c.addElement("dams:copyrightStatus",damsURI).setText( copyrightStatus );
+            }
 	        if ( copyrightStatus.equals( copyrightRegents ) )
 	        {
-	            addRightsHolder( o, "UC Regents");
+	            addRightsHolder( o, copyrightStatus, "UC Regents");
 	        }
 	        else if ( !isBlank(copyrightOwner) )
 	        {
-	            addRightsHolder( o, copyrightOwner );
+	            addRightsHolder( o, copyrightStatus, copyrightOwner );
 	        }
         }
 
@@ -310,9 +320,26 @@ public class RecordUtil
             }
         }
     }
-    private static void addRightsHolder( Element o, String rightsHolder )
+    private static void addRightsHolder( Element o, String copyrightStatus, String rightsHolder )
     {
-        Element name = o.addElement("dams:rightsHolder",damsURI).addElement("mads:Name",madsURI);
+        String predicate = null;
+        String nameClass = null;
+        if ( copyrightStatus.equals(copyrightPerson) )
+        {
+            predicate = "dams:rightsHolderPersonal";
+            nameClass = "mads:PersonalName";
+        }
+        else if ( copyrightStatus.equals(copyrightCorporate) || copyrightStatus.equals(copyrightRegents) )
+        {
+            predicate = "dams:rightsHolderCorporate";
+            nameClass = "mads:CorporateName";
+        }
+        if ( copyrightStatus.equals(copyrightOther) )
+        {
+            predicate = "dams:rightsHolderName";
+            nameClass = "mads:Name";
+        }
+        Element name = o.addElement(predicate,damsURI).addElement(nameClass,madsURI);
         name.addElement("mads:authoritativeLabel",madsURI).setText(rightsHolder);
         Element el = name.addElement("mads:elementList");
         el.addAttribute( new QName("parseType",rdfNS), "Collection" );
