@@ -89,6 +89,12 @@
   <xsl:template name="file">
     <xsl:variable name="fid" select="mets:fptr/@FILEID"/>
     <dams:hasFile>
+      <xsl:variable name="fileURI">
+        <xsl:choose>
+          <xsl:when test="@LOCTYPE='URL'"><xsl:value-of select="@xlink:href"/></xsl:when>
+          <xsl:otherwise><xsl:value-of select="/mets:mets/@OBJID"/>/FID</xsl:otherwise>
+        </xsl:choose>
+      </xsl:variable>
       <dams:File rdf:about="{/mets:mets/@OBJID}/FID">
         <xsl:for-each select="//mets:file[@ID=$fid]">
           <dams:use>
@@ -655,9 +661,16 @@
             </xsl:choose>
           </mads:Authority>
         </dams:role>
-        <dams:name>
+        <xsl:variable name="predicateName">
+          <xsl:choose>
+            <xsl:when test="@type='personal'">personalName</xsl:when>
+            <xsl:when test="@type='corporate'">corporateName</xsl:when>
+            <xsl:otherwise>name</xsl:otherwise>
+          </xsl:choose>
+        </xsl:variable>
+        <xsl:element name="dams:{$predicateName}">
           <xsl:call-template name="name"/>
-        </dams:name>
+        </xsl:element>
       </dams:Relationship>
     </dams:relationship>
   </xsl:template>
