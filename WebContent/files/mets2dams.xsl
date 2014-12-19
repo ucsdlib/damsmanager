@@ -436,6 +436,16 @@
               <dams:displayLabel>IGSN number</dams:displayLabel>
               <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
+            <xsl:when test="@displayLabel = 'identifier:isbn'">
+              <dams:type>identifier</dams:type>
+              <dams:displayLabel>ISBN</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
+            <xsl:when test="@displayLabel = 'identifier:lccn'">
+              <dams:type>identifier</dams:type>
+              <dams:displayLabel>LCCN</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:local'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>local</dams:displayLabel>
@@ -555,39 +565,43 @@
     </xsl:choose>
   </xsl:template>
   <xsl:template match="mods:identifier">
-    <dams:note>
-      <dams:Note>
-        <dams:type>identifier</dams:type>
-        <dams:displayLabel><xsl:value-of select="@type"/></dams:displayLabel>
-        <xsl:choose>
-          <xsl:when test="@displayLabel = 'ARK'
-                       or @displayLabel = 'basket'
-                       or @displayLabel = 'collection number'
-                       or @displayLabel = 'call number'
-                       or @displayLabel = 'DOI'
-                       or @displayLabel = 'EDM'
-                       or @displayLabel = 'filename'
-                       or @displayLabel = 'IGSN number'
-                       or @displayLabel = 'local'
-                       or @displayLabel = 'negative'
-                       or @displayLabel = 'OCLC number'
-                       or @displayLabel = 'registration number'
-                       or @displayLabel = 'roger record'
-                       or @displayLabel = 'sample number'
-                       or @displayLabel = 'sequence'">
-            <rdf:value><xsl:value-of select="."/></rdf:value>
-          </xsl:when>
-          <xsl:otherwise>
-            <rdf:value>
-              <xsl:text>identifier:</xsl:text>
-              <xsl:value-of select="@displayLabel"/>
-              <xsl:text>: </xsl:text>
-              <xsl:value-of select="."/>
-            </rdf:value>
-          </xsl:otherwise>
-        </xsl:choose>
-      </dams:Note>
-    </dams:note>
+    <xsl:if test="@invalid != 'yes'">
+      <dams:note>
+        <dams:Note>
+          <dams:type>identifier</dams:type>
+          <dams:displayLabel><xsl:value-of select="@type"/></dams:displayLabel>
+          <xsl:choose>
+            <xsl:when test="@displayLabel = 'ARK'
+                         or @displayLabel = 'basket'
+                         or @displayLabel = 'collection number'
+                         or @displayLabel = 'call number'
+                         or @displayLabel = 'DOI'
+                         or @displayLabel = 'EDM'
+                         or @displayLabel = 'filename'
+                         or @displayLabel = 'IGSN number'
+                         or @displayLabel = 'isbn'
+                         or @displayLabel = 'lccn'
+                         or @displayLabel = 'local'
+                         or @displayLabel = 'negative'
+                         or @displayLabel = 'OCLC number'
+                         or @displayLabel = 'registration number'
+                         or @displayLabel = 'roger record'
+                         or @displayLabel = 'sample number'
+                         or @displayLabel = 'sequence'">
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
+            <xsl:otherwise>
+              <rdf:value>
+                <xsl:text>identifier:</xsl:text>
+                <xsl:value-of select="@displayLabel"/>
+                <xsl:text>: </xsl:text>
+                <xsl:value-of select="."/>
+              </rdf:value>
+            </xsl:otherwise>
+          </xsl:choose>
+        </dams:Note>
+      </dams:note>
+    </xsl:if>
   </xsl:template>
   <xsl:template match="mods:originInfo">
     <xsl:if test="mods:dateCreated|mods:dateIssued|mods:dateOther">
@@ -623,11 +637,6 @@
             <xsl:if test="mods:publisher != '' and mods:place/mods:placeTerm[@type!='code' or not(@type)] != ''">, </xsl:if>
             <xsl:if test="mods:publisher != ''">
               <xsl:value-of select="mods:publisher"/>
-            </xsl:if>
-            <xsl:if test="mods:place/mods:placeTerm[@type='code'] != ''">
-              <xsl:text> (</xsl:text>
-              <xsl:value-of select="mods:place/mods:placeTerm[@type='code']"/>
-              <xsl:text>)</xsl:text>
             </xsl:if>
           </rdf:value>
         </dams:Note>
