@@ -155,8 +155,8 @@
 			</td>
 			<td>
 				<select id="releaseOption" name="releaseOption" class="inputText" onChange="releaseOptionChange(this);">
-					<option value="" selected> -- Options -- </option>
-					<option value="newRelease">New Collection</option>
+					<option value=""> -- Options -- </option>
+					<option value="newRelease" selected>New Collection</option>
 					<option value="mergeRelease">Merge Collection</option>
 					<option value="one-offsRelease">One-Offs</option>
 				</select>
