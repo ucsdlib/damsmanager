@@ -141,12 +141,14 @@ public class RecordUtil
         }
         
         // collections
-        for ( Iterator<String> it = collections.keySet().iterator(); it.hasNext(); )
-        {
-            String uri = it.next();
-            String collType = collections.get(uri);
-            String collPredicate = StringUtils.isNotBlank(collType) ? collType.substring(0, 1).toLowerCase() + collType.substring(1) : "collection";
-            o.addElement("dams:" + collPredicate, damsURI).addAttribute(rdfResource, uri);
+        if (collections != null && collections.size() > 0) {
+	        for ( Iterator<String> it = collections.keySet().iterator(); it.hasNext(); )
+	        {
+	            String uri = it.next();
+	            String collType = collections.get(uri);
+	            String collPredicate = StringUtils.isNotBlank(collType) ? collType.substring(0, 1).toLowerCase() + collType.substring(1) : "collection";
+	            o.addElement("dams:" + collPredicate, damsURI).addAttribute(rdfResource, uri);
+	        }
         }
 
         // copyright
