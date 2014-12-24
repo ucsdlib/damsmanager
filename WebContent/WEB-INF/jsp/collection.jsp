@@ -3,8 +3,6 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
-<c:set var="actionNameLen">${fn:length(model.action)}</c:set>  
-<c:set var="actionNameFl">${fn:substring(model.action, 0, 1)}</c:set>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <head>
@@ -23,15 +21,16 @@
 			return false;
 		}
 
-		var unitIndex = document.mainForm.unit.selectedIndex;  
-	    if(unitIndex == 0){
-	    	alert("Please select a unit.");
-			return false;
-	    }
 	    
 		var collTypeIndex = document.mainForm.collType.selectedIndex;  
 	    if(collTypeIndex == 0){
 	    	alert("Please select a collection type.");
+			return false;
+	    }
+
+		var unitIndex = document.mainForm.unit.selectedIndex;  
+	    if(unitIndex == 0){
+	    	alert("Please select a unit.");
 			return false;
 	    }
 	    
@@ -40,22 +39,33 @@
 	    	alert("Please select a visibility value.");
 			return false;
 	    }
+	    
+	    var collIndex = document.mainForm.category.selectedIndex;
+		var parentIndex = document.mainForm.parentCollection.selectedIndex;  
+	    if(parentIndex != 0){
+	    	if (category.options[collIndex].value == parentCollection.options[parentIndex].value) {
+	    		alert("Parent collection can't be the same collection. Please select another parent collection.");
+				return false;
+	    	}
+	    }
         
-	    var message = "Are you sure to create a new collection record? \n";
+	    var message = "Are you sure to save the collection record? \n";
 
 	    var exeConfirm = confirm(message);
 	    if(!exeConfirm)
 	    	return false;
 	    
-    	document.mainForm.action = "/damsmanager/collection.do?action=save&sid=" + getSid();
+	    document.mainForm.actionValue.value = "save";
+    	document.mainForm.action = "/damsmanager/collection.do";
     	mainForm.submit();
 	}
-	
-	function createCollection() {
-		document.location.href="/damsmanager/collection.do?create";
+
+	function selectCollection(select) {
+		document.mainForm.actionValue.value = "edit";
+		mainForm.submit();
 	}
-	
-	var crumbs = [{"Home":"http://library.ucsd.edu"}, {"Digital Library Collections":"/dc"},{"DAMS Manager":"/damsmanager/"}, {"Collection Create":""}];
+
+	var crumbs = [{"Home":"http://library.ucsd.edu"}, {"Digital Library Collections":"/dc"},{"DAMS Manager":"/damsmanager/"}, {"Collection Create/Edit":""}];
 	drawBreadcrumbNMenu(crumbs, "tdr_crumbs_content", true);
 </script>
 <jsp:include flush="true" page="/jsp/libanner.jsp" />
@@ -75,39 +85,38 @@
 <tr>
 <td align="center">
 <div id="main" class="mainDiv" style="margin-bottom:50px;margin-top:30px;">
-<form id="mainForm" name="mainForm" method="post" action="/damsmanager/collection.do?create" >
+<form id="mainForm" name="mainForm" method="post" action="/damsmanager/collection.do" >
 <div class="emBox_ark">
-<div class="emBoxBanner">Collection <c:out value="${fn:toUpperCase(actionNameFl)}${fn:substring(model.action, 1, actionNameLen)}" /></div>
+<div class="emBoxBanner">Collection Create/Edit</div>
 
 <div style="background:#DDDDDD;padding-top:8px;padding-bottom:8px;padding-left:25px;" align="left">
-	<c:choose>
-	  <c:when test="${model.action == 'create'}">
-		<span class="submenuText" style="padding-right:15px;"><span class="requiredLabel">*</span><b>Collection Title</b></span>
-		<span class="submenuText"><input type="text" id="collTitle" name="collTitle" size="56" value="${model.collTitle}"></span>
-	  </c:when>
-	  <c:otherwise>
-		<span class="submenuText"><span class="requiredLabel">*</span><b>Collection Selection:&nbsp;</b></span>
-		<span style="padding:0px 5px 0px 7px;">
-			<select id="category" name="category" onChange="selectCollection(this);" class="inputText" >
-				<option value=""> -- collections -- </option>
-				<c:forEach var="entry" items="${model.categories}">
-					<c:set var="colNameLen"> ${fn:length(entry.key)}</c:set>
-					<option value="${entry.value}" <c:if test="${model.category == entry.value}">selected</c:if>>
-                     			<c:choose>
-							<c:when test="${colNameLen > 72}"><c:out value="${fn:substring(entry.key, 0, 68)}" /> ...</c:when>
-							<c:otherwise><c:out value="${entry.key}" /></c:otherwise>
-						</c:choose>
-                      	</option>
-				</c:forEach>
-			</select>
-		</span>
-		<a class="ui-button ui-widget ui-state-default ui-corner-all ui-button-text-icon-primary" onclick="createCollection()" style="font-size:12px;font-weight:normal;padding:2px;">New</a>
-	  </c:otherwise>
-	</c:choose>
+	<span class="submenuText"><span class="requiredLabel">*</span><b>Collection Selection:&nbsp;</b></span>
+	<span style="padding:0px 5px 0px 7px;">
+		<select id="category" name="category" onChange="selectCollection(this);" class="inputText" >
+			<option value=""> -- Create New Collection -- </option>
+			<c:forEach var="entry" items="${model.categories}">
+				<c:set var="colNameLen"> ${fn:length(entry.key)}</c:set>
+				<option value="${entry.value}" <c:if test="${model.category == entry.value}">selected</c:if>>
+                    			<c:choose>
+						<c:when test="${colNameLen > 72}"><c:out value="${fn:substring(entry.key, 0, 68)}" /> ...</c:when>
+						<c:otherwise><c:out value="${entry.key}" /></c:otherwise>
+					</c:choose>
+                     	</option>
+			</c:forEach>
+		</select>
+	</span>
 </div>
 
 <div style="margin-top:10px;padding-left:20px;" align="left">
 	<table>
+		<tr align ="left">
+			<td height="25px">
+				<span class="submenuText"><span class="requiredLabel">*</span><b>Collection Title: </b></span>
+			</td>
+			<td>
+				<span class="submenuText"><input type="text" id="collTitle" name="collTitle" size="56" value="${model.collTitle}"></span>
+			</td>
+		</tr>
 		<tr align ="left">
 			<td height="25px">
 				<span class="submenuText"><span class="requiredLabel">*</span><b>Collection Type: </b></span>
@@ -176,8 +185,9 @@
 	</table>
 </div>
 <div class="buttonDiv">
+    <input type="hidden" name="actionValue" value="${model.actionValue}"/>
 	<input type="button" name="collectionEdit" value=" Submit " onClick="confirmSubmit();"/>&nbsp;&nbsp;
-	<input type="button" name="ActionCancel" value=" Cancel " onClick="document.location.href='/damsmanager/'"/>
+	<input type="button" name="actionCancel" value=" Cancel " onClick="document.location.href='/damsmanager/'"/>
 </div>
 </div>
 </form>

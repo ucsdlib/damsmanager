@@ -1,0 +1,46 @@
+Third-Party Licensing Information
+
+Java:
+
+commons-codec-1.6.jar                      http://www.apache.org/licenses/
+commons-fileupload-1.2.2.jar               http://www.apache.org/licenses/
+commons-io-2.4.jar                         http://www.apache.org/licenses/
+commons-lang3-3.1.jar                      http://www.apache.org/licenses/
+commons-logging-1.1.1.jar                  http://www.apache.org/licenses/
+dom4j-1.6.1.jar                            http://dom4j.sourceforge.net/dom4j-1.6.1/license.html
+httpclient-4.2.1.jar                       http://www.apache.org/licenses/
+httpcore-4.2.1.jar                         http://www.apache.org/licenses/
+httpmime-4.2.1.jar                         http://www.apache.org/licenses/
+jaxen.jar                                  http://jaxen.codehaus.org/license.html
+jdom.jar                                   https://github.com/hunterhacker/jdom/blob/master/LICENSE.txt
+jena-arq-2.9.3.jar                         http://www.apache.org/licenses/LICENSE-2.0
+jena-core-2.7.3.jar                        http://www.apache.org/licenses/LICENSE-2.0
+jena-iri-0.9.3.jar                         http://www.apache.org/licenses/LICENSE-2.0
+json-simple-1.1.1.jar                      http://www.apache.org/licenses/LICENSE-2.0
+jsp-api.jar                                https://jsp.java.net/license.html
+jstl-1.2.jar                               https://jstl.java.net/license.html
+junit-4.11.jar                             http://junit.org/license.html
+log4j-1.2.16.jar                           https://logging.apache.org/log4j/1.2/license.html
+mail.jar                                   https://java.net/projects/javamail/pages/License
+poi-3.10-FINAL-20140208.jar                http://www.apache.org/licenses/LICENSE-2.0
+poi-ooxml-3.10-FINAL-20140208.jar          http://www.apache.org/licenses/LICENSE-2.0
+poi-ooxml-schemas-3.10-FINAL-20140208.jar  http://www.apache.org/licenses/LICENSE-2.0
+servlet-api.jar                            http://www.apache.org/licenses/LICENSE-2.0
+slf4j-api-1.5.8.jar                        http://slf4j.org/license.html
+slf4j-log4j12-1.5.8.jar                    http://slf4j.org/license.html
+spring-beans-3.2.0.M2.jar                  http://www.apache.org/licenses/LICENSE-2.0
+spring-context-3.2.0.M2.jar                http://www.apache.org/licenses/LICENSE-2.0
+spring-core-3.2.0.M2.jar                   http://www.apache.org/licenses/LICENSE-2.0
+spring-expression-3.2.0.M2.jar             http://www.apache.org/licenses/LICENSE-2.0
+spring-web-3.2.0.M2.jar                    http://www.apache.org/licenses/LICENSE-2.0
+spring-webmvc-3.2.0.M2.jar                 http://www.apache.org/licenses/LICENSE-2.0
+stax-api-1.0.1.jar                         http://www.apache.org/licenses/LICENSE-2.0
+xercesImpl-2.7.1.jar                       http://www.apache.org/licenses/LICENSE-2.0
+xmlbeans-2.3.0.jar                         http://www.apache.org/licenses/LICENSE-2.0
+
+Javascript:
+
+highcharts.js (CC-BY-NC)                   http://shop.highsoft.com/highcharts.html
+jquery-1.4.2.min.js                        https://jquery.org/license/
+json2.js                                   https://github.com/douglascrockford/JSON-js
+ui.datepicker.js                           https://jquery.org/license/

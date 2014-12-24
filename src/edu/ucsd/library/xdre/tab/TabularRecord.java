@@ -18,6 +18,8 @@ import org.dom4j.Element;
 import org.dom4j.Namespace;
 import org.dom4j.QName;
 
+import edu.ucsd.library.xdre.utils.Constants;
+
 /**
  * A bundle of tabular data, consisting of a key-value map for the record, and 0 or more
  * components (also key-value maps).
@@ -370,7 +372,7 @@ public class TabularRecord implements Record
         
         if (!StringUtils.isBlank(copyrightStatus) || !StringUtils.isBlank(accessOverride) )
         {
-        	RecordUtil.addRights(e.getDocument(), null, null, copyrightStatus, copyrightJurisdiction, null,
+        	RecordUtil.addRights(e.getDocument(), null, null, copyrightStatus, copyrightJurisdiction, null, null,
         			null, accessOverride, beginDate, endDate);
         }
         
@@ -400,8 +402,11 @@ public class TabularRecord implements Record
 	            coll.addElement("dams:visibility").setText("curator");
 	            addTitle( coll, colName, null, null, null, null, null );
         	} else {
-        		Element coll = addElement( e, "collection", damsNS );
-                addAttribute( coll, "resource", rdfNS, colName );
+        		String cid = colName.substring(colName.lastIndexOf("/") + 1);
+    			String arkUrlBase = Constants.DAMS_ARK_URL_BASE;
+        		String collArkUrl = arkUrlBase + (arkUrlBase.endsWith("/")?"":"/") + Constants.ARK_ORG + "/" + cid;
+        		Element coll = addElement( e, pred, damsNS );
+                addAttribute( coll, "resource", rdfNS, collArkUrl );
         	}
         }
     }

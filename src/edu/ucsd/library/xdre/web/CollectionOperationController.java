@@ -516,7 +516,7 @@ public class CollectionOperationController implements Controller {
 										  // preview when there are no error reported
 										  rdfPreview.add(rec.toRDFXML().selectSingleNode("//dams:Object").detach()); 
 									  } else {
-										  File convertedFile = new File(tmpDir.getAbsolutePath(), id + ".rdf.xml");
+										  File convertedFile = new File(tmpDir.getAbsolutePath(), id.replaceAll("[\\//:.*]+","") + ".rdf.xml");
 										  try{
 											  writeXml(convertedFile, doc.asXML());
 										  } finally {										  
@@ -582,6 +582,7 @@ public class CollectionOperationController implements Controller {
 				  String copyrightStatus =getParameter(paramsMap, "copyrightStatus");
 				  String copyrightJurisdiction = getParameter(paramsMap, "countryCode");
 				  String copyrightOwner = getParameter(paramsMap, "copyrightOwner");
+				  String rightsHolderType = getParameter(paramsMap, "rightsHolderType");
 				  String program = getParameter(paramsMap, "program");
 				  String access = getParameter(paramsMap, "accessOverride");
 				  String beginDate = getParameter(paramsMap, "licenseBeginDate");
@@ -636,10 +637,15 @@ public class CollectionOperationController implements Controller {
 		 			  handler.setSession(session);
 		 			  handler.setUserId(userId);
 		 			  
+		 			  Map<String, String> collections = new HashMap<String, String>();
+		 			  if (StringUtils.isNotBlank(collectionId)) {
+		 				  String collType = damsClient.getCollectionType(collectionId);
+		 				 collections.put(collectionId, collType);
+		 			  }
+		 			  
 					  for  (int j=0; j<sources.size(); j++) {
 						  InputStream in = null;
 						  String sourceID = null;
-						  String[] collections = {collectionId};
 						  
 						  Object srcRecord =  sources.get(j);
 						  sourceID = (srcRecord instanceof File ? ((File)srcRecord).getName() : srcRecord.toString());
@@ -668,7 +674,7 @@ public class CollectionOperationController implements Controller {
 						  try {
 							  File xsl = new File(session.getServletContext().getRealPath("files/mets2dams.xsl"));
 							  ModsRecord record = new ModsRecord(xsl, in, sourceID.replaceAll("\\..*",""), collections, unit, 
-										copyrightStatus, copyrightJurisdiction, copyrightOwner,
+										copyrightStatus, copyrightJurisdiction, copyrightOwner, rightsHolderType,
 										program, access, beginDate, endDate);
 							  
 							  // Add master file(s) for the bib/Roger record: a PDF or a TIFF, or a PDF + ZIP
@@ -713,7 +719,7 @@ public class CollectionOperationController implements Controller {
 									  File tmpDir = new File (Constants.TMP_FILE_DIR + File.separatorChar + "converted");
 									  if(!tmpDir.exists())
 										  tmpDir.mkdir();
-									  File convertedFile = new File(tmpDir.getAbsolutePath(), id + ".rdf.xml");
+									  File convertedFile = new File(tmpDir.getAbsolutePath(), id.replaceAll("[\\//:.*]+","") + ".rdf.xml");
 									  try{
 										  writeXml(convertedFile, record.toRDFXML().asXML());
 									  } finally {										  

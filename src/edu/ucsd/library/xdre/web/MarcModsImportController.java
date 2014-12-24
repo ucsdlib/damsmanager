@@ -1,5 +1,6 @@
 package edu.ucsd.library.xdre.web;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.lang3.StringUtils;
+import org.json.simple.JSONArray;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -40,6 +42,7 @@ public class MarcModsImportController implements Controller {
 		String copyrightOwner = request.getParameter("copyrightOwner");
 		String program = request.getParameter("program");
 		String accessOverride = request.getParameter("accessOverride");
+		String licenseBeginDate = request.getParameter("licenseBeginDate");
 		String licenseEndDate = request.getParameter("licenseEndDate");
 
 		HttpSession session = request.getSession();	
@@ -65,6 +68,9 @@ public class MarcModsImportController implements Controller {
 			message = (!StringUtils.isBlank(message) || StringUtils.isBlank(collectionId)) ? message : (String)request.getSession().getAttribute("message");
 			request.getSession().removeAttribute("message");
 
+			JSONArray accessValues = new JSONArray();
+			accessValues.addAll(Arrays.asList(RecordUtil.ACCESS_VALUES));
+
 			dataMap.put("categories", collectionMap);
 			dataMap.put("category", collectionId);
 			dataMap.put("units", unitsMap);
@@ -76,8 +82,10 @@ public class MarcModsImportController implements Controller {
 			dataMap.put("filestore", fileStore);
 			dataMap.put("filestoreDefault", fsDefault);
 			dataMap.put("copyrightStatus", RecordUtil.COPYRIGHT_VALUES);
+			dataMap.put("rightsHolderTypes", RecordUtil.RIGHTSHOLDER_TYPES);
 			dataMap.put("program", RecordUtil.PROGRAM_VALUES);
-			dataMap.put("accessOverride", RecordUtil.ACCESS_VALUES);
+			dataMap.put("accessOverride", accessValues);
+			dataMap.put("licenseBeginDate", licenseBeginDate);
 			dataMap.put("licenseEndDate", licenseEndDate);
 		
 		

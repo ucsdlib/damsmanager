@@ -12,13 +12,12 @@
   <xsl:output method="xml" indent="yes"/>
   <xsl:variable name="madsNS">http://www.loc.gov/mads/rdf/v1#</xsl:variable>
   <xsl:variable name="damsid">http://library.ucsd.edu/ark:/20775/</xsl:variable>
-  <xsl:param name="unit"/>
-  <xsl:param name="col"/>
 
   <!-- handle bare mods records -->
   <xsl:template match="/mods:mods">
     <dams:Object rdf:about="{generate-id()}">
       <xsl:apply-templates/>
+      <xsl:call-template name="physical-description-note"/>
     </dams:Object>
   </xsl:template>
 
@@ -35,17 +34,13 @@
   <xsl:template match="/mets:mets/mets:structMap[@TYPE='logical']/mets:div">
     <xsl:variable name="dmdid" select="@DMDID"/>
     <dams:Object rdf:about="{/mets:mets/@OBJID}">
-<!--
-      <xsl:if test="$col != ''">
-        <dams:collection rdf:resource="{$damsid}{$col}"/>
-      </xsl:if>
--->
-      <xsl:if test="$unit != ''">
-        <dams:unit rdf:resource="{$damsid}{$unit}"/>
-      </xsl:if>
       <xsl:call-template name="mods">
         <xsl:with-param name="dmdid" select="$dmdid"/>
       </xsl:call-template>
+      <!-- desc md from dmdSec[@ID=$dmdid] -->
+      <xsl:for-each select="//mets:dmdSec[@ID=$dmdid]/mets:mdWrap/mets:xmlData/mods:mods">
+        <xsl:call-template name="physical-description-note"/>
+      </xsl:for-each>
       <xsl:for-each select="mets:div">
         <xsl:call-template name="div"/>
       </xsl:for-each>
@@ -58,9 +53,25 @@
         <dams:hasComponent>
           <dams:Component rdf:about="{/mets:mets/@OBJID}/CID">
             <dams:order><xsl:value-of select="@ORDER"/></dams:order>
-            <xsl:call-template name="mods">
-              <xsl:with-param name="dmdid" select="$dmdid"/>
-            </xsl:call-template>
+            <xsl:choose>
+              <xsl:when test="$dmdid != ''">
+                <xsl:call-template name="mods">
+                  <xsl:with-param name="dmdid" select="$dmdid"/>
+                </xsl:call-template>
+              </xsl:when>
+              <xsl:when test="@LABEL != ''">
+                <dams:title>
+                  <mads:Title>
+                    <mads:authoritativeLabel><xsl:value-of select="@LABEL"/></mads:authoritativeLabel>
+                    <mads:elementList rdf:parseType="Collection">
+                      <mads:MainTitleElement>
+                        <mads:elementValue><xsl:value-of select="@LABEL"/></mads:elementValue>
+                      </mads:MainTitleElement>
+                    </mads:elementList>
+                  </mads:Title>
+                </dams:title>
+              </xsl:when>
+            </xsl:choose>
             <xsl:for-each select="mets:div">
               <xsl:call-template name="div"/>
             </xsl:for-each>
@@ -78,9 +89,35 @@
   <xsl:template name="file">
     <xsl:variable name="fid" select="mets:fptr/@FILEID"/>
     <dams:hasFile>
+      <xsl:variable name="fileURI">
+        <xsl:choose>
+          <xsl:when test="@LOCTYPE='URL'"><xsl:value-of select="@xlink:href"/></xsl:when>
+          <xsl:otherwise><xsl:value-of select="/mets:mets/@OBJID"/>/FID</xsl:otherwise>
+        </xsl:choose>
+      </xsl:variable>
       <dams:File rdf:about="{/mets:mets/@OBJID}/FID">
         <xsl:for-each select="//mets:file[@ID=$fid]">
-          <dams:use><xsl:value-of select="@USE"/></dams:use>
+          <dams:use>
+            <xsl:choose>
+              <xsl:when test="@USE = 'Audio-Master'">audio-source</xsl:when>
+              <xsl:when test="@USE = 'Audio-Master-Edited'">audio-alternate</xsl:when>
+              <xsl:when test="@USE = 'Audio-Service'">audio-service</xsl:when>
+              <xsl:when test="@USE = 'Application-PDF'">document-service</xsl:when>
+              <xsl:when test="@USE = 'Image-Master'">image-source</xsl:when>
+              <xsl:when test="@USE = 'Image-Master-Edited'">image-alternate</xsl:when>
+              <xsl:when test="@USE = 'Image-Service'">image-service</xsl:when>
+              <xsl:when test="@USE = 'Image-Service-HighRes'">image-large</xsl:when>
+              <xsl:when test="@USE = 'Image-Service-MedRes'">image-preview</xsl:when>
+              <xsl:when test="@USE = 'Image-Service-LowRes'">image-thumbnail</xsl:when>
+              <xsl:when test="@USE = 'Image-Thumbnail'">image-icon</xsl:when>
+              <xsl:when test="@USE = 'Text-Service'">document-service</xsl:when>
+              <xsl:when test="@USE = 'Text-Master'">document-source</xsl:when>
+              <xsl:when test="@USE = 'Text-Data'">data-source</xsl:when>
+              <xsl:when test="@USE = 'Video-Master'">video-source</xsl:when>
+              <xsl:when test="@USE = 'Video-Master-Edited'">video-alternate</xsl:when>
+              <xsl:when test="@USE = 'Video-Service'">video-service</xsl:when>
+            </xsl:choose>
+          </dams:use>
           <dams:sourceFileName>
             <xsl:value-of select="mets:FLocat/@xlink:href"/>
           </dams:sourceFileName>
@@ -95,6 +132,45 @@
       <xsl:apply-templates/>
     </xsl:for-each>
   </xsl:template>
+  <xsl:template name="physical-description-note">
+    <xsl:if test="mods:physicalDescription/mods:extent
+               or mods:physicalDescription/mods:note[@displayLabel='General Physical Description note']
+               or mods:physicalDescription/mods:note[@displayLabel='Physical Facet note']
+               or mods:note[@displayLabel='extent']
+               or mods:note[@diplayLabel='dimensions']">
+      <dams:note>
+        <dams:Note>
+          <dams:type>physical description</dams:type>
+          <rdf:value>
+            <xsl:call-template name="physical-description-element">
+              <xsl:with-param name="value" select="mods:physicalDescription/mods:note[@displayLabel='General Physical Description note']"/>
+            </xsl:call-template>
+            <xsl:call-template name="physical-description-element">
+              <xsl:with-param name="value" select="mods:physicalDescription/mods:note[@displayLabel='Physical Facet note']"/>
+            </xsl:call-template>
+            <xsl:call-template name="physical-description-element">
+              <xsl:with-param name="value" select="mods:note[@displayLabel='extent']"/>
+            </xsl:call-template>
+            <xsl:call-template name="physical-description-element">
+              <xsl:with-param name="value" select="mods:physicalDescription/mods:extent"/>
+            </xsl:call-template>
+            <xsl:call-template name="physical-description-element">
+              <xsl:with-param name="value" select="mods:note[@displayLabel='dimensions']"/>
+              <xsl:with-param name="last">true</xsl:with-param>
+            </xsl:call-template>
+          </rdf:value>
+        </dams:Note>
+      </dams:note>
+    </xsl:if>
+  </xsl:template>
+  <xsl:template name="physical-description-element">
+    <xsl:param name="value"/>
+    <xsl:param name="last"/>
+    <xsl:if test="$value != ''">
+      <xsl:value-of disable-output-escaping="yes" select="$value"/>
+      <xsl:if test="$last != 'true'"><xsl:text>; </xsl:text></xsl:if>
+    </xsl:if>
+  </xsl:template>
   <xsl:template match="mods:mods/mods:titleInfo|mods:relatedItem/mods:titleInfo">
     <dams:title>
       <mads:Title>
@@ -102,12 +178,18 @@
           <xsl:value-of select="mods:nonSort"/>
           <xsl:value-of select="mods:title"/>
           <xsl:for-each select="mods:subTitle">
-            <dams:subtitle><xsl:value-of select="."/></dams:subtitle>
+            <xsl:text>, </xsl:text><xsl:value-of select="."/>
           </xsl:for-each>
           <xsl:for-each select="mods:partNumber">
-            <dams:partNumber><xsl:value-of select="."/></dams:partNumber>
+            <xsl:text>, </xsl:text><xsl:value-of select="."/>
           </xsl:for-each>
         </mads:authoritativeLabel>
+        <xsl:for-each select="mods:subTitle">
+          <dams:subtitle><xsl:value-of select="."/></dams:subtitle>
+        </xsl:for-each>
+        <xsl:for-each select="mods:partNumber">
+          <dams:partNumber><xsl:value-of select="."/></dams:partNumber>
+        </xsl:for-each>
         <mads:elementList rdf:parseType="Collection">
           <xsl:apply-templates/>
         </mads:elementList>
@@ -224,32 +306,40 @@
     </xsl:for-each>
   </xsl:template>
   <xsl:template match="mods:physicalDescription/mods:extent">
-    <xsl:if test="not(/mods:modsCollection)">
-      <dams:note>
-        <dams:Note>
-          <dams:type>physical description</dams:type>
-          <rdf:value><xsl:value-of select="."/></rdf:value>
-        </dams:Note>
-      </dams:note>
-    </xsl:if>
+    <!-- see physical-description-note -->
   </xsl:template>
   <xsl:template match="mods:physicalDescription/mods:note">
-    <dams:note>
-      <dams:Note>
-        <xsl:choose>
-          <xsl:when test="@displayLabel = 'Material Specific Details note'">
+    <xsl:choose>
+      <xsl:when test="@displayLabel = 'Material Specific Details note'">
+        <dams:note>
+          <dams:Note>
             <dams:type>material details</dams:type>
-          </xsl:when>
-          <xsl:when test="@displayLabel = 'Physical Characteristics and Technical Requirements note'">
+            <rdf:value><xsl:value-of select="."/></rdf:value>
+          </dams:Note>
+        </dams:note>
+      </xsl:when>
+      <xsl:when test="@displayLabel = 'Physical Characteristics and Technical Requirements note'">
+        <dams:note>
+          <dams:Note>
             <dams:type>technical requirements</dams:type>
-          </xsl:when>
-          <xsl:when test="@displayLabel = 'Physical Facet note'">
-            <dams:type>physical description</dams:type>
-          </xsl:when>
-        </xsl:choose>
-        <rdf:value><xsl:value-of select="."/></rdf:value>
-      </dams:Note>
-    </dams:note>
+            <rdf:value><xsl:value-of select="."/></rdf:value>
+          </dams:Note>
+        </dams:note>
+      </xsl:when>
+      <xsl:when test="@displayLabel = 'General Physical Description note'">
+        <!-- see physical-description-note -->
+      </xsl:when>
+      <xsl:when test="@displayLabel = 'Physical Facet note'">
+        <!-- see physical-description-note -->
+      </xsl:when>
+      <xsl:otherwise>
+        <dams:note>
+          <dams:Note>
+            <xsl:call-template name="generic-note"/>
+          </dams:Note>
+        </dams:note>
+      </xsl:otherwise>
+    </xsl:choose>
   </xsl:template>
   <xsl:template match="mods:mods/mods:abstract">
     <dams:note>
@@ -270,7 +360,7 @@
                 <xsl:otherwise>Abstract</xsl:otherwise>
               </xsl:choose>
             </dams:displayLabel>
-            <dams:type>abstract</dams:type>
+            <dams:type>description</dams:type>
           </xsl:otherwise>
         </xsl:choose>
         <rdf:value><xsl:value-of select="."/></rdf:value>
@@ -283,108 +373,162 @@
         <dams:Note>
           <xsl:choose>
             <!-- display label maps to blank type -->
-            <xsl:when test="@displayLabel = 'General note'"></xsl:when>
-            <xsl:when test="@displayLabel = 'Related Archival Materials note'"></xsl:when>
+            <xsl:when test="@displayLabel = 'General note'">
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
+            <xsl:when test="@displayLabel = 'Related Archival Materials note'">
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
 
             <!-- display label maps to custom type -->
             <xsl:when test="@displayLabel = 'Biographical/Historical note'">
               <dams:type>biography</dams:type>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="@displayLabel = 'General Physical Description note'">
-              <dams:type>physical description</dams:type>
+              <!-- see physical-description-note -->
             </xsl:when>
             <xsl:when test="@displayLabel = 'Immediate Source of Acquisition note'">
               <dams:type>custodial history</dams:type>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="@displayLabel = 'Preferred Citation note'">
               <dams:type>preferred citation</dams:type>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
 
             <!-- display label maps to type and display label -->
             <xsl:when test="@displayLabel = 'identifier:ARK'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>ARK</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
+            <xsl:when test="@displayLabel = 'identifier:basket'">
+              <dams:type>identifier</dams:type>
+              <dams:displayLabel>basket</dams:displayLabel>
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:collection number'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>collection number</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:call number'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>call number</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:DOI'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>DOI</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
+            <xsl:when test="@displayLabel = 'identifier:EDM'">
+              <dams:type>identifier</dams:type>
+              <dams:displayLabel>EDM</dams:displayLabel>
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:filename'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>filename</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:IGSN number'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>IGSN number</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
+            <xsl:when test="@displayLabel = 'identifier:isbn'">
+              <dams:type>identifier</dams:type>
+              <dams:displayLabel>ISBN</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
+            <xsl:when test="@displayLabel = 'identifier:lccn'">
+              <dams:type>identifier</dams:type>
+              <dams:displayLabel>LCCN</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:local'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>local</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:negative'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>negative</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:OCLC number'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>OCLC number</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
+            <xsl:when test="@displayLabel = 'identifier:registration number'">
+              <dams:type>identifier</dams:type>
+              <dams:displayLabel>registration number</dams:displayLabel>
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:roger record'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>roger record</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:sample number'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>sample number</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:sequence'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>sequence</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="@displayLabel = 'material details:storage method'">
               <dams:type>material details</dams:type>
               <dams:displayLabel>storage method</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="@displayLabel = 'material details:water depth'">
               <dams:type>material details</dams:type>
               <dams:displayLabel>water depth</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
 
             <!-- displayLabel maps to type -->
-            <xsl:when test="@displayLabel = 'bibliography' or @displayLabel = 'classification'
-               or @displayLabel = 'credits' or @displayLabel = 'digital origin'
-               or @displayLabel = 'extent' or @displayLabel = 'inscription'
-               or @displayLabel = 'local attribution' or @displayLabel = 'performers'
-               or @displayLabel = 'publication' or @displayLabel = 'series'
-               or @displayLabel = 'statement of responsibility' or @displayLabel = 'table of contents'
-               or @displayLabel = 'thesis' or @displayLabel = 'venue'">
+            <xsl:when test="@displayLabel = 'arrangement'
+                         or @displayLabel = 'bibliography'
+                         or @displayLabel = 'classification'
+                         or @displayLabel = 'credits'
+                         or @displayLabel = 'digital origin'
+                         or @displayLabel = 'edition'
+                         or @displayLabel = 'inscription'
+                         or @displayLabel = 'local attribution'
+                         or @displayLabel = 'performers'
+                         or @displayLabel = 'publication'
+                         or @displayLabel = 'series'
+                         or @displayLabel = 'statement of responsibility'
+                         or @displayLabel = 'table of contents'
+                         or @displayLabel = 'thesis'
+                         or @displayLabel = 'venue'">
               <dams:type><xsl:value-of select="@displayLabel"/></dams:type>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
+            <xsl:when test="@displayLabel = 'dimensions' or @displayLabel = 'extent'">
+              <!-- see physical-description-note -->
             </xsl:when>
             <xsl:otherwise>
-
-              <!-- default: map display label and type directly -->
-              <xsl:if test="@displayLabel != ''">
-                <dams:displayLabel>
-                  <xsl:value-of select="@displayLabel" disable-output-escaping="yes"/>
-                </dams:displayLabel>
-              </xsl:if>
-              <xsl:if test="@type != ''">
-                <dams:type><xsl:value-of select="@type"/></dams:type>
-              </xsl:if>
+              <xsl:call-template name="generic-note"/>
             </xsl:otherwise>
           </xsl:choose>
-          <rdf:value><xsl:value-of select="."/></rdf:value>
         </dams:Note>
       </dams:note>
     </xsl:if>
+  </xsl:template>
+  <xsl:template name="generic-note">
+    <!-- default note if type/label do not match vocabulary -->
+    <rdf:value>
+      <xsl:if test="@displayLabel != ''">
+        <xsl:value-of select="@displayLabel"/><xsl:text>: </xsl:text>
+      </xsl:if>
+      <xsl:value-of select="."/>
+    </rdf:value>
   </xsl:template>
   <xsl:template match="mods:accessCondition">
     <xsl:choose>
@@ -420,21 +564,44 @@
       <xsl:when test="@displayLabel = 'Conditions Governing Use note'"></xsl:when>
     </xsl:choose>
   </xsl:template>
-  <xsl:template match="mods:relatedItem[@type='host']">
-    <dams:provenanceCollection>
-      <dams:ProvenanceCollection rdf:about="{$damsid}{$col}">
-        <xsl:apply-templates/>
-      </dams:ProvenanceCollection>
-    </dams:provenanceCollection>
-  </xsl:template>
   <xsl:template match="mods:identifier">
-    <dams:note>
-      <dams:Note>
-        <dams:type>identifier</dams:type>
-        <dams:displayLabel><xsl:value-of select="@type"/></dams:displayLabel>
-        <rdf:value><xsl:value-of select="."/></rdf:value>
-      </dams:Note>
-    </dams:note>
+    <xsl:if test="@invalid != 'yes'">
+      <dams:note>
+        <dams:Note>
+          <dams:type>identifier</dams:type>
+          <dams:displayLabel><xsl:value-of select="@type"/></dams:displayLabel>
+          <xsl:choose>
+            <xsl:when test="@displayLabel = 'ARK'
+                         or @displayLabel = 'basket'
+                         or @displayLabel = 'collection number'
+                         or @displayLabel = 'call number'
+                         or @displayLabel = 'DOI'
+                         or @displayLabel = 'EDM'
+                         or @displayLabel = 'filename'
+                         or @displayLabel = 'IGSN number'
+                         or @displayLabel = 'isbn'
+                         or @displayLabel = 'lccn'
+                         or @displayLabel = 'local'
+                         or @displayLabel = 'negative'
+                         or @displayLabel = 'OCLC number'
+                         or @displayLabel = 'registration number'
+                         or @displayLabel = 'roger record'
+                         or @displayLabel = 'sample number'
+                         or @displayLabel = 'sequence'">
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
+            <xsl:otherwise>
+              <rdf:value>
+                <xsl:text>identifier:</xsl:text>
+                <xsl:value-of select="@displayLabel"/>
+                <xsl:text>: </xsl:text>
+                <xsl:value-of select="."/>
+              </rdf:value>
+            </xsl:otherwise>
+          </xsl:choose>
+        </dams:Note>
+      </dams:note>
+    </xsl:if>
   </xsl:template>
   <xsl:template match="mods:originInfo">
     <xsl:if test="mods:dateCreated|mods:dateIssued|mods:dateOther">
@@ -471,11 +638,6 @@
             <xsl:if test="mods:publisher != ''">
               <xsl:value-of select="mods:publisher"/>
             </xsl:if>
-            <xsl:if test="mods:place/mods:placeTerm[@type='code'] != ''">
-              <xsl:text> (</xsl:text>
-              <xsl:value-of select="mods:place/mods:placeTerm[@type='code']"/>
-              <xsl:text>)</xsl:text>
-            </xsl:if>
           </rdf:value>
         </dams:Note>
       </dams:note>
@@ -508,9 +670,16 @@
             </xsl:choose>
           </mads:Authority>
         </dams:role>
-        <dams:name>
+        <xsl:variable name="predicateName">
+          <xsl:choose>
+            <xsl:when test="@type='personal'">personalName</xsl:when>
+            <xsl:when test="@type='corporate'">corporateName</xsl:when>
+            <xsl:otherwise>name</xsl:otherwise>
+          </xsl:choose>
+        </xsl:variable>
+        <xsl:element name="dams:{$predicateName}">
           <xsl:call-template name="name"/>
-        </dams:name>
+        </xsl:element>
       </dams:Relationship>
     </dams:relationship>
   </xsl:template>
@@ -644,10 +813,15 @@
               <xsl:for-each select="*">
                 <xsl:if test="position() &gt; 1">--</xsl:if>
                 <xsl:choose>
-                  <xsl:when test="name() = 'name'">
+                  <xsl:when test="local-name() = 'name'">
                     <xsl:for-each select="mods:namePart">
                       <xsl:if test="position() &gt; 1">, </xsl:if>
-                      <xsl:value-of select="."/>
+                      <xsl:choose>
+                        <xsl:when test="mods:displayForm">
+                          <xsl:value-of select="mods:displayForm"/>
+                        </xsl:when>
+                        <xsl:otherwise><xsl:value-of select="."/></xsl:otherwise>
+                      </xsl:choose>
                     </xsl:for-each>
                   </xsl:when>
                   <xsl:otherwise>
@@ -670,6 +844,18 @@
       </xsl:when>
       <xsl:when test="mods:name">
         <dams:name><xsl:apply-templates/></dams:name>
+      </xsl:when>
+      <xsl:when test="mods:genre">
+        <dams:genreForm><xsl:apply-templates/></dams:genreForm>
+      </xsl:when>
+      <xsl:when test="mods:geographic">
+        <dams:geographic><xsl:apply-templates/></dams:geographic>
+      </xsl:when>
+      <xsl:when test="mods:occupation">
+        <dams:occupation><xsl:apply-templates/></dams:occupation>
+      </xsl:when>
+      <xsl:when test="mods:temporal">
+        <dams:temporal><xsl:apply-templates/></dams:temporal>
       </xsl:when>
       <xsl:when test="mods:topic">
         <dams:topic><xsl:apply-templates/></dams:topic>
@@ -701,17 +887,17 @@
       </xsl:otherwise>
     </xsl:choose>
   </xsl:template>
-  <xsl:template match="mods:genre">
-    <dams:genreForm>
-      <xsl:call-template name="simplesubject"/>
-    </dams:genreForm>
+  <xsl:template match="mods:mods/mods:genre">
+    <dams:genreForm><xsl:call-template name="simplesubject"/></dams:genreForm>
   </xsl:template>
-  <xsl:template name="simplesubject" match="mods:topic">
+  <xsl:template name="simplesubject" match="mods:genre|mods:geographic|mods:occupation|mods:temporal|mods:topic">
     <xsl:variable name="elemName">
       <xsl:choose>
-        <xsl:when test="local-name() = 'topic'">Topic</xsl:when>
-        <xsl:when test="local-name() = 'geographic'">Geographic</xsl:when>
         <xsl:when test="local-name() = 'genre'">GenreForm</xsl:when>
+        <xsl:when test="local-name() = 'geographic'">Geographic</xsl:when>
+        <xsl:when test="local-name() = 'occupation'">Occupation</xsl:when>
+        <xsl:when test="local-name() = 'temporal'">Temporal</xsl:when>
+        <xsl:when test="local-name() = 'topic'">Topic</xsl:when>
         <xsl:otherwise>ZZZ<xsl:value-of select="name()"/></xsl:otherwise>
       </xsl:choose>
     </xsl:variable>
@@ -720,15 +906,11 @@
         <xsl:value-of select="generate-id()"/>
       </xsl:attribute>
       <xsl:call-template name="authority">
-        <xsl:with-param name="auth" select="@authority"/>
+        <xsl:with-param name="auth" select="../@authority"/>
       </xsl:call-template>
       <mads:authoritativeLabel>
         <xsl:value-of select="."/>
       </mads:authoritativeLabel>
-      <!-- XXX: do we want to create an element list when there is only one
-                namePart? This just repeats the display form, and in some cases
-                includes subject strings that aren't broken into components
-           -->
       <mads:elementList rdf:parseType="Collection">
         <xsl:element name="mads:{$elemName}Element">
           <mads:elementValue>
@@ -738,5 +920,4 @@
       </mads:elementList>
     </xsl:element>
   </xsl:template>
-<!-- XXX repository???  -->
 </xsl:stylesheet>
