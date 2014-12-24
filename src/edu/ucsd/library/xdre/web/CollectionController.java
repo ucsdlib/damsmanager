@@ -1,5 +1,6 @@
 package edu.ucsd.library.xdre.web;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -10,16 +11,13 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.dom4j.Document;
-import org.dom4j.DocumentFactory;
-import org.dom4j.Element;
-import org.dom4j.Namespace;
 import org.dom4j.Node;
-import org.dom4j.QName;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
-import edu.ucsd.library.xdre.tab.TabularRecord;
+import edu.ucsd.library.xdre.model.DAMSCollection;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 
@@ -32,116 +30,109 @@ import edu.ucsd.library.xdre.utils.DAMSClient;
 public class CollectionController implements Controller {
 	public static final String[] COLLECTION_TYPES = {"AssembledCollection", "ProvenanceCollection", "ProvenanceCollectionPart"};
 	public static final String[] VISIBILITY_VALUES = {"curator", "local", "public"};
-	public static enum Action {create, edit, save}
 
-    private String madsURI = null;
-    private String damsURI = null;
-    private String rdfURI = null;
-    private Namespace madsNS = null;
-    private Namespace damsNS = null;
-    private Namespace rdfNS = null;
+	private static Logger log = Logger.getLogger(CollectionController.class);
+	private static enum Action {create, edit, save}
 	
 	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
-		String action = request.getParameter("action");
+		String action = request.getParameter("actionValue");
 		String collectionId =  request.getParameter("category");
-		String parentCollection =  request.getParameter("parentCollection");
+		String collType = request.getParameter("collType");
 		String collTitle = request.getParameter("collTitle");
 		String unit =  request.getParameter("unit");
-		String collType = request.getParameter("collType");
+		String parentCollection =  request.getParameter("parentCollection");
 		String visibility = request.getParameter("visibility");
 		String message = request.getParameter("message");
 
-	    madsURI = Constants.NS_PREFIX_MAP.get("mads");
-	    damsURI = Constants.NS_PREFIX_MAP.get("dams");
-	    rdfURI = Constants.NS_PREFIX_MAP.get("rdf");
-	    madsNS = new Namespace("mads", madsURI);
-	    damsNS = new Namespace("dams", damsURI);
-	    rdfNS = new Namespace("rdf", rdfURI);
-	    
 		HttpSession session = request.getSession();
 		DAMSClient damsClient = null;
 		Map dataMap = new HashMap();
+		DAMSCollection collection = null;
+
+		if (action != null && Action.valueOf(action).equals(Action.save))
+			log.info("{actionValue => " + action + ", category => " + collectionId + ", collType => " + collType + ",  collTitle => " + collTitle
+					+ ", unit => " + unit + ", parentCollection => " + parentCollection + ", visibility => " + visibility  + ", message =>" + message + "}");
+		
 		try{
 			damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
 			damsClient.setTripleStore(Constants.DEFAULT_TRIPLESTORE);
-			Map<String, String> collectionMap = damsClient.listCollections();
-			Map<String, String> unitsMap = damsClient.listUnits();
-			Document doc = null;
 			
 			if (StringUtils.isBlank(action)) {
-				action = Action.create.name();
+				action = Action.edit.name();
 			}
 			
 			switch (Action.valueOf(action)) {
-				case edit :
-					doc = damsClient.getRecord(collectionId);
-					break;
 				case save :
-					if (StringUtils.isBlank(collectionId)) {
-						if (StringUtils.isBlank(collTitle)) {
-							message = "Error: Collection title is missing. Please enter a collection title.";
-							action = Action.create.name();
+					if (StringUtils.isBlank(collTitle)) {
+						message = "Collection title is missing! Please enter a collection title.";
+					}
+
+					// Parent collection checking
+					if (StringUtils.isNotBlank(parentCollection) && StringUtils.isNotBlank(collectionId) && parentCollection.endsWith(collectionId)) {
+						message = "Parent collection can't be the same collection! Please choose another parent collection.";
+					}
+
+					// check title existing
+					String checkId = checkRecord (collTitle, damsClient);
+					if (StringUtils.isNotBlank(checkId) && (StringUtils.isBlank(collectionId)
+							|| StringUtils.isNotBlank(collectionId) && !checkId.endsWith(collectionId))) {
+						message = "Collection with title " + collTitle + " exists (" + checkId + ")! Please use another title.";
+					}
+
+					if (StringUtils.isBlank(message)) {	
+						collection = new DAMSCollection (damsClient, collectionId, collType, collTitle, unit, visibility, parentCollection);
+						if (collection.save()) {
+							message = "Successfully";
+							if (collection.isNew())
+								message += " created ";
+							else
+								message += " updated ";
+							message += "collection '" + collTitle + "' (" + collection.getId() + ").";
+
+							// Update solr
+							Document record = collection.getRecord();
+							List<Node> nodes = record.selectNodes("//@rdf:about");
+							for (Node node : nodes) {
+								String resId = node.getStringValue();
+								// Update SOLR
+								if (!damsClient.solrUpdate(resId))
+									message += " SOLR update failed for " + resId;
+							}
+						} else {
+							message = "collection \"" + collTitle + "\"";
+							if (collection.isNew())
+								message = "Failed to create " + message;
+							else if (!collection.isModified())
+								message = "No changes submitted for " + message;
+							else
+								message = "Failed to update " + message;
+							 message += (StringUtils.isNotBlank(collection.getId()) ? " (" + collection.getId() + ")" : "") + ".";
 						}
 						
-						if (StringUtils.isBlank(message)) {
-							collectionId = checkRecord (collTitle, damsClient);
-							if (StringUtils.isNotBlank(collectionId)) {
-								message = "Error: Collection with title " + collTitle + " exists: " + collectionId + ". Please use another collection title.";
-								action = Action.create.name();
-							} else {
-								collectionId = toDamsUrl(damsClient.mintArk(Constants.DEFAULT_ARK_NAME));
-						    	doc = new DocumentFactory().createDocument();
-						    	Element rdf = TabularRecord.createRdfRoot (doc);
-						    	
-						    	// Collection record
-						        Element root = rdf.addElement(new QName(collType, damsNS)).addAttribute(new QName("about", rdfNS), collectionId);
-						       
-						        // Collection title
-						        addTitle(root, collTitle);
-						        
-						        // Add parent collection linkings
-						        if (StringUtils.isNotBlank(parentCollection)) {
-						        	addCollectionLink(root, damsClient.getCollectionType(parentCollection), parentCollection);
-						        	// Add child reference to the parent collection
-						        	Document docParent = damsClient.getRecord(parentCollection);
-						        	Node collNode = docParent.selectSingleNode("//*[contains(@rdf:about, '" + parentCollection + "')]");
-						        	((Element)collNode).addElement(new QName("has" + collType.replace("ProvenanceCollectionPart", "Part"), damsNS))
-						        			.addAttribute(new QName("resource", rdfNS), collectionId);
-						        	rdf.add(collNode.detach());
-						        }
-						        
-						        // Add unit linking
-						        root.addElement(new QName("unit", damsNS)).addAttribute(new QName("resource", rdfNS), unit);
-						        
-						        // Add visibility property
-						        if (StringUtils.isNotBlank(visibility))
-						        	root.addElement(new QName("visibility", damsNS)).setText(visibility);
-								
-								if (damsClient.updateObject(collectionId, doc.asXML(), Constants.IMPORT_MODE_ALL)) {
-									
-									message = "Successfully saved collection " + collectionId + ".";
-									// Update SOLR
-									if (!damsClient.solrUpdate(collectionId))
-										message = "Collection " + collectionId + "saved successfully. But failed to update SOLR.";
-									
-									if (StringUtils.isNotBlank(parentCollection)) {
-										if (damsClient.solrUpdate(parentCollection)) 
-											message += " Failed to update SOLR for parent collection " + parentCollection + ".";
-									}
-									collTitle = "";
-								} else {
-									message = "Failed to save collection \"" + collTitle + "\": " + collectionId + ".";
-								}
-								action = Action.create.name();
-							}
-						}
+						collectionId = collection.getId();
 					}
+					action = Action.edit.name();
 					break;
 				default :
-					visibility = VISIBILITY_VALUES[0];
+					if (StringUtils.isNotBlank(collectionId)) {
+						collection = DAMSCollection.getRecord(damsClient, collectionId);
+						parentCollection =  collection.getParent();
+						collTitle = collection.getTitle();
+						unit =  collection.getUnit();
+						collType = collection.getType();
+						visibility = collection.getVisibility();
+					} else {
+						collTitle = null;
+						parentCollection =  null;
+						unit =  null;
+						collType = null;
+						visibility = "curator";
+					}
 					break;
-			
 			}
+
+			Map<String, String> collectionMap = damsClient.listCollections();
+			Map<String, String> unitsMap = damsClient.listUnits();
 			
 			message = (StringUtils.isNotBlank(message) || StringUtils.isBlank(collectionId)) ? message : (String)request.getSession().getAttribute("message");
 			session.removeAttribute("message");
@@ -156,7 +147,7 @@ public class CollectionController implements Controller {
 			dataMap.put("visibility", visibility);
 			dataMap.put("parentCollection", parentCollection);
 			dataMap.put("collTitle", collTitle);
-			dataMap.put("action", action);
+			dataMap.put("actionValue", action);
 			dataMap.put("message", message);
 
 		} catch (Exception e) {
@@ -166,6 +157,24 @@ public class CollectionController implements Controller {
 			if(damsClient != null)
 				damsClient.close();
 		}
+		
+		// loging
+		String requestAction = request.getParameter("actionValue");
+		if (requestAction != null && Action.valueOf(requestAction).equals(Action.save) && collection != null) {
+			log.info("Result: {actionValue => " + action + ", category => " + collection.getId() + ", collType => " + collection.getType()
+					+ ",  collTitle => " + collection.getTitle() + ", unit => " + collection.getUnit() + ", parentCollection => " + collection.getParent()
+					+ ", visibility => " + collection.getVisibility()  + ", message => " + message + "}");
+			if (collection.getRecord() != null) {
+				File rdf = new File(Constants.TMP_FILE_DIR, (StringUtils.isNotBlank(collectionId) ? collectionId.substring(collectionId.lastIndexOf("/") + 1) : "")
+						+ "_" + System.currentTimeMillis() + ".rdf.xml");
+				try{
+					CollectionOperationController.writeXml(rdf, collection.getRecord().asXML());
+				} finally {										  
+					rdf.deleteOnExit();
+				}
+			}
+		} else
+			log.info("Message => " + message);
 		return new ModelAndView("collection", "model", dataMap);
 	}
 	
@@ -175,15 +184,6 @@ public class CollectionController implements Controller {
 	
 	private List<String> getVisibilityValues() {
 		return Arrays.asList(VISIBILITY_VALUES);
-	}
-
-	private String toDamsUrl(String recordId){
-		if(!recordId.startsWith("http")){
-			String arkUrlBase = Constants.DAMS_ARK_URL_BASE;
-			String arkOrg = Constants.ARK_ORG;
-			recordId = arkUrlBase + (arkUrlBase.endsWith("/")?"":"/") + (recordId.indexOf('/')>0?recordId:arkOrg+"/"+recordId);
-		}
-		return recordId;
 	}
 	
 	private String checkRecord (String collTitle, DAMSClient damsClient) throws Exception {
@@ -195,32 +195,5 @@ public class CollectionController implements Controller {
 			}
 		}
 		return null;
-	}
-	
-	
-	private void addTitle( Element parent, String value )
-	{
-		Element titleElem = parent.addElement(new QName("title", damsNS)).addElement(new QName("Title", madsNS));
-		titleElem.addElement(new QName("authoritativeLabel", madsNS)).setText(value);
-		Element elemList = titleElem.addElement("mads:elementList",madsURI);
-		elemList.addAttribute(new QName("parseType",rdfNS), "Collection");
-		elemList.addElement(new QName("MainTitleElement", madsNS)).addElement(new QName("elementValue", madsNS)).setText(value);
-	}
-	
-	private void addCollectionLink(Element parent, String collectionType, String collId) {
-		int idx = collectionType.indexOf(":");
-		String collPredicateName = "";
-		// Setting specific collection predicate for the parent collection.
-		if (idx > 0) {
-			collPredicateName = collectionType.substring(collectionType.indexOf(":") + 1);
-			collPredicateName = collectionType.substring(0, collectionType.indexOf(":") + 1)
-					+ collectionType.substring(0, 1).toLowerCase() + collectionType.substring(1);
-			parent.addElement(collPredicateName).addAttribute(new QName("resource",
-					new Namespace("rdf", Constants.NS_PREFIX_MAP.get("rdf"))), collId);
-		}else{
-			collPredicateName = collectionType.substring(0, 1).toLowerCase() + collectionType.substring(1);
-			Element elem = parent.addElement(new QName(collPredicateName, damsNS));
-			elem.addAttribute(new QName("resource", rdfNS), collId);
-		}
 	}
  }

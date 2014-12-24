@@ -1,5 +1,9 @@
 package edu.ucsd.library.xdre.tab;
 
+import java.util.Iterator;
+import java.util.Map;
+
+import org.apache.commons.lang3.StringUtils;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.dom4j.Namespace;
@@ -16,7 +20,9 @@ public class RecordUtil
     // private type values
     private static String copyrightPublic  = "Public domain";
     private static String copyrightRegents = "Copyright UC Regents";
-    private static String copyrightOther   = "Copyrighted";
+    private static String copyrightPerson = "Copyrighted (Person)";
+    private static String copyrightCorporate = "Copyrighted (Corporate)";
+    private static String copyrightOther = "Copyrighted (Other)";
     private static String copyrightUnknown = "Unknown";
 
     private static String accessPublicLicense           = "Public - granted by rights holder";
@@ -59,7 +65,8 @@ public class RecordUtil
      * Copyright values.
     **/
     public static String[] COPYRIGHT_VALUES = {
-        copyrightPublic, copyrightRegents, copyrightOther, copyrightUnknown
+        copyrightPublic, copyrightRegents, copyrightPerson, copyrightCorporate,
+        copyrightOther, copyrightUnknown
     };
 
     /**
@@ -77,7 +84,11 @@ public class RecordUtil
     **/
     public static String[] PROGRAM_VALUES = { programRDC, programDLP, programSCA };
 
-
+    /**
+     * Rights holder types.
+    **/
+    public static String[] RIGHTSHOLDER_TYPES = { "Personal", "Corporate", "Family" };
+    
     // namespaces
     private static String damsURI="http://library.ucsd.edu/ontology/dams#";
     private static String madsURI="http://www.loc.gov/mads/rdf/v1#";
@@ -102,8 +113,8 @@ public class RecordUtil
      * @param access  One value from ACCESS_VALUES.
      * @param endDate End of any license permission or restriction (in YYYY-MM-DD format).
     **/
-    public static void addRights( Document doc, String unitURI, String[] collectionURIs,
-        String copyrightStatus, String copyrightJurisdiction, String copyrightOwner,
+    public static void addRights( Document doc, String unitURI, Map<String, String> collections,
+        String copyrightStatus, String copyrightJurisdiction, String copyrightOwner, String rightsHolderType,
         String program, String access, String beginDate, String endDate )
     {
         Element o = (Element)doc.selectSingleNode("//dams:Object");
@@ -130,10 +141,14 @@ public class RecordUtil
         }
         
         // collections
-        for ( int i = 0; collectionURIs != null && i < collectionURIs.length; i++ )
-        {
-            String uri = collectionURIs[i];
-            o.addElement("dams:collection",damsURI).addAttribute(rdfResource, uri);
+        if (collections != null && collections.size() > 0) {
+	        for ( Iterator<String> it = collections.keySet().iterator(); it.hasNext(); )
+	        {
+	            String uri = it.next();
+	            String collType = collections.get(uri);
+	            String collPredicate = StringUtils.isNotBlank(collType) ? collType.substring(0, 1).toLowerCase() + collType.substring(1) : "collection";
+	            o.addElement("dams:" + collPredicate, damsURI).addAttribute(rdfResource, uri);
+	        }
         }
 
         // copyright
@@ -143,14 +158,21 @@ public class RecordUtil
 	        {
 	            c.addElement("dams:copyrightJurisdiction",damsURI).setText( copyrightJurisdiction );
 	        }
-	        c.addElement("dams:copyrightStatus",damsURI).setText( copyrightStatus );
+            if ( copyrightStatus.startsWith("Copyrighted (") )
+            {
+	            c.addElement("dams:copyrightStatus",damsURI).setText( "Copyrighted" );
+            }
+            else
+            {
+	            c.addElement("dams:copyrightStatus",damsURI).setText( copyrightStatus );
+            }
 	        if ( copyrightStatus.equals( copyrightRegents ) )
 	        {
-	            addRightsHolder( o, "UC Regents");
+	            addRightsHolder( o, copyrightStatus, "UC Regents");
 	        }
 	        else if ( !isBlank(copyrightOwner) )
 	        {
-	            addRightsHolder( o, copyrightOwner );
+	            addRightsHolder( o, copyrightStatus, copyrightOwner );
 	        }
         }
 
@@ -292,7 +314,7 @@ public class RecordUtil
             Element rest = e.addElement("dams:restriction",damsURI)
                 .addElement("dams:Restriction",damsURI);
             rest.addElement("dams:type",damsURI).setText(restriction);
-            if (!isBlank(permission)) {
+            if (isBlank(permission)) {
 	        	if ( !isBlank(beginDate) )
 	            {
 	                rest.addElement("dams:beginDate",damsURI).setText(beginDate);
@@ -304,13 +326,30 @@ public class RecordUtil
             }
         }
     }
-    private static void addRightsHolder( Element o, String rightsHolder )
+    private static void addRightsHolder( Element o, String copyrightStatus, String rightsHolder )
     {
-        Element name = o.addElement("dams:rightsHolder",damsURI).addElement("mads:Name",madsURI);
+        String predicate = null;
+        String nameClass = null;
+        if ( copyrightStatus.equals(copyrightPerson) )
+        {
+            predicate = "dams:rightsHolderPersonal";
+            nameClass = "mads:PersonalName";
+        }
+        else if ( copyrightStatus.equals(copyrightCorporate) || copyrightStatus.equals(copyrightRegents) )
+        {
+            predicate = "dams:rightsHolderCorporate";
+            nameClass = "mads:CorporateName";
+        }
+        if ( copyrightStatus.equals(copyrightOther) )
+        {
+            predicate = "dams:rightsHolderName";
+            nameClass = "mads:Name";
+        }
+        Element name = o.addElement(predicate,damsURI).addElement(nameClass,madsURI);
         name.addElement("mads:authoritativeLabel",madsURI).setText(rightsHolder);
         Element el = name.addElement("mads:elementList");
         el.addAttribute( new QName("parseType",rdfNS), "Collection" );
-        el.addElement("mads:NameElement",madsURI).addElement("mads:elementValue",madsURI)
+        el.addElement("mads:FullNameElement", madsURI).addElement("mads:elementValue", madsURI)
             .setText(rightsHolder);
     }
 

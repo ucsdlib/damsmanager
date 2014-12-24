@@ -187,16 +187,15 @@ public class CollectionReleaseHandler extends CollectionHandler{
 					setStatus("Canceled");
 					clearSession();
 				}
-				
-				
-				if (exeResult) {
-					// Remove the stub collection for merge one-offs release
-					if (releaseOption.equalsIgnoreCase(RELEASE_MERGE) || releaseOption.equalsIgnoreCase(RELEASE_ONE_OFFS)) {
-						damsClient.delete(collectionId, null, null);
-						if(!updateSOLR(collectionId)) {
-							failedCount++;
-							solrUpdateFailed.append("\t" + collectionId);
-						}
+			}
+
+			if (exeResult) {
+				// Remove the stub collection for merge one-offs release
+				if (releaseOption.equalsIgnoreCase(RELEASE_MERGE) || releaseOption.equalsIgnoreCase(RELEASE_ONE_OFFS)) {
+					damsClient.delete(collectionId, null, null);
+					if(!updateSOLR(collectionId)) {
+						failedCount++;
+						solrUpdateFailed.append("\t" + collectionId);
 					}
 				}
 			}

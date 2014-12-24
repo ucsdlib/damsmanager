@@ -64,22 +64,70 @@
 	    }
 	    
 		var copyrightStatusIndex = document.mainForm.copyrightStatus.selectedIndex;
+		var copyrightStatusValue = document.mainForm.copyrightStatus.options[copyrightStatusIndex].value;
 	    if(copyrightStatusIndex == 0){
 	    	alert("Please select copyright status.");
 	    	document.mainForm.copyrightStatus.focus();
 			return false;
 	    }
 	    
-	    var countryCode = document.mainForm.countryCode.value.trim(); 
-	    var accessOverrideVal = document.mainForm.accessOverride.options[accessOverride.selectedIndex].value;
-	    if(accessOverrideVal.indexOf ("Creative Commons") < 0){
-	       	if(countryCode.length != 2 || !countryCode.match(letters)){
-		        alert('Please enter a valid country code with two characters.'); 
-		        document.mainForm.countryCode.focus();
+	    if (copyrightStatusValue == 'Copyrighted (Person)' || csSelectedValue == 'Copyrighted (Corporate)' || csSelectedValue == 'Copyrighted (Other)') {
+		    var countryCode = document.mainForm.countryCode.value.trim(); 
+		    var accessOverrideVal = document.mainForm.accessOverride.options[accessOverride.selectedIndex].value;
+		    if(accessOverrideVal.indexOf ("Creative Commons") < 0){
+		       	if(countryCode.length != 2 || !countryCode.match(letters)){
+			        alert('Please enter a valid country code with two characters.'); 
+			        document.mainForm.countryCode.focus();
+			        return false; 
+		       	}
+	       	}
+
+		    var copyrightOwner = document.mainForm.copyrightOwner.value.trim(); 
+	       	if(copyrightOwner.length == 0){
+		        alert('Copyright owner field is required.'); 
+		        document.mainForm.copyrightOwner.focus();
 		        return false; 
 	       	}
-       	}
-        
+	       	
+		    var rightsHolderTypeIndex = document.mainForm.rightsHolderType.selectedIndex; 
+	       	if(rightsHolderTypeIndex == 0){
+		        alert('Please select a rights holder type.'); 
+		        document.mainForm.rightsHolderType.focus();
+		        return false; 
+	       	}
+	       	
+	       	// License begin/end date validation
+	       	var licenseBeginDate = document.mainForm.licenseBeginDate.value.trim();
+	       	var licenseEndDate = document.mainForm.licenseEndDate.value.trim();
+	       	var beginDate = null;
+	       	var endDate = null;
+	       	if (licenseBeginDate.length > 0) {
+	       		beginDate = parseDate(licenseBeginDate);
+	       		if (beginDate == null) {
+	       			alert ("Please enter a valid license begin date in format yyyy-mm-dd.");
+	       			document.mainForm.licenseBeginDate.focus();
+	       			return false;
+	       		}
+	       	}
+	       	
+	       	if (licenseEndDate.length > 0) {
+		       	endDate = parseDate(licenseEndDate);
+	       		if (endDate == null) {
+	       			alert ("Please enter a valid license end date in format yyyy-mm-dd.");
+	       			document.mainForm.licenseEndDate.focus();
+	       			return false;
+	       		}
+	       	}
+	       	
+	       	if (beginDate != null && endDate != null) {
+	       		if (beginDate > endDate) {
+	       			alert ("Invalid date range: license end date can't be earilier than the license begin date!");
+	       			document.mainForm.licenseEndDate.focus();
+	       			return false;
+		       	}
+	       	}
+	    }
+	    
 		var programIndex = document.mainForm.program.selectedIndex;
 	    if(programIndex == 0){
 	    	alert("Please select a program.");
@@ -146,7 +194,77 @@
 		else
 			$("#sourceTitle").text("Metadata Location");
 	}
-	  
+
+	var accessOverrideOptions = ${model.accessOverride};
+	function copyrightStatusChanged() {
+		var csSelectedIdx = document.mainForm.copyrightStatus.selectedIndex;
+		var csOptions = document.mainForm.copyrightStatus.options;
+		var csSelectedValue = csOptions[csSelectedIdx].value;
+		var copyrightOwnerField = $("#copyrightOwnerField");
+		var rightsHolderTypeField = $("#rightsHolderTypeField");
+		var accessOverrideField = $("#accessOverrideField");
+		var licenseBeginDateField = $("#licenseBeginDateField");
+		var licenseEndDateField = $("#licenseEndDateField");
+
+		if (csSelectedValue == '' || csSelectedValue == 'Public domain') {
+			$(copyrightOwnerField).hide();
+			$(accessOverrideField).hide();
+			$(licenseBeginDateField).hide();
+			$(licenseEndDateField).hide();
+		} else if (csSelectedValue == 'Copyright UC Regents') {
+			$(copyrightOwnerField).show();
+			$("#copyrightOwner").val("UC Regents").prop('disabled', true);
+			$(rightsHolderTypeField).hide();
+
+			// access override
+			$(accessOverrideField).show();
+			var aoOptions = ["Curator", "Click through - cultural sensitivity", "Restricted - cultural sensitivity"];
+			addAccessOverrideOptions(aoOptions);
+
+			$(licenseBeginDateField).hide();
+			$(licenseEndDateField).hide();
+		} else if (csSelectedValue == 'Copyrighted (Person)' || csSelectedValue == 'Copyrighted (Corporate)' || csSelectedValue == 'Copyrighted (Other)') {
+			$(copyrightOwnerField).show();
+			$("#copyrightOwner").val("").prop('disabled', false);
+			$(rightsHolderTypeField).show();
+
+			// access override
+			$(accessOverrideField).show();
+			addAccessOverrideOptions(accessOverrideOptions);
+			
+			$(licenseBeginDateField).show();
+			$(licenseEndDateField).show();
+		} else if (csSelectedValue == 'Unknown') {
+			$(copyrightOwnerField).hide();
+
+			// access override
+			$(accessOverrideField).show();
+			var aoOptions = ["Public - open fair use", "UCSD - educational fair use", "Curator", "Click through - cultural sensitivity", "Restricted - cultural sensitivity"];
+			addAccessOverrideOptions(aoOptions);
+
+			$(licenseBeginDateField).hide();
+			$(licenseEndDateField).hide();
+		}
+	}
+
+	function addAccessOverrideOptions(options) {
+		$("#accessOverride").find("option").remove();
+		$('#accessOverride').append('<option value=""> -- access override -- </option>');
+		$.each(options, function(key, val) {
+			$('#accessOverride').append('<option value="' + val + '">' + val + '</option>');
+		});
+	}
+
+	// parse a date in yyyy-mm-dd format
+	function parseDate(input) {
+	  var parts = input.split('-');
+	  if (parts.length != 3) {
+		  return null;
+	  }
+	  // new Date(year, month [, day [, hours[, minutes[, seconds[, ms]]]]])
+	  return new Date(parts[0], parts[1]-1, parts[2]); // Note: months are 0-based
+	}
+
 	$(function() {
 		var beginCal = $( "#licenseBeginDate" );
 		var endCal = $( "#licenseEndDate" );
@@ -194,7 +312,7 @@
 <div style="background:#DDDDDD;padding-top:8px;padding-bottom:8px;padding-left:25px;" align="left">
 		<span class="submenuText"><span class="requiredLabel">*</span><b>Collection Selection:&nbsp;</b></span>
 		<span style="padding:0px 5px 0px 7px;">
-			<select id="category" name="category" onChange="selectCollection(this);" class="inputText" >
+			<select id="category" name="category" class="inputText" >
 				<option value=""> -- collections -- </option>
 				<c:forEach var="entry" items="${model.categories}">
 					<c:set var="colNameLen"> ${fn:length(entry.key)}</c:set>
@@ -210,7 +328,7 @@
 </div>
 <div style="margin-top:10px;padding-left:20px;" align="left">
 	<table>
-		<tr align="left">
+		<tr align="left" style="width:160px">
 			<td height="25px">
 				<span class="submenuText"><span class="requiredLabel">*</span><b>Metadata Source: </b></span>
 			</td>
@@ -254,7 +372,7 @@
 				<span class="submenuText"><span class="requiredLabel">*</span><b>Copyright Status: </b></span>
 			</td>
 			<td>
-				<select id="copyrightStatus" name="copyrightStatus" class="inputText">
+				<select id="copyrightStatus" name="copyrightStatus" class="inputText" onChange="copyrightStatusChanged();">
 					<option value=""> -- copyright -- </option>
 					<c:forEach var="val" items="${model.copyrightStatus}">
 						<option value="${val}"><c:out value="${val}" /></option>
@@ -262,20 +380,33 @@
 				</select>
 			</td>
 		</tr>
-		<tr align="left">
-			<td height="25px">
-				<span class="submenuText" style="padding-left: 6px"><b>Copyright Jurisdiction: </b></span>
+		<tr align="left" id="copyrightJurisdictionField">
+			<td height="25px" style="width:160px nowrap">
+				<span class="submenuText"><span class="requiredLabel" id="copyrightJurisdiction_required">*</span><b>Copyright Jurisdiction: </b></span>
 			</td>
 			<td  align="left">
-				<span class="submenuText"><input type="text" id="countryCode" name="countryCode" size="20"></span>
+				<span class="submenuText"><input type="text" id="countryCode" name="countryCode" size="20" value="us"></span>
 			</td>
 		</tr>
-		<tr align="left">
+		<tr align="left" id="copyrightOwnerField" style="display:none;">
 			<td height="25px">
-				<span class="submenuText" style="padding-left: 6px"><b>Copyright Owner: </b></span>
+				<span class="submenuText"><span class="requiredLabel" id="copyrightOwner_required">*</span><b>Copyright Owner: </b></span>
 			</td>
 			<td  align="left">
-				<span class="submenuText"><input type="text" name="copyrightOwner" size="20"></span>
+				<span class="submenuText"><input type="text" id="copyrightOwner" name="copyrightOwner" size="20"></span>
+			</td>
+		</tr>
+		<tr align="left" id="rightsHolderTypeField" style="display:none;">
+			<td height="25px">
+				<span class="submenuText"><span class="requiredLabel" id="rightsHolderType_required">*</span><b>Rights Holder Type: </b></span>
+			</td>
+			<td  align="left">
+				<select id="rightsHolderType" name="rightsHolderType" class="inputText">
+					<option value=""> -- Rights Holder Types -- </option>
+					<c:forEach var="val" items="${model.rightsHolderTypes}">
+						<option value="${val}"><c:out value="${val}" /></option>
+					</c:forEach>
+				</select>
 			</td>
 		</tr>
 		<tr align ="left">
@@ -291,9 +422,9 @@
 				</select>
 			</td>
 		</tr>
-		<tr align ="left">
+		<tr align ="left" id="accessOverrideField" style="display:none;">
 			<td height="25px">
-				<span class="submenuText" style="padding-left: 6px"><b>Access Override: </b></span>
+				<span class="submenuText"><span class="requiredLabel" id="accessOverride_required" style="padding-left:6px;"></span><b>Access Override: </b></span>
 			</td>
 			<td>
 				<select id="accessOverride" name="accessOverride" class="inputText">
@@ -304,20 +435,20 @@
 				</select>
 			</td>
 		</tr>
-		<tr align="left">
+		<tr align="left" id="licenseBeginDateField" style="display:none;">
 			<td height="25px">
-				<span class="submenuText" style="padding-left: 6px"><b>License Begin Date: </b></span>
+				<span class="submenuText"><span class="requiredLabel" id="licenseBeginDate_required" style="padding-left:6px;"></span><b>License Begin Date: </b></span>
 			</td>
 			<td  align="left">
-				<span class="submenuText"><input type="text" id="licenseBeginDate" name="licenseBeginDate" size="25" style="cursor:pointer;" value="${model.licenseBeginDate}"></span>
+				<span class="submenuText"><input type="text" id="licenseBeginDate" name="licenseBeginDate" size="25" style="cursor:pointer;margin-right:2px;" value="${model.licenseBeginDate}"></span>
 			</td>
 		</tr>
-		<tr align="left">
+		<tr align="left"  id="licenseEndDateField" style="display:none;">
 			<td height="25px">
-				<span class="submenuText" style="padding-left: 6px"><b>License End Date: </b></span>
+				<span class="submenuText"><span class="requiredLabel" id="licenseEndDate_required" style="padding-left:6px;"></span><b>License End Date: </b></span>
 			</td>
 			<td  align="left">
-				<span class="submenuText"><input type="text" id="licenseEndDate" name="licenseEndDate" size="25" style="cursor:pointer;" value="${model.licenseEndDate}"></span>
+				<span class="submenuText"><input type="text" id="licenseEndDate" name="licenseEndDate" size="25" style="cursor:pointer;margin-right:2px;" value="${model.licenseEndDate}"></span>
 			</td>
 		</tr>
 		<tr align="left">

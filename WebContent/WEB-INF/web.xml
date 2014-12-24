@@ -107,6 +107,7 @@
 	        <url-pattern>/marcModsImport.do</url-pattern>
 	        <url-pattern>/collectionRelease.do</url-pattern>
 	        <url-pattern>/collection.do</url-pattern>
+	        <url-pattern>/operationHandler.do</url-pattern>
     	</web-resource-collection>
     	<auth-constraint>
         	<role-name>32</role-name>
