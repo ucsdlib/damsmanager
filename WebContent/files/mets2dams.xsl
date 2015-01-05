@@ -88,15 +88,18 @@
   </xsl:template>
   <xsl:template name="file">
     <xsl:variable name="fid" select="mets:fptr/@FILEID"/>
-    <dams:hasFile>
-      <xsl:variable name="fileURI">
+    <xsl:for-each select="//mets:file[@ID=$fid]">
+      <xsl:variable name="fileAbout">
         <xsl:choose>
-          <xsl:when test="@LOCTYPE='URL'"><xsl:value-of select="@xlink:href"/></xsl:when>
+          <xsl:when test="mets:FLocat/@LOCTYPE='URL'
+                  and starts-with(mets:FLocat/@xlink:href,'http://library.ucsd.edu/ark:/')">
+            <xsl:value-of select="mets:FLocat/@xlink:href"/>
+          </xsl:when>
           <xsl:otherwise><xsl:value-of select="/mets:mets/@OBJID"/>/FID</xsl:otherwise>
         </xsl:choose>
       </xsl:variable>
-      <dams:File rdf:about="{/mets:mets/@OBJID}/FID">
-        <xsl:for-each select="//mets:file[@ID=$fid]">
+      <dams:hasFile>
+        <dams:File rdf:about="{$fileAbout}">
           <dams:use>
             <xsl:choose>
               <xsl:when test="@USE = 'Audio-Master'">audio-source</xsl:when>
@@ -121,9 +124,9 @@
           <dams:sourceFileName>
             <xsl:value-of select="mets:FLocat/@xlink:href"/>
           </dams:sourceFileName>
-        </xsl:for-each>
-      </dams:File>
-    </dams:hasFile>
+        </dams:File>
+      </dams:hasFile>
+    </xsl:for-each>
   </xsl:template>
   <xsl:template name="mods">
     <xsl:param name="dmdid"/>
