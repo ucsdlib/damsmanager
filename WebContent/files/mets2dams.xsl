@@ -409,6 +409,7 @@
             <xsl:when test="@displayLabel = 'identifier:basket'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>basket</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:collection number'">
               <dams:type>identifier</dams:type>
@@ -428,6 +429,7 @@
             <xsl:when test="@displayLabel = 'identifier:EDM'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>EDM</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:filename'">
               <dams:type>identifier</dams:type>
@@ -467,6 +469,7 @@
             <xsl:when test="@displayLabel = 'identifier:registration number'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>registration number</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:roger record'">
               <dams:type>identifier</dams:type>
