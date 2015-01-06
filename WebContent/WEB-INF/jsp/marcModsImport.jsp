@@ -63,6 +63,13 @@
 			return false;
 	    }
 	    
+		var programIndex = document.mainForm.program.selectedIndex;
+	    if(programIndex == 0){
+	    	alert("Please select a program.");
+	    	document.mainForm.program.focus();
+			return false;
+	    }
+	    
 		var copyrightStatusIndex = document.mainForm.copyrightStatus.selectedIndex;
 		var csSelectedValue = document.mainForm.copyrightStatus.options[copyrightStatusIndex].value;
 	    if(copyrightStatusIndex == 0){
@@ -126,13 +133,6 @@
 	       			return false;
 		       	}
 	       	}
-	    }
-	    
-		var programIndex = document.mainForm.program.selectedIndex;
-	    if(programIndex == 0){
-	    	alert("Please select a program.");
-	    	document.mainForm.program.focus();
-			return false;
 	    }
         
 	    var message = "Are you sure to import objects from METS/MODS metadata source? \n";
@@ -369,6 +369,19 @@
 		</tr>
 		<tr align ="left">
 			<td height="25px">
+				<span class="submenuText"><span class="requiredLabel">*</span><b>Program: </b></span>
+			</td>
+			<td>
+				<select id="program" name="program" class="inputText">
+					<option value=""> -- program -- </option>
+					<c:forEach var="val" items="${model.program}">
+						<option value="${val}"><c:out value="${val}" /></option>
+					</c:forEach>
+				</select>
+			</td>
+		</tr>
+		<tr align ="left">
+			<td height="25px">
 				<span class="submenuText"><span class="requiredLabel">*</span><b>Copyright Status: </b></span>
 			</td>
 			<td>
@@ -404,19 +417,6 @@
 				<select id="rightsHolderType" name="rightsHolderType" class="inputText">
 					<option value=""> -- Rights Holder Types -- </option>
 					<c:forEach var="val" items="${model.rightsHolderTypes}">
-						<option value="${val}"><c:out value="${val}" /></option>
-					</c:forEach>
-				</select>
-			</td>
-		</tr>
-		<tr align ="left">
-			<td height="25px">
-				<span class="submenuText"><span class="requiredLabel">*</span><b>Program: </b></span>
-			</td>
-			<td>
-				<select id="program" name="program" class="inputText">
-					<option value=""> -- program -- </option>
-					<c:forEach var="val" items="${model.program}">
 						<option value="${val}"><c:out value="${val}" /></option>
 					</c:forEach>
 				</select>

@@ -155,7 +155,7 @@ public class TabularRecord implements Record
     {
         if ( ark == null ) { ark = "ARK"; }
         String id = (cmp > 0) ? ark + "/" + cmp : ark;
-        String fileID = ark + "/" + cmp + "/1";
+        String fileID = id + "/1";
         addAttribute(e, "about", rdfNS, id);
 
         // typeOfResource ///////////////////////////////////////////////////////////////
