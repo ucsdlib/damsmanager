@@ -24,6 +24,7 @@ public class RecordUtil
     private static String copyrightCorporate = "Copyrighted (Corporate)";
     private static String copyrightOther = "Copyrighted (Other)";
     private static String copyrightUnknown = "Unknown";
+    private static String underCopyright = "Under copyright";
 
     private static String accessPublicLicense           = "Public - granted by rights holder";
     private static String accessPublicFairUse           = "Public - open fair use";
@@ -158,9 +159,9 @@ public class RecordUtil
 	        {
 	            c.addElement("dams:copyrightJurisdiction",damsURI).setText( copyrightJurisdiction );
 	        }
-            if ( copyrightStatus.startsWith("Copyrighted (") )
+            if ( copyrightStatus.startsWith("Copyrighted (") || copyrightStatus.equals(copyrightRegents) )
             {
-	            c.addElement("dams:copyrightStatus",damsURI).setText( "Copyrighted" );
+	            c.addElement("dams:copyrightStatus",damsURI).setText( underCopyright );
             }
             else
             {
