@@ -64,14 +64,14 @@
 	    }
 	    
 		var copyrightStatusIndex = document.mainForm.copyrightStatus.selectedIndex;
-		var copyrightStatusValue = document.mainForm.copyrightStatus.options[copyrightStatusIndex].value;
+		var csSelectedValue = document.mainForm.copyrightStatus.options[copyrightStatusIndex].value;
 	    if(copyrightStatusIndex == 0){
 	    	alert("Please select copyright status.");
 	    	document.mainForm.copyrightStatus.focus();
 			return false;
 	    }
 	    
-	    if (copyrightStatusValue == 'Copyrighted (Person)' || csSelectedValue == 'Copyrighted (Corporate)' || csSelectedValue == 'Copyrighted (Other)') {
+	    if (csSelectedValue == 'Copyrighted (Person)' || csSelectedValue == 'Copyrighted (Corporate)' || csSelectedValue == 'Copyrighted (Other)') {
 		    var countryCode = document.mainForm.countryCode.value.trim(); 
 		    var accessOverrideVal = document.mainForm.accessOverride.options[accessOverride.selectedIndex].value;
 		    if(accessOverrideVal.indexOf ("Creative Commons") < 0){
