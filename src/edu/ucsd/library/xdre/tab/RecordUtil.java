@@ -18,8 +18,8 @@ import org.dom4j.QName;
 public class RecordUtil
 {
     // private type values
-    private static String copyrightPublic  = "Public domain";
-    private static String copyrightRegents = "Copyright UC Regents";
+    public static String copyrightPublic  = "Public domain";
+    public static String copyrightRegents = "Copyright UC Regents";
     private static String copyrightPerson = "Copyrighted (Person)";
     private static String copyrightCorporate = "Copyrighted (Corporate)";
     private static String copyrightOther = "Copyrighted (Other)";
