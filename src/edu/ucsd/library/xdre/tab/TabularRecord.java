@@ -401,6 +401,13 @@ public class TabularRecord implements Record
         {
         	RecordUtil.addRights(e.getDocument(), null, null, copyrightStatus, copyrightJurisdiction, null, null,
         			null, accessOverride, beginDate, endDate);
+        	
+        	// Ingore column "copyright holder corporate name" = "UC Regents" for Copyright Status = "Copyright UC Regents" when presented
+        	if (!StringUtils.isBlank(copyrightStatus) && copyrightStatus.equalsIgnoreCase(RecordUtil.copyrightRegents)){
+	        	String rightsHolders = data.get("copyright holder corporate name");
+	        	if (!StringUtils.isBlank(rightsHolders) && rightsHolders.trim().equalsIgnoreCase("UC Regents"))
+	        		data.remove("copyright holder corporate name");
+        	}
         }
         
         // rights holder (special case of subject name) /////////////////////////////////
