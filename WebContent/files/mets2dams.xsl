@@ -174,6 +174,7 @@
       <xsl:if test="$last != 'true'"><xsl:text>; </xsl:text></xsl:if>
     </xsl:if>
   </xsl:template>
+<!-- XXX: selectively enable for items with URLs? (see https://lib-jira.ucsd.edu:8443/browse/DI-7)
   <xsl:template match="mods:mods/mods:titleInfo|mods:relatedItem/mods:titleInfo">
     <dams:title>
       <mads:Title>
@@ -199,6 +200,7 @@
       </mads:Title>
     </dams:title>
   </xsl:template>
+-->
   <xsl:template match="mods:titleInfo/mods:title">
     <mads:MainTitleElement>
       <mads:elementValue><xsl:value-of select="."/></mads:elementValue>
