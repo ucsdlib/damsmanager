@@ -353,7 +353,7 @@
           <xsl:when test="@displayLabel = 'Scope and Contents note'">
             <dams:type>scope and content</dams:type>
           </xsl:when>
-          <xsl:when test="@displayLabel = 'Abstract'">
+          <xsl:when test="@displayLabel = 'Abstract' or @displayLabel = 'inscription'">
             <dams:type>description</dams:type>
           </xsl:when>
           <xsl:otherwise>
