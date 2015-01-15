@@ -33,6 +33,7 @@ public class TabularRecord implements Record
     public static final String OBJECT_COMPONENT_TYPE = "object/component";
     public static final String COMPONENT = "component";
     public static final String DELIMITER = "|";
+    public static final String DELIMITER_CELL = "@";
     public static final String[] ACCEPTED_DATE_FORMATS = {"yyyy-MM-dd", "yyyy-MM", "yyyy"};
     private static DateFormat[] dateFormats = {new SimpleDateFormat(ACCEPTED_DATE_FORMATS[0]), 
     	new SimpleDateFormat(ACCEPTED_DATE_FORMATS[1]), new SimpleDateFormat(ACCEPTED_DATE_FORMATS[2])};
@@ -340,11 +341,11 @@ public class TabularRecord implements Record
             if ( key.startsWith("related resource") )
             {
                 String values = data.get( key );
-
-            	if ( pop(values) ) {
-            		values = values.trim();
-	                String[] elemValues = values.split("\\|\\|");
-	            	if (elemValues.length == 1 && !(values.startsWith("||") || values.endsWith("||")) || elemValues.length > 2) {
+                for ( String value : split(values) )
+                {
+	                String[] elemValues = value.split("\\" + DELIMITER_CELL);
+	            	if (elemValues.length == 1 && !(values.startsWith(DELIMITER_CELL) || values.endsWith(DELIMITER_CELL))) {
+	            		elemValues = value.split(" " + DELIMITER_CELL + " ");
 	            		throw new Exception("Invalid Related Resource value in record " + recordID() + ": \"" + values + "\"");
 	            	}
 	            	
