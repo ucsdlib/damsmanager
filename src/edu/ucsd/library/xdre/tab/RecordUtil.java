@@ -18,12 +18,13 @@ import org.dom4j.QName;
 public class RecordUtil
 {
     // private type values
-    private static String copyrightPublic  = "Public domain";
-    private static String copyrightRegents = "Copyright UC Regents";
+    public static String copyrightPublic  = "Public domain";
+    public static String copyrightRegents = "Copyright UC Regents";
     private static String copyrightPerson = "Copyrighted (Person)";
     private static String copyrightCorporate = "Copyrighted (Corporate)";
     private static String copyrightOther = "Copyrighted (Other)";
     private static String copyrightUnknown = "Unknown";
+    private static String underCopyright = "Under copyright";
 
     private static String accessPublicLicense           = "Public - granted by rights holder";
     private static String accessPublicFairUse           = "Public - open fair use";
@@ -60,6 +61,42 @@ public class RecordUtil
         + "image of a person or persons now deceased. In some Aboriginal Communities, hearing "
         + "names or seeing images of deceased persons may cause sadness or distress, particularly "
         + "to the relatives of these people.";
+
+    private static String copyrightPurposeNote = "Use: This work is available from the UC San "
+        + "Diego Library. This digital copy of the work is intended to support research, teaching, "
+        + "and private study.";
+    private static String copyrightNoteCopyrightedUS = "Constraint(s) on Use: This work is "
+        + "protected by the U.S. Copyright Law (Title 17, U.S.C.). Use of this work beyond that "
+        + "allowed by \"fair use\" requires written permission of the copyright holder(s). "
+        + "Responsibility for obtaining permissions and any use and distribution of this work "
+        + "rests exclusively with the user and not the UC San Diego Library. Inquiries can be made "
+        + "to the UC San Diego Library program having custody of the work.";
+    private static String copyrightNoteCopyrightedRegents = "Constraint(s) on Use: This work is "
+        + "protected by the U.S. Copyright Law (Title 17, U.S.C.). Use of this work beyond that "
+        + "allowed by \"fair use\" requires written permission of the UC Regents. Responsibility "
+        + "for obtaining permissions and any use and distribution of this work rests exclusively "
+        + "with the user and not the UC San Diego Library. Inquiries can be made to the UC San "
+        + "Diego Library program having custody of the work.";
+    private static String copyrightNoteCopyrightedOther = "Constraint(s) on Use: This work is "
+        + "protected by the copyright law. Use of this work beyond that allowed by the applicable "
+        + "copyright statute requires written permission of the copyright holder(s). "
+        + "Responsibility for obtaining permissions and any use and distribution of this work "
+        + "rests exclusively with the user and not the UC San Diego Library. Inquiries can be made "
+        + "to the UC San Diego Library program having custody of the work.";
+    private static String copyrightNotePublicDomain = "Constraint(s) on Use: This work may be used "
+        + "without prior permission.";
+    private static String copyrightNoteUnknownUS = "Constraint(s) on Use: This work may be "
+        + "protected by the U.S. Copyright Law (Title 17, U.S.C.). Use of this work beyond that "
+        + "allowed by \"fair use\" requires the written permission of the copyright holders(s). "
+        + "Responsibility for obtaining permissions and any use and distribution of this work "
+        + "rests exclusively with the user and not the UC San Diego Libraries. Inquiries can be "
+        + "made to the UC San Diego Libraries department having custody of the work.";
+    private static String copyrightNoteUnknownOther = "Constraint(s) on Use: This work may be "
+    	+ "protected by the copyright law. Use of this work beyond that allowed by the applicable "
+        + "copyright statute requires the written permission of the copyright holders(s). "
+        + "Responsibility for obtaining permissions and any use and distribution of this work "
+        + "rests exclusively with the user and not the UC San Diego Libraries. Inquiries can be "
+        + "made to the UC San Diego Libraries department having custody of the work.";
 
     /**
      * Copyright values.
@@ -153,27 +190,43 @@ public class RecordUtil
 
         // copyright
         if (!isBlank(copyrightStatus)) {
-	        Element c = o.addElement("dams:copyright",damsURI).addElement("dams:Copyright",damsURI);
-	        if ( !isBlank(copyrightJurisdiction) )
-	        {
-	            c.addElement("dams:copyrightJurisdiction",damsURI).setText( copyrightJurisdiction );
-	        }
-            if ( copyrightStatus.startsWith("Copyrighted (") )
-            {
-	            c.addElement("dams:copyrightStatus",damsURI).setText( "Copyrighted" );
+            Element c = o.addElement("dams:copyright",damsURI).addElement("dams:Copyright",damsURI);
+            if ( !isBlank(copyrightJurisdiction) ) {
+                c.addElement("dams:copyrightJurisdiction",damsURI).setText( copyrightJurisdiction );
             }
-            else
-            {
-	            c.addElement("dams:copyrightStatus",damsURI).setText( copyrightStatus );
+
+            if ( copyrightStatus.startsWith("Copyrighted (") || copyrightStatus.equals(copyrightRegents) ) {
+                c.addElement("dams:copyrightStatus",damsURI).setText( underCopyright );
+            } else {
+                c.addElement("dams:copyrightStatus",damsURI).setText( copyrightStatus );
             }
-	        if ( copyrightStatus.equals( copyrightRegents ) )
-	        {
-	            addRightsHolder( o, copyrightStatus, "UC Regents");
-	        }
-	        else if ( !isBlank(copyrightOwner) )
-	        {
-	            addRightsHolder( o, copyrightStatus, copyrightOwner );
-	        }
+
+            if ( copyrightStatus.equals( copyrightRegents ) ) {
+                addRightsHolder( o, copyrightStatus, "UC Regents");
+            } else if ( !isBlank(copyrightOwner) ) {
+                addRightsHolder( o, copyrightStatus, copyrightOwner );
+            }
+
+            // copyright boilerplate
+            c.addElement("dams:copyrightPurposeNote").setText(copyrightPurposeNote);
+            if ( copyrightStatus.equals(copyrightPublic) ) {
+                c.addElement("dams:copyrightNote").setText(copyrightNotePublicDomain);
+            } else if ( copyrightStatus.equals(copyrightUnknown) ) {
+                if ( copyrightJurisdiction.equalsIgnoreCase("us") ) {
+                    c.addElement("dams:copyrightNote").setText(copyrightNoteUnknownUS);
+                } else {
+                    c.addElement("dams:copyrightNote").setText(copyrightNoteUnknownOther);
+                }
+            } else if ( copyrightStatus.equals(copyrightRegents) ) {
+                c.addElement("dams:copyrightNote").setText(copyrightNoteCopyrightedRegents);
+            } else if ( copyrightStatus.equals(copyrightPerson) || copyrightStatus.equals(copyrightCorporate)
+                     || copyrightStatus.equals(copyrightOther) || copyrightStatus.toLowerCase().startsWith("under copyright") ) {
+                if ( copyrightJurisdiction.equalsIgnoreCase("us") ) {
+                    c.addElement("dams:copyrightNote").setText(copyrightNoteCopyrightedUS);
+                } else {
+                    c.addElement("dams:copyrightNote").setText(copyrightNoteCopyrightedOther);
+                }
+            }
         }
 
         // other rights

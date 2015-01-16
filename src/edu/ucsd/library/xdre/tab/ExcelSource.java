@@ -81,6 +81,7 @@ public class ExcelSource implements RecordSource
                 headers.add( firstRow.getCell(i).getStringCellValue().toLowerCase() );
             }
             currRow++;
+            cache = parseRow( currRow );
         }
     }
 
@@ -153,6 +154,7 @@ public class ExcelSource implements RecordSource
                 Cell cell = row.getCell(i);
                 if ( cell != null )
                 {
+                	cell.setCellType(Cell.CELL_TYPE_STRING);
                     value = cell.toString();
                 }
             }

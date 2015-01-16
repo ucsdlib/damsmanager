@@ -33,9 +33,12 @@ public class TabularRecord implements Record
     public static final String OBJECT_COMPONENT_TYPE = "object/component";
     public static final String COMPONENT = "component";
     public static final String DELIMITER = "|";
+    public static final String DELIMITER_CELL = "@";
     public static final String[] ACCEPTED_DATE_FORMATS = {"yyyy-MM-dd", "yyyy-MM", "yyyy"};
     private static DateFormat[] dateFormats = {new SimpleDateFormat(ACCEPTED_DATE_FORMATS[0]), 
     	new SimpleDateFormat(ACCEPTED_DATE_FORMATS[1]), new SimpleDateFormat(ACCEPTED_DATE_FORMATS[2])};
+    private static String[] related_resource_types = {"artifact", "basket", "depiction", "journal entry",
+    	"news release", "online exhibit", "online finding aid", "related"};
 
     // namespaces
     private static final Namespace rdfNS  = new Namespace(
@@ -153,7 +156,7 @@ public class TabularRecord implements Record
     {
         if ( ark == null ) { ark = "ARK"; }
         String id = (cmp > 0) ? ark + "/" + cmp : ark;
-        String fileID = ark + "/" + cmp + "/1";
+        String fileID = id + "/1";
         addAttribute(e, "about", rdfNS, id);
 
         // typeOfResource ///////////////////////////////////////////////////////////////
@@ -332,15 +335,40 @@ public class TabularRecord implements Record
         }
 
         // related resource /////////////////////////////////////////////////////////////
-        String relType = data.get("related resource:type");
-        String relURI = data.get("related resource:uri");
-        String relDesc = data.get("related resource:description");
-        if ( pop(relURI) || pop(relDesc) )
+        for ( Iterator<String> it = data.keySet().iterator(); it.hasNext(); )
         {
-            Element rel = addElement(e,"relatedResource",damsNS,"RelatedResource",damsNS);
-            if ( pop(relType) ) { addElement(rel,"type",damsNS).setText(relType); }
-            if ( pop(relURI) ) { addElement(rel,"uri",damsNS).setText(relURI); }
-            if ( pop(relDesc) ) { addElement(rel,"description",damsNS).setText(relDesc); }
+            String key = it.next();
+            if ( key.startsWith("related resource") )
+            {
+                String values = data.get( key );
+                for ( String value : split(values) )
+                {
+	                String[] elemValues = value.split("\\" + DELIMITER_CELL);
+	            	if (elemValues.length == 1 && !(values.startsWith(DELIMITER_CELL) || values.endsWith(DELIMITER_CELL))) {
+	            		elemValues = value.split(" " + DELIMITER_CELL + " ");
+	            		throw new Exception("Invalid Related Resource value in record " + recordID() + ": \"" + values + "\"");
+	            	}
+	            	
+	            	Element rel = addElement(e,"relatedResource", damsNS, "RelatedResource", damsNS);
+	            	if ( pop(elemValues[0]) ) { 
+	            		addElement(rel, "description", damsNS).setText(elemValues[0].trim());
+	            	}
+	
+	            	if ( elemValues.length >= 2 && pop(elemValues[1]) ) { 
+	            		Element uri = addElement(rel, "uri", damsNS);
+	            		addAttribute( uri, "resource", rdfNS, elemValues[1].trim() );
+	            	}
+
+	            	String type = "";
+	            	if (key.indexOf(":") > 0 && key.length() > key.indexOf(":") + 1)
+		            	type = key.substring( key.indexOf(":") + 1 ).trim().toLowerCase();
+	            	
+	            	if (Arrays.asList(related_resource_types).contains(type))
+	            		addElement(rel, "type", damsNS).setText(type);
+	            	else
+	            		throw new Exception("Invalid Related Resource type value for column name: " + key );
+                }
+            }
         }
 
         // files ////////////////////////////////////////////////////////////////////////
@@ -374,6 +402,13 @@ public class TabularRecord implements Record
         {
         	RecordUtil.addRights(e.getDocument(), null, null, copyrightStatus, copyrightJurisdiction, null, null,
         			null, accessOverride, beginDate, endDate);
+        	
+        	// Ingore column "copyright holder corporate name" = "UC Regents" for Copyright Status = "Copyright UC Regents" when presented
+        	if (!StringUtils.isBlank(copyrightStatus) && copyrightStatus.equalsIgnoreCase(RecordUtil.copyrightRegents)){
+	        	String rightsHolders = data.get("copyright holder corporate name");
+	        	if (!StringUtils.isBlank(rightsHolders) && rightsHolders.trim().equalsIgnoreCase("UC Regents"))
+	        		data.remove("copyright holder corporate name");
+        	}
         }
         
         // rights holder (special case of subject name) /////////////////////////////////

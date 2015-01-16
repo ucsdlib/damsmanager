@@ -88,15 +88,18 @@
   </xsl:template>
   <xsl:template name="file">
     <xsl:variable name="fid" select="mets:fptr/@FILEID"/>
-    <dams:hasFile>
-      <xsl:variable name="fileURI">
+    <xsl:for-each select="//mets:file[@ID=$fid]">
+      <xsl:variable name="fileAbout">
         <xsl:choose>
-          <xsl:when test="@LOCTYPE='URL'"><xsl:value-of select="@xlink:href"/></xsl:when>
+          <xsl:when test="mets:FLocat/@LOCTYPE='URL'
+                  and starts-with(mets:FLocat/@xlink:href,'http://library.ucsd.edu/ark:/')">
+            <xsl:value-of select="mets:FLocat/@xlink:href"/>
+          </xsl:when>
           <xsl:otherwise><xsl:value-of select="/mets:mets/@OBJID"/>/FID</xsl:otherwise>
         </xsl:choose>
       </xsl:variable>
-      <dams:File rdf:about="{/mets:mets/@OBJID}/FID">
-        <xsl:for-each select="//mets:file[@ID=$fid]">
+      <dams:hasFile>
+        <dams:File rdf:about="{$fileAbout}">
           <dams:use>
             <xsl:choose>
               <xsl:when test="@USE = 'Audio-Master'">audio-source</xsl:when>
@@ -121,9 +124,9 @@
           <dams:sourceFileName>
             <xsl:value-of select="mets:FLocat/@xlink:href"/>
           </dams:sourceFileName>
-        </xsl:for-each>
-      </dams:File>
-    </dams:hasFile>
+        </dams:File>
+      </dams:hasFile>
+    </xsl:for-each>
   </xsl:template>
   <xsl:template name="mods">
     <xsl:param name="dmdid"/>
@@ -171,6 +174,7 @@
       <xsl:if test="$last != 'true'"><xsl:text>; </xsl:text></xsl:if>
     </xsl:if>
   </xsl:template>
+<!-- XXX: selectively enable for items with URLs? (see https://lib-jira.ucsd.edu:8443/browse/DI-7)
   <xsl:template match="mods:mods/mods:titleInfo|mods:relatedItem/mods:titleInfo">
     <dams:title>
       <mads:Title>
@@ -196,6 +200,7 @@
       </mads:Title>
     </dams:title>
   </xsl:template>
+-->
   <xsl:template match="mods:titleInfo/mods:title">
     <mads:MainTitleElement>
       <mads:elementValue><xsl:value-of select="."/></mads:elementValue>
@@ -348,7 +353,7 @@
           <xsl:when test="@displayLabel = 'Scope and Contents note'">
             <dams:type>scope and content</dams:type>
           </xsl:when>
-          <xsl:when test="@displayLabel = 'Abstract'">
+          <xsl:when test="@displayLabel = 'Abstract' or @displayLabel = 'inscription'">
             <dams:type>description</dams:type>
           </xsl:when>
           <xsl:otherwise>
@@ -406,6 +411,7 @@
             <xsl:when test="@displayLabel = 'identifier:basket'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>basket</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:collection number'">
               <dams:type>identifier</dams:type>
@@ -425,6 +431,7 @@
             <xsl:when test="@displayLabel = 'identifier:EDM'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>EDM</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:filename'">
               <dams:type>identifier</dams:type>
@@ -464,6 +471,7 @@
             <xsl:when test="@displayLabel = 'identifier:registration number'">
               <dams:type>identifier</dams:type>
               <dams:displayLabel>registration number</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:roger record'">
               <dams:type>identifier</dams:type>
