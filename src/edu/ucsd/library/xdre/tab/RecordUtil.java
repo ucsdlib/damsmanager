@@ -220,7 +220,7 @@ public class RecordUtil
             } else if ( copyrightStatus.equals(copyrightRegents) ) {
                 c.addElement("dams:copyrightNote").setText(copyrightNoteCopyrightedRegents);
             } else if ( copyrightStatus.equals(copyrightPerson) || copyrightStatus.equals(copyrightCorporate)
-                     || copyrightStatus.equals(copyrightOther) ) {
+                     || copyrightStatus.equals(copyrightOther) || copyrightStatus.toLowerCase().startsWith("under copyright") ) {
                 if ( copyrightJurisdiction.equalsIgnoreCase("us") ) {
                     c.addElement("dams:copyrightNote").setText(copyrightNoteCopyrightedUS);
                 } else {
