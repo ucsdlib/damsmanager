@@ -637,8 +637,8 @@ public abstract class CollectionHandler implements ProcessHandler {
 	public boolean isDocument(String fileName, String use){
 		fileName = fileName.toLowerCase();
 		String mimeType = DAMSClient.getMimeType(fileName);
-		if((use!=null && use.toLowerCase().startsWith("document")) || 
-				mimeType.indexOf("pdf")>=0 || fileName.endsWith(".pdf"))
+		if(/*(use!=null && use.toLowerCase().startsWith("document")) || */
+				mimeType.toLowerCase().indexOf("pdf")>=0 || fileName.toLowerCase().endsWith(".pdf"))
 			return true;
 		else
 			return false;
