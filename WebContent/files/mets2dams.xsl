@@ -170,7 +170,7 @@
     <xsl:param name="value"/>
     <xsl:param name="last"/>
     <xsl:if test="$value != ''">
-      <xsl:value-of disable-output-escaping="yes" select="$value"/>
+      <xsl:value-of select="$value"/>
       <xsl:if test="$last != 'true'"><xsl:text>; </xsl:text></xsl:if>
     </xsl:if>
   </xsl:template>
