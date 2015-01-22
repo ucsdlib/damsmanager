@@ -366,7 +366,7 @@
     </dams:note>
   </xsl:template>
   <xsl:template match="mods:mods/mods:note">
-    <xsl:if test="text() != ''">
+    <xsl:if test="text() != '' and @displayLabel != 'Digital object made available by '">
       <dams:note>
         <dams:Note>
           <xsl:choose>
