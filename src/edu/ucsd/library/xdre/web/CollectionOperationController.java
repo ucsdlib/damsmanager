@@ -1223,7 +1223,7 @@ public class CollectionOperationController implements Controller {
 		for (File file : files) {
 			String fileName = file.getName();
 			if (fileName.endsWith(".tif")) {
-				  fileUseMap.put(fileName, "image-master");
+				  fileUseMap.put(fileName, "image-source");
 			} else if (fileName.endsWith(".pdf")) {
 				  fileUseMap.put(fileName, "document-service");
 			} else if (fileName.endsWith(".zip")) {
