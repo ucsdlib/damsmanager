@@ -119,6 +119,7 @@
               <xsl:when test="@USE = 'Video-Master'">video-source</xsl:when>
               <xsl:when test="@USE = 'Video-Master-Edited'">video-alternate</xsl:when>
               <xsl:when test="@USE = 'Video-Service'">video-service</xsl:when>
+              <xsl:otherwise><xsl:value-of select="@USE"/></xsl:otherwise>
             </xsl:choose>
           </dams:use>
           <dams:sourceFileName>
