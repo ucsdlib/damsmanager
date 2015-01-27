@@ -102,23 +102,36 @@
         <dams:File rdf:about="{$fileAbout}">
           <dams:use>
             <xsl:choose>
+              <xsl:when test="@USE = 'Application-PDF'">document-service</xsl:when>
+              <xsl:when test="@USE = 'Application-PS'">document-source</xsl:when>
+              <xsl:when test="@USE = 'Audio-Clip'">audio-source</xsl:when>
               <xsl:when test="@USE = 'Audio-Master'">audio-source</xsl:when>
               <xsl:when test="@USE = 'Audio-Master-Edited'">audio-alternate</xsl:when>
               <xsl:when test="@USE = 'Audio-Service'">audio-service</xsl:when>
-              <xsl:when test="@USE = 'Application-PDF'">document-service</xsl:when>
+              <xsl:when test="@USE = 'Audio-Streaming'">audio-service</xsl:when>
               <xsl:when test="@USE = 'Image-Master'">image-source</xsl:when>
               <xsl:when test="@USE = 'Image-Master-Edited'">image-alternate</xsl:when>
               <xsl:when test="@USE = 'Image-Service'">image-service</xsl:when>
-              <xsl:when test="@USE = 'Image-Service-HighRes'">image-large</xsl:when>
-              <xsl:when test="@USE = 'Image-Service-MedRes'">image-preview</xsl:when>
-              <xsl:when test="@USE = 'Image-Service-LowRes'">image-thumbnail</xsl:when>
-              <xsl:when test="@USE = 'Image-Thumbnail'">image-icon</xsl:when>
-              <xsl:when test="@USE = 'Text-Service'">document-service</xsl:when>
-              <xsl:when test="@USE = 'Text-Master'">document-source</xsl:when>
+              <xsl:when test="@USE = 'Image-Service-Edited'">image-service</xsl:when>
+              <xsl:when test="@USE = 'Image-Service-HiRes'">image-huge</xsl:when>
+              <xsl:when test="@USE = 'Image-Service-LowRes'">image-preview</xsl:when>
+              <xsl:when test="@USE = 'Image-Service-MedRes'">image-large</xsl:when>
+              <xsl:when test="@USE = 'Image-Thumbnail'">image-thumbnail</xsl:when>
+              <xsl:when test="@USE = 'Text-Codebook'">data-service</xsl:when>
               <xsl:when test="@USE = 'Text-Data'">data-source</xsl:when>
+              <xsl:when test="@USE = 'Text-Data Definition'">data-source</xsl:when>
+              <xsl:when test="@USE = 'Text-GeoReference'">document-source</xsl:when>
+              <xsl:when test="@USE = 'Text-Master'">document-source</xsl:when>
+              <xsl:when test="@USE = 'Text-OCR-Edited'">document-service</xsl:when>
+              <xsl:when test="@USE = 'Text-OCR-Unedited'">document-service</xsl:when>
+              <xsl:when test="@USE = 'Text-Service'">document-service</xsl:when>
+              <xsl:when test="@USE = 'Text-TEI-Transcripted'">document-service</xsl:when>
+              <xsl:when test="@USE = 'Text-TEI-Translated'">document-service</xsl:when>
+              <xsl:when test="@USE = 'Video-Clip'">video-source</xsl:when>
               <xsl:when test="@USE = 'Video-Master'">video-source</xsl:when>
               <xsl:when test="@USE = 'Video-Master-Edited'">video-alternate</xsl:when>
               <xsl:when test="@USE = 'Video-Service'">video-service</xsl:when>
+              <xsl:when test="@USE = 'Video-Streaming'">video-service</xsl:when>
               <xsl:otherwise><xsl:value-of select="@USE"/></xsl:otherwise>
             </xsl:choose>
           </dams:use>
@@ -567,36 +580,44 @@
     </xsl:choose>
   </xsl:template>
   <xsl:template match="mods:identifier">
-    <xsl:if test="@invalid != 'yes'">
+    <xsl:if test="not(@invalid) or @invalid != 'yes'">
+      <xsl:variable name="type">
+        <xsl:choose>
+          <xsl:when test="@displayLabel != ''"><xsl:value-of select="@displayLabel"/></xsl:when>
+          <xsl:when test="@type != ''"><xsl:value-of select="@type"/></xsl:when>
+        </xsl:choose>
+      </xsl:variable>
       <dams:note>
         <dams:Note>
           <dams:type>identifier</dams:type>
-          <dams:displayLabel><xsl:value-of select="@type"/></dams:displayLabel>
+          <dams:displayLabel><xsl:value-of select="$type"/></dams:displayLabel>
           <xsl:choose>
-            <xsl:when test="@displayLabel = 'ARK'
-                         or @displayLabel = 'basket'
-                         or @displayLabel = 'collection number'
-                         or @displayLabel = 'call number'
-                         or @displayLabel = 'DOI'
-                         or @displayLabel = 'EDM'
-                         or @displayLabel = 'filename'
-                         or @displayLabel = 'IGSN number'
-                         or @displayLabel = 'isbn'
-                         or @displayLabel = 'lccn'
-                         or @displayLabel = 'local'
-                         or @displayLabel = 'negative'
-                         or @displayLabel = 'OCLC number'
-                         or @displayLabel = 'registration number'
-                         or @displayLabel = 'roger record'
-                         or @displayLabel = 'sample number'
-                         or @displayLabel = 'sequence'">
+            <xsl:when test="$type = 'ARK'
+                         or $type = 'basket'
+                         or $type = 'collection number'
+                         or $type = 'call number'
+                         or $type = 'DOI'
+                         or $type = 'EDM'
+                         or $type = 'filename'
+                         or $type = 'IGSN number'
+                         or $type = 'isbn'
+                         or $type = 'lccn'
+                         or $type = 'local'
+                         or $type = 'negative'
+                         or $type = 'OCLC number'
+                         or $type = 'registration number'
+                         or $type = 'roger record'
+                         or $type = 'sample number'
+                         or $type = 'sequence'">
               <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:otherwise>
               <rdf:value>
                 <xsl:text>identifier:</xsl:text>
-                <xsl:value-of select="@displayLabel"/>
-                <xsl:text>: </xsl:text>
+                <xsl:if test="$type != ''">
+                  <xsl:value-of select="$type"/>
+                  <xsl:text>: </xsl:text>
+                </xsl:if>
                 <xsl:value-of select="."/>
               </rdf:value>
             </xsl:otherwise>
