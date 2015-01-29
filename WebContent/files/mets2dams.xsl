@@ -579,16 +579,18 @@
       <dams:note>
         <dams:Note>
           <dams:type>identifier</dams:type>
-          <dams:displayLabel><xsl:value-of select="$type"/></dams:displayLabel>
           <xsl:choose>
             <xsl:when test="$type = 'isbn'">
-              <rdf:value>ISBN</rdf:value>
+              <dams:displayLabel>ISBN</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="$type = 'lccn'">
-              <rdf:value>LCCN</rdf:value>
+              <dams:displayLabel>LCCN</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="$type = 'roger record'">
-              <rdf:value>Roger record</rdf:value>
+              <dams:displayLabel>Roger record</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="$type = 'ARK'
                          or $type = 'basket'
@@ -604,6 +606,7 @@
                          or $type = 'registration number'
                          or $type = 'sample number'
                          or $type = 'sequence'">
+              <dams:displayLabel><xsl:value-of select="$type"/></dams:displayLabel>
               <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:otherwise>
@@ -906,7 +909,10 @@
     </xsl:choose>
   </xsl:template>
   <xsl:template match="mods:mods/mods:genre">
-    <dams:genreForm><xsl:call-template name="simplesubject"/></dams:genreForm>
+    <xsl:variable name="value" select="."/>
+    <xsl:if test="not(//mods:subject/mods:genre[text() = $value])">
+      <dams:genreForm><xsl:call-template name="simplesubject"/></dams:genreForm>
+    </xsl:if>
   </xsl:template>
   <xsl:template name="simplesubject" match="mods:genre|mods:geographic|mods:occupation|mods:temporal|mods:topic">
     <xsl:variable name="elemName">
