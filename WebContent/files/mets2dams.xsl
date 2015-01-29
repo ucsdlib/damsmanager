@@ -909,7 +909,12 @@
     </xsl:choose>
   </xsl:template>
   <xsl:template match="mods:mods/mods:genre">
-    <xsl:variable name="value" select="."/>
+    <xsl:variable name="upper">ABCDEFGHIJKLMNOPQRSTUVWXYZ</xsl:variable>
+    <xsl:variable name="lower">abcdefghijklmnopqrstuvwxyz</xsl:variable>
+    <xsl:variable name="value">
+      <xsl:value-of select="translate( substring(., 1, 1), $lower, $upper)"/>
+      <xsl:value-of select="substring(., 2)"/>
+    </xsl:variable>
     <xsl:if test="not(//mods:subject/mods:genre[text() = $value])">
       <dams:genreForm><xsl:call-template name="simplesubject"/></dams:genreForm>
     </xsl:if>
