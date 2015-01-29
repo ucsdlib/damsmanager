@@ -360,18 +360,7 @@
           <xsl:when test="@displayLabel = 'Scope and Contents note'">
             <dams:type>scope and content</dams:type>
           </xsl:when>
-          <xsl:when test="@displayLabel = 'Abstract' or @displayLabel = 'inscription'">
-            <dams:type>description</dams:type>
-          </xsl:when>
           <xsl:otherwise>
-            <dams:displayLabel>
-              <xsl:choose>
-                <xsl:when test="@displayLabel != ''">
-                  <xsl:value-of select="@displayLabel"/>
-                </xsl:when>
-                <xsl:otherwise>Abstract</xsl:otherwise>
-              </xsl:choose>
-            </dams:displayLabel>
             <dams:type>description</dams:type>
           </xsl:otherwise>
         </xsl:choose>
@@ -482,7 +471,7 @@
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:roger record'">
               <dams:type>identifier</dams:type>
-              <dams:displayLabel>roger record</dams:displayLabel>
+              <dams:displayLabel>Roger record</dams:displayLabel>
               <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:sample number'">
@@ -592,6 +581,15 @@
           <dams:type>identifier</dams:type>
           <dams:displayLabel><xsl:value-of select="$type"/></dams:displayLabel>
           <xsl:choose>
+            <xsl:when test="$type = 'isbn'">
+              <rdf:value>ISBN</rdf:value>
+            </xsl:when>
+            <xsl:when test="$type = 'lccn'">
+              <rdf:value>LCCN</rdf:value>
+            </xsl:when>
+            <xsl:when test="$type = 'roger record'">
+              <rdf:value>Roger record</rdf:value>
+            </xsl:when>
             <xsl:when test="$type = 'ARK'
                          or $type = 'basket'
                          or $type = 'collection number'
@@ -600,13 +598,10 @@
                          or $type = 'EDM'
                          or $type = 'filename'
                          or $type = 'IGSN number'
-                         or $type = 'isbn'
-                         or $type = 'lccn'
                          or $type = 'local'
                          or $type = 'negative'
                          or $type = 'OCLC number'
                          or $type = 'registration number'
-                         or $type = 'roger record'
                          or $type = 'sample number'
                          or $type = 'sequence'">
               <rdf:value><xsl:value-of select="."/></rdf:value>
