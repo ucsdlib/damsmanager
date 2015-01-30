@@ -102,23 +102,37 @@
         <dams:File rdf:about="{$fileAbout}">
           <dams:use>
             <xsl:choose>
+              <xsl:when test="@USE = 'Application-PDF'">document-service</xsl:when>
+              <xsl:when test="@USE = 'Application-PS'">document-source</xsl:when>
+              <xsl:when test="@USE = 'Audio-Clip'">audio-source</xsl:when>
               <xsl:when test="@USE = 'Audio-Master'">audio-source</xsl:when>
               <xsl:when test="@USE = 'Audio-Master-Edited'">audio-alternate</xsl:when>
               <xsl:when test="@USE = 'Audio-Service'">audio-service</xsl:when>
-              <xsl:when test="@USE = 'Application-PDF'">document-service</xsl:when>
+              <xsl:when test="@USE = 'Audio-Streaming'">audio-service</xsl:when>
               <xsl:when test="@USE = 'Image-Master'">image-source</xsl:when>
               <xsl:when test="@USE = 'Image-Master-Edited'">image-alternate</xsl:when>
               <xsl:when test="@USE = 'Image-Service'">image-service</xsl:when>
-              <xsl:when test="@USE = 'Image-Service-HighRes'">image-large</xsl:when>
-              <xsl:when test="@USE = 'Image-Service-MedRes'">image-preview</xsl:when>
-              <xsl:when test="@USE = 'Image-Service-LowRes'">image-thumbnail</xsl:when>
-              <xsl:when test="@USE = 'Image-Thumbnail'">image-icon</xsl:when>
-              <xsl:when test="@USE = 'Text-Service'">document-service</xsl:when>
-              <xsl:when test="@USE = 'Text-Master'">document-source</xsl:when>
+              <xsl:when test="@USE = 'Image-Service-Edited'">image-service</xsl:when>
+              <xsl:when test="@USE = 'Image-Service-HiRes'">image-huge</xsl:when>
+              <xsl:when test="@USE = 'Image-Service-LowRes'">image-preview</xsl:when>
+              <xsl:when test="@USE = 'Image-Service-MedRes'">image-large</xsl:when>
+              <xsl:when test="@USE = 'Image-Thumbnail'">image-thumbnail</xsl:when>
+              <xsl:when test="@USE = 'Text-Codebook'">data-service</xsl:when>
               <xsl:when test="@USE = 'Text-Data'">data-source</xsl:when>
+              <xsl:when test="@USE = 'Text-Data Definition'">data-source</xsl:when>
+              <xsl:when test="@USE = 'Text-GeoReference'">document-source</xsl:when>
+              <xsl:when test="@USE = 'Text-Master'">document-source</xsl:when>
+              <xsl:when test="@USE = 'Text-OCR-Edited'">document-service</xsl:when>
+              <xsl:when test="@USE = 'Text-OCR-Unedited'">document-service</xsl:when>
+              <xsl:when test="@USE = 'Text-Service'">document-service</xsl:when>
+              <xsl:when test="@USE = 'Text-TEI-Transcripted'">document-service</xsl:when>
+              <xsl:when test="@USE = 'Text-TEI-Translated'">document-service</xsl:when>
+              <xsl:when test="@USE = 'Video-Clip'">video-source</xsl:when>
               <xsl:when test="@USE = 'Video-Master'">video-source</xsl:when>
               <xsl:when test="@USE = 'Video-Master-Edited'">video-alternate</xsl:when>
               <xsl:when test="@USE = 'Video-Service'">video-service</xsl:when>
+              <xsl:when test="@USE = 'Video-Streaming'">video-service</xsl:when>
+              <xsl:otherwise><xsl:value-of select="@USE"/></xsl:otherwise>
             </xsl:choose>
           </dams:use>
           <dams:sourceFileName>
@@ -170,37 +184,47 @@
     <xsl:param name="value"/>
     <xsl:param name="last"/>
     <xsl:if test="$value != ''">
-      <xsl:value-of disable-output-escaping="yes" select="$value"/>
+      <xsl:value-of select="$value"/>
       <xsl:if test="$last != 'true'"><xsl:text>; </xsl:text></xsl:if>
     </xsl:if>
   </xsl:template>
-<!-- XXX: selectively enable for items with URLs? (see https://lib-jira.ucsd.edu:8443/browse/DI-7)
-  <xsl:template match="mods:mods/mods:titleInfo|mods:relatedItem/mods:titleInfo">
-    <dams:title>
-      <mads:Title>
-        <mads:authoritativeLabel>
-          <xsl:value-of select="mods:nonSort"/>
-          <xsl:value-of select="mods:title"/>
-          <xsl:for-each select="mods:subTitle">
-            <xsl:text>, </xsl:text><xsl:value-of select="."/>
-          </xsl:for-each>
-          <xsl:for-each select="mods:partNumber">
-            <xsl:text>, </xsl:text><xsl:value-of select="."/>
-          </xsl:for-each>
-        </mads:authoritativeLabel>
-        <xsl:for-each select="mods:subTitle">
-          <dams:subtitle><xsl:value-of select="."/></dams:subtitle>
-        </xsl:for-each>
-        <xsl:for-each select="mods:partNumber">
-          <dams:partNumber><xsl:value-of select="."/></dams:partNumber>
-        </xsl:for-each>
-        <mads:elementList rdf:parseType="Collection">
-          <xsl:apply-templates/>
-        </mads:elementList>
-      </mads:Title>
-    </dams:title>
+  <xsl:template match="mods:titleInfo">
+    <xsl:if test="not(@type) or @type != 'alternative'">
+      <dams:title>
+        <mads:Title>
+          <mads:authoritativeLabel>
+            <xsl:call-template name="title-label"/>
+          </mads:authoritativeLabel>
+          <mads:elementList rdf:parseType="Collection">
+            <xsl:apply-templates/>
+          </mads:elementList>
+
+          <!-- attach variants to first titleInfo -->
+          <xsl:if test=". = ../mods:titleInfo[not(@type)][1]">
+            <xsl:for-each select="../mods:titleInfo[@type='alternative']">
+              <mads:hasVariant>
+                <mads:Variant>
+                  <mads:variantLabel>
+                    <xsl:call-template name="title-label"/>
+                  </mads:variantLabel>
+                </mads:Variant>
+              </mads:hasVariant>
+            </xsl:for-each>
+          </xsl:if>
+        </mads:Title>
+      </dams:title>
+    </xsl:if>
   </xsl:template>
--->
+  <xsl:template name="title-label">
+    <xsl:value-of select="mods:nonSort"/>
+    <xsl:value-of select="mods:title"/>
+    <xsl:for-each select="mods:subTitle">
+      <xsl:text>, </xsl:text><xsl:value-of select="."/>
+    </xsl:for-each>
+    <xsl:for-each select="mods:partNumber">
+      <xsl:text>, </xsl:text><xsl:value-of select="."/>
+    </xsl:for-each>
+  </xsl:template>
   <xsl:template match="mods:titleInfo/mods:title">
     <mads:MainTitleElement>
       <mads:elementValue><xsl:value-of select="."/></mads:elementValue>
@@ -261,7 +285,8 @@
     </dams:typeOfResource>
   </xsl:template>
   <xsl:template match="mods:mods/mods:relatedItem">
-    <xsl:if test="mods:titleInfo or mods:location">
+    <!-- only generate RelatedResource if there is a URL -->
+    <xsl:if test="mods:location/mods:url">
       <dams:relatedResource>
         <dams:RelatedResource>
           <xsl:if test="mods:titleInfo/mods:title">
@@ -353,18 +378,7 @@
           <xsl:when test="@displayLabel = 'Scope and Contents note'">
             <dams:type>scope and content</dams:type>
           </xsl:when>
-          <xsl:when test="@displayLabel = 'Abstract' or @displayLabel = 'inscription'">
-            <dams:type>description</dams:type>
-          </xsl:when>
           <xsl:otherwise>
-            <dams:displayLabel>
-              <xsl:choose>
-                <xsl:when test="@displayLabel != ''">
-                  <xsl:value-of select="@displayLabel"/>
-                </xsl:when>
-                <xsl:otherwise>Abstract</xsl:otherwise>
-              </xsl:choose>
-            </dams:displayLabel>
             <dams:type>description</dams:type>
           </xsl:otherwise>
         </xsl:choose>
@@ -373,7 +387,7 @@
     </dams:note>
   </xsl:template>
   <xsl:template match="mods:mods/mods:note">
-    <xsl:if test="text() != ''">
+    <xsl:if test="text() != '' and @displayLabel != 'Digital object made available by '">
       <dams:note>
         <dams:Note>
           <xsl:choose>
@@ -475,7 +489,7 @@
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:roger record'">
               <dams:type>identifier</dams:type>
-              <dams:displayLabel>roger record</dams:displayLabel>
+              <dams:displayLabel>Roger record</dams:displayLabel>
               <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:when test="@displayLabel = 'identifier:sample number'">
@@ -573,36 +587,53 @@
     </xsl:choose>
   </xsl:template>
   <xsl:template match="mods:identifier">
-    <xsl:if test="@invalid != 'yes'">
+    <xsl:if test="not(@invalid) or @invalid != 'yes'">
+      <xsl:variable name="type">
+        <xsl:choose>
+          <xsl:when test="@displayLabel != ''"><xsl:value-of select="@displayLabel"/></xsl:when>
+          <xsl:when test="@type != ''"><xsl:value-of select="@type"/></xsl:when>
+        </xsl:choose>
+      </xsl:variable>
       <dams:note>
         <dams:Note>
           <dams:type>identifier</dams:type>
-          <dams:displayLabel><xsl:value-of select="@type"/></dams:displayLabel>
           <xsl:choose>
-            <xsl:when test="@displayLabel = 'ARK'
-                         or @displayLabel = 'basket'
-                         or @displayLabel = 'collection number'
-                         or @displayLabel = 'call number'
-                         or @displayLabel = 'DOI'
-                         or @displayLabel = 'EDM'
-                         or @displayLabel = 'filename'
-                         or @displayLabel = 'IGSN number'
-                         or @displayLabel = 'isbn'
-                         or @displayLabel = 'lccn'
-                         or @displayLabel = 'local'
-                         or @displayLabel = 'negative'
-                         or @displayLabel = 'OCLC number'
-                         or @displayLabel = 'registration number'
-                         or @displayLabel = 'roger record'
-                         or @displayLabel = 'sample number'
-                         or @displayLabel = 'sequence'">
+            <xsl:when test="$type = 'isbn'">
+              <dams:displayLabel>ISBN</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
+            <xsl:when test="$type = 'lccn'">
+              <dams:displayLabel>LCCN</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
+            <xsl:when test="$type = 'roger record'">
+              <dams:displayLabel>Roger record</dams:displayLabel>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
+            <xsl:when test="$type = 'ARK'
+                         or $type = 'basket'
+                         or $type = 'collection number'
+                         or $type = 'call number'
+                         or $type = 'DOI'
+                         or $type = 'EDM'
+                         or $type = 'filename'
+                         or $type = 'IGSN number'
+                         or $type = 'local'
+                         or $type = 'negative'
+                         or $type = 'OCLC number'
+                         or $type = 'registration number'
+                         or $type = 'sample number'
+                         or $type = 'sequence'">
+              <dams:displayLabel><xsl:value-of select="$type"/></dams:displayLabel>
               <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:otherwise>
               <rdf:value>
                 <xsl:text>identifier:</xsl:text>
-                <xsl:value-of select="@displayLabel"/>
-                <xsl:text>: </xsl:text>
+                <xsl:if test="$type != ''">
+                  <xsl:value-of select="$type"/>
+                  <xsl:text>: </xsl:text>
+                </xsl:if>
                 <xsl:value-of select="."/>
               </rdf:value>
             </xsl:otherwise>
@@ -896,7 +927,15 @@
     </xsl:choose>
   </xsl:template>
   <xsl:template match="mods:mods/mods:genre">
-    <dams:genreForm><xsl:call-template name="simplesubject"/></dams:genreForm>
+    <xsl:variable name="upper">ABCDEFGHIJKLMNOPQRSTUVWXYZ</xsl:variable>
+    <xsl:variable name="lower">abcdefghijklmnopqrstuvwxyz</xsl:variable>
+    <xsl:variable name="value">
+      <xsl:value-of select="translate( substring(., 1, 1), $lower, $upper)"/>
+      <xsl:value-of select="substring(., 2)"/>
+    </xsl:variable>
+    <xsl:if test="not(//mods:subject/mods:genre[text() = $value])">
+      <dams:genreForm><xsl:call-template name="simplesubject"/></dams:genreForm>
+    </xsl:if>
   </xsl:template>
   <xsl:template name="simplesubject" match="mods:genre|mods:geographic|mods:occupation|mods:temporal|mods:topic">
     <xsl:variable name="elemName">
