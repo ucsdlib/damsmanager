@@ -189,23 +189,41 @@
     </xsl:if>
   </xsl:template>
   <xsl:template match="mods:titleInfo">
-    <dams:title>
-      <mads:Title>
-        <mads:authoritativeLabel>
-          <xsl:value-of select="mods:nonSort"/>
-          <xsl:value-of select="mods:title"/>
-          <xsl:for-each select="mods:subTitle">
-            <xsl:text>, </xsl:text><xsl:value-of select="."/>
-          </xsl:for-each>
-          <xsl:for-each select="mods:partNumber">
-            <xsl:text>, </xsl:text><xsl:value-of select="."/>
-          </xsl:for-each>
-        </mads:authoritativeLabel>
-        <mads:elementList rdf:parseType="Collection">
-          <xsl:apply-templates/>
-        </mads:elementList>
-      </mads:Title>
-    </dams:title>
+    <xsl:if test="not(@type) or @type != 'alternative'">
+      <dams:title>
+        <mads:Title>
+          <mads:authoritativeLabel>
+            <xsl:call-template name="title-label"/>
+          </mads:authoritativeLabel>
+          <mads:elementList rdf:parseType="Collection">
+            <xsl:apply-templates/>
+          </mads:elementList>
+
+          <!-- attach variants to first titleInfo -->
+          <xsl:if test=". = ../mods:titleInfo[not(@type)][1]">
+            <xsl:for-each select="../mods:titleInfo[@type='alternative']">
+              <mads:hasVariant>
+                <mads:Variant>
+                  <mads:variantLabel>
+                    <xsl:call-template name="title-label"/>
+                  </mads:variantLabel>
+                </mads:Variant>
+              </mads:hasVariant>
+            </xsl:for-each>
+          </xsl:if>
+        </mads:Title>
+      </dams:title>
+    </xsl:if>
+  </xsl:template>
+  <xsl:template name="title-label">
+    <xsl:value-of select="mods:nonSort"/>
+    <xsl:value-of select="mods:title"/>
+    <xsl:for-each select="mods:subTitle">
+      <xsl:text>, </xsl:text><xsl:value-of select="."/>
+    </xsl:for-each>
+    <xsl:for-each select="mods:partNumber">
+      <xsl:text>, </xsl:text><xsl:value-of select="."/>
+    </xsl:for-each>
   </xsl:template>
   <xsl:template match="mods:titleInfo/mods:title">
     <mads:MainTitleElement>
