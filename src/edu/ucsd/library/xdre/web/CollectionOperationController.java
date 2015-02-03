@@ -13,11 +13,13 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javax.annotation.PostConstruct;
 import javax.mail.MessagingException;
@@ -51,6 +53,7 @@ import edu.ucsd.library.xdre.collection.CollectionReleaseHandler;
 import edu.ucsd.library.xdre.collection.DerivativeHandler;
 import edu.ucsd.library.xdre.collection.FileCountValidaionHandler;
 import edu.ucsd.library.xdre.collection.FileIngestionHandler;
+import edu.ucsd.library.xdre.collection.FileUploadHandler;
 import edu.ucsd.library.xdre.collection.FilestoreSerializationHandler;
 import edu.ucsd.library.xdre.collection.JhoveReportHandler;
 import edu.ucsd.library.xdre.collection.MetadataExportHandler;
@@ -150,6 +153,7 @@ public class CollectionOperationController implements Controller {
 		boolean isSerialization = getParameter(paramsMap, "serialize") != null;
 		boolean isMarcModsImport = getParameter(paramsMap, "marcModsImport") != null;
 		boolean isCollectionRelease = getParameter(paramsMap, "collectionRelease") != null;
+		boolean isFileUpload = getParameter(paramsMap, "fileUpload") != null;
 		String fileStore = getParameter(paramsMap, "fs");
 		if(activeButton == null || activeButton.length() == 0)
 			activeButton = "validateButton";
@@ -179,10 +183,12 @@ public class CollectionOperationController implements Controller {
 			forwardTo = "/marcModsImport.do?";
 		else if(isCollectionRelease)
 			forwardTo = "/collectionRelease.do?";
+		else if(isFileUpload)
+			forwardTo = "/fileUpload.do?";
 
 		String[] emails = null;
 		String user = request.getRemoteUser();
-		if(( !(getParameter(paramsMap, "solrRecordsDump") != null || isBSJhoveReport || isDevUpload)
+		if(( !(getParameter(paramsMap, "solrRecordsDump") != null || isBSJhoveReport || isDevUpload || isFileUpload)
 				&& getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "externalImport") == null 
 				&& getParameter(paramsMap, "dataConvert") == null ) && getParameter(paramsMap, "marcModsImport") == null && 
 				(collectionId == null || (collectionId=collectionId.trim()).length() == 0)){
@@ -196,7 +202,7 @@ public class CollectionOperationController implements Controller {
 				message = e.getMessage();
 			}
 			if(!vRequest){
-				if(isSolrDump || isCollectionRelease)
+				if(isSolrDump || isCollectionRelease || isFileUpload)
 					session.setAttribute("message", message);
 				else {
 					forwardTo += "&activeButton=" + activeButton;
@@ -263,7 +269,7 @@ public class CollectionOperationController implements Controller {
 			e.printStackTrace();
 		}
 		
-		if(isSolrDump || isMarcModsImport || isCollectionRelease) {
+		if(isSolrDump || isMarcModsImport || isCollectionRelease || isFileUpload) {
 			session.setAttribute("message", message.replace("\n", "<br />"));
 			if(collectionId != null && (isMarcModsImport  || isCollectionRelease))
 				forwardTo += "category=" + collectionId;
@@ -324,7 +330,7 @@ public class CollectionOperationController implements Controller {
 		operations[12] = getParameter(paramsMap, "tsSyn") != null;
 		operations[13] = getParameter(paramsMap, "createJson") != null;
 		operations[14] = getParameter(paramsMap, "cacheJson") != null;
-		operations[15] = getParameter(paramsMap, "devUpload") != null;
+		operations[15] = getParameter(paramsMap, "fileUpload") != null;
 		operations[16] = getParameter(paramsMap, "jsonDiffUpdate") != null;
 		operations[17] = getParameter(paramsMap, "validateManifest") != null;
 		operations[18] = getParameter(paramsMap, "metadataExport") != null;
@@ -350,48 +356,22 @@ public class CollectionOperationController implements Controller {
 		damsClient.setTripleStore(ds);
 		damsClient.setFileStore(fileStore);
 
-		/*Date ckDate = null;
-		if(operations[1]){
-			String checksumDate = getParameter(paramsMap, "checksumDate");
-			if(checksumDate == null || (checksumDate = checksumDate.trim()).length() == 0)
-				message += "Please enter a date for checksum validation ...<br>";
-			try{
-				ckDate = (new SimpleDateFormat("MM-dd-yyyy")).parse(checksumDate);
-			}catch (ParseException e){
-				message += "Please enter a Date in valid format(mm/dd/yyyy): " + checksumDate + ".<br>";
-			}
-		}*/
-
-		
-		JSONArray filesJsonArr = null;
-		if(operations[15]){
-			String filesArr = getParameter(paramsMap, "files");
-			if(filesArr == null || (filesArr = filesArr.trim()).length() == 0)
-				message += "Missing perameter files.<br>";
-			try{
-				filesJsonArr = (JSONArray)JSONValue.parse(filesArr);
-			}catch (Exception e){
-				e.printStackTrace();
-				message += "Invalid files parameter array: " + filesArr + " - " + e.getMessage() + "<br>";
-			}
-		}
-	if(message.length() == 0){
-	 int userId = -1;
-	 String userIdAttr = (String) session.getAttribute("employeeId");
-	 if(userIdAttr != null && userIdAttr.length() > 0){
-		 try{
-		     userId = Integer.parseInt(userIdAttr);
-		 }catch(NumberFormatException e){
-			 userId = -1;
+		if(message.length() == 0){
+		 int userId = -1;
+		 String userIdAttr = (String) session.getAttribute("employeeId");
+		 if(userIdAttr != null && userIdAttr.length() > 0){
+			 try{
+			     userId = Integer.parseInt(userIdAttr);
+			 }catch(NumberFormatException e){
+				 userId = -1;
+			 }
 		 }
-	 }
+		 
+		 CollectionHandler handler = null;
+		 OutputStream fileOut = null;
+		 	 
+	 try {
 	 
-	 CollectionHandler handler = null;
-	 OutputStream fileOut = null;
-	 
-	 
-	try {
- 
 	 boolean successful = true;
 	 for(int i=0; i<operations.length; i++){
 		 handler = null;
@@ -1001,30 +981,24 @@ public class CollectionOperationController implements Controller {
 					 }else
 						 handler = new FilestoreSerializationHandler(damsClient, collectionId);
 				 }
-			 }/* else if (i == 15){	
-				 session.setAttribute("status", opMessage + "Moving files from dev to LocalStore ...");
-				 //localStore = getLocalFileStore();
-				 List<String> files = new ArrayList<String>();
-				 Iterator it= filesJsonArr.iterator(); 
-				 while(it.hasNext()){
-					 files.add(URLDecoder.decode((String)it.next(), "UTF-8"));
+			 } else if (i == 15) {	
+				 session.setAttribute("status", opMessage + "Uploading files from dams-staging to " + damsClient.getFileStore() + " ...");
+				 Map<String, String> filesMap = new TreeMap<String, String>();
+				 for(Iterator<String> it = paramsMap.keySet().iterator(); it.hasNext();){
+					 String key = it.next();
+					 if (key.startsWith("f-")) {
+						 String file = paramsMap.get(key)[0];
+						 String fileURI = paramsMap.get(key.replaceFirst("f-", "fid-"))[0];
+						 
+						 if(fileURI != null && fileURI.startsWith(Constants.DAMS_ARK_URL_BASE))
+							 filesMap.put(file, fileURI.trim());
+						 else
+							 message += "Invalid fileURL for file " + file + " (" + fileURI + "). \n";
+					 }
 				 }
-				 handler = new DevUploadHandler(files);
-			 } else if (i == 16){	
-				 session.setAttribute("status", opMessage + "Single Item DIFF Updating ...");				    
-				 dHandler = new JSONDiffUpdateHandler(subjectId, jsonToUpdate, tsUtils);
-				 //((JSONDiffUpdateHandler)dHandler).setSession(session);
-			 } else if (i == 17){
-				 String manifestOption = getParameter(paramsMap, "manifestOptions");
-				 boolean validateManifest = true;
-				 boolean writeManifest = manifestOption != null && manifestOption.equals("write");
-				 if(writeManifest){
-					 validateManifest = false;
-					 session.setAttribute("status", opMessage + "Manifest Writing ...");
-				 }else
-					 session.setAttribute("status", opMessage + "Manifest Valification ...");
-			     handler = new LocalStoreManifestHandler(tsUtils, collectionId, validateManifest, writeManifest);
-			 }*/ else if (i == 18){
+				 handler = new FileUploadHandler(damsClient, filesMap);
+				 handler.setItems(Arrays.asList(filesMap.keySet().toArray(new String[filesMap.size()])));
+			 } else if (i == 18){
 				 boolean components = getParameter(paramsMap, "exComponents") == null;
 				 String exFormat = getParameter(paramsMap, "exportFormat");
 				 String xslSource = getParameter(paramsMap, "xsl");
