@@ -123,12 +123,20 @@
   }
   
   var gField;
+  var callback;
   function setFilePaths(filePaths){
      document.getElementById(gField).value = filePaths;
+     if (callback != null) {
+    	 callback (gField);
+     }
    }
 
-  function showFilePicker(id, event){
+  function showFilePicker(id, event, handler){
 	  gField = id;
+	  if (handler != null)
+		  callback = handler;
+	  else
+		  callback = getSid();
 	  var dirFilter = trim(document.getElementById(id).value);
 	  if (dirFilter.indexOf(";") == dirFilter.length - 1)
 		  dirFilter = dirFilter.substr(0, dirFilter.length - 1);

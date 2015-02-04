@@ -2111,6 +2111,25 @@ public class DAMSClient {
 	public void close(){
 		client.getConnectionManager().shutdown();
 	}
+
+	/**
+	 * Prepare/convert the parameters for file ingest
+	 * @param oid
+	 * @param cid
+	 * @param fid
+	 * @param file
+	 * @return
+	 */
+	public static Map<String, String> toFileIngestParams (String oid, String cid, String fid, File file) {
+		Map<String, String> params = new HashMap<String, String>();
+		params.put("oid", oid);
+		params.put("cid", cid);
+		params.put("fid", fid);	
+		params.put("sourcePath", file.getParent());
+		params.put("sourceFileName", file.getName());
+		params.put("dateCreated", damsDateFormat.format(file.lastModified()));
+		return params;
+	}
 	
 	/**
 	 * Construct SOLR query
