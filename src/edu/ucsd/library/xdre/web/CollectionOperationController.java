@@ -688,8 +688,8 @@ public class CollectionOperationController implements Controller {
 		
 
 						  for (Record rec = null; (rec = recordSource.nextRecord()) != null;) {
-							  record = new InputStreamRecord (rec, collections, unit, copyrightStatus, copyrightJurisdiction, copyrightOwner,
-						        		rightsHolderType, program, access, beginDate, endDate );
+							  record = new InputStreamRecord (rec, collections, unit, copyrightStatus, copyrightJurisdiction, 
+									  copyrightOwner, program, access, beginDate, endDate );
 							  
 							  String id = record.recordID();
 							  handler.logMessage("Pre-processing record with ID " + id + " ... ");

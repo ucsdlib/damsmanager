@@ -21,7 +21,7 @@ public class InputStreamRecord implements Record {
     protected Document rdf;
 	
 	public InputStreamRecord(Record record, Map<String, String> collections, String unit, 
-			String copyrightStatus, String copyrightJurisdiction, String copyrightOwner, String rightsHolderType,
+			String copyrightStatus, String copyrightJurisdiction, String copyrightOwner,
 			String program, String access, String beginDate, String endDate) throws Exception {
 		this.id = record.recordID();
 		this.rdf = record.toRDFXML();
@@ -29,7 +29,7 @@ public class InputStreamRecord implements Record {
 		//Assign component ID and file ID for symbols CID, FID 
 		assignIDs();
 		RecordUtil.addRights(rdf, unit, collections, copyrightStatus, copyrightJurisdiction, 
-				copyrightOwner, rightsHolderType, program, access, beginDate, endDate);
+				copyrightOwner, program, access, beginDate, endDate);
 	}
 
 	@Override

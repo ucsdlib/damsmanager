@@ -82,7 +82,6 @@ public class MarcModsImportController implements Controller {
 			dataMap.put("filestore", fileStore);
 			dataMap.put("filestoreDefault", fsDefault);
 			dataMap.put("copyrightStatus", RecordUtil.COPYRIGHT_VALUES);
-			dataMap.put("rightsHolderTypes", RecordUtil.RIGHTSHOLDER_TYPES);
 			dataMap.put("program", RecordUtil.PROGRAM_VALUES);
 			dataMap.put("accessOverride", accessValues);
 			dataMap.put("licenseBeginDate", licenseBeginDate);

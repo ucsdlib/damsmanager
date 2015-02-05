@@ -120,11 +120,6 @@ public class RecordUtil
      * Program values.
     **/
     public static String[] PROGRAM_VALUES = { programRDC, programDLP, programSCA };
-
-    /**
-     * Rights holder types.
-    **/
-    public static String[] RIGHTSHOLDER_TYPES = { "Personal", "Corporate", "Family" };
     
     // namespaces
     private static String damsURI="http://library.ucsd.edu/ontology/dams#";
@@ -151,7 +146,7 @@ public class RecordUtil
      * @param endDate End of any license permission or restriction (in YYYY-MM-DD format).
     **/
     public static void addRights( Document doc, String unitURI, Map<String, String> collections,
-        String copyrightStatus, String copyrightJurisdiction, String copyrightOwner, String rightsHolderType,
+        String copyrightStatus, String copyrightJurisdiction, String copyrightOwner,
         String program, String access, String beginDate, String endDate )
     {
         Element o = (Element)doc.selectSingleNode("//dams:Object");
