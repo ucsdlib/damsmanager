@@ -20,28 +20,19 @@ import edu.ucsd.library.xdre.utils.DAMSClient;
 
 
  /**
- * Class ModsController, the model for the AtImport view
+ * Class ExcelImportController, the model for the ExcelImport view
  *
  * @author lsitu@ucsd.edu
  */
-public class MarcModsImportController implements Controller {
+public class ExcelImportController implements Controller {
 
 	
 	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		String ds = request.getParameter("ts");
 		String collectionId =  request.getParameter("category");
 		String unit =  request.getParameter("unit");
-		String reset = request.getParameter("reset");
 		String message = request.getParameter("message");
 		String fileStore = request.getParameter("fs");
-		String source = request.getParameter("source");
-		String bibNumber = request.getParameter("bib");
-		String modsXml = request.getParameter("mods");
-		String copyrightStatus = request.getParameter("copyrightStatus");
-		String copyrightJurisdiction = request.getParameter("copyrightJurisdiction");
-		String copyrightOwner = request.getParameter("copyrightOwner");
-		String program = request.getParameter("program");
-		String accessOverride = request.getParameter("accessOverride");
 		String licenseBeginDate = request.getParameter("licenseBeginDate");
 		String licenseEndDate = request.getParameter("licenseEndDate");
 
@@ -65,8 +56,8 @@ public class MarcModsImportController implements Controller {
 			if(fileStore == null || fileStore.length() == 0)
 				fileStore = fsDefault;
 
-			message = (!StringUtils.isBlank(message) || StringUtils.isBlank(collectionId)) ? message : (String)request.getSession().getAttribute("message");
-			request.getSession().removeAttribute("message");
+			message = (!StringUtils.isBlank(message) || StringUtils.isBlank(collectionId)) ? message : (String)session.getAttribute("message");
+			session.removeAttribute("message");
 
 			JSONArray accessValues = new JSONArray();
 			accessValues.addAll(Arrays.asList(RecordUtil.ACCESS_VALUES));
@@ -95,6 +86,6 @@ public class MarcModsImportController implements Controller {
 			if(damsClient != null)
 				damsClient.close();
 		}
-		return new ModelAndView("marcModsImport", "model", dataMap);
+		return new ModelAndView("excelImport", "model", dataMap);
 	}
  }

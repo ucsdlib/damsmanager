@@ -10,7 +10,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
 import org.dom4j.Branch;
 import org.dom4j.Document;
 import org.dom4j.DocumentFactory;
@@ -18,7 +17,6 @@ import org.dom4j.Element;
 import org.dom4j.Namespace;
 import org.dom4j.QName;
 
-import edu.ucsd.library.xdre.utils.Constants;
 
 /**
  * A bundle of tabular data, consisting of a key-value map for the record, and 0 or more
@@ -164,21 +162,6 @@ public class TabularRecord implements Record
         {
             addTextElement( e, "typeOfResource", damsNS, type );
         }
-
-        // unit /////////////////////////////////////////////////////////////////////////
-        if ( cmp == 0 && pop(data.get("unit")) )
-        {
-            Element unit = addElement( e, "unit", damsNS );
-            addAttribute( unit, "resource", rdfNS, data.get("unit") );
-        }
-
-        // collections //////////////////////////////////////////////////////////////////
-        addCollection( e, data, "assembled collection", "assembledCollection",
-            "AssembledCollection" );
-        addCollection( e, data, "provenance collection", "provenanceCollection",
-            "ProvenanceCollection" );
-        addCollection( e, data, "provenance collection part", "provenanceCollectionPart",
-            "ProvenanceCollectionPart" );
 
         // title ////////////////////////////////////////////////////////////////////////
         String main  = data.get("title");
@@ -385,66 +368,8 @@ public class TabularRecord implements Record
                 addElement(f,"use",damsNS).setText(use);
             }
         }
-
-        // Copyright and Access Override (RightsHolder excluded for more specific predicates) //
-        String copyrightStatus = data.get("rights status");
-        String copyrightJurisdiction = data.get("jurisdiction");
-        String accessOverride = data.get("access override");
-        String beginDate = data.get("access override begin date");
-        String endDate = data.get("access override end date");
-        
-        // Validate the value for Access Override
-        if ( pop(data.get("access override")) ) {
-        	validateAccessOverride ( objectID, accessOverride.trim() );
-        }
-        
-        if (!StringUtils.isBlank(copyrightStatus) || !StringUtils.isBlank(accessOverride) )
-        {
-        	RecordUtil.addRights(e.getDocument(), null, null, copyrightStatus, copyrightJurisdiction, null, null,
-        			null, accessOverride, beginDate, endDate);
-        	
-        	// Ingore column "copyright holder corporate name" = "UC Regents" for Copyright Status = "Copyright UC Regents" when presented
-        	if (!StringUtils.isBlank(copyrightStatus) && copyrightStatus.equalsIgnoreCase(RecordUtil.copyrightRegents)){
-	        	String rightsHolders = data.get("copyright holder corporate name");
-	        	if (!StringUtils.isBlank(rightsHolders) && rightsHolders.trim().equalsIgnoreCase("UC Regents"))
-	        		data.remove("copyright holder corporate name");
-        	}
-        }
-        
-        // rights holder (special case of subject name) /////////////////////////////////
-        addSubject( data, e, "copyright holder conference name", "ConferenceName", madsNS,
-                "rightsHolderConference", damsNS, "Name" );
-        addSubject( data, e, "copyright holder corporate name", "CorporateName", madsNS,
-                "rightsHolderCorporate", damsNS, "Name" );
-        addSubject( data, e, "copyright holder family name", "FamilyName", madsNS,
-                "rightsHolderFamily", damsNS, "Name" );
-        addSubject( data, e, "copyright holder personal name", "PersonalName", madsNS,
-                "rightsHolderPersonal", damsNS, "FullName" );
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////
-    // metadata utilities ////////////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////
-    private void addCollection( Element e, Map<String,String> data, String header,
-        String pred, String elem )
-    {
-        for ( String colName : split(data.get(header)) )
-        {
-        	if ( !(colName.startsWith("http://") || colName.startsWith("https://")) )
-        	{
-	        	// Insert new stub record if it's not a url, otherwise will insert as resource reference
-	            Element coll = addVocabElement( e, pred, damsNS, elem, damsNS );
-	            coll.addElement("dams:visibility").setText("curator");
-	            addTitle( coll, colName, null, null, null, null, null );
-        	} else {
-        		String cid = colName.substring(colName.lastIndexOf("/") + 1);
-    			String arkUrlBase = Constants.DAMS_ARK_URL_BASE;
-        		String collArkUrl = arkUrlBase + (arkUrlBase.endsWith("/")?"":"/") + Constants.ARK_ORG + "/" + cid;
-        		Element coll = addElement( e, pred, damsNS );
-                addAttribute( coll, "resource", rdfNS, collArkUrl );
-        	}
-        }
-    }
     private void addRelationship( Map<String,String> data, Element e, String header,
         String type, String pred, String element )
     {
@@ -618,15 +543,6 @@ public class TabularRecord implements Record
     	}
     }
 
-    private static void validateAccessOverride ( String objectID,String accessOverride ) throws Exception
-    {
-    	List<String> accessValues = Arrays.asList(RecordUtil.ACCESS_VALUES);
-    	if ( accessValues.indexOf(accessOverride) < 0 )
-    	{
-    		throw new Exception( "Invalid access override value \"" + accessOverride + "\" for record " + objectID + ".");
-    	}
-    
-    }
 
     /**
      * Create the RDF root element
