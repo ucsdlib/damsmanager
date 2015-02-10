@@ -15,6 +15,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -40,6 +41,7 @@ import org.apache.log4j.Logger;
 import org.dom4j.Document;
 import org.dom4j.DocumentFactory;
 import org.dom4j.Element;
+import org.dom4j.Node;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.XMLWriter;
 import org.json.simple.JSONArray;
@@ -561,6 +563,8 @@ public class CollectionOperationController implements Controller {
 				  }
 			 } else if (i == 6){	
 				  session.setAttribute("status", opMessage + "Importing from Standard Input Stream source ...");
+				  log.info(opMessage + "Importing from Standard Input Stream source ...");
+
 				  String unit = getParameter(paramsMap, "unit");
 				  String source = getParameter(paramsMap, "source");
 				  String bibNumber = getParameter(paramsMap, "bibInput");
@@ -568,7 +572,6 @@ public class CollectionOperationController implements Controller {
 				  String copyrightStatus =getParameter(paramsMap, "copyrightStatus");
 				  String copyrightJurisdiction = getParameter(paramsMap, "countryCode");
 				  String copyrightOwner = getParameter(paramsMap, "copyrightOwner");
-				  String rightsHolderType = getParameter(paramsMap, "rightsHolderType");
 				  String program = getParameter(paramsMap, "program");
 				  String access = getParameter(paramsMap, "accessOverride");
 				  String beginDate = getParameter(paramsMap, "licenseBeginDate");
@@ -618,7 +621,6 @@ public class CollectionOperationController implements Controller {
 
 				  // Handling pre-processing request
 				  Element rdfPreview = null;
-				  StringBuilder errorMessage = new StringBuilder();
 				  StringBuilder duplicatRecords = new StringBuilder();
 				  List<String> ids = new ArrayList<String>();
 				  boolean preprocessing = importOption.equalsIgnoreCase("pre-processing");
@@ -629,6 +631,8 @@ public class CollectionOperationController implements Controller {
 					  rdfPreview = TabularRecord.createRdfRoot (doc);
 				  }
 				  
+				  boolean preSuccessful = true;
+				  StringBuilder proMessage = new StringBuilder();
 				  if (source != null && (source.equalsIgnoreCase("bib") || source.equalsIgnoreCase("mods") || source.equalsIgnoreCase("excel"))) {
 					  // Initiate the logging handler 
 					  handler = new MetadataImportHandler(damsClient, null);
@@ -649,115 +653,161 @@ public class CollectionOperationController implements Controller {
 						  Object srcRecord =  sources.get(j);
 						  sourceID = (srcRecord instanceof File ? ((File)srcRecord).getName() : srcRecord.toString());
 						  if (preprocessing)
-							  handler.logMessage("Pre-processing record " + sourceID + " ... ");
+							  handler.setStatus("Pre-processing record " + sourceID + " ... ");
 						  else
-							  handler.logMessage("Processing record " + sourceID + " ... ");
+							  handler.setStatus("Processing record " + sourceID + " ... ");
 						  
 						  RecordSource recordSource = null;
 						  InputStreamRecord record = null;
 						  
-						  if (source.equalsIgnoreCase("excel")) {
-							  // Handling Excel Input Stream records
-							  recordSource = new ExcelSource((File)srcRecord);
-						  } else {
-							  // Handling AT/Roger records
-							  try {
-								  if (source.equalsIgnoreCase("bib")) {
-									  
-									  String url = Constants.DAMS_STORAGE_URL.substring(0, Constants.DAMS_STORAGE_URL.indexOf("/dams/"))
-											  + "/jollyroger/get?type=bib&mods=true&ns=true&value=" + sourceID;
-		
-									  handler.logMessage("Getting MARC XML for Roger record " + sourceID + " from URL: " + url);
-									  HttpGet req = new HttpGet(url);
-									  Document doc = damsClient.getXMLResult(req);
-									  modsXml = doc.asXML();
-									  in = new ByteArrayInputStream (modsXml.getBytes("UTF-8"));
-								  } else {
-									  // METS/MODS XML from staging area
-									  File srcFile = (File)sources.get(j);
-									  in = new FileInputStream(srcFile);
-								  }
-							  
-								  File xsl = new File(session.getServletContext().getRealPath("files/mets2dams.xsl"));
-								  recordSource = new XsltSource( xsl, sourceID.replaceAll("\\..*",""), in );
-							  } finally {
-								  CollectionHandler.close(in);
-								  in = null;
-							  }
-						  }
-		
-
-						  for (Record rec = null; (rec = recordSource.nextRecord()) != null;) {
-							  record = new InputStreamRecord (rec, collections, unit, copyrightStatus, copyrightJurisdiction, 
-									  copyrightOwner, program, access, beginDate, endDate );
-							  
-							  String id = record.recordID();
-							  handler.logMessage("Pre-processing record with ID " + id + " ... ");
-							  
-							  if(ids.indexOf(id) < 0) {
-								  ids.add(id);
+						  try {
+							  if (source.equalsIgnoreCase("excel")) {
+								  // Handling Excel Input Stream records
+								  recordSource = new ExcelSource((File)srcRecord);
 							  } else {
-								  successful = false;
-								  duplicatRecords.append(id + ", ");
-								  handler.logError("Found duplicated record with ID " + id + ".");
-							  }
-							  
-							  // Add master file(s) for the bib/Roger record: a PDF or a TIFF, or a PDF + ZIP
-							  List<File> filesToIngest = null;
-							  if (source.equalsIgnoreCase("bib") && ingestWithFiles) {
-								  filesToIngest = getRogerFiles ((String)srcRecord, ingestFiles);
-								  // Processing the master file(s) with error report. 
-								  if (filesToIngest.size() == 0) {
-									  errorMessage.append("Roger record " + srcRecord
-											  + " has no master file(s) for \"Ingest metadata and files\" option.\n");
-								  } else if (filesToIngest.size() > 2 
-										  || (filesToIngest.size() == 2 && !filesToIngest.get(1).getName().endsWith(".zip"))) {
-									  errorMessage.append("Unexpected file(s) for Roger record " + srcRecord + ": ");
-									  for (File file : filesToIngest) {
-										  errorMessage.append((filesToIngest.indexOf(file) > 0 ? ", " : "") + file.getName());
+								  // Handling AT/Roger records
+								  try {
+									  if (source.equalsIgnoreCase("bib")) {
+										  
+										  String url = Constants.DAMS_STORAGE_URL.substring(0, Constants.DAMS_STORAGE_URL.indexOf("/dams/"))
+												   + "/jollyroger/get?type=bib&mods=true&ns=true&value=" + sourceID;
+			
+										  log.info("Getting MARC XML for Roger record " + sourceID + " from URL: " + url);
+										  HttpGet req = new HttpGet(url);
+										  Document doc = damsClient.getXMLResult(req);
+										  modsXml = doc.asXML();
+										  in = new ByteArrayInputStream (modsXml.getBytes("UTF-8"));
+									  } else {
+										  // METS/MODS XML from staging area
+										  File srcFile = (File)sources.get(j);
+										  in = new FileInputStream(srcFile);
 									  }
-									  errorMessage.append(".\n");
-								  } else {
-									  // Handle the use property for the file(s)
-									  Map<String, String> fileUseMap = getFileUse(filesToIngest);
-									  
-									  record.addFiles(0, filesToIngest, fileUseMap);
+								  
+									  File xsl = new File(session.getServletContext().getRealPath("files/mets2dams.xsl"));
+									  recordSource = new XsltSource( xsl, sourceID.replaceAll("\\..*",""), in );
+								  } finally {
+									  CollectionHandler.close(in);
+									  in = null;
 								  }
 							  }
-						  
-							  if (errorMessage.length() == 0 && duplicatRecords.length() == 0) {
-								  if (preprocessing) {
-									 // Pre-processing with rdf preview
-									  rdfPreview.add(record.toRDFXML().selectSingleNode("//dams:Object").detach()); 
-								  } else {
-									  // Write the converted rdf/xml to file system
-									  File tmpDir = new File (Constants.TMP_FILE_DIR + File.separatorChar + "converted");
-									  if(!tmpDir.exists())
-										  tmpDir.mkdir();
-									  File convertedFile = new File(tmpDir.getAbsolutePath(), id.replaceAll("[\\//:.*]+","") + ".rdf.xml");
-									  try{
-										  writeXml(convertedFile, record.toRDFXML().asXML());
-									  } finally {										  
-										  convertedFile.deleteOnExit();
-										  dataFiles.add(convertedFile);
-									  }
-								  }
-							  }
-							  
-							  handler.setProgressPercentage(j * 100/sources.size());
+						  } catch (Exception e) {
+							  e.printStackTrace();
+							  successful = false;
+							  preSuccessful = false;
+							  String error = e.getMessage() != null ? e.getMessage() : e.getCause() != null ? e.getCause().getMessage() : e.getClass().getName();
+							  handler.setStatus(error);
+							  log.error("Error metadata source " + sourceID + ": " + error);
+							  proMessage.append(sourceID + " - failed - " + CollectionHandler.damsDateFormat.format(new Date()) + " - " + error);
 						  }
-					  }					  
+
+						  String id = "";
+						  String info = "";
+						  if (recordSource != null) {
+							  for (Record rec = null; (rec = recordSource.nextRecord()) != null;) {
+
+								  String objTitle = "";
+								  id = rec.recordID();  
+								  StringBuilder errorMessage = new StringBuilder(); 
+								  try {
+									  
+									  record = new InputStreamRecord (rec, collections, unit, copyrightStatus, copyrightJurisdiction, 
+											  copyrightOwner, program, access, beginDate, endDate );
+									  
+									  objTitle = getTitle(record.toRDFXML());
+									  info = "Pre-processing record with ID " + id + " ... ";
+									  handler.setStatus(info);
+									  log.info(info);
+									  
+									  if(ids.indexOf(id) < 0) {
+										  ids.add(id);
+									  } else {
+										  duplicatRecords.append(rec + ", ");
+										  String error = "Duplicated record with ID " + id;
+										  handler.setStatus(error);
+										  log.error(info);
+										  errorMessage.append("\n* " + error);
+									  }
+									  
+									  // Add master file(s) for the bib/Roger record: a PDF or a TIFF, or a PDF + ZIP
+									  List<File> filesToIngest = null;
+									  if (source.equalsIgnoreCase("bib") && ingestWithFiles) {
+										  filesToIngest = getRogerFiles ((String)srcRecord, ingestFiles);
+										  // Processing the master file(s) with error report. 
+										  if (filesToIngest.size() == 0) {
+											  errorMessage.append("\n* Roger record " + srcRecord
+													  + " has no master file(s) for \"Ingest metadata and files\" option.");
+										  } else if (filesToIngest.size() > 2 
+												  || (filesToIngest.size() == 2 && !filesToIngest.get(1).getName().endsWith(".zip"))) {
+											  errorMessage.append("\n* Unexpected file(s) for Roger record " + srcRecord + ": ");
+											  for (File file : filesToIngest) {
+												  errorMessage.append((filesToIngest.indexOf(file) > 0 ? ", " : "") + file.getName());
+											  }
+										  } else {
+											  // Handle the use property for the file(s)
+											  Map<String, String> fileUseMap = getFileUse(filesToIngest);
+											  
+											  record.addFiles(0, filesToIngest, fileUseMap);
+										  }
+									  }
+								  } catch (Exception e) {
+									  info = "Error: " + e.getMessage();
+									  handler.setStatus(info);
+									  log.warn(info);
+									  errorMessage.append("\n* " + e.getMessage());
+								  }
+							  
+								  objTitle = StringUtils.isEmpty(objTitle) ? "[Object]" : objTitle;
+								  if (errorMessage.length() == 0) {
+									  
+									  info = objTitle + " - " + id + " - " + " successful - " + CollectionHandler.damsDateFormat.format(new Date());
+									  proMessage.append("\n\n" + info);
+									  log.info(info);
+
+									  if (preprocessing) {
+										 // Pre-processing with rdf preview
+										  rdfPreview.add(record.toRDFXML().selectSingleNode("//dams:Object").detach()); 
+									  } else {
+										  // Write the converted rdf/xml to file system
+										  File tmpDir = new File (Constants.TMP_FILE_DIR + File.separatorChar + "converted");
+										  if(!tmpDir.exists())
+											  tmpDir.mkdir();
+										  File convertedFile = new File(tmpDir.getAbsolutePath(), id.replaceAll("[\\//:.*]+","") + ".rdf.xml");
+										  try{
+											  writeXml(convertedFile, record.toRDFXML().asXML());
+										  } finally {										  
+											  convertedFile.deleteOnExit();
+											  dataFiles.add(convertedFile);
+										  }
+									  }
+								  } else {
+									  preSuccessful = false;
+	
+									  info = objTitle + " - " + id + " - " + " failed - " 
+											  + CollectionHandler.damsDateFormat.format(new Date()) + ": " + errorMessage.toString();
+									  proMessage.append("\n\n" + info);
+									  log.error(info);
+								  }
+								  
+								  handler.setProgressPercentage(j * 100/sources.size()); 
+							  }
+						  }
+					  }
+					  
+					  // Logging the result for pre-processing
+					  if (preprocessing || !preSuccessful) {
+						  message = "\nPre-processing " + (preSuccessful?"successful":"failed") + ": \n"
+								  + (proMessage.length() == 0 ? "." : "\n " + proMessage.toString());
+						  handler.logMessage(message);
+					  }
 					  handler.release();
 					  handler = null;
-					  
-					  // report the errors if there's any
-					  if (errorMessage.length() == 0 && duplicatRecords.length() == 0) {
+
+					  if (preSuccessful) {
 						  // Write the converted RDF/xml for preview
 						  if (preprocessing) {
 							  File destFile = new File(Constants.TMP_FILE_DIR, "preview-" + submissionId + "-rdf.xml");
 							  writeXml(destFile, rdfPreview.getDocument().asXML());
-							  successful = true;
-							  message = "\nThe converted RDF/XML is ready for <a href=\"" + logLink
+							  message += "\nThe converted RDF/XML is ready for <a href=\"" + logLink
 									  + "&file=" + destFile.getName() + "\">download</a>.\n";
 						  }else{
 							  // Ingest the converted RDF/XML files
@@ -767,11 +817,6 @@ public class CollectionOperationController implements Controller {
 						  }
 					  } else {
 						  successful = false;
-						  message = "\nPre-processing issues found:";
-						  if (duplicatRecords.length() > 0)
-							  message += "\nDuplicated records: " + duplicatRecords.substring(0, duplicatRecords.length() - 2).toString();
-						  if (errorMessage.length() > 0)
-							  message += "\nOther Errors: \n" + errorMessage.toString();
 					  }
 				  } else {
 					  successful = false;
@@ -1242,5 +1287,14 @@ public class CollectionOperationController implements Controller {
 			}
 		}
 		return fileUseMap;
+	}
+	
+	private static String getTitle(Document doc) {
+		String title = "";
+		Node node = doc.selectSingleNode("//dams:Object/dams:title/mads:Title/mads:authoritativeLabel");
+		if (node != null) {
+			title = node.getText();
+		}
+		return title;
 	}
 }

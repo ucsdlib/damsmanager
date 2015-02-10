@@ -1745,10 +1745,9 @@ public class DAMSClient {
 						SAXReader saxReader = new SAXReader();
 						Document doc = saxReader.read(in);
 						System.out.println(doc.asXML());
-						Node node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/status");
-						
+						Node node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/timestamp");						
 						if(node != null)
-							respContent += node.getText();
+							respContent += " " + node.getText();
 						node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/statusCode");
 						if(node != null)
 							respContent += " status code " + doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/statusCode").getText();
