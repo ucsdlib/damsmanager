@@ -7,6 +7,7 @@ import java.io.UnsupportedEncodingException;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -14,16 +15,21 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.dom4j.Node;
 import org.dom4j.io.SAXReader;
 
+import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.ResourceFactory;
 import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.util.iterator.ExtendedIterator;
 
 import edu.ucsd.library.xdre.collection.MetadataImportHandler;
 import edu.ucsd.library.xdre.utils.Constants;
@@ -66,6 +72,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 	private int solrFailedCount = 0;
 	private Map<String, String> objRecords = new HashMap<String, String>();
 	private List<String> recordsIngested = new ArrayList<String>();
+	
 	private List<String> objWithFiles = new ArrayList<String>();
 	private StringBuilder ingestFailed = new StringBuilder();
 	private StringBuilder metadataFailed = new StringBuilder();
@@ -73,6 +80,13 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 	private StringBuilder filesIngested = new StringBuilder();
 
 	private boolean replace = false;
+
+	private int processIndex = 0;
+	private boolean[] status = null;
+	private StringBuilder[] messages = null;
+	private String[] processNames = {"Object RDF/XML validation", "Object metadata build", "File ingest", "SOLR index request"};
+	private StringBuilder ingestMessages = new StringBuilder();
+	private String preprocessedTimestamp = "";
 
 	/**
 	 * Constructor
@@ -104,6 +118,15 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		this.replace = replace;
 	}
 
+	
+	public String getPreprocessedTimestamp() {
+		return preprocessedTimestamp;
+	}
+
+	public void setPreprocessedTimestamp(String preprocessedTimestamp) {
+		this.preprocessedTimestamp = preprocessedTimestamp;
+	}
+
 	/**
 	 * Procedure to populate the RDF metadata and ingest the files
 	 */
@@ -129,10 +152,16 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		String currFile = null;
 		SAXReader saxReader = new SAXReader();
 		for(int i=0; i<fLen&&!interrupted; i++){
+			if (i == 0)
+				logMessage ("Object Import status:\n[Object title]   -   [URI]   -   [Status]   -   [Timestamp]");
+
 			recordsToReplace = new ArrayList<>();
 			currFile = rdfFiles[i].getName();
+
+			preprocessedTimestamp = damsDateFormat.format(rdfFiles[i].lastModified());
+
 			setStatus("Processing external import for file " + currFile + " (" + (i+1) + " of " + fLen + ") ... " );
-			try{
+			try{		
 				doc = saxReader.read(rdfFiles[i]);
 				List<Node> nodes = doc.selectNodes("//@rdf:about");
 				for(int j=0; j<nodes.size(); j++){
@@ -329,13 +358,22 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 				RDFStore graph = null;
 				
 				rdfStore = new RDFStore();
-				Model rdf = rdfStore.loadRDFXML(dams4Rdf);
+				rdfStore.loadRDFXML(dams4Rdf);
 				initHandler();
 				
 				Model iRdf = null;
 				int jLen = items.size();
 				//System.out.println(currFile + " records found: " + jLen);
-				for (int j=0; j<jLen&&!interrupted; j++){
+				for (int j=0; j<jLen&&!interrupted; j++) {
+
+					processIndex = 0;
+					status = new boolean[processNames.length];
+					messages = new StringBuilder[processNames.length];
+					for (int k = 0; k <messages.length; k++) {
+						messages[k] = new StringBuilder();
+					}
+					
+					Model objModel = null;
 					graph = new RDFStore();
 					recordsCount++;
 					// Add subject
@@ -348,7 +386,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 						for(int k=0; k<objURIs.size(); k++){
 							objURI = objURIs.get(k);
 							iRdf = rdfStore.querySubject(objURI.toString());
-							graph.merge(iRdf);
+							objModel = graph.merge(iRdf);
 						}
 						
 						// Update object
@@ -357,33 +395,105 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 						if (replace && recordsToReplace.indexOf(subjectId) >= 0)
 							importMode = Constants.IMPORT_MODE_ALL;
 						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), importMode);
-							
+
+						
+						// Logging for Object RDF/XML validation
+						status[processIndex] = succeeded;
+						messages[processIndex].append(damsDateFormat.format(new Date()));
+
 						if(!succeeded){
 							if(metadataFailed.indexOf(currFile) < 0)
 								failedCount++;
 							metadataFailed.append(subjectId + " (" + currFile + "), \n");
 							message = "Metadata import for record " + subjectId  + " failed (" + (j+1) + " of " + jLen + ") in file " + currFile + ".";
 							setStatus( message ); 
-							logError(message + "\n Error RDF: \n" + graph.export(RDFStore.RDFXML_ABBREV_FORMAT));
+							log.error(message + "\n Error RDF: \n" + graph.export(RDFStore.RDFXML_ABBREV_FORMAT));
 						}else{
 							recordsIngested.add(subjectId);
 							message = "Metadata import for record " + subjectId  + " succeeded (" + (j+1) + " of " + jLen + ") in file " + currFile + ". ";
 							setStatus(message); 
-							logMessage(message);
 							log.info(message);
 							
-							// Update SOLR fre records ingested.
-							updateSOLR(subjectId);
+							processIndex++;
+							status[processIndex] = succeeded;
+							messages[processIndex].append(damsDateFormat.format(new Date()));
+							// Ingest the source file only if metadata ingested successfully
+							if(status[processIndex] && importOption.equalsIgnoreCase("metadataAndFiles")){
+								uploadFiles(objModel, currFile, subjectId);
+							}
 						}
 					
 					} catch (Exception e) {
 						e.printStackTrace();
+						
 						if(metadataFailed.indexOf(currFile) < 0)
 							failedCount++;
 						metadataFailed.append(subjectId + " (" + currFile + "), \n");
 						message = "Metadata import failed: " + e.getMessage();
 						setStatus( message  + " (" +(j+1)+ " of " + jLen + ") in file " + currFile + "."); 
-						logError(message);
+						log.error(message);
+						
+						String error = e.getMessage();
+						if (error.indexOf("Invalid RDF input") >= 0) {
+							messages[processIndex].append(error);
+						} else {
+							status[processIndex] = true;
+							messages[processIndex].append(damsDateFormat.format(new Date()));
+							processIndex++;
+							messages[processIndex].append(error);
+						}
+					} finally {
+						int solrRequestIndex = processNames.length - 1;
+						try{
+							// Update SOLR for the record.
+							status[solrRequestIndex] = updateSOLR(subjectId);
+							messages[solrRequestIndex].append(damsDateFormat.format(new Date()));
+
+						} catch(Exception e) {
+							e.printStackTrace();
+							exeResult = false;
+							log.error("SOLR Index failed " + subjectId + ": " + e.getMessage());
+							
+							messages[processNames.length - 1].append(e.getMessage());
+						}
+						
+						if(exeResult)
+							exeResult = status[processIndex];
+
+						
+						String resultMessage = "http://" + Constants.CLUSTER_HOST_NAME + ".ucsd.edu/dc/object/" + subjectId.substring(subjectId.lastIndexOf("/") + 1)
+								+ " - " + (status[processIndex] && status[solrRequestIndex] ? "successful" : "failed") + " - " + damsDateFormat.format(new Date());
+						if (objRecords.containsKey(subjectId)) {
+							String title = getTitle(objModel, subjectId);
+							if (StringUtils.isBlank(title))
+								title = "[Unknown Title]";
+
+							logMessage ("\n" + title + " - " + resultMessage);
+							if (!status[processIndex] || !status[solrRequestIndex]) {
+								// Logging for pre-procesing - succeeded. 
+								logMessage ("* Pre-processing - successful - " + preprocessedTimestamp);
+								for (int k = 0; k <= processIndex; k++) {
+									if (status[k] || !status[k] && status[k - 1]) {
+										logMessage ("* " + processNames[k] + " - " + (status[k] ? "successful" : "failed") + " - " + messages[k].toString());
+									}
+								}
+								
+								// SOLR index request logging
+								if (!status[solrRequestIndex])
+									logMessage ("* " + processNames[solrRequestIndex] + " - " + (status[solrRequestIndex] ? "successful" : "failed") + " - " + messages[solrRequestIndex].toString());
+							}
+							
+						} else {
+
+							ingestMessages.append("\n" + resultMessage);
+							if (!status[processIndex]) {
+								for (int k = 0; k + 1 < processIndex; k++) {
+									if (status[k] || !status[k] && status[k - 1]) {
+										logMessage ("* " + processNames[k] + " - " + (status[k] ? "successful" : "failed") + " - " + messages[k].toString());
+									}
+								}
+							}
+						}
 					}
 					
 					try{
@@ -391,32 +501,25 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 						interrupted = true;
+						exeResult = false;
 						failedCount++;
 						metadataFailed.append(subjectId + " (" + currFile + ") \n");
 						message = "Metadata import interrupted for subject " + subjectId  + ". \n Error: " + e.getMessage() + "\n";
 						setStatus("Canceled");
 						clearSession();
-						logError(message);
+						log.error(message);
+						
+						logMessage ("Client Cancled - " + damsDateFormat.format(new Date()));
 					}
-				}
-				
-				// Ingest the source file
-				if(importOption.equalsIgnoreCase("metadataAndFiles")){
-					uploadFiles(rdf, currFile);
 				}
 
 			}catch(Exception e){
 				e.printStackTrace();
+				exeResult = false;
 				failedCount++;
 				message = "Import failed for " + currFile + ": " + e.getMessage();
 				setStatus( message  + " (" +(i+1)+ " of " + fLen + ").");
-				logError(message);
-			}finally{
-				// Update SOLR for files uploaded
-				int iLen = objWithFiles.size();
-				for (int j=0; j<iLen&&!interrupted; j++){
-					updateSOLR(objWithFiles.get(j));
-				}
+				log.error(message);
 			}
 			
 			setProgressPercentage( ((i + 1) * 100) / fLen);
@@ -425,18 +528,21 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 				Thread.sleep(10);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
+				exeResult = false;
 				interrupted = true;
 				failedCount++;
 				message = "Import interrupted for oject in " + currFile + ". \n Error: " + e.getMessage() + "\n";
 				setStatus("Canceled");
 				clearSession();
-				logError(message);
+				log.error(message);
+				
+				messages[processIndex].append("Client canceled - " + damsDateFormat .format(new Date()));
 			}
 		}
 		return exeResult;
 	}
 	
-	public void uploadFiles(Model rdf, String srcName){
+	public int uploadFiles(Model rdf, String srcName, String subjectURL){
 		String message = "";
 		String oid = null;
 		String cid = null;
@@ -456,14 +562,22 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		for(int l=0; l<iLen&&!interrupted;l++){
 			stmt = oStmt.remove(0);
 			prop = stmt.getPredicate();
-			if(prop.getLocalName().equals(HAS_FILE)){
+			if(prop.getLocalName().equals(HAS_FILE) && stmt.getSubject().getURI().indexOf(subjectURL) >= 0){
 				oStmt.add(stmt);
 			}
 		}
+
 		
+		boolean successful = true;
 		iLen = oStmt.size();
+
 		for(int l=0; l<iLen&&!interrupted;l++){
+			if (l == 0)
+				processIndex++;
+			
 			filesCount++;
+			boolean ingested = true;
+			StringBuilder ingestLog = new StringBuilder();
 			stmt = oStmt.get(l);
 			fNode = stmt.getObject();
 			fileUrl = fNode.asResource().getURI();
@@ -484,6 +598,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 			}
 			
 			setStatus("Ingesting file " + fileUrl + " (" + srcFileName + ", " + (l+1) + " of " + iLen + ") in " + srcName + " ... " );
+			
 			if(srcFileName!=null) {
 				String fName = srcFileName;
 				File srcFile = null;
@@ -501,71 +616,114 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 				if(srcFile == null || !srcFile.exists()){
 					// Retrieve the file locally
 					srcFile = filesMap.get(fName);
-					if(srcFile == null){
-						exeResult = false;
-						logError("Source file for " + srcFileName + " in " + srcName + " doesn't exist. Please choose a correct file location from the dams staging area.");
-					}else{
-						// Ingest the file
-						DamsURI dURI = null;
-						boolean ingested = false;
-						String tmpFile = srcFile.getAbsolutePath();
-						try{
-							dURI = DamsURI.toParts(fileUrl, null);
-							oid = dURI.getObject();
-							cid = dURI.getComponent();
-							fid = dURI.getFileName();
+				}
+
+				if(srcFile == null){
+					ingestFailedCount++;
+					ingestFailed.append(fileUrl + " (" + srcFileName + ")\t\n");
+					log.error("Source file for " + srcFileName + " in " + srcName + " doesn't exist. Please choose a correct file location from the dams staging area.");
+					
+					ingested = false;
+					successful = false;
+					ingestLog.append("\n    Ingest - failed - " + damsDateFormat.format(new Date()) + " - " + "Source file is not found.");
+				}else{
+					// Ingest the file
+					DamsURI dURI = null;
+					
+					String tmpFile = srcFile.getAbsolutePath();
+					try{
+						dURI = DamsURI.toParts(fileUrl, null);
+						oid = dURI.getObject();
+						cid = dURI.getComponent();
+						fid = dURI.getFileName();
+						
+						params = new HashMap<String, String>();
+						params.put("oid", oid);
+						params.put("cid", cid);
+						params.put("fid", fid);
+						params.put("use", use);
+						params.put("local", tmpFile);
+						params.put("sourceFileName", srcFileName);
+						
+						// File ingest and Jhove extraction
+						if(!damsClient.uploadFile(params, replace)){
+							ingestFailedCount++;
+							ingestFailed.append(fileUrl + " (" + srcFileName + ")\t\n");
+							log.error("Error ingesting file " + fileUrl  + " (" + tmpFile + ", " + (l+1) + " of " + iLen + ") in " + srcName + ".");
+
+							ingested = false;
+							successful = false;
+							ingestLog.append("\n    Ingest - failed - " + damsDateFormat.format(new Date()));
+						}else{
+							ingestLog.append("\n    Ingest - successful - " + damsDateFormat.format(new Date()));
+							ingestLog.append("\n    JHOVE extraction - successful - " + damsDateFormat.format(new Date()));
 							
-							params = new HashMap<String, String>();
-							params.put("oid", oid);
-							params.put("cid", cid);
-							params.put("fid", fid);
-							params.put("use", use);
-							params.put("local", tmpFile);
-							params.put("sourceFileName", srcFileName);
-							ingested = damsClient.createFile(params);
-							if(!ingested){
-								ingestFailedCount++;
-								ingestFailed.append(fileUrl + " (" + tmpFile + "), \n");
-								logError("Error ingesting file " + fileUrl  + " (" + tmpFile + ", " + (l+1) + " of " + iLen + ") in " + srcName + ".");
-							}else{
-								message = "Ingested file " + fileUrl + " (" + tmpFile + ", " + (l+1) + " of " + iLen + ") in " + srcName + ". ";
-								log.info(message);
-								logMessage(message);
-								filesIngested.append(fileUrl + "\t" + srcFileName + "\t" + damsClient.getRequestURL() + "\n");
-								
-								// Add for SOLR update
-								if(objWithFiles.indexOf(oid) < 0)
-									objWithFiles.add(oid);
-								// Remove the hasFile property from the record which was ingested during file ingestion.
-								//rdf.remove(stmt);
-								//rdf.remove(stmts);
-								
-								//Create derivatives for images and documents PDFs
-								if((isImage(fid, use) || isDocument(fid, use)) 
-										&& (use == null || use.endsWith("source") || use.endsWith("service") || use.endsWith("alternate"))){
-									
-									boolean derCreated = damsClient.createDerivatives(oid, cid, fid, null);
+							message = "Ingested file " + fileUrl + " (" + srcFileName + ", " + (l+1) + " of " + iLen + ") in " + srcName + ". ";
+							log.info(message);
+							setStatus(message);
+							filesIngested.append(fileUrl + "\t" + srcFileName + "\t" + damsClient.getRequestURL() + "\n");
+							
+							// Add for SOLR update
+							if(objWithFiles.indexOf(oid) < 0)
+								objWithFiles.add(oid);
+							
+							//Create/update derivatives for images and documents PDFs
+							if((isImage(fid, use) || isDocument(fid, use)) 
+									&& (use == null || use.endsWith("source") || use.endsWith("service") || use.endsWith("alternate"))){
+								try {
+									boolean derCreated = damsClient.updateDerivatives(oid, cid, fid, null);
+
 									if(derCreated){
 										logMessage( "Created derivatives for " + fileUrl + " (" + damsClient.getRequestURL() + ").");
+										
+										ingestLog.append("\n    Derivative creation - - successful - " + damsDateFormat.format(new Date()));
 									} else {
 										derivFailedCount++;
 										derivativesFailed.append(damsClient.getRequestURL() + ", \n"); 
-										logError("Failed to created derivatives " + damsClient.getRequestURL() + " (" + tmpFile + ", " + (l+1) + " of " + iLen + "). ");
+										log.error("Failed to created derivatives " + damsClient.getRequestURL() + " (" + tmpFile + ", " + (l+1) + " of " + iLen + "). ");
+										
+										ingested = false;
+										successful = false;
+										ingestLog.append("\n    Derivative creation - failed - " + damsDateFormat.format(new Date()));
 									}
+								} catch(Exception e) {
+									e.printStackTrace();
+									ingestFailedCount++;
+									ingestFailed.append(srcFileName + " (" + fileUrl + ")\t\n");
+									log.error("Failed to ingest file " + fileUrl + " (" + srcFileName + ", " + (l+1) + " of " + iLen + ") in " + srcName + ": " + e.getMessage());
+									
+									ingested = false;
+									successful = false;
+									ingestLog.append("\n    Derivative creation - failed - " + e.getMessage());
 								}
 							}
-						}catch(Exception e){
-							e.printStackTrace();
-							ingestFailedCount++;
-							ingestFailed.append(fileUrl + " (" + tmpFile + "), \n");
-							logError("Failed to ingest file " + fileUrl + " (" + tmpFile + ", " + (l+1) + " of " + iLen + ") in " + srcName + ": " + e.getMessage());
 						}
+					} catch(Exception e) {
+						e.printStackTrace();
+						
+						ingestFailedCount++;
+						ingestFailed.append(srcFileName + " (" + fileUrl + ")\t\n");
+						log.error("Failed to ingest file " + fileUrl + " (" + srcFileName + ", " + (l+1) + " of " + iLen + ") in " + srcName + ": " + e.getMessage());
+						
+						ingested = false;
+						successful = false;
+						String error = e.getMessage();
+						if (error.indexOf("Error Jhove extraction") >= 0) {
+							ingestLog.append("\n    Ingest - successful - " + damsDateFormat.format(new Date()));
+							ingestLog.append("\n    JHOVE extraction - failed - " + damsDateFormat.format(new Date()) + " - " + error);
+						} else 
+							ingestLog.append("\n    Ingest - failed - " + damsDateFormat.format(new Date()) + " - " + error);
+						
 					}
 				}
 			}else{
 				ingestFailedCount++;
-				ingestFailed.append( fid + ", \n");
-				logError("Missing sourceFileName property for file " + fileUrl + " (" + (l+1) + " of " + iLen + ") in " + srcName + ".");
+				ingestFailed.append( fid + "\t\n");
+				log.error("Missing sourceFileName property for file " + fileUrl + " (" + (l+1) + " of " + iLen + ") in " + srcName + ".\n");
+				
+				ingested = false;
+				successful = false;
+				ingestLog.append("\n    Ingest - failed - " + damsDateFormat.format(new Date()) + ": " + "missing sourceFileName property for file " + fileUrl + ".");
 			}	
 			
 			try{
@@ -576,9 +734,24 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 				message = "Import interrupted in " + (fileUrl!=null?fileUrl + " (" + srcName + ")":srcName) + ". \n Error: " + e.getMessage() + "\n";
 				setStatus("Canceled");
 				clearSession();
-				logError(message);
+				log.error(message);
+				
+				ingested = false;
+				successful = false;
+				ingestLog.append("\n    Ingest - failed - " + damsDateFormat.format(new Date()) + ": canceled by user.");
+				
 			}
+			
+			status[processIndex] = successful;
+			messages[processIndex].append("\n**  " + srcFileName + " (" + fileUrl + ") - " + (ingested ? "successful" : "failed") + " - " + damsDateFormat.format(new Date()));
+			if (!ingested)
+				messages[processIndex].append(ingestLog.toString());
+				
 		}
+
+		messages[processIndex].insert(0, damsDateFormat.format(new Date()));
+
+		return iLen;
 	}
 
 	/**
@@ -661,7 +834,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 						for(Iterator<Map<String, String>> it=oids.iterator(); it.hasNext();)
 							duids += (duids.length()>0?", ":"") + it.next().values().iterator().next();
 						
-						System.out.println("Duplicated records found for " + title + " (" + field + "): " + duids + ".");
+						log.warn("Duplicated records found for " + title + " (" + field + "): " + duids + ".");
 					}	
 				}
 					
@@ -839,7 +1012,24 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 			record.detach();
 		}
 	}
-	
+
+	private String getTitle(Model model, String oid){
+		String title = "";
+		String damsNsPrefixUri = model.getNsPrefixURI("dams");
+		String madsNsPrefixUri = model.getNsPrefixURI("mads");
+		ExtendedIterator<Triple> titleIt = model.getGraph().find(ResourceFactory.createResource(oid).asNode(), 
+				ResourceFactory.createProperty(damsNsPrefixUri + "title").asNode(), com.hp.hpl.jena.graph.Node.ANY);
+		
+		if (titleIt.hasNext()) {
+			ExtendedIterator<Triple> titleLabelIt = model.getGraph().find(titleIt.next().getObject(), 
+					ResourceFactory.createProperty(madsNsPrefixUri + "authoritativeLabel").asNode(), com.hp.hpl.jena.graph.Node.ANY);
+			if (titleLabelIt.hasNext()) {
+				title = titleLabelIt.next().getObject().getLiteral().getLexicalForm();
+			}
+		}
+		return title;
+	}
+
 	/**
 	 * Construct the URL with an id.
 	 * @param arkUrl
@@ -882,16 +1072,20 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 	 */
 	public String getExeInfo() {
 		int objectsCount = objRecords.size();
+		
 		if(exeResult)
-			exeReport.append("Successfully imported " + objectsCount + " objets in " + rdfFiles.length + " metadata file" + (rdfFiles.length>1?"s":"") + ": \n - Total " + recordsCount + " records ingested. \n - " + (filesCount==0?"No":"Total " + filesCount) + " files ingested. ");
+			exeReport.append("Import summary: successful - Imported " + objectsCount + " objets in " + rdfFiles.length + " metadata file" + (rdfFiles.length>1?"s":"")
+					+ " \n- Total " + recordsCount + " records ingested. \n- " + (filesCount==0?"No":"Total " + filesCount) + " files ingested.\n");
 		else {
-			exeReport.append("Import failed ( Found " +  objectsCount + " objets; Total " + recordsCount + " record" + (recordsCount>1?"s":"") + (failedCount>0?"; " + failedCount + " of " + rdfFiles.length + " failed":"") + (derivFailedCount>0?"; Derivatives creation failed for " + derivFailedCount + " files.":"") + (solrFailedCount>0?"; SOLR update failed for " + solrFailedCount + " records.":"") +"): \n ");
-			if(ingestFailedCount > 0)
-				exeReport.append(" - " + ingestFailedCount + " of " + filesCount + " file" + (filesCount>1?"s":"") + " failed: \n" + ingestFailed.toString() + " \n");
+			exeReport.append("Import summary: failed - Found " +  objectsCount + " objet" + (objectsCount>1?"s":"") 
+					+ (failedCount>0?" \n- " + failedCount + " of " + rdfFiles.length + " failed":"") + (derivFailedCount>0?" \n- Derivatives creation failed for " + derivFailedCount + " files.":"") 
+					+ (solrFailedCount>0?" \n- SOLR update failed for " + solrFailedCount + " records.":"") +" \n");
 			if(metadataFailed.length() > 0)
-				exeReport.append(" - Failed to import the following metadeta records: \n" + metadataFailed.toString());
+				exeReport.append("* Failed to import the following metadeta records: \n" + metadataFailed.toString());
+			if(ingestFailedCount > 0)
+				exeReport.append("* Failed to ingest " + ingestFailedCount + " of total " + filesCount + " file" + (filesCount>1?"s":"") + ": \n" + ingestFailed.toString() + " \n");
 			if(derivativesFailed.length() > 0)
-				exeReport.append(" - Failed to create the following derivatives: \n" + derivativesFailed.toString());
+				exeReport.append("* Failed to create the following derivatives: \n" + derivativesFailed.toString());
 			getSOLRReport();
 		}
 		
@@ -911,12 +1105,16 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 				exeReport.append(it.next() + "\n");
 			}
 		}else
-			exeReport.append("No records were imported.\n");
-		String exeInfo = exeReport.toString();
-		log("log", exeInfo);
+			exeReport.append("\nNo records were imported.\n");
+
 		if(filesIngested.length() > 0){
-			log("log", "\nThe following files are ingested successfully: \n" + filesIngested.toString());
+			log.info("\nThe following files are ingested successfully: \n" + filesIngested.toString());
 		}
+		
+		log("log", "\n______________________________________________________________________________________________");
+		String exeInfo = exeReport.toString();
+		logMessage(exeInfo);
+
 		return exeInfo;
 	}
 }
