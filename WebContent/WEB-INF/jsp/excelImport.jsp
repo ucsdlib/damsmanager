@@ -158,7 +158,7 @@
 			$(licenseEndDateField).hide();
 		} else if (csSelectedValue == 'Copyright UC Regents') {
 			$(copyrightOwnerField).show();
-			$("#copyrightOwner").val("UC Regents").prop('read', true);
+			$("#copyrightOwner").val("UC Regents").prop('disabled', true);
 
 			// access override
 			$(accessOverrideField).show();
