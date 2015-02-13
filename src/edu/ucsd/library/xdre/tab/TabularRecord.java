@@ -28,8 +28,9 @@ import org.dom4j.QName;
 public class TabularRecord implements Record
 {
     public static final String OBJECT_ID = "object unique id";
-    public static final String OBJECT_COMPONENT_TYPE = "object/component";
+    public static final String OBJECT_COMPONENT_TYPE = "level";
     public static final String COMPONENT = "component";
+    public static final String SUBCOMPONENT = "sub-component";
     public static final String DELIMITER = "|";
     public static final String DELIMITER_CELL = "@";
     public static final String[] ACCEPTED_DATE_FORMATS = {"yyyy-MM-dd", "yyyy-MM", "yyyy"};
@@ -49,8 +50,9 @@ public class TabularRecord implements Record
             "dams", "http://library.ucsd.edu/ontology/dams#");
 
     private Map<String,String> data;
-    private List<Map<String,String>> cmp;
+    private List<TabularRecord> cmp;
     private int counter = 0;
+    private int cmpCounter = 0;
 
     /**
      * Create an empty record.
@@ -71,10 +73,10 @@ public class TabularRecord implements Record
     /**
      * Create a record with both record-level and component-level data.
     **/
-    public TabularRecord( Map<String,String> data, ArrayList<Map<String,String>> cmp )
+    public TabularRecord( Map<String,String> data, ArrayList<TabularRecord> cmp )
     {
         this.data = (data != null) ? data : new HashMap<String,String>();
-        this.cmp = (cmp != null) ? cmp : new ArrayList<Map<String,String>>();
+        this.cmp = (cmp != null) ? cmp : new ArrayList<TabularRecord>();
     }
 
     /**
@@ -94,9 +96,17 @@ public class TabularRecord implements Record
     }
 
     /**
+     * Add component-level data.
+    **/
+    public void addComponent( TabularRecord component )
+    {
+        cmp.add(component);
+    }
+    
+    /**
      * Set the component-level data.
     **/
-    public void setComponents( List<Map<String,String>> cmp )
+    public void setComponents( List<TabularRecord> cmp )
     {
         this.cmp = cmp;
     }
@@ -104,7 +114,7 @@ public class TabularRecord implements Record
     /**
      * Get the component-level data.
     **/
-    public List<Map<String,String>> getComponents()
+    public List<TabularRecord> getComponents()
     {
         return cmp;
     }
@@ -136,13 +146,21 @@ public class TabularRecord implements Record
         addFields( root, data, 0, ark );
 
         // component metadata
-        for ( int i = 0; i < cmp.size(); i++ )
-        {
-            Element e = addElement(root, "hasComponent", damsNS, "Component", damsNS);
-            addFields(e, cmp.get(i), (i + 1), ark); // 1-based component ids
-        }
+        serializeComponents (root, cmp, ark);
 
         return rdf.getDocument();
+    }
+
+    private void serializeComponents (Element parent, List<TabularRecord> cmps, String ark) throws Exception {
+        for ( int i = 0; i < cmps.size(); i++ )
+        {
+        	TabularRecord component = cmps.get(i);
+            Element e = addElement(parent, "hasComponent", damsNS, "Component", damsNS);
+            addFields(e, component.getData(), ++cmpCounter, ark); // 1-based component ids
+            List<TabularRecord> subCmps = component.getComponents();
+            // sub-component metadata
+            serializeComponents (e, subCmps, ark);
+        }
     }
 
     /**

@@ -4,6 +4,7 @@ import static edu.ucsd.library.xdre.tab.TabularRecord.OBJECT_ID;
 import static edu.ucsd.library.xdre.tab.TabularRecord.DELIMITER;
 import static edu.ucsd.library.xdre.tab.TabularRecord.OBJECT_COMPONENT_TYPE;
 import static edu.ucsd.library.xdre.tab.TabularRecord.COMPONENT;
+import static edu.ucsd.library.xdre.tab.TabularRecord.SUBCOMPONENT;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -86,7 +87,7 @@ public class ExcelSource implements RecordSource
     }
 
     @Override
-    public TabularRecord nextRecord()
+    public TabularRecord nextRecord() throws Exception
     {
         if ( currRow < lastRow )
         {
@@ -101,32 +102,41 @@ public class ExcelSource implements RecordSource
             String objID = cache.get(OBJECT_ID);
             String cmpID = null;
 
-            // look for component records
-            List<Map<String,String>> components = new ArrayList<>();
+            // look for component/sub-component records
             while (currRow < lastRow && (cmpID == null || cmpID.equals(objID)))
             {
                 currRow++;
-                Map<String,String> cmp = parseRow( currRow );
-                cmpID = cmp.get(OBJECT_ID);
-                String objectComponentType = cmp.get(OBJECT_COMPONENT_TYPE);
-                if ( objectComponentType != null && objectComponentType.equalsIgnoreCase(COMPONENT) 
+                Map<String,String> cmpData = parseRow( currRow );
+                cmpID = cmpData.get(OBJECT_ID);
+                String objectComponentType = cmpData.get(OBJECT_COMPONENT_TYPE);
+                if ( objectComponentType != null && (objectComponentType.equalsIgnoreCase(COMPONENT) || objectComponentType.equalsIgnoreCase(SUBCOMPONENT))
                 		&& (cmpID == null || cmpID.trim().equals("") || cmpID.equals(objID)) )
                 {
-                    // component record, add to list
-                    components.add( cmp );
-                    cmpID = null;
+                	TabularRecord component = new TabularRecord();
+                	component.setData(cmpData);
+                	if (objectComponentType.equalsIgnoreCase(COMPONENT)) {
+	                    // component record, add to list
+	                    rec.addComponent( component );
+                	} else if (objectComponentType.equalsIgnoreCase(SUBCOMPONENT)) {
+                		// sub-component record, add to child list
+                		List<TabularRecord> components = rec.getComponents();
+                		if ( components.size() == 0 )
+                			throw new Exception ("Parent component is missing for sub-component in object " + objID + ".");
+                		components.get( components.size() - 1 ).addComponent( component );
+                	} else 
+                		throw new Exception ("Unknown Level value for object/component/sub-component option in object " + objID + ".");
+
+                	cmpID = null;
                     cache = null;
                 }
                 else
                 {
                     // this is the next object record, save for next time
-                    cache = cmp;
+                    cache = cmpData;
                     break;
                 }
             }
 
-            // finish record
-            rec.setComponents( components );
             return rec;
         }
         else if ( cache != null )
