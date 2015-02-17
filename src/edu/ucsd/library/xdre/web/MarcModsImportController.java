@@ -1,5 +1,7 @@
 package edu.ucsd.library.xdre.web;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -10,6 +12,10 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.lang3.StringUtils;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Node;
+import org.dom4j.io.SAXReader;
 import org.json.simple.JSONArray;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -71,6 +77,8 @@ public class MarcModsImportController implements Controller {
 			JSONArray accessValues = new JSONArray();
 			accessValues.addAll(Arrays.asList(RecordUtil.ACCESS_VALUES));
 
+			List<String> countryCodes = getCountryCodes (request);
+			
 			dataMap.put("categories", collectionMap);
 			dataMap.put("category", collectionId);
 			dataMap.put("units", unitsMap);
@@ -86,6 +94,7 @@ public class MarcModsImportController implements Controller {
 			dataMap.put("accessOverride", accessValues);
 			dataMap.put("licenseBeginDate", licenseBeginDate);
 			dataMap.put("licenseEndDate", licenseEndDate);
+			dataMap.put("countryCodes", countryCodes);
 		
 		
 		} catch (Exception e) {
@@ -96,5 +105,18 @@ public class MarcModsImportController implements Controller {
 				damsClient.close();
 		}
 		return new ModelAndView("marcModsImport", "model", dataMap);
+	}
+	
+	public static List<String> getCountryCodes (HttpServletRequest request) throws DocumentException {
+		List<String> countryCodes = new ArrayList<>();
+		File dataFile = new File(request.getSession().getServletContext().getRealPath("files/country-code-iso-3166-all.xml"));
+		SAXReader reader = new SAXReader();
+		Document dataDoc = reader.read(dataFile);
+		List<Node> nodes = dataDoc.selectNodes("//country/@alpha-2");
+		for (Node node : nodes) {
+			countryCodes.add(node.getStringValue().trim());
+		}
+		
+		return countryCodes;
 	}
  }
