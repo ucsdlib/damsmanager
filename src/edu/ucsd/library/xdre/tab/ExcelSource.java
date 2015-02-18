@@ -92,54 +92,55 @@ public class ExcelSource implements RecordSource
         if ( currRow < lastRow )
         {
             // parse an object record (if we don't already have a leftover)
-            if ( cache == null )
+            while ( currRow < lastRow && (cache == null || cache.size() == 0))
             {
-                cache = parseRow( currRow );
+                cache = parseRow( currRow++ );
             }
 
-            TabularRecord rec = new TabularRecord();
-            rec.setData( cache );
-            String objID = cache.get(OBJECT_ID);
-            String cmpID = null;
-
-            // look for component/sub-component records
-            while (currRow < lastRow && (cmpID == null || cmpID.equals(objID)))
-            {
-                currRow++;
-                Map<String,String> cmpData = parseRow( currRow );
-                cmpID = cmpData.get(OBJECT_ID);
-                String objectComponentType = cmpData.get(OBJECT_COMPONENT_TYPE);
-                if ( objectComponentType != null && (objectComponentType.equalsIgnoreCase(COMPONENT) || objectComponentType.equalsIgnoreCase(SUBCOMPONENT))
-                		&& (cmpID == null || cmpID.trim().equals("") || cmpID.equals(objID)) )
-                {
-                	TabularRecord component = new TabularRecord();
-                	component.setData(cmpData);
-                	if (objectComponentType.equalsIgnoreCase(COMPONENT)) {
-	                    // component record, add to list
-	                    rec.addComponent( component );
-                	} else if (objectComponentType.equalsIgnoreCase(SUBCOMPONENT)) {
-                		// sub-component record, add to child list
-                		List<TabularRecord> components = rec.getComponents();
-                		if ( components.size() == 0 )
-                			throw new Exception ("Parent component is missing for sub-component in object " + objID + ".");
-                		components.get( components.size() - 1 ).addComponent( component );
-                	} else 
-                		throw new Exception ("Unknown Level value for object/component/sub-component option in object " + objID + ".");
-
-                	cmpID = null;
-                    cache = null;
-                }
-                else
-                {
-                    // this is the next object record, save for next time
-                    cache = cmpData;
-                    break;
-                }
+            if (cache.size() > 0) {
+	            TabularRecord rec = new TabularRecord();
+	            rec.setData( cache );
+	            String objID = cache.get(OBJECT_ID);
+	            String cmpID = null;
+	
+	            // look for component/sub-component records
+	            while (currRow < lastRow && (cmpID == null || cmpID.equals(objID)))
+	            {
+	                currRow++;
+	                Map<String,String> cmpData = parseRow( currRow );
+	                cmpID = cmpData.get(OBJECT_ID);
+	                String objectComponentType = cmpData.get(OBJECT_COMPONENT_TYPE);
+	                if ( objectComponentType != null && (objectComponentType.equalsIgnoreCase(COMPONENT) || objectComponentType.equalsIgnoreCase(SUBCOMPONENT))
+	                		&& (cmpID == null || cmpID.trim().equals("") || cmpID.equals(objID)) )
+	                {
+	                	TabularRecord component = new TabularRecord();
+	                	component.setData(cmpData);
+	                	if (objectComponentType.equalsIgnoreCase(COMPONENT)) {
+		                    // component record, add to list
+		                    rec.addComponent( component );
+	                	} else if (objectComponentType.equalsIgnoreCase(SUBCOMPONENT)) {
+	                		// sub-component record, add to child list
+	                		List<TabularRecord> components = rec.getComponents();
+	                		if ( components.size() == 0 )
+	                			throw new Exception ("Parent component is missing for sub-component in object " + objID + ".");
+	                		components.get( components.size() - 1 ).addComponent( component );
+	                	} else 
+	                		throw new Exception ("Unknown Level value for object/component/sub-component option in object " + objID + ".");
+	
+	                	cmpID = null;
+	                    cache = null;
+	                }
+	                else
+	                {
+	                    // this is the next object record, save for next time
+	                    cache = cmpData;
+	                    break;
+	                }
+	            }
+	            return rec;
             }
-
-            return rec;
         }
-        else if ( cache != null )
+        else if ( cache != null && cache.size() > 0)
         {
             TabularRecord rec = new TabularRecord(cache);
             cache = null;
