@@ -331,12 +331,13 @@
 			<td  align="left">
 				<span class="submenuText">
 					<select id="countryCode" name="countryCode" class="inputText">
-						<c:forEach var="countryCode" items="${model.countryCodes}">
-							<option value="${countryCode}" <c:if test="${countryCode == 'US'}">selected</c:if>>
-	                      			<c:out value="${countryCode}" />
+						<c:forEach var="entry" items="${model.countryCodes}">
+							<option value="${entry.value}" <c:if test="${entry.value == 'US'}">selected</c:if>>
+	                      			<c:out value="${entry.key}" />
 	                       	</option>
 						</c:forEach>
-					</select></span>
+					</select>
+				</span>
 			</td>
 		</tr>
 		<tr align="left" id="copyrightOwnerField" style="display:none;">

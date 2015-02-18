@@ -1,11 +1,11 @@
 package edu.ucsd.library.xdre.web;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -77,7 +77,7 @@ public class MarcModsImportController implements Controller {
 			JSONArray accessValues = new JSONArray();
 			accessValues.addAll(Arrays.asList(RecordUtil.ACCESS_VALUES));
 
-			List<String> countryCodes = getCountryCodes (request);
+			Map<String, String> countryCodes = getCountryCodes (request);
 			
 			dataMap.put("categories", collectionMap);
 			dataMap.put("category", collectionId);
@@ -107,14 +107,16 @@ public class MarcModsImportController implements Controller {
 		return new ModelAndView("marcModsImport", "model", dataMap);
 	}
 	
-	public static List<String> getCountryCodes (HttpServletRequest request) throws DocumentException {
-		List<String> countryCodes = new ArrayList<>();
+	public static Map<String, String> getCountryCodes (HttpServletRequest request) throws DocumentException {
+		Map<String, String> countryCodes = new TreeMap<>();
 		File dataFile = new File(request.getSession().getServletContext().getRealPath("files/country-code-iso-3166-all.xml"));
 		SAXReader reader = new SAXReader();
 		Document dataDoc = reader.read(dataFile);
-		List<Node> nodes = dataDoc.selectNodes("//country/@alpha-2");
+		List<Node> nodes = dataDoc.selectNodes("//country");
 		for (Node node : nodes) {
-			countryCodes.add(node.getStringValue().trim());
+			String name = node.selectSingleNode("@name").getStringValue().trim();
+			String alpha2 = node.selectSingleNode("@alpha-2").getStringValue().trim();
+			countryCodes.put(name, alpha2);
 		}
 		
 		return countryCodes;

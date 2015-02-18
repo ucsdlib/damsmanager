@@ -62,7 +62,7 @@ public class ExcelImportController implements Controller {
 			JSONArray accessValues = new JSONArray();
 			accessValues.addAll(Arrays.asList(RecordUtil.ACCESS_VALUES));
 
-			List<String> countryCodes = MarcModsImportController.getCountryCodes (request);
+			Map<String, String> countryCodes = MarcModsImportController.getCountryCodes (request);
 
 			dataMap.put("categories", collectionMap);
 			dataMap.put("category", collectionId);
