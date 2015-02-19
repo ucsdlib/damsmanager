@@ -388,7 +388,15 @@
 				<span class="submenuText"><span class="requiredLabel" id="copyrightJurisdiction_required">*</span><b>Copyright Jurisdiction: </b></span>
 			</td>
 			<td  align="left">
-				<span class="submenuText"><input type="text" id="countryCode" name="countryCode" size="20" value="us"></span>
+				<span class="submenuText">
+					<select id="countryCode" name="countryCode" class="inputText">
+						<c:forEach var="entry" items="${model.countryCodes}">
+							<option value="${entry.value}" <c:if test="${entry.value == 'US'}">selected</c:if>>
+	                      			<c:out value="${entry.key}" />
+	                       	</option>
+						</c:forEach>
+					</select>
+				</span>
 			</td>
 		</tr>
 		<tr align="left" id="copyrightOwnerField" style="display:none;">

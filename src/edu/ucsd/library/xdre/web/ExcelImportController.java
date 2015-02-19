@@ -62,6 +62,8 @@ public class ExcelImportController implements Controller {
 			JSONArray accessValues = new JSONArray();
 			accessValues.addAll(Arrays.asList(RecordUtil.ACCESS_VALUES));
 
+			Map<String, String> countryCodes = MarcModsImportController.getCountryCodes (request);
+
 			dataMap.put("categories", collectionMap);
 			dataMap.put("category", collectionId);
 			dataMap.put("units", unitsMap);
@@ -77,6 +79,7 @@ public class ExcelImportController implements Controller {
 			dataMap.put("accessOverride", accessValues);
 			dataMap.put("licenseBeginDate", licenseBeginDate);
 			dataMap.put("licenseEndDate", licenseEndDate);
+			dataMap.put("countryCodes", countryCodes);
 		
 		
 		} catch (Exception e) {
