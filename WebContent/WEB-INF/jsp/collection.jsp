@@ -49,7 +49,9 @@
 	    	}
 	    }
         
-	    var message = "Are you sure to save the collection record? \n";
+	    var message = "Are you sure you want to Create collection '" + collTitle + "'? \n";
+	    if (collIndex > 0)
+	    	message = "Are you sure you want to Edit " + document.mainForm.category.options[collIndex].text + "? \n";
 
 	    var exeConfirm = confirm(message);
 	    if(!exeConfirm)
