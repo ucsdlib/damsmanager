@@ -51,7 +51,8 @@ public class FileUtils {
 	  {
 	    for (String extension : fileExtensions)
 	    {
-	      if (file.getName().toLowerCase().endsWith(extension))
+	      String fileName = file.getName().toLowerCase();
+	      if (!file.isHidden() && !fileName.startsWith("~") && fileName.endsWith(extension))
 	      {
 	        return true;
 	      }
