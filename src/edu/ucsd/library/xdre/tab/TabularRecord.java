@@ -156,6 +156,7 @@ public class TabularRecord implements Record
         {
         	TabularRecord component = cmps.get(i);
             Element e = addElement(parent, "hasComponent", damsNS, "Component", damsNS);
+            addTextElement( e, "order", damsNS, "" + (i + 1));
             addFields(e, component.getData(), ++cmpCounter, ark); // 1-based component ids
             List<TabularRecord> subCmps = component.getComponents();
             // sub-component metadata
