@@ -162,6 +162,7 @@ public class CollectionOperationController implements Controller {
 			activeButton = "validateButton";
 		HttpSession session = request.getSession();
 		session.setAttribute("category", collectionId);
+		session.setAttribute("user", request.getRemoteUser());
 		
 		String ds = getParameter(paramsMap, "ts");
 		if(ds == null || ds.length() == 0)
@@ -362,6 +363,7 @@ public class CollectionOperationController implements Controller {
 		damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
 		damsClient.setTripleStore(ds);
 		damsClient.setFileStore(fileStore);
+		damsClient.setUser((String)session.getAttribute("user"));
 
 		if(message.length() == 0){
 		 int userId = -1;

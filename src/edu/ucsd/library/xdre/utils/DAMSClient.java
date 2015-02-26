@@ -122,6 +122,7 @@ public class DAMSClient {
 	private String fileStore = null;
 	private String tripleStore = null;
 	private String solrURLBase = null; // SOLR URL
+	private String user = null; 
 
 	/**
 	 * Construct a DAMSClient object.
@@ -1590,7 +1591,8 @@ public class DAMSClient {
 	 * @return
 	 */
 	public String toDAMSURL(String[] urlParts, String format){
-		NameValuePair[] params = {new BasicNameValuePair("format", format), new BasicNameValuePair("ts",tripleStore), new BasicNameValuePair("fs", fileStore)};
+		NameValuePair[] params = {new BasicNameValuePair("format", format), new BasicNameValuePair("ts",tripleStore), 
+				new BasicNameValuePair("fs", fileStore), new BasicNameValuePair("user", StringUtils.isBlank(user) ? "":user)};
 		String paramsStr = concatParams(params);
 		//System.out.println(storageURL + toUrlPath(urlParts) + (paramsStr.length()>0?"?":"") + paramsStr);
 		return storageURL + toUrlPath(urlParts) + (paramsStr.length()>0?"?":"") + paramsStr;
@@ -1884,6 +1886,22 @@ public class DAMSClient {
 	 */
 	public String getTripleStore() {
 		return tripleStore;
+	}
+
+	/**
+	 * Get user ID
+	 * @return
+	 */
+	public String getUser() {
+		return user;
+	}
+
+	/**
+	 * Set user ID
+	 * @param user
+	 */
+	public void setUser(String user) {
+		this.user = user;
 	}
 
 	/**
