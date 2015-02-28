@@ -68,6 +68,16 @@
 	    	alert("Please select a program.");
 	    	document.mainForm.program.focus();
 			return false;
+	    } else {
+	    	var unitText = document.mainForm.unit.options[unitIndex].text;
+	    	var programText = document.mainForm.program.options[programIndex].text;
+	    	if (unitText.indexOf("Research Data") >= 0 || programText.indexOf("Research Data") >= 0) {
+	    		 if (!(unitText.indexOf("Research Data") >= 0 && programText.indexOf("Research Data") >= 0)) {
+		    		alert("The Unit selected doesn't match the Program. Please select a program that match unit \"" + unitText + "\"!");
+		    		document.mainForm.program.focus();
+					return false;
+	    		 }
+	    	}
 	    }
 	    
 		var copyrightStatusIndex = document.mainForm.copyrightStatus.selectedIndex;
@@ -168,8 +178,18 @@
 		var unitName = unitOpt.options[unitOpt.selectedIndex].text;
 		var unitID = unitOpt.options[unitOpt.selectedIndex].value;
 		var fsSelected = fsDefault;
-		if(unitName == "UCSD Research Data Collections" || unitID.indexOf("bb6827300d") >= 0)
+		if(unitName == "UCSD Research Data Collections" || unitName.indexOf("Research Data Curation") >= 0 || unitID.indexOf("bb6827300d") >= 0) {
 			fsSelected = "openStack";
+			var proOpts = document.mainForm.program.options;
+			for (var i = 0; i < proOpts.length; i++) { 
+				if (proOpts[i].text.indexOf("Research Data") >=0)
+					proOpts[i].selected = true;
+			}
+		} else {
+			var programText = document.mainForm.program.options[mainForm.program.selectedIndex].text;
+			if (programText.indexOf("Research Data") >=0)
+				document.mainForm.program.selectedIndex = 0;
+		}
 		document.mainForm.fs.value = fsSelected;
 	}
 	
