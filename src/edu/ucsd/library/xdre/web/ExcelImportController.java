@@ -1,5 +1,6 @@
 package edu.ucsd.library.xdre.web;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +15,7 @@ import org.json.simple.JSONArray;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
+import edu.ucsd.library.xdre.tab.ExcelSource;
 import edu.ucsd.library.xdre.tab.RecordUtil;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
@@ -40,6 +42,16 @@ public class ExcelImportController implements Controller {
 		DAMSClient damsClient = null;
 		Map dataMap = new HashMap();
 		try{
+			
+			// initiate column name and control values for validation
+			String columns = request.getServletContext().getRealPath("files/valid_columns.xlsx");
+			String cvs = request.getServletContext().getRealPath("files/valid_cv_values.xlsx");
+			try {
+				ExcelSource.initControlValues(new File(columns), new File(cvs));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
 			if(ds == null)
 				ds = Constants.DEFAULT_TRIPLESTORE;
 
