@@ -1,7 +1,6 @@
 package edu.ucsd.library.xdre.tab;
 
 import java.io.File;
-import java.io.InputStream;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
@@ -13,48 +12,24 @@ import org.dom4j.Node;
 import org.dom4j.QName;
 
 /**
- * A Marc/Mods record constructed from the Roger/AT form
+ * Standard InputStreamRecord constructed from the Excel form, AT/Roger form etc.
  * @author lsitu
- * Since Sep. 25, 2014 
+ * Since Feb. 4, 2015 
  */
-public class ModsRecord implements Record {
+public class InputStreamRecord implements Record {
     protected String id;
     protected Document rdf;
 	
-	public ModsRecord(File xsl, File xml, Map<String, String> collections, String unitURI, 
-			String copyrightStatus, String copyrightJurisdiction, String copyrightOwner, String rightsHolderType,
-			String program, String access, String beginDate, String endDate) 
-					throws Exception {
-		XsltSource xsltSource = new XsltSource( xsl, xml );
-		Record record = xsltSource.nextRecord();
-		this.id = record.recordID();
-		this.rdf = record.toRDFXML();
-		
-		//Assign ID for component and files with symbols /CID or /FID 
-		assignIDs();
-		RecordUtil.addRights(rdf, unitURI, collections, copyrightStatus, copyrightJurisdiction,
-				copyrightOwner, rightsHolderType, program, access, beginDate, endDate);
-	}
-	
-	public ModsRecord(File xsl, InputStream in, String sourceID, Map<String, String> collections, String unitURI, 
-			String copyrightStatus, String copyrightJurisdiction, String copyrightOwner, String rightsHolderType,
+	public InputStreamRecord(Record record, Map<String, String> collections, String unit, 
+			String copyrightStatus, String copyrightJurisdiction, String copyrightOwner,
 			String program, String access, String beginDate, String endDate) throws Exception {
-		XsltSource xsltSource = new XsltSource( xsl, sourceID, in );
-		Record record = xsltSource.nextRecord();
 		this.id = record.recordID();
 		this.rdf = record.toRDFXML();
 		
 		//Assign component ID and file ID for symbols CID, FID 
 		assignIDs();
-		RecordUtil.addRights(rdf, unitURI, collections, copyrightStatus, copyrightJurisdiction, 
-				copyrightOwner, rightsHolderType, program, access, beginDate, endDate);
-	}
-
-	public void addRights (String unitURI, Map<String, String> collections,
-	        String copyrightStatus, String copyrightJurisdiction, String copyrightOwner, String rightsHolderType,
-	        String program, String access, String beginDate, String endDate){
-		RecordUtil.addRights(rdf, unitURI, collections, copyrightStatus, copyrightJurisdiction, 
-				copyrightOwner, rightsHolderType, program, access, beginDate, endDate);
+		RecordUtil.addRights(rdf, unit, collections, copyrightStatus, copyrightJurisdiction, 
+				copyrightOwner, program, access, beginDate, endDate);
 	}
 
 	@Override

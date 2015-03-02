@@ -38,8 +38,8 @@
 		
 	function setPath(){
 		var paths = document.getElementById("dir").value;
-		window.opener.setFilePaths(paths);
 		self.close();
+		window.opener.setFilePaths(paths);
 	}
 	</script>
 </HEAD>

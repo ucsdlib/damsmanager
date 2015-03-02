@@ -10,7 +10,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
 import org.dom4j.Branch;
 import org.dom4j.Document;
 import org.dom4j.DocumentFactory;
@@ -18,7 +17,6 @@ import org.dom4j.Element;
 import org.dom4j.Namespace;
 import org.dom4j.QName;
 
-import edu.ucsd.library.xdre.utils.Constants;
 
 /**
  * A bundle of tabular data, consisting of a key-value map for the record, and 0 or more
@@ -30,8 +28,9 @@ import edu.ucsd.library.xdre.utils.Constants;
 public class TabularRecord implements Record
 {
     public static final String OBJECT_ID = "object unique id";
-    public static final String OBJECT_COMPONENT_TYPE = "object/component";
+    public static final String OBJECT_COMPONENT_TYPE = "level";
     public static final String COMPONENT = "component";
+    public static final String SUBCOMPONENT = "sub-component";
     public static final String DELIMITER = "|";
     public static final String DELIMITER_CELL = "@";
     public static final String[] ACCEPTED_DATE_FORMATS = {"yyyy-MM-dd", "yyyy-MM", "yyyy"};
@@ -51,8 +50,9 @@ public class TabularRecord implements Record
             "dams", "http://library.ucsd.edu/ontology/dams#");
 
     private Map<String,String> data;
-    private List<Map<String,String>> cmp;
+    private List<TabularRecord> cmp;
     private int counter = 0;
+    private int cmpCounter = 0;
 
     /**
      * Create an empty record.
@@ -73,10 +73,10 @@ public class TabularRecord implements Record
     /**
      * Create a record with both record-level and component-level data.
     **/
-    public TabularRecord( Map<String,String> data, ArrayList<Map<String,String>> cmp )
+    public TabularRecord( Map<String,String> data, ArrayList<TabularRecord> cmp )
     {
         this.data = (data != null) ? data : new HashMap<String,String>();
-        this.cmp = (cmp != null) ? cmp : new ArrayList<Map<String,String>>();
+        this.cmp = (cmp != null) ? cmp : new ArrayList<TabularRecord>();
     }
 
     /**
@@ -96,9 +96,17 @@ public class TabularRecord implements Record
     }
 
     /**
+     * Add component-level data.
+    **/
+    public void addComponent( TabularRecord component )
+    {
+        cmp.add(component);
+    }
+    
+    /**
      * Set the component-level data.
     **/
-    public void setComponents( List<Map<String,String>> cmp )
+    public void setComponents( List<TabularRecord> cmp )
     {
         this.cmp = cmp;
     }
@@ -106,7 +114,7 @@ public class TabularRecord implements Record
     /**
      * Get the component-level data.
     **/
-    public List<Map<String,String>> getComponents()
+    public List<TabularRecord> getComponents()
     {
         return cmp;
     }
@@ -138,13 +146,21 @@ public class TabularRecord implements Record
         addFields( root, data, 0, ark );
 
         // component metadata
-        for ( int i = 0; i < cmp.size(); i++ )
-        {
-            Element e = addElement(root, "hasComponent", damsNS, "Component", damsNS);
-            addFields(e, cmp.get(i), (i + 1), ark); // 1-based component ids
-        }
+        serializeComponents (root, cmp, ark);
 
         return rdf.getDocument();
+    }
+
+    private void serializeComponents (Element parent, List<TabularRecord> cmps, String ark) throws Exception {
+        for ( int i = 0; i < cmps.size(); i++ )
+        {
+        	TabularRecord component = cmps.get(i);
+            Element e = addElement(parent, "hasComponent", damsNS, "Component", damsNS);
+            addFields(e, component.getData(), ++cmpCounter, ark); // 1-based component ids
+            List<TabularRecord> subCmps = component.getComponents();
+            // sub-component metadata
+            serializeComponents (e, subCmps, ark);
+        }
     }
 
     /**
@@ -164,21 +180,6 @@ public class TabularRecord implements Record
         {
             addTextElement( e, "typeOfResource", damsNS, type );
         }
-
-        // unit /////////////////////////////////////////////////////////////////////////
-        if ( cmp == 0 && pop(data.get("unit")) )
-        {
-            Element unit = addElement( e, "unit", damsNS );
-            addAttribute( unit, "resource", rdfNS, data.get("unit") );
-        }
-
-        // collections //////////////////////////////////////////////////////////////////
-        addCollection( e, data, "assembled collection", "assembledCollection",
-            "AssembledCollection" );
-        addCollection( e, data, "provenance collection", "provenanceCollection",
-            "ProvenanceCollection" );
-        addCollection( e, data, "provenance collection part", "provenanceCollectionPart",
-            "ProvenanceCollectionPart" );
 
         // title ////////////////////////////////////////////////////////////////////////
         String main  = data.get("title");
@@ -385,66 +386,8 @@ public class TabularRecord implements Record
                 addElement(f,"use",damsNS).setText(use);
             }
         }
-
-        // Copyright and Access Override (RightsHolder excluded for more specific predicates) //
-        String copyrightStatus = data.get("rights status");
-        String copyrightJurisdiction = data.get("jurisdiction");
-        String accessOverride = data.get("access override");
-        String beginDate = data.get("access override begin date");
-        String endDate = data.get("access override end date");
-        
-        // Validate the value for Access Override
-        if ( pop(data.get("access override")) ) {
-        	validateAccessOverride ( objectID, accessOverride.trim() );
-        }
-        
-        if (!StringUtils.isBlank(copyrightStatus) || !StringUtils.isBlank(accessOverride) )
-        {
-        	RecordUtil.addRights(e.getDocument(), null, null, copyrightStatus, copyrightJurisdiction, null, null,
-        			null, accessOverride, beginDate, endDate);
-        	
-        	// Ingore column "copyright holder corporate name" = "UC Regents" for Copyright Status = "Copyright UC Regents" when presented
-        	if (!StringUtils.isBlank(copyrightStatus) && copyrightStatus.equalsIgnoreCase(RecordUtil.copyrightRegents)){
-	        	String rightsHolders = data.get("copyright holder corporate name");
-	        	if (!StringUtils.isBlank(rightsHolders) && rightsHolders.trim().equalsIgnoreCase("UC Regents"))
-	        		data.remove("copyright holder corporate name");
-        	}
-        }
-        
-        // rights holder (special case of subject name) /////////////////////////////////
-        addSubject( data, e, "copyright holder conference name", "ConferenceName", madsNS,
-                "rightsHolderConference", damsNS, "Name" );
-        addSubject( data, e, "copyright holder corporate name", "CorporateName", madsNS,
-                "rightsHolderCorporate", damsNS, "Name" );
-        addSubject( data, e, "copyright holder family name", "FamilyName", madsNS,
-                "rightsHolderFamily", damsNS, "Name" );
-        addSubject( data, e, "copyright holder personal name", "PersonalName", madsNS,
-                "rightsHolderPersonal", damsNS, "FullName" );
     }
 
-    /////////////////////////////////////////////////////////////////////////////////////
-    // metadata utilities ////////////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////
-    private void addCollection( Element e, Map<String,String> data, String header,
-        String pred, String elem )
-    {
-        for ( String colName : split(data.get(header)) )
-        {
-        	if ( !(colName.startsWith("http://") || colName.startsWith("https://")) )
-        	{
-	        	// Insert new stub record if it's not a url, otherwise will insert as resource reference
-	            Element coll = addVocabElement( e, pred, damsNS, elem, damsNS );
-	            coll.addElement("dams:visibility").setText("curator");
-	            addTitle( coll, colName, null, null, null, null, null );
-        	} else {
-        		String cid = colName.substring(colName.lastIndexOf("/") + 1);
-    			String arkUrlBase = Constants.DAMS_ARK_URL_BASE;
-        		String collArkUrl = arkUrlBase + (arkUrlBase.endsWith("/")?"":"/") + Constants.ARK_ORG + "/" + cid;
-        		Element coll = addElement( e, pred, damsNS );
-                addAttribute( coll, "resource", rdfNS, collArkUrl );
-        	}
-        }
-    }
     private void addRelationship( Map<String,String> data, Element e, String header,
         String type, String pred, String element )
     {
@@ -618,15 +561,6 @@ public class TabularRecord implements Record
     	}
     }
 
-    private static void validateAccessOverride ( String objectID,String accessOverride ) throws Exception
-    {
-    	List<String> accessValues = Arrays.asList(RecordUtil.ACCESS_VALUES);
-    	if ( accessValues.indexOf(accessOverride) < 0 )
-    	{
-    		throw new Exception( "Invalid access override value \"" + accessOverride + "\" for record " + objectID + ".");
-    	}
-    
-    }
 
     /**
      * Create the RDF root element

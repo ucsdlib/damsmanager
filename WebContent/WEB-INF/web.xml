@@ -105,6 +105,7 @@
 	        <url-pattern>/dataConverter.do</url-pattern>
 	        <url-pattern>/progressHandler.do</url-pattern>
 	        <url-pattern>/marcModsImport.do</url-pattern>
+	        <url-pattern>/excelImport.do</url-pattern>
 	        <url-pattern>/collectionRelease.do</url-pattern>
 	        <url-pattern>/collection.do</url-pattern>
 	        <url-pattern>/operationHandler.do</url-pattern>

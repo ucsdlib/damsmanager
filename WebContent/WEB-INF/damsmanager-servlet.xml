@@ -23,13 +23,14 @@
 	<bean name="/solrDump.do" class="edu.ucsd.library.xdre.web.SolrDumpController" />
 	<bean name="/serialize.do" class="edu.ucsd.library.xdre.web.CollectionsViewController" />
 	<bean name="/marcModsImport.do" class="edu.ucsd.library.xdre.web.MarcModsImportController"></bean>
+	<bean name="/excelImport.do" class="edu.ucsd.library.xdre.web.ExcelImportController"></bean>
 	<!--<bean name="/metaDataImport.do" class="edu.ucsd.library.xdre.web.MetadataImportController" />-->
 	<!--<bean name="/solrIndex.do" class="edu.ucsd.library.xdre.web.SolrIndexController" />-->
 	<!--<bean name="/collectionUpdate.do" class="edu.ucsd.library.xdre.web.CollectionUpdateController"></bean>-->
 	<bean name="/controlPanel.do" class="edu.ucsd.library.xdre.web.CollectionManagementController"></bean>
 	<bean name="/operationHandler.do" class="edu.ucsd.library.xdre.web.CollectionOperationController"></bean>
 	<bean name="/progressHandler.do" class="edu.ucsd.library.xdre.web.ProgressController"></bean>
-	<!--<bean name="/fileUpload.do" class="edu.ucsd.library.xdre.web.FileUploadController"></bean>-->
+	<bean name="/fileUpload.do" class="edu.ucsd.library.xdre.web.FileUploadController"></bean>
 	<bean name="/collectionRelease.do" class="edu.ucsd.library.xdre.web.CollectionReleaseController"></bean>
 	
 	<!--<bean name="/cancelConvert.do" class="edu.ucsd.library.xdre.web.CancelDataConvertController"></bean>-->

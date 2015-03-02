@@ -1745,10 +1745,9 @@ public class DAMSClient {
 						SAXReader saxReader = new SAXReader();
 						Document doc = saxReader.read(in);
 						System.out.println(doc.asXML());
-						Node node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/status");
-						
+						Node node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/timestamp");						
 						if(node != null)
-							respContent += node.getText();
+							respContent += " " + node.getText();
 						node = doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/statusCode");
 						if(node != null)
 							respContent += " status code " + doc.selectSingleNode(DOCUMENT_RESPONSE_ROOT_PATH + "/statusCode").getText();
@@ -2110,6 +2109,25 @@ public class DAMSClient {
 	
 	public void close(){
 		client.getConnectionManager().shutdown();
+	}
+
+	/**
+	 * Prepare/convert the parameters for file ingest
+	 * @param oid
+	 * @param cid
+	 * @param fid
+	 * @param file
+	 * @return
+	 */
+	public static Map<String, String> toFileIngestParams (String oid, String cid, String fid, File file) {
+		Map<String, String> params = new HashMap<String, String>();
+		params.put("oid", oid);
+		params.put("cid", cid);
+		params.put("fid", fid);	
+		params.put("sourcePath", file.getParent());
+		params.put("sourceFileName", file.getName());
+		params.put("dateCreated", damsDateFormat.format(file.lastModified()));
+		return params;
 	}
 	
 	/**

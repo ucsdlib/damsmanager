@@ -12,5 +12,5 @@ public interface RecordSource
      * Get the next TabularRecord available from this source, or null if no
      * more records are available.
     **/
-    public Record nextRecord();
+    public Record nextRecord() throws Exception;
 }

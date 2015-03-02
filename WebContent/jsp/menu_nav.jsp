@@ -6,6 +6,7 @@
 		 	<li><a href='/damsmanager/jsp/introduction.jsp'>Introduction</a></li>
 		 	<li><a href='/damsmanager/collection.do'>Collection Create/Edit</a></li>
 		 	<li><a href='/damsmanager/collectionRelease.do'>Collection Release</a></li>
+		 	<li><a href='/damsmanager/excelImport.do'>Excel Import</a></li>
 		 	<li><a href='/damsmanager/marcModsImport.do'>MARC/MODS Import</a></li>
 			<li><a href='/damsmanager/ingest.do'>Staging Ingest</a></li>
 		 	<li><a href='/damsmanager/controlPanel.do'>Process Manager</a></li>
@@ -13,6 +14,7 @@
 	</li>
 	<li><a>DAMS</a>
 		<ul>
+			<li><a href='/damsmanager/fileUpload.do'>File Upload</a></li>
 			<li><a href='/damsmanager/solrDump.do'>SOLR Dump Utility</a></li>
 			<li><a href='/damsmanager/serialize.do'>Filestore Serialization</a></li>
 		</ul>

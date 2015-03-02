@@ -16,6 +16,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.text.Normalizer;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -60,6 +61,7 @@ import edu.ucsd.library.xdre.utils.RightsAction;
 public abstract class CollectionHandler implements ProcessHandler {
 	public static final String INFO_MODEL_PREFIX = "info:fedora/afmodel:";
 	public static final String HAS_FILE = "hasFile";
+	public static SimpleDateFormat damsDateFormat = new SimpleDateFormat(DAMSClient.DAMS_DATE_FORMAT);
 	
 	private static Logger log = Logger.getLogger(CollectionHandler.class);
 	protected static Random random = new Random();
@@ -677,11 +679,11 @@ public abstract class CollectionHandler implements ProcessHandler {
 				solrFailed.add(oid);
 				message = "SOLR update failed for object " + oid  + ".";
 				setStatus(message); 
-				logError(message);
+				log.error(message);
 			}else{
 				message = "SOLR update succeeded for object " + oid  + ". ";
 				setStatus(message); 
-				logMessage(message);
+				//logMessage(message);
 				log.info(message);
 			}
 		} catch (Exception e) {
@@ -689,7 +691,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 			solrFailed.add(oid);
 			message = "SOLR update failed for " + oid + ": " + e.getMessage();
 			setStatus(message); 
-			logError(message);
+			log.error(message);
 		}
 		return succeeded;
 	}
@@ -702,7 +704,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 		StringBuilder builder = new StringBuilder();
 		int iLen = solrFailed.size();
 		if(iLen > 0){
-			builder.append("SOLR update failed for the following record" + (iLen>1?"s":"") + ": \n");
+			builder.append("SOLR index request failed for the following record" + (iLen>1?"s":"") + ": \n");
 			for(int i=0; i<iLen; i++){
 				builder.append(solrFailed.get(i) + ", \n");
 			}

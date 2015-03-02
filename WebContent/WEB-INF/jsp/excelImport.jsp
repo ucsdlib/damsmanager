@@ -17,45 +17,13 @@
 	var letters = /^[A-Za-z]+$/;
 	function confirmImport(){
 		var collectionIndex = document.mainForm.category.selectedIndex;
-        var sourceName = document.mainForm.source.options[source.selectedIndex].value;
-        if (sourceName == 'bib') {
-        	var bib = trim(document.mainForm.bibInput.value);
-        	var message = ""; 
-        	if (bib.length == 0) {
-        		message = "Please type in valid bib number(s) delimited by comma (,).";
-        	}else{
-	       		var bibs = bib.split(",");
-	       		var emptyCount = 0;
-	       		for (var i=0; i<bibs.length; i++) {
-	       			var bibVal = trim(bibs[i]);
-	       			if (bibVal.length == 0)
-	       				emptyCount += 1;
-	       			else{
-		       			if (bibVal.charAt(0) != 'b' || !(bibVal.length == 8 || bibVal.length == 9)){
-		       				message = "Invalid bib number at index " + (i + 1) + ": " + bibVal + ". \nPlease type in valid bib number(s) delimited by comma (,).";
-		       				break;
-	       				}
-	       			}
-	       		}
-	       		if(emptyCount == bibs.length)
-	       			message = "Invalid bib number(s): " + bib + ". \nPlease type in valid bib number(s) delimited by comma (,).";
-
-        	}
-        	
-       		if (message.length > 0) {
-	   	    	alert(message);
-	   	    	document.mainForm.bibInput.focus();
-	   			return false;
-        	}
-        } else {
-        	var file = document.mainForm.dataPath.value;
-        	if (file == "") {
-    	    	alert("Please choose metadata source file location.");
-    	    	document.mainForm.dataPath.focus();
-    			return false;
-        	}
-        	document.mainForm.enctype = "multipart/form-data";
-        }
+       	var file = document.mainForm.dataPath.value;
+       	if (file == "") {
+   	    	alert("Please choose Excel metadata source file location.");
+   	    	document.mainForm.dataPath.focus();
+   			return false;
+       	}
+       	document.mainForm.enctype = "multipart/form-data";
         
 		var unitIndex = document.mainForm.unit.selectedIndex;  
 	    if(unitIndex == 0){
@@ -128,7 +96,7 @@
 	       	}
 	    }
         
-	    var message = "Are you sure to import objects from METS/MODS metadata source? \n";
+	    var message = "Are you sure to import objects from Excel metadata source? \n";
 	    if(collectionIndex == 0){
 	    	message = "No collections selected for DAMS staging ingest! \nAre you sure to continue?";
 	    }
@@ -136,7 +104,7 @@
 	    if(!exeConfirm)
 	    	return false;
 	    
-    	document.mainForm.action = "/damsmanager/operationHandler.do?marcModsImport&progress=0&formId=mainForm&sid=" + getSid();
+    	document.mainForm.action = "/damsmanager/operationHandler.do?excelImport&progress=0&formId=mainForm&sid=" + getSid();
     	displayMessage("message", "");
     	getAssignment("mainForm");
 		displayProgressBar(0);
@@ -148,12 +116,12 @@
 		var ds = document.mainForm.ts.options[dsIdx].value;
 		var selectedIndex = selectObj.selectedIndex;
 		if (selectedIndex == 0) {
-			document.mainForm.action = "/damsmanager/marcModsImport.do?ts=" + ds;
+			document.mainForm.action = "/damsmanager/excelImport.do?ts=" + ds;
 			document.mainForm.submit();
 		}
 		else {
 			var collectionId = selectObj.options[selectedIndex].value;
-			document.mainForm.action = "/damsmanager/marcModsImport.do?ts=" + ds + "&reset&category=" + collectionId;
+			document.mainForm.action = "/damsmanager/excelImport.do?ts=" + ds + "&reset&category=" + collectionId;
 			document.mainForm.submit();
 		}
 	}
@@ -161,31 +129,16 @@
 	function reloadPage(){
 		var dsIdx = document.mainForm.ts.selectedIndex;
 		var ds = document.mainForm.ts.options[dsIdx].value;
-		document.location.href="/damsmanager/atImport.do?ts=" + ds;
+		document.location.href="/damsmanager/excelImport.do?ts=" + ds;
 	}
 	
 	function selectUnit(unitOpt){
 		var unitName = unitOpt.options[unitOpt.selectedIndex].text;
 		var unitID = unitOpt.options[unitOpt.selectedIndex].value;
 		var fsSelected = fsDefault;
-		if(unitName == "UCSD Research Data Collections" || unitID.indexOf("bb6827300d") >= 0)
+		if(unitName == "UCSD Research Data Collections" || unitName.indexOf("Research Data Curation") >= 0 || unitID.indexOf("bb6827300d") >= 0)
 			fsSelected = "openStack";
 		document.mainForm.fs.value = fsSelected;
-	}
-	
-	function selectSource(){
-		var srcOptions = document.mainForm.source.options;
-		var sourceName = srcOptions[source.selectedIndex].value;
-		for(var i=0; i<srcOptions.length; i++){
-			if(srcOptions[i].value != sourceName)
-				$("#" + srcOptions[i].value).hide();
-		}
-		
-		$("#" + sourceName).show();
-		if(sourceName == 'bib')
-			$("#sourceTitle").text("Bib number(s)");
-		else
-			$("#sourceTitle").text("Metadata Location");
 	}
 
 	var accessOverrideOptions = ${model.accessOverride};
@@ -276,7 +229,7 @@
 		 });
 	});
 	
-	var crumbs = [{"Home":"http://library.ucsd.edu"}, {"Digital Library Collections":"/dc"},{"DAMS Manager":"/damsmanager/"}, {"MARC/MODS Import":""}];
+	var crumbs = [{"Home":"http://library.ucsd.edu"}, {"Digital Library Collections":"/dc"},{"DAMS Manager":"/damsmanager/"}, {"Excel Import":""}];
 	drawBreadcrumbNMenu(crumbs, "tdr_crumbs_content", true);
 </script>
 <jsp:include flush="true" page="/jsp/libanner.jsp" />
@@ -296,9 +249,9 @@
 <tr>
 <td align="center">
 <div id="main" class="mainDiv">
-<form id="mainForm" name="mainForm" method="post" action="/damsmanager/operationHandler.do?marcModsImport" >
+<form id="mainForm" name="mainForm" method="post" action="/damsmanager/operationHandler.do?excelImport" >
 <div class="emBox_ark">
-<div class="emBoxBanner">MARC/MODS Import</div>
+<div class="emBoxBanner">Excel Import</div>
 <div style="background:#DDDDDD;padding-top:8px;padding-bottom:8px;padding-left:25px;" align="left">
 		<span class="submenuText"><span class="requiredLabel">*</span><b>Collection Selection:&nbsp;</b></span>
 		<span style="padding:0px 5px 0px 7px;">
@@ -318,17 +271,6 @@
 </div>
 <div style="margin-top:10px;padding-left:20px;" align="left">
 	<table>
-		<tr align="left" style="width:160px">
-			<td height="25px">
-				<span class="submenuText"><span class="requiredLabel">*</span><b>Metadata Source: </b></span>
-			</td>
-			<td>
-				<select id="source" name="source" class="inputText" onChange="selectSource(this);">
-					<option value="mods" selected>METS/MODS</option>
-					<option value="bib">Roger Record</option>
-				</select>
-		    </td>
-		</tr>
 		<tr align="left">
 			<td height="25px">
 				<span class="submenuText">
@@ -337,8 +279,7 @@
 			</td>
 			<td  align="left">
 				<div class="submenuText" id="modsSpan">
-					<div id="mods"><input type="text" id="dataPath" name="dataPath" size="52" value="">&nbsp;<input type="button" onclick="showFilePicker('dataPath', event)" value="&nbsp;...&nbsp;"></div>
-					<div id="bib" style="display:none"><input type="text" id="bibInput" name="bibInput" size="56" value=""><span class="note"> (Records delimiter: <strong>,</strong> )</span></div>
+					<div id="excel"><input type="text" id="dataPath" name="dataPath" size="52" value="">&nbsp;<input type="button" onclick="showFilePicker('dataPath', event)" value="&nbsp;...&nbsp;"></div>
 				</div>
 			</td>
 		</tr>
@@ -443,13 +384,8 @@
 								<input type="text" id="filesPath" name="filesPath" size="48" value="">&nbsp;<input type="button" onclick="showFilePicker('filesPath', event)" value="&nbsp;...&nbsp;">
 							</div>
 						 </div>
-						 <div title="Check this checkbox to import metadata only." class="submenuText">
-							<input type="radio" name="importOption" value="metadata">
-							<span class="submenuText">Ingest metadata only</span>
-						 </div>
 					  </fieldset>
-				</div>
-													  
+				</div>								  
 			</td>
 		</tr>
 		<tr><td colspan="2" style="padding-left:6px;"><span class="submenuText"><span class="requiredLabel">*</span><b>Required Field</b></span></td>
@@ -457,8 +393,8 @@
 </div>
 <div class="buttonDiv">
 	<input type="hidden" name="fs" value=""/>
-	<input type="button" name="atImport" value=" Import " onClick="confirmImport();"/>&nbsp;&nbsp;
-	<input type="button" name="atImportCancel" value=" Cancel " onClick="document.location.href='/damsmanager/'"/>
+	<input type="button" name="import" value=" Import " onClick="confirmImport();"/>&nbsp;&nbsp;
+	<input type="button" name="cancel" value=" Cancel " onClick="document.location.href='/damsmanager/excelImport.do'"/>
 </div>
 </div>
 </form>
