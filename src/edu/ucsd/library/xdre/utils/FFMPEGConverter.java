@@ -8,9 +8,9 @@ import java.io.Reader;
 import java.util.ArrayList;
 
 /**
- * Utility class to create video derivative with FFMPEG.
- * @author lsitu@ucsd.edu
-**/
+ * Utility class to create audio/video derivatives with FFMPEG.
+ * @author lsitu
+ **/
 public class FFMPEGConverter
 {
 
@@ -40,16 +40,20 @@ public class FFMPEGConverter
 		this.command = command;
 	}
 
-	public File createDerivative(String oid, String cid, String mfid, String dfid, String frameSize) throws Exception {
-		File dst =  null;
-		//try {
-		File src = null;
-		// Local file support only
-		String fsDir = Constants.FILESTORE_DIR+ "/" + DAMSClient.pairPath(DAMSClient.stripID(oid));
-		String mfName = Constants.ARK_ORG + "-" + oid + "-" + (cid==null||cid.length()==0?"0-":cid+"-")+mfid;
-		String dfName = Constants.ARK_ORG + "-" + oid + "-" + (cid==null||cid.length()==0?"0-":cid+"-")+dfid;
-		src = new File(fsDir, mfName);
-		
+	/**
+	 * Create mp3 audio derivative
+	 * @param oid
+	 * @param cid
+	 * @param mfid
+	 * @param dfid
+	 * @return
+	 * @throws Exception
+	 */
+	public File createAudioDerivative (String oid, String cid, String mfid, String dfid)
+			throws Exception {
+		File src = createArkFile(oid, cid, mfid);
+		File dst =  createArkFile(oid, cid, dfid);
+
 		if( !src.exists() ) {
 			// XXX Implementation to retrieve master file to local disk???
 			throw new Exception ("Master file " + src.getPath() + " doesn't exists.");
@@ -63,8 +67,8 @@ public class FFMPEGConverter
 			else
 				tmpDir.mkdirs();
 		}
-		dst = File.createTempFile("ffmpeg_tmp", oid+"-"+dfName, tmpDir);
-		boolean succssful = createVideo( src, dst, frameSize );
+		dst = File.createTempFile("ffmpeg_tmp", oid+"-"+dst.getName(), tmpDir);
+		boolean succssful = createAudioMp3( src, dst );
 		if ( !succssful ) {
 			if(dst != null && dst.exists()){
 				// Cleanup temp files
@@ -80,7 +84,60 @@ public class FFMPEGConverter
 	}
 	
 
-	private boolean createVideo( File src, File dst, String frameSize) throws Exception{
+	/**
+	 * Create mp4 video derivative
+	 * @param oid
+	 * @param cid
+	 * @param mfid
+	 * @param dfid
+	 * @param frameSize
+	 * @return
+	 * @throws Exception
+	 */
+	public File createVideoDerivative(String oid, String cid, String mfid, String dfid, String frameSize) throws Exception {
+		File src = createArkFile(oid, cid, mfid);
+		File dst =  createArkFile(oid, cid, dfid);
+
+		if( !src.exists() ) {
+			// XXX Implementation to retrieve master file to local disk???
+			throw new Exception ("Master file " + src.getPath() + " doesn't exists.");
+		}
+
+		// Create the directory in dams staging to hold the temporary files created by ffmpeg for ingest
+		File tmpDir = new File(Constants.DAMS_STAGING + "/darry/ffmpeg");
+		if(!tmpDir.exists()){
+			if(new File(Constants.DAMS_STAGING + "/darry").exists()) {
+				tmpDir.mkdir();
+			} else {
+				tmpDir.mkdirs();
+			}
+		}
+
+		dst = File.createTempFile("ffmpeg_tmp", oid+"-"+dst.getName(), tmpDir);
+		boolean succssful = createVideoMp4( src, dst, frameSize );
+		if ( !succssful ) {
+			if(dst != null && dst.exists()){
+				// Cleanup temp files
+				try {
+					dst.delete();
+				} catch ( Exception e ) {
+					e.printStackTrace();
+				}
+				dst = null;
+			}
+		}
+		return dst;
+	}
+
+	/**
+	 * Create video mp4 derivative
+	 * @param src
+	 * @param dst
+	 * @param frameSize
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean createVideoMp4( File src, File dst, String frameSize) throws Exception{
 		// Build the ffmpeg command to create mp4 derivative for 720p HD resolution
 		ArrayList<String> cmd = new ArrayList<String>();
 		cmd.add( command );
@@ -113,6 +170,37 @@ public class FFMPEGConverter
 		cmd.add( "1" );
 		cmd.add( dst.getAbsolutePath() );
 
+		return exec(cmd);
+	}
+
+	/**
+	 * Create audio mp3 derivative
+	 * @param src
+	 * @param dst
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean createAudioMp3( File src, File dst) throws Exception{
+		// Build the ffmpeg command to create mp4 derivative for 720p HD resolution
+		ArrayList<String> cmd = new ArrayList<String>();
+		cmd.add( command );
+		cmd.add( "-i" );
+		cmd.add( src.getAbsolutePath() );
+		cmd.add( "-y" );		// delete silently
+		cmd.add( "-acodec" );	// mp3 encoding
+		cmd.add( "mp3" );
+		cmd.add( "-b:a" );		// constant bit rate
+		cmd.add( "192k" );
+		cmd.add( "-threads" );	// threads 2
+		cmd.add( "2" );
+		cmd.add( "-pass" );		// pass 1
+		cmd.add( "1" );
+		cmd.add( dst.getAbsolutePath() );
+
+		return exec(cmd);
+	}
+
+	private boolean exec(ArrayList<String> cmd) throws Exception {
 		Reader reader = null;
 		InputStream in = null;
 		BufferedReader buf = null;
@@ -158,5 +246,12 @@ public class FFMPEGConverter
 				proc = null;
 			}
 		}
+	}
+
+	private File createArkFile(String oid, String cid, String fid) {
+		// Local file support only
+		String fsDir = Constants.FILESTORE_DIR+ "/" + DAMSClient.pairPath(DAMSClient.stripID(oid));
+		String fName = Constants.ARK_ORG + "-" + oid + "-" + (cid==null||cid.length()==0?"0-":cid+"-") + fid;
+		return new File(fsDir, fName);
 	}
 }
