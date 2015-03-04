@@ -113,20 +113,26 @@ public class DerivativeHandler extends CollectionHandler{
 				
 				// Create derivative for the designated source file or master image files (source/alternative?), service video files (mp4) etc.
 	        	if((file!=null && file.length()>0 && fileID.endsWith(file)) || 
-	        			(file==null || file.length()==0) && use != null && !(use.startsWith("audio") || use.startsWith("data")) && (use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE) || (use.endsWith(Constants.SERVICE) && (fileID.indexOf("/1.")>0 || (reqSizes.length==1 && reqSizes[0].equals("v")))))){
+	        			(file==null || file.length()==0) && use != null && !use.startsWith("data") && (use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE) || (use.endsWith(Constants.SERVICE) && (fileID.indexOf("/1.")>0 || (reqSizes.length==1 && reqSizes[0].equals("v")))))){
 		        	totalFiles += 1;
 		        	DamsURI fileURI = DamsURI.toParts(fileID, dFile.getObject());
-	        		String derId = null;
+	        		
 	        		String mfId = fileURI.getFileName();
 	        		for(int j=0; j<reqSizes.length; j++){
-	        			if(use.endsWith(Constants.SOURCE) && (use.startsWith("video") || mfId.equals("1.mov") || mfId.equals("1.avi")) && reqSizes[j].equals("v"))
-	        				derId = fileURI.toString().replace("/"+mfId, "/"+"2.mp4");
-	        			else
+	        			String derId = null;
+	        			if (reqSizes[j].equals("v")) {
+		        			if(use.endsWith(Constants.SOURCE) && (use.startsWith("video") || mfId.equals("1.mov") || mfId.equals("1.avi")))
+		        				derId = fileURI.toString().replace("/"+mfId, "/"+"2.mp4");
+		        			else if(isAudio(fileID, use))
+		        				derId = fileURI.toString().replace("/"+mfId, "/"+"2.mp3");
+	        			} else if (!isAudio(fileID, use))
 	        				derId = fileURI.toString().replace("/"+mfId, "/"+reqSizes[j]+".jpg");
-	        			if(!isFileExists(derId, dFiles)){
-	        				sizs2create += reqSizes[j] + ",";
-	        			}else{
-	        				sizs2replace += reqSizes[j] + ",";
+	        			if (derId != null) {
+		        			if(!isFileExists(derId, dFiles)){
+		        				sizs2create += reqSizes[j] + ",";
+		        			}else{
+		        				sizs2replace += reqSizes[j] + ",";
+		        			}
 	        			}
 	        		}
 	        		
@@ -141,7 +147,7 @@ public class DerivativeHandler extends CollectionHandler{
 	        			derSize = sizs2create.split(",");
 	        			if(reqSizes.length == derSize.length)
 	        				derSize = sizes;
-	        			if(handleFile(subjectId, fileURI.getComponent(), fileURI.getFileName(), derSize, false, i))
+	        			if(handleFile(subjectId, fileURI.getComponent(), fileURI.getFileName(), use, derSize, false, i))
 	        				updateSOLR = true;
 	        		}else if (!replace)
 	        			skipCount++;
@@ -151,7 +157,7 @@ public class DerivativeHandler extends CollectionHandler{
 	        			derSize = sizs2replace.split(",");
 	        			if(reqSizes.length == sizs2replace.split(",").length)
 	        				derSize = sizes;
-	        			if(handleFile(subjectId, fileURI.getComponent(), fileURI.getFileName(), derSize, true, i))
+	        			if(handleFile(subjectId, fileURI.getComponent(), fileURI.getFileName(), use, derSize, true, i))
 	        				updateSOLR = true;
 	        		}
 	        	}
@@ -198,7 +204,7 @@ public class DerivativeHandler extends CollectionHandler{
 		return message;
 	}
 	
-	private boolean handleFile(String oid, String cid, String fid, String[] derSizes, boolean update, int itemIndex) throws Exception{
+	private boolean handleFile(String oid, String cid, String fid, String use, String[] derSizes, boolean update, int itemIndex) throws Exception{
         
         //Item reference from DDOM Viewer
 		String derivFullName = "";
@@ -229,60 +235,73 @@ public class DerivativeHandler extends CollectionHandler{
 	    		dSizes.addAll(Arrays.asList(derSizes.clone()));
 	    	int vIdx = -1;
 	    	if((vIdx=dSizes.indexOf("v")) >= 0){
-	    		// MP4 derivative processing
+	    		// MP#/MP4 derivative processing
 	    		dSizes.remove(vIdx);
 	    		derSizes = dSizes.size()>0?dSizes.toArray(new String[dSizes.size()]):new String[0];
-	    		
-	    		String dfid = "2.mp4";
-	    		derivFullName = oid + "/" + (cid!=null?cid+"/":"") + dfid;
-	    		if(!update && damsClient.exists(oid, cid, dfid)){
-	    			logError("Derivative " + derivFullName + " exists.");
-	    		}else{
-	    			File dst = null;
-	    			try{
-		    			dst = createMp4Derivatives(oid, cid, fid, dfid);
-		    			if(dst != null){
-		    				// Upload the mp4
-		    				Map<String, String> params = new HashMap<String, String>();
-		    				params.put("oid", oid);
-		    				params.put("cid", cid);
-		    				params.put("fid", dfid);
-		    				params.put("local", dst.getAbsolutePath());
-		    				params.put(DFile.USE, "video-service");
-		    				String fs = damsClient.getFileStore();
-		    				if(fs != null)
-		    					params.put("fs", fs);
-		    				successful = damsClient.uploadFile(params, replace); 
-		    			}else
-		    				successful = false;
-	    			}finally{
-	    				if(dst != null && dst.exists()){
-	    					// Cleanup temp files
-	    					try {
-	    						dst.delete();
-	    					} catch ( Exception e ) {
-	    						e.printStackTrace();
-	    					}
-	    					dst = null;
-	    				}
-	    			}
+
+	    		if (isVideo(fid, use) || isAudio(fid, use)) {
+		    		String dfid = "2.mp4";
+		    		if (isAudio(fid, null))
+		    			dfid = "2.mp3";
+
+		    		derivFullName = oid + "/" + (cid!=null?cid+"/":"") + dfid;
+		    		if(!update && damsClient.exists(oid, cid, dfid)){
+		    			logError("Derivative " + derivFullName + " exists.");
+		    		}else{
+		    			File dst = null;
+		    			try{
+		    				if(isAudio(fid, use))
+		    					dst = createMp3Derivatives(oid, cid, fid, dfid);
+		    				else
+		    					dst = createMp4Derivatives(oid, cid, fid, dfid);
+
+		    				if(dst != null){
+			    				// Upload the mp4
+			    				Map<String, String> params = new HashMap<String, String>();
+			    				params.put("oid", oid);
+			    				params.put("cid", cid);
+			    				params.put("fid", dfid);
+			    				params.put("local", dst.getAbsolutePath());
+			    				if (isAudio(fid, null))
+			    					params.put(DFile.USE, "audio-service");
+			    				else
+			    					params.put(DFile.USE, "video-service");
+
+			    				String fs = damsClient.getFileStore();
+			    				if(fs != null)
+			    					params.put("fs", fs);
+			    				successful = damsClient.uploadFile(params, replace); 
+			    			}else
+			    				successful = false;
+		    			}finally{
+		    				if(dst != null && dst.exists()){
+		    					// Cleanup temp files
+		    					try {
+		    						dst.delete();
+		    					} catch ( Exception e ) {
+		    						e.printStackTrace();
+		    					}
+		    					dst = null;
+		    				}
+		    			}
+		    		}
+					if(!successful){
+						failedsCount += 1;
+		        		setExeResult(false);
+		        		message = "Failed to create derivative " + derivFullName + " for " + itemLink 
+							+ (itemIndex + 1) + " of " + getFilesCount() + " in " +collectionTitle + ").";
+		        		log("log", message);
+		        		setStatus(message);
+					} else {
+						if(update)
+							updatedCount++;
+						else
+							createdCount++;
+						message = "Derivative " + derivFullName + " for " + itemLink + " generated (" 
+							+ (itemIndex + 1) + " of " + getFilesCount() + " in " + collectionTitle + ").";
+					    setStatus(message);
+					}
 	    		}
-				if(!successful){
-					failedsCount += 1;
-	        		setExeResult(false);
-	        		message = "Failed to create derivative " + derivFullName + " for " + itemLink 
-						+ (itemIndex + 1) + " of " + getFilesCount() + " in " +collectionTitle + ").";
-	        		log("log", message);
-	        		setStatus(message);
-				} else {
-					if(update)
-						updatedCount++;
-					else
-						createdCount++;
-					message = "Derivative " + derivFullName + " for " + itemLink + " generated (" 
-						+ (itemIndex + 1) + " of " + getFilesCount() + " in " + collectionTitle + ").";
-				    setStatus(message);
-				}
 	    	}
 	    	
 	    	if(derSizes == null || derSizes.length > 0){
@@ -346,6 +365,22 @@ public class DerivativeHandler extends CollectionHandler{
 		}
                 	
 		return successful;
+	}
+
+	/**
+	 * Function to create the mp3 derivatives
+	 * @param oid
+	 * @param cid
+	 * @param mfid
+	 * @param dfid
+	 * @return
+	 * @throws Exception 
+	 */
+	public File createMp3Derivatives(String oid, String cid, String mfid, String dfid) throws Exception{
+		FFMPEGConverter converter = new FFMPEGConverter();
+		if(Constants.FFMPEG_COMMAND != null && Constants.FFMPEG_COMMAND.length() > 0)
+			converter.setCommand(Constants.FFMPEG_COMMAND);
+		return converter.createAudioDerivative(DAMSClient.stripID(oid), cid, mfid, dfid);
 	}
 	
 	/**
