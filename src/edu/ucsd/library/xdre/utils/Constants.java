@@ -52,6 +52,8 @@ public class Constants {
 	public static String DERIVATIVES_LIST = "";
 	public static String VIDEO_SIZE = "";
 	public static String FFMPEG_COMMAND = "";
+	public static String FFMPEG_VIDEO_PARAMS = "";
+	public static String FFMPEG_AUDIO_PARAMS = "";
 	
 	/* begin stats declaration*/
 	public static String CURATOR_ROLE ="";
@@ -119,7 +121,12 @@ public class Constants {
 			// FFMPEG command
 			FFMPEG_COMMAND = props.getProperty("xdre.ffmpeg");
 			
-			// FFMPEG command
+			// FFMPEG MP4 video derivative creation parameters string
+			FFMPEG_VIDEO_PARAMS = props.getProperty("ffmpeg.video.params");
+
+			// FFMPEG MP3 audio derivative creation parameters string
+			FFMPEG_AUDIO_PARAMS = props.getProperty("ffmpeg.audio.params");
+
 			VIDEO_SIZE = props.getProperty("video.size");
 
 			// Namespace prefix

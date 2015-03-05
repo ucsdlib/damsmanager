@@ -380,7 +380,7 @@ public class DerivativeHandler extends CollectionHandler{
 		FFMPEGConverter converter = new FFMPEGConverter();
 		if(Constants.FFMPEG_COMMAND != null && Constants.FFMPEG_COMMAND.length() > 0)
 			converter.setCommand(Constants.FFMPEG_COMMAND);
-		return converter.createAudioDerivative(DAMSClient.stripID(oid), cid, mfid, dfid);
+		return converter.createDerivative(DAMSClient.stripID(oid), cid, mfid, dfid, Constants.FFMPEG_AUDIO_PARAMS);
 	}
 	
 	/**
@@ -396,7 +396,7 @@ public class DerivativeHandler extends CollectionHandler{
 		FFMPEGConverter converter = new FFMPEGConverter();
 		if(Constants.FFMPEG_COMMAND != null && Constants.FFMPEG_COMMAND.length() > 0)
 			converter.setCommand(Constants.FFMPEG_COMMAND);
-		return converter.createVideoDerivative(DAMSClient.stripID(oid), cid, mfid, dfid, Constants.VIDEO_SIZE);
+		return converter.createDerivative(DAMSClient.stripID(oid), cid, mfid, dfid, Constants.FFMPEG_VIDEO_PARAMS);
 	}
 	
 	public boolean isFileExists(String fileId, List<DFile> dFiles){

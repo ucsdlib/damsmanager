@@ -6,6 +6,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Utility class to create audio/video derivatives with FFMPEG.
@@ -41,60 +45,16 @@ public class FFMPEGConverter
 	}
 
 	/**
-	 * Create mp3 audio derivative
+	 * Create derivative
 	 * @param oid
 	 * @param cid
 	 * @param mfid
 	 * @param dfid
+	 * @param params
 	 * @return
 	 * @throws Exception
 	 */
-	public File createAudioDerivative (String oid, String cid, String mfid, String dfid)
-			throws Exception {
-		File src = createArkFile(oid, cid, mfid);
-		File dst =  createArkFile(oid, cid, dfid);
-
-		if( !src.exists() ) {
-			// XXX Implementation to retrieve master file to local disk???
-			throw new Exception ("Master file " + src.getPath() + " doesn't exists.");
-		}
-		
-		// Create the directory in dams staging to hold the temporary files created by ffmpeg for ingest
-		File tmpDir = new File(Constants.DAMS_STAGING + "/darry/ffmpeg");
-		if(!tmpDir.exists()){
-			if(new File(Constants.DAMS_STAGING + "/darry").exists())
-				tmpDir.mkdir();
-			else
-				tmpDir.mkdirs();
-		}
-		dst = File.createTempFile("ffmpeg_tmp", oid+"-"+dst.getName(), tmpDir);
-		boolean succssful = createAudioMp3( src, dst );
-		if ( !succssful ) {
-			if(dst != null && dst.exists()){
-				// Cleanup temp files
-				try {
-					dst.delete();
-				} catch ( Exception e ) {
-					e.printStackTrace();
-				}
-				dst = null;
-			}
-		}
-		return dst;
-	}
-	
-
-	/**
-	 * Create mp4 video derivative
-	 * @param oid
-	 * @param cid
-	 * @param mfid
-	 * @param dfid
-	 * @param frameSize
-	 * @return
-	 * @throws Exception
-	 */
-	public File createVideoDerivative(String oid, String cid, String mfid, String dfid, String frameSize) throws Exception {
+	public File createDerivative(String oid, String cid, String mfid, String dfid, String params) throws Exception {
 		File src = createArkFile(oid, cid, mfid);
 		File dst =  createArkFile(oid, cid, dfid);
 
@@ -114,7 +74,7 @@ public class FFMPEGConverter
 		}
 
 		dst = File.createTempFile("ffmpeg_tmp", oid+"-"+dst.getName(), tmpDir);
-		boolean succssful = createVideoMp4( src, dst, frameSize );
+		boolean succssful = createDerivative( src, dst, params );
 		if ( !succssful ) {
 			if(dst != null && dst.exists()){
 				// Cleanup temp files
@@ -130,77 +90,27 @@ public class FFMPEGConverter
 	}
 
 	/**
-	 * Create video mp4 derivative
+	 * Create derivative
 	 * @param src
 	 * @param dst
-	 * @param frameSize
+	 * @param params
 	 * @return
 	 * @throws Exception
 	 */
-	public boolean createVideoMp4( File src, File dst, String frameSize) throws Exception{
-		// Build the ffmpeg command to create mp4 derivative for 720p HD resolution
-		ArrayList<String> cmd = new ArrayList<String>();
+	public boolean createDerivative( File src, File dst, String params) throws Exception{
+		// Build the ffmpeg command to create derivative
+		List<String> cmd = new ArrayList<>();
 		cmd.add( command );
 		cmd.add( "-i" );
-		cmd.add( src.getAbsolutePath() );
-		cmd.add( "-y" );		// delete silently
-		cmd.add( "-vcodec" );	// h264 encoding
-		cmd.add( "libx264" );
-		cmd.add( "-pix_fmt" );	// chrome sampling
-		cmd.add( "yuv420p" );
-		cmd.add( "-profile:v" );// profile baseline to have highest compatibility with target players
-		cmd.add( "baseline" );
-		cmd.add( "-vf" );		// de-interlaced/progressive
-		cmd.add( "yadif" );	
-		cmd.add( "-aspect" );	// aspect ratio 16:9
-		cmd.add( "16:9" );
-		cmd.add( "-s" );		// resize to specified pixel dimensions
-		cmd.add( frameSize );
-		cmd.add( "-b:a" );		// high quality video
-		cmd.add( "192k" );
-		cmd.add( "-b:v" );		// bit rate 4000k
-		cmd.add( "4000k" );
-		cmd.add( "-minrate" );	// min bit rate 3000k
-		cmd.add( "3000k" );
-		cmd.add( "-maxrate" );	// max bit rate 5000k
-		cmd.add( "5000k" );
-		cmd.add( "-threads" );	// threads 2
-		cmd.add( "2" );
-		cmd.add( "-pass" );		// pass 1
-		cmd.add( "1" );
+		cmd.add( src.getAbsolutePath());
+		if (StringUtils.isNotBlank(params))
+			cmd.addAll(Arrays.asList(params.split(" ")));
 		cmd.add( dst.getAbsolutePath() );
 
 		return exec(cmd);
 	}
 
-	/**
-	 * Create audio mp3 derivative
-	 * @param src
-	 * @param dst
-	 * @return
-	 * @throws Exception
-	 */
-	public boolean createAudioMp3( File src, File dst) throws Exception{
-		// Build the ffmpeg command to create mp4 derivative for 720p HD resolution
-		ArrayList<String> cmd = new ArrayList<String>();
-		cmd.add( command );
-		cmd.add( "-i" );
-		cmd.add( src.getAbsolutePath() );
-		cmd.add( "-y" );		// delete silently
-		cmd.add( "-acodec" );	// mp3 encoding
-		cmd.add( "mp3" );
-		cmd.add( "-b:a" );		// constant bit rate
-		cmd.add( "192k" );
-		cmd.add( "-threads" );	// threads 2
-		cmd.add( "2" );
-		cmd.add( "-pass" );		// pass 1
-		cmd.add( "1" );
-		cmd.add( dst.getAbsolutePath() );
-
-		return exec(cmd);
-	}
-
-	private boolean exec(ArrayList<String> cmd) throws Exception {
+	private boolean exec(List<String> cmd) throws Exception {
 		Reader reader = null;
 		InputStream in = null;
 		BufferedReader buf = null;

@@ -694,7 +694,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 			converter.setCommand(Constants.FFMPEG_COMMAND);
 		}
 
-		return converter.createVideoMp4(src, dest, Constants.VIDEO_SIZE);
+		return converter.createDerivative(src, dest, Constants.FFMPEG_VIDEO_PARAMS);
 	}
 
 	/**
@@ -711,7 +711,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 			converter.setCommand(Constants.FFMPEG_COMMAND);
 		}
 
-		return converter.createAudioMp3(src, dest);
+		return converter.createDerivative(src, dest, Constants.FFMPEG_VIDEO_PARAMS);
 	}
 
 	/**
