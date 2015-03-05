@@ -7,6 +7,7 @@ import java.io.UnsupportedEncodingException;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -26,7 +27,6 @@ import com.hp.hpl.jena.graph.Triple;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
-import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.ResourceFactory;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.util.iterator.ExtendedIterator;
@@ -362,6 +362,8 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 				initHandler();
 				
 				Model iRdf = null;
+
+				items = sortRecords(items);
 				int jLen = items.size();
 				//System.out.println(currFile + " records found: " + jLen);
 				for (int j=0; j<jLen&&!interrupted; j++) {
@@ -448,6 +450,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 							// Update SOLR for the record.
 							status[solrRequestIndex] = updateSOLR(subjectId);
 							messages[solrRequestIndex].append(damsDateFormat.format(new Date()));
+							log.info("SOLR update requested for " + subjectId + ": " + damsClient.getRequestURL() + " " + status[solrRequestIndex]);
 
 						} catch(Exception e) {
 							e.printStackTrace();
@@ -1013,6 +1016,23 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		}
 	}
 
+	private List<String> sortRecords(List<String> records) {
+		if (records == null || records.size() <= 1)
+			return records;
+
+		// Sort object records to the last of the list
+		int count = 0;
+		Collections.sort(records);
+		List<String> sortedRecords = new ArrayList<>();
+		for (String rec : records) {
+			if (objRecords.containsKey(rec))
+				sortedRecords.add(rec);
+		    else
+				sortedRecords.add (count++, rec);
+		}
+		return sortedRecords;
+	}
+
 	private String getTitle(Model model, String oid){
 		String title = "";
 		String damsNsPrefixUri = model.getNsPrefixURI("dams");
@@ -1094,7 +1114,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 			exeReport.append("\nThe following " + objectsCount + " object" + (objectsCount>1?"s are ":" is ") + "found in the source metadata: \n");
 			for(Iterator<String> it=objRecords.keySet().iterator(); it.hasNext();){
 				key = it.next();
-				exeReport.append(key + " \t" + objRecords.get(key) + "\n");
+				exeReport.append("http://" + Constants.CLUSTER_HOST_NAME + ".ucsd.edu/dc/object/" + key.substring(key.lastIndexOf("/") + 1) + " \t" + objRecords.get(key) + "\n");
 			}
 		}
 		

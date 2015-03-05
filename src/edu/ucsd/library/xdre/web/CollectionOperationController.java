@@ -162,6 +162,7 @@ public class CollectionOperationController implements Controller {
 			activeButton = "validateButton";
 		HttpSession session = request.getSession();
 		session.setAttribute("category", collectionId);
+		session.setAttribute("user", request.getRemoteUser());
 		
 		String ds = getParameter(paramsMap, "ts");
 		if(ds == null || ds.length() == 0)
@@ -344,7 +345,9 @@ public class CollectionOperationController implements Controller {
 		operations[19] = getParameter(paramsMap, "jhoveReport") != null;
 
 		int submissionId = (int)System.currentTimeMillis();
-		String logLink = "https://" + (Constants.CLUSTER_HOST_NAME.indexOf("localhost")>=0?":8443":Constants.CLUSTER_HOST_NAME.indexOf("lib-ingest")>=0?Constants.CLUSTER_HOST_NAME+".ucsd.edu:8443":Constants.CLUSTER_HOST_NAME+".ucsd.edu") + "/damsmanager/downloadLog.do?submissionId=" + submissionId;
+		String logLink = "https://" + (Constants.CLUSTER_HOST_NAME.indexOf("localhost")>=0?"localhost:8443" :
+			Constants.CLUSTER_HOST_NAME.indexOf("lib-ingest")>=0?Constants.CLUSTER_HOST_NAME+".ucsd.edu:8443" :
+				Constants.CLUSTER_HOST_NAME+".ucsd.edu") + "/damsmanager/downloadLog.do?submissionId=" + submissionId;
 		
 		String ds = getParameter(paramsMap, "ts");
 		String dsDest = null;
@@ -362,6 +365,7 @@ public class CollectionOperationController implements Controller {
 		damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
 		damsClient.setTripleStore(ds);
 		damsClient.setFileStore(fileStore);
+		damsClient.setUser((String)session.getAttribute("user"));
 
 		if(message.length() == 0){
 		 int userId = -1;
@@ -664,6 +668,28 @@ public class CollectionOperationController implements Controller {
 							  if (source.equalsIgnoreCase("excel")) {
 								  // Handling Excel Input Stream records
 								  recordSource = new ExcelSource((File)srcRecord);
+
+								  // Report for Excel column name validation
+								  List<String> invalidColumns = ((ExcelSource)recordSource).getInvalidColumns();
+
+								  if (invalidColumns != null && invalidColumns.size() > 0) {
+									  successful = false;
+									  preSuccessful = false;
+
+									  proMessage.append("Excel source " + sourceID + " - failed - " + CollectionHandler.damsDateFormat.format(new Date()) + ": \n");
+
+									  if (invalidColumns != null && invalidColumns.size() > 0) {
+										  // Report invalid columns
+										  proMessage.append( "* Found the following invalid column name" + (invalidColumns.size() > 1 ? "s" : "") + ": " );
+										  for (int k=0; k<invalidColumns.size(); k++) {
+											  proMessage.append(invalidColumns.get(k));
+											  if (k == invalidColumns.size() - 1)
+												  proMessage.append("\n");
+											  else
+												  proMessage.append("; ");
+										  }
+									  }
+								  }
 							  } else {
 								  // Handling AT/Roger records
 								  try {
@@ -702,7 +728,7 @@ public class CollectionOperationController implements Controller {
 
 						  String id = "";
 						  String info = "";
-						  if (recordSource != null) {
+						  if (recordSource != null && preSuccessful) {
 							  for (Record rec = null; (rec = recordSource.nextRecord()) != null;) {
 
 								  String objTitle = "";
@@ -748,8 +774,38 @@ public class CollectionOperationController implements Controller {
 											  
 											  record.addFiles(0, filesToIngest, fileUseMap);
 										  }
+									  } else if (source.equalsIgnoreCase("excel")) {
+										  // Report for invalid Excel control values validation
+										  List<Map<String, String>> invalidValues = ((ExcelSource)recordSource).getInvalidValues();
+										  if (invalidValues != null && invalidValues.size() > 0) {
+											  
+											  // process to retrieve control values errors for the record since it will parse the row for the next record
+											  StringBuilder cvErrors = new StringBuilder();
+											  for (int k=0; k< invalidValues.size(); k++) {
+												  Map<String, String> m = invalidValues.get(k);
+												  if (m.containsKey(TabularRecord.OBJECT_ID) && m.get(TabularRecord.OBJECT_ID).equals(String.valueOf(id))) {
+													  cvErrors.append( "* Row index " + m.get("row") + " [");
+													  
+													  // don't count for the row number and the record id
+													  m.remove("row");
+													  m.remove(TabularRecord.OBJECT_ID);
+													  int l = 0;
+													  for (String key : m.keySet()) {
+														  if (l++ > 0)
+															  cvErrors.append(" | ");
+														  cvErrors.append(key + " => " + m.get(key));	  
+													  }
+													  cvErrors.append("]\n");
+												  }
+											  }
+											  
+											  if (cvErrors.length() > 0) {
+												  errorMessage.append( "Invalid control value(s)" + " - \n" + cvErrors.toString() );
+											  }
+										  }
 									  }
 								  } catch (Exception e) {
+									  e.printStackTrace();
 									  info = "Error: " + e.getMessage();
 									  handler.setStatus(info);
 									  log.warn(info);
@@ -783,7 +839,7 @@ public class CollectionOperationController implements Controller {
 									  preSuccessful = false;
 	
 									  info = objTitle + " - " + id + " - " + " failed - " 
-											  + CollectionHandler.damsDateFormat.format(new Date()) + ": " + errorMessage.toString();
+											  + CollectionHandler.damsDateFormat.format(new Date()) + " - " + errorMessage.toString();
 									  proMessage.append("\n\n" + info);
 									  log.error(info);
 								  }
@@ -796,7 +852,7 @@ public class CollectionOperationController implements Controller {
 					  // Logging the result for pre-processing
 					  if (preprocessing || !preSuccessful) {
 						  message = "\nPre-processing " + (preSuccessful?"successful":"failed") + ": \n"
-								  + (proMessage.length() == 0 ? "." : "\n " + proMessage.toString());
+								  + (proMessage.length() == 0 ? "" : "\n " + proMessage.toString());
 						  handler.logMessage(message);
 					  }
 					  handler.release();

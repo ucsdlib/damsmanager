@@ -68,6 +68,16 @@
 	    	alert("Please select a program.");
 	    	document.mainForm.program.focus();
 			return false;
+	    } else {
+	    	var unitText = document.mainForm.unit.options[unitIndex].text;
+	    	var programText = document.mainForm.program.options[programIndex].text;
+	    	if (unitText.indexOf("Research Data") >= 0 || programText.indexOf("Research Data") >= 0) {
+	    		 if (!(unitText.indexOf("Research Data") >= 0 && programText.indexOf("Research Data") >= 0)) {
+		    		alert("The Unit selected doesn't match the Program. Please select a program that match unit \"" + unitText + "\"!");
+		    		document.mainForm.program.focus();
+					return false;
+	    		 }
+	    	}
 	    }
 	    
 		var copyrightStatusIndex = document.mainForm.copyrightStatus.selectedIndex;
@@ -168,8 +178,18 @@
 		var unitName = unitOpt.options[unitOpt.selectedIndex].text;
 		var unitID = unitOpt.options[unitOpt.selectedIndex].value;
 		var fsSelected = fsDefault;
-		if(unitName == "UCSD Research Data Collections" || unitID.indexOf("bb6827300d") >= 0)
+		if(unitName == "UCSD Research Data Collections" || unitName.indexOf("Research Data Curation") >= 0 || unitID.indexOf("bb6827300d") >= 0) {
 			fsSelected = "openStack";
+			var proOpts = document.mainForm.program.options;
+			for (var i = 0; i < proOpts.length; i++) { 
+				if (proOpts[i].text.indexOf("Research Data") >=0)
+					proOpts[i].selected = true;
+			}
+		} else {
+			var programText = document.mainForm.program.options[mainForm.program.selectedIndex].text;
+			if (programText.indexOf("Research Data") >=0)
+				document.mainForm.program.selectedIndex = 0;
+		}
 		document.mainForm.fs.value = fsSelected;
 	}
 	
@@ -388,7 +408,15 @@
 				<span class="submenuText"><span class="requiredLabel" id="copyrightJurisdiction_required">*</span><b>Copyright Jurisdiction: </b></span>
 			</td>
 			<td  align="left">
-				<span class="submenuText"><input type="text" id="countryCode" name="countryCode" size="20" value="us"></span>
+				<span class="submenuText">
+					<select id="countryCode" name="countryCode" class="inputText">
+						<c:forEach var="entry" items="${model.countryCodes}">
+							<option value="${entry.value}" <c:if test="${entry.value == 'US'}">selected</c:if>>
+	                      			<c:out value="${entry.key}" />
+	                       	</option>
+						</c:forEach>
+					</select>
+				</span>
 			</td>
 		</tr>
 		<tr align="left" id="copyrightOwnerField" style="display:none;">

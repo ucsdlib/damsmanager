@@ -1,15 +1,21 @@
 package edu.ucsd.library.xdre.web;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.lang3.StringUtils;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.Node;
+import org.dom4j.io.SAXReader;
 import org.json.simple.JSONArray;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
@@ -71,6 +77,8 @@ public class MarcModsImportController implements Controller {
 			JSONArray accessValues = new JSONArray();
 			accessValues.addAll(Arrays.asList(RecordUtil.ACCESS_VALUES));
 
+			Map<String, String> countryCodes = getCountryCodes (request);
+			
 			dataMap.put("categories", collectionMap);
 			dataMap.put("category", collectionId);
 			dataMap.put("units", unitsMap);
@@ -86,6 +94,7 @@ public class MarcModsImportController implements Controller {
 			dataMap.put("accessOverride", accessValues);
 			dataMap.put("licenseBeginDate", licenseBeginDate);
 			dataMap.put("licenseEndDate", licenseEndDate);
+			dataMap.put("countryCodes", countryCodes);
 		
 		
 		} catch (Exception e) {
@@ -96,5 +105,20 @@ public class MarcModsImportController implements Controller {
 				damsClient.close();
 		}
 		return new ModelAndView("marcModsImport", "model", dataMap);
+	}
+	
+	public static Map<String, String> getCountryCodes (HttpServletRequest request) throws DocumentException {
+		Map<String, String> countryCodes = new TreeMap<>();
+		File dataFile = new File(request.getSession().getServletContext().getRealPath("files/country-code-iso-3166-all.xml"));
+		SAXReader reader = new SAXReader();
+		Document dataDoc = reader.read(dataFile);
+		List<Node> nodes = dataDoc.selectNodes("//country");
+		for (Node node : nodes) {
+			String name = node.selectSingleNode("@name").getStringValue().trim();
+			String alpha2 = node.selectSingleNode("@alpha-2").getStringValue().trim();
+			countryCodes.put(name, alpha2);
+		}
+		
+		return countryCodes;
 	}
  }

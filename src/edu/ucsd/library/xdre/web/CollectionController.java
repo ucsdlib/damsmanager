@@ -56,6 +56,7 @@ public class CollectionController implements Controller {
 		try{
 			damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
 			damsClient.setTripleStore(Constants.DEFAULT_TRIPLESTORE);
+			damsClient.setUser(request.getRemoteUser());
 			
 			if (StringUtils.isBlank(action)) {
 				action = Action.edit.name();
