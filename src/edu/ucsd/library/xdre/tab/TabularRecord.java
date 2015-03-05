@@ -378,15 +378,40 @@ public class TabularRecord implements Record
         String use = data.get("file use");
         if ( pop(fn) )
         {
-            Element f = addElement(e,"hasFile",damsNS,"File",damsNS);
-            String ext = (fn.indexOf(".") != -1) ? fn.substring(fn.lastIndexOf(".")) : "";
-            addAttribute( f, "about", rdfNS, fileID + ext );
-            addElement(f,"sourceFileName",damsNS).setText(fn);
-            if ( pop(use) )
-            {
-                addElement(f,"use",damsNS).setText(use);
-            }
+        	addFile (e, fileID, fn, use);
         }
+        
+        fn = data.get("file name 2");
+        use = data.get("file use 2");
+        if ( pop(fn) )
+        {
+        	String fileID2 = getSecondFileID (fileID);
+        	addFile (e, fileID2, fn, use);
+        }
+    }
+
+    private void addFile (Element parent, String fileID, String fileName, String use)
+    {
+        Element f = addElement(parent,"hasFile",damsNS,"File",damsNS);
+        String ext = (fileName.indexOf(".") != -1) ? fileName.substring(fileName.lastIndexOf(".")) : "";
+        addAttribute( f, "about", rdfNS, fileID + ext );
+        addElement(f,"sourceFileName",damsNS).setText(fileName);
+        if ( pop(use) )
+        {
+            addElement(f,"use",damsNS).setText(use);
+        }
+    }
+
+    private String getSecondFileID (String fileID) {
+    	int f2Index = 2;
+    	
+    	String fileID2 = fileID;
+    	if (fileID.lastIndexOf("/") > 0)
+    		fileID2 = fileID.substring(0, fileID.lastIndexOf("/"));
+        try {
+        	f2Index = Integer.parseInt(fileID.substring(fileID.lastIndexOf("/") + 1)) + 1;
+        } catch (NumberFormatException ne) {}
+        return fileID2 + "/" + f2Index;
     }
 
     private void addRelationship( Map<String,String> data, Element e, String header,
