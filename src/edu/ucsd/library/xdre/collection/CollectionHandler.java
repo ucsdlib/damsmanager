@@ -49,6 +49,7 @@ import org.dom4j.Node;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.DomUtil;
+import edu.ucsd.library.xdre.utils.FFMPEGConverter;
 import edu.ucsd.library.xdre.utils.ProcessHandler;
 import edu.ucsd.library.xdre.utils.RequestOrganizer;
 import edu.ucsd.library.xdre.utils.RightsAction;
@@ -644,7 +645,75 @@ public abstract class CollectionHandler implements ProcessHandler {
 		else
 			return false;
 	}
-	
+
+	/**
+	 * Check for video file
+	 * @param fileName
+	 * @param use
+	 * @return
+	 */
+	public static boolean isVideo(String fileName, final String use){
+		fileName = fileName.toLowerCase();
+		String mimeType = DAMSClient.getMimeType(fileName);
+		if((use!=null && use.toLowerCase().startsWith("video")) || mimeType.indexOf("video")>=0
+				|| fileName.endsWith("mp4") || fileName.endsWith("avi") || fileName.endsWith("mov")) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	/**
+	 * Check for audio file
+	 * @param fileName
+	 * @param use
+	 * @return
+	 */
+	public static boolean isAudio(String fileName, final String use){
+		fileName = fileName.toLowerCase();
+		String mimeType = DAMSClient.getMimeType(fileName);
+		if((use!=null && use.toLowerCase().startsWith("audio")) || mimeType.indexOf("audio")>=0
+				|| fileName.endsWith("wav") || fileName.endsWith("mp3")) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	/**
+	 * Create video derivatives
+	 * @param src
+	 * @param dest
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean createVideoDerivative(final File src, final File dest)
+			throws Exception{
+		final FFMPEGConverter converter = new FFMPEGConverter();
+		if(Constants.FFMPEG_COMMAND != null && Constants.FFMPEG_COMMAND.length() > 0) {
+			converter.setCommand(Constants.FFMPEG_COMMAND);
+		}
+
+		return converter.createDerivative(src, dest, Constants.FFMPEG_VIDEO_PARAMS);
+	}
+
+	/**
+	 * Create audio derivatives
+	 * @param src
+	 * @param dest
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean createAudioDerivative(final File src, final File dest)
+			throws Exception{
+		final FFMPEGConverter converter = new FFMPEGConverter();
+		if(Constants.FFMPEG_COMMAND != null && Constants.FFMPEG_COMMAND.length() > 0) {
+			converter.setCommand(Constants.FFMPEG_COMMAND);
+		}
+
+		return converter.createDerivative(src, dest, Constants.FFMPEG_VIDEO_PARAMS);
+	}
+
 	/**
 	 * Update a record in SOLR 
 	 * @param oid
