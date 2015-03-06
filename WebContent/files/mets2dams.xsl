@@ -159,22 +159,10 @@
         <dams:Note>
           <dams:type>physical description</dams:type>
           <rdf:value>
-            <xsl:call-template name="physical-description-element">
-              <xsl:with-param name="value" select="mods:physicalDescription/mods:note[@displayLabel='General Physical Description note']"/>
-            </xsl:call-template>
-            <xsl:call-template name="physical-description-element">
-              <xsl:with-param name="value" select="mods:physicalDescription/mods:note[@displayLabel='Physical Facet note']"/>
-            </xsl:call-template>
-            <xsl:call-template name="physical-description-element">
-              <xsl:with-param name="value" select="mods:note[@displayLabel='extent']"/>
-            </xsl:call-template>
-            <xsl:call-template name="physical-description-element">
-              <xsl:with-param name="value" select="mods:physicalDescription/mods:extent"/>
-            </xsl:call-template>
-            <xsl:call-template name="physical-description-element">
-              <xsl:with-param name="value" select="mods:note[@displayLabel='dimensions']"/>
-              <xsl:with-param name="last">true</xsl:with-param>
-            </xsl:call-template>
+            <xsl:for-each select="mods:physicalDescription/mods:note[@displayLabel='General Physical Description note']|mods:physicalDescription/mods:note[@displayLabel='Physical Facet note']|mods:note[@displayLabel='extent']|mods:physicalDescription/mods:extent|mods:note[@displayLabel='dimensions']">
+              <xsl:if test="position() &gt; 1">; </xsl:if>
+              <xsl:value-of select="."/>
+            </xsl:for-each>
           </rdf:value>
         </dams:Note>
       </dams:note>
@@ -189,7 +177,7 @@
     </xsl:if>
   </xsl:template>
   <xsl:template match="mods:titleInfo">
-    <xsl:if test="not(@type) or @type != 'alternative'">
+    <xsl:if test="not(@type) or (@type != 'alternative' and @type != 'uniform')">
       <dams:title>
         <mads:Title>
           <mads:authoritativeLabel>
@@ -201,7 +189,7 @@
 
           <!-- attach variants to first titleInfo -->
           <xsl:if test=". = ../mods:titleInfo[not(@type)][1]">
-            <xsl:for-each select="../mods:titleInfo[@type='alternative']">
+            <xsl:for-each select="../mods:titleInfo[@type='alternative' or @type='uniform']">
               <mads:hasVariant>
                 <mads:Variant>
                   <mads:variantLabel>
