@@ -36,6 +36,7 @@ import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.DFile;
 import edu.ucsd.library.xdre.utils.DamsURI;
+import edu.ucsd.library.xdre.utils.FFMPEGConverter;
 import edu.ucsd.library.xdre.utils.RDFStore;
 
 /**
@@ -130,6 +131,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 	/**
 	 * Procedure to populate the RDF metadata and ingest the files
 	 */
+	@Override
 	public boolean execute() throws Exception {
 		if(filesPaths != null){
 			File file = null;
@@ -671,10 +673,81 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 								objWithFiles.add(oid);
 							
 							//Create/update derivatives for images and documents PDFs
-							if((isImage(fid, use) || isDocument(fid, use)) 
-									&& (use == null || use.endsWith("source") || use.endsWith("service") || use.endsWith("alternate"))){
+							if((isImage(fid, use) || isDocument(fid, use) || isVideo(fid, use) || isAudio(fid, use))
+									&& (use == null || use.endsWith("source") || use.endsWith("service") || use.endsWith("alternate"))) {
 								try {
-									boolean derCreated = damsClient.updateDerivatives(oid, cid, fid, null);
+									boolean derCreated = false;
+									if (isVideo(fid, use) || isAudio(fid, use)) {
+										
+										FFMPEGConverter converter = new FFMPEGConverter();
+										if(Constants.FFMPEG_COMMAND != null && Constants.FFMPEG_COMMAND.length() > 0) {
+											converter.setCommand(Constants.FFMPEG_COMMAND);
+										}
+
+										// initiate the parameter to upload the derivative
+										params = new HashMap<String, String>();
+
+										final File tmpDir = new File(Constants.DAMS_STAGING + "/darry/ffmpeg");
+										if (!tmpDir.exists()) {
+											tmpDir.mkdirs();
+										}
+
+										String dfid = null;
+										File dst = null;
+										try{
+											// Calculate the file index for derivatives
+											int fileIndex = 1;
+											try {
+												if (fid.indexOf(".") > 0) {
+													fileIndex = Integer.parseInt(fid.substring(0, fid.indexOf(".")));
+												} else {
+													fileIndex = Integer.parseInt(fid);
+												}
+											} catch (final NumberFormatException ne) {}
+
+											fileIndex += 1;
+											
+											if (isAudio(fid, use)) {
+												dfid = fileIndex + ".mp3";
+												dst = File.createTempFile("ffmpeg_tmp", oid.substring(oid.lastIndexOf("/") + 1) + "-" + dfid, tmpDir);
+												derCreated = createAudioDerivative(srcFile, dst);
+												params.put(DFile.USE, "audio-service");
+											} else {
+												dfid = fileIndex + ".mp4";
+												dst = File.createTempFile("ffmpeg_tmp", oid.substring(oid.lastIndexOf("/") + 1) + "-" + dfid, tmpDir);
+												derCreated = createVideoDerivative(srcFile, dst);
+												params.put(DFile.USE, "video-service");
+											}
+											if(derCreated){
+												// Upload the mp3/mp4 derivative
+												params.put("oid", oid);
+												params.put("cid", cid);
+												params.put("fid", dfid);
+												params.put("local", dst.getAbsolutePath());
+
+												String fs = damsClient.getFileStore();
+												if(fs != null) {
+													params.put("fs", fs);
+												}
+
+												derCreated = damsClient.uploadFile(params, replace);
+											} else {
+												successful = false;
+											}
+										}finally{
+											if(dst != null && dst.exists()){
+												// Cleanup temp files
+												try {
+													dst.delete();
+												} catch ( final Exception e ) {
+													e.printStackTrace();
+												}
+												dst = null;
+											}
+										}
+									} else {
+										derCreated = damsClient.updateDerivatives(oid, cid, fid, null);
+									}
 
 									if(derCreated){
 										logMessage( "Created derivatives for " + fileUrl + " (" + damsClient.getRequestURL() + ").");
@@ -1090,6 +1163,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 	/**
 	 * Execution result message
 	 */
+	@Override
 	public String getExeInfo() {
 		int objectsCount = objRecords.size();
 		

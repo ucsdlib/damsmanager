@@ -348,6 +348,7 @@ public class CollectionOperationController implements Controller {
 		String logLink = "https://" + (Constants.CLUSTER_HOST_NAME.indexOf("localhost")>=0?"localhost:8443" :
 			Constants.CLUSTER_HOST_NAME.indexOf("lib-ingest")>=0?Constants.CLUSTER_HOST_NAME+".ucsd.edu:8443" :
 				Constants.CLUSTER_HOST_NAME+".ucsd.edu") + "/damsmanager/downloadLog.do?submissionId=" + submissionId;
+		String dataLink = "";
 		
 		String ds = getParameter(paramsMap, "ts");
 		String dsDest = null;
@@ -863,8 +864,10 @@ public class CollectionOperationController implements Controller {
 						  if (preprocessing) {
 							  File destFile = new File(Constants.TMP_FILE_DIR, "preview-" + submissionId + "-rdf.xml");
 							  writeXml(destFile, rdfPreview.getDocument().asXML());
-							  message += "\nThe converted RDF/XML is ready for <a href=\"" + logLink
+							  
+							  dataLink = "\nThe converted RDF/XML is ready for <a href=\"" + logLink
 									  + "&file=" + destFile.getName() + "\">download</a>.\n";
+
 						  }else{
 							  // Ingest the converted RDF/XML files
 							  handler = new RDFDAMS4ImportTsHandler(damsClient, dataFiles.toArray(new File[dataFiles.size()]), importOption);
@@ -1243,7 +1246,7 @@ public class CollectionOperationController implements Controller {
 		}
 		returnMessage = "\n" + returnMessage + "\n    ...     ";
 	}
-	returnMessage +=  "\n" + logMessage;
+	returnMessage +=  "\n" + dataLink + "\n" + logMessage;
 	RequestOrganizer.addResultMessage(session, returnMessage.replace("\n", "<br />") + "<br />");
 	return returnMessage;
 	}
