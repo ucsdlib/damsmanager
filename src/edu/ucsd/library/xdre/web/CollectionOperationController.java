@@ -368,6 +368,9 @@ public class CollectionOperationController implements Controller {
 		damsClient.setFileStore(fileStore);
 		damsClient.setUser((String)session.getAttribute("user"));
 
+		String clientVersion = session.getServletContext().getInitParameter("src-version");
+		String clientTool = "Custom";
+
 		if(message.length() == 0){
 		 int userId = -1;
 		 String userIdAttr = (String) session.getAttribute("employeeId");
@@ -667,6 +670,7 @@ public class CollectionOperationController implements Controller {
 						  
 						  try {
 							  if (source.equalsIgnoreCase("excel")) {
+								  clientTool = "Excel";
 								  // Handling Excel Input Stream records
 								  recordSource = new ExcelSource((File)srcRecord);
 
@@ -696,6 +700,7 @@ public class CollectionOperationController implements Controller {
 								  try {
 									  if (source.equalsIgnoreCase("bib")) {
 										  
+										  clientTool = "MARC";
 										  String url = Constants.DAMS_STORAGE_URL.substring(0, Constants.DAMS_STORAGE_URL.indexOf("/dams/"))
 												   + "/jollyroger/get?type=bib&mods=true&ns=true&value=" + sourceID;
 			
@@ -706,6 +711,7 @@ public class CollectionOperationController implements Controller {
 										  in = new ByteArrayInputStream (modsXml.getBytes("UTF-8"));
 									  } else {
 										  // METS/MODS XML from staging area
+										  clientTool = "AT";
 										  File srcFile = (File)sources.get(j);
 										  in = new FileInputStream(srcFile);
 									  }
@@ -1178,6 +1184,7 @@ public class CollectionOperationController implements Controller {
 			 
 		   	if(handler != null){
 	 			try {
+	 				damsClient.setClientInfo(clientTool + (StringUtils.isNotBlank(clientVersion) ? " " + clientVersion : ""));
 	 				handler.setSubmissionId(submissionId);
 	 				handler.setDamsClient(damsClient);
 	 				handler.setSession(session);
