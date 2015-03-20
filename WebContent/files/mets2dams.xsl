@@ -374,6 +374,14 @@
       </dams:Note>
     </dams:note>
   </xsl:template>
+  <xsl:template match="mods:mods/mods:tableOfContents">
+    <dams:note>
+      <dams:Note>
+        <dams:type>table of contents</dams:type>
+        <rdf:value><xsl:value-of select="."/></rdf:value>
+      </dams:Note>
+    </dams:note>
+  </xsl:template>
   <xsl:template match="mods:mods/mods:note">
     <xsl:if test="text() != '' and (not(@displayLabel) or @displayLabel != 'Digital object made available by ')">
       <dams:note>
@@ -522,6 +530,10 @@
             </xsl:when>
             <xsl:when test="@displayLabel = 'dimensions' or @displayLabel = 'extent'">
               <!-- see physical-description-note -->
+            </xsl:when>
+            <xsl:when test="@type = 'performers'">
+              <dams:type>performers</dams:type>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
             <xsl:otherwise>
               <xsl:call-template name="generic-note"/>
