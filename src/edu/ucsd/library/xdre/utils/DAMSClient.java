@@ -122,7 +122,8 @@ public class DAMSClient {
 	private String fileStore = null;
 	private String tripleStore = null;
 	private String solrURLBase = null; // SOLR URL
-	private String user = null; 
+	private String user = null;
+	private String clientInfo = null;
 
 	/**
 	 * Construct a DAMSClient object.
@@ -1592,7 +1593,8 @@ public class DAMSClient {
 	 */
 	public String toDAMSURL(String[] urlParts, String format){
 		NameValuePair[] params = {new BasicNameValuePair("format", format), new BasicNameValuePair("ts",tripleStore), 
-				new BasicNameValuePair("fs", fileStore), new BasicNameValuePair("user", StringUtils.isBlank(user) ? "":user)};
+				new BasicNameValuePair("fs", fileStore), new BasicNameValuePair("user", StringUtils.isBlank(user) ? "":user),
+				new BasicNameValuePair("client", StringUtils.isBlank(clientInfo) ? "" : clientInfo)};
 		String paramsStr = concatParams(params);
 		//System.out.println(storageURL + toUrlPath(urlParts) + (paramsStr.length()>0?"?":"") + paramsStr);
 		return storageURL + toUrlPath(urlParts) + (paramsStr.length()>0?"?":"") + paramsStr;
@@ -1671,8 +1673,12 @@ public class DAMSClient {
 		String paramStr = "";
 		for(int i=0; i<params.length; i++){
 			String paramValue = params[i].getValue();
-			if(paramValue != null && paramValue.length() > 0)
+			if(StringUtils.isNotBlank(paramValue)) {
+				try {
+					paramValue = URLEncoder.encode(paramValue, "UTF-8");
+				} catch (UnsupportedEncodingException e) {}
 				paramStr += (paramStr.length()>0?"&":"") + params[i].getName() + "=" + paramValue;
+			}
 		}
 		return paramStr;
 	}
@@ -1902,6 +1908,22 @@ public class DAMSClient {
 	 */
 	public void setUser(String user) {
 		this.user = user;
+	}
+
+    /**
+     * Get client info: TOOL VERSION 
+     * @return
+     */
+	public String getClientInfo() {
+		return clientInfo;
+	}
+
+	/**
+	 * Get client info
+	 * @param clientInfo: TOOL VERSION
+	 */
+	public void setClientInfo(String clientInfo) {
+		this.clientInfo = clientInfo;
 	}
 
 	/**
