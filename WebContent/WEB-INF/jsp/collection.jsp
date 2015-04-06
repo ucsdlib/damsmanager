@@ -12,6 +12,7 @@
 </head>
 <body style="background-color:#fff;">
 <script type="text/javascript">
+	var collTypes = ["AssembledCollection", "ProvenanceCollection", "ProvenanceCollectionPart"];
 	function confirmSubmit() {
 
 		var collTitle = document.mainForm.collTitle.value.trim();
@@ -43,10 +44,28 @@
 	    var collIndex = document.mainForm.category.selectedIndex;
 		var parentIndex = document.mainForm.parentCollection.selectedIndex;  
 	    if(parentIndex != 0){
-	    	if (category.options[collIndex].value == parentCollection.options[parentIndex].value) {
-	    		alert("Parent collection can't be the same collection. Please select another parent collection.");
-				return false;
-	    	}
+	    	var collTypeValue = document.mainForm.collType.options[collTypeIndex].value;
+	    	var parentColl = document.mainForm.parentCollection.options[parentIndex].text;
+	    	var parentCollType = parentColl.substring(parentColl.lastIndexOf("[")+1, parentColl.lastIndexOf("]"));
+
+    		var error = "";
+    		if (category.options[collIndex].value == parentCollection.options[parentIndex].value) {
+	    		error = "Parent collection can't be the same collection.";
+	   		} else if (collTypeValue == collTypes[2]) { // ProvenanceCollectionPart
+	   			if (parentCollType != collTypes[1]) 
+	   				error = "A " + collTypes[2] + " can only have a " + collTypes[1] + " parent.";
+	    	} else if (collTypeValue == collTypes[1]) { // ProvenanceCollection
+	   			if (parentCollType != collTypes[0])
+    				error = "A " + collTypes[1] + " can only have a " + collTypes[0] + " parent.";
+	   		} else if (collTypeValue == collTypes[0]) { // AssembledCollection
+	   			if (parentCollType != collTypes[0])
+    				error = "An " + collTypes[0] + " can only have an " + collTypes[0] + " parent.";
+    		}
+    		
+    		if (error.length > 0) {
+    			alert ("Please select a valid parent collection!" + "\nNote: " + error);
+    			return false;
+    		}
 	    }
         
 	    var message = "Are you sure you want to Create collection '" + collTitle + "'? \n";
@@ -98,12 +117,14 @@
 			<option value=""> -- Create New Collection -- </option>
 			<c:forEach var="entry" items="${model.categories}">
 				<c:set var="colNameLen"> ${fn:length(entry.key)}</c:set>
+				<c:set var="splitText" value="${fn:split(entry.key,'[')}" />
+				<c:set var="typeIndex">${fn:indexOf(entry.key, splitText[fn:length(splitText)-1])}</c:set>
 				<option value="${entry.value}" <c:if test="${model.category == entry.value}">selected</c:if>>
-                    			<c:choose>
-						<c:when test="${colNameLen > 72}"><c:out value="${fn:substring(entry.key, 0, 68)}" /> ...</c:when>
+                   <c:choose>
+						<c:when test="${colNameLen > 75}"><c:out value="${fn:substring(entry.key, 0, 72-(colNameLen-typeIndex))}" />...[<c:out value="${splitText[fn:length(splitText)-1]}" /></c:when>
 						<c:otherwise><c:out value="${entry.key}" /></c:otherwise>
 					</c:choose>
-                     	</option>
+                </option>
 			</c:forEach>
 		</select>
 	</span>
@@ -142,13 +163,15 @@
 				<select id="parentCollection" name="parentCollection" class="inputText" >
 					<option value=""> -- collections -- </option>
 					<c:forEach var="entry" items="${model.categories}">
-						<c:set var="colNameLen"> ${fn:length(entry.key)}</c:set>
+						<c:set var="colNameLen">${fn:length(entry.key)}</c:set>
+						<c:set var="splitText" value="${fn:split(entry.key,'[')}" />
+						<c:set var="typeIndex">${fn:indexOf(entry.key, splitText[fn:length(splitText)-1])}</c:set>
 						<option value="${entry.value}" <c:if test="${model.parentCollection == entry.value}">selected</c:if>>
-	                     			<c:choose>
-								<c:when test="${colNameLen > 75}"><c:out value="${fn:substring(entry.key, 0, 71)}" /> ...</c:when>
+	                     	<c:choose>
+								<c:when test="${colNameLen > 75}"><c:out value="${fn:substring(entry.key, 0, 72-(colNameLen-typeIndex))}" />...[<c:out value="${splitText[fn:length(splitText)-1]}" /></c:when>
 								<c:otherwise><c:out value="${entry.key}" /></c:otherwise>
 							</c:choose>
-	                      	</option>
+	                    </option>
 					</c:forEach>
 				</select>
 			</td>
