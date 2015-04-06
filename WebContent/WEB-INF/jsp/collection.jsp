@@ -48,26 +48,24 @@
 	    	var parentColl = document.mainForm.parentCollection.options[parentIndex].text;
 	    	var parentCollType = parentColl.substring(parentColl.lastIndexOf("[")+1, parentColl.lastIndexOf("]"));
 
-			if (collTypeValue == collTypes[2]) { // ProvenanceCollectionPart
-	    		alert("A " + collTypes[2] + " is not allowed to have any parent collections!");
-				return false;
-	    	} else {
-	    		var error = "";
-	    		if (category.options[collIndex].value == parentCollection.options[parentIndex].value) {
-		    		error = "Parent collection can't be the same collection.";
-		   		} else if (collTypeValue == collTypes[1]) { // ProvenanceCollection
-		   			if (parentCollType != collTypes[2])
-	    				error = "A " + collTypes[1] + " can only have a " + collTypes[2] + " parent.";
-		   		} else if (collTypeValue == collTypes[0]) { // AssembledCollection
-		   			if (!(parentCollType == collTypes[0] || parentCollType == collTypes[1]))
-	    				error = "An " + collTypes[0] + " can either have an " + collTypes[0] + " parent or a " + collTypes[1] + " parent.";
-	    		}
-	    		
-	    		if (error.length > 0) {
-	    			alert ("Please select a valid parent collection!" + "\nNote: " + error);
-	    			return false;
-	    		}
-	    	}
+    		var error = "";
+    		if (category.options[collIndex].value == parentCollection.options[parentIndex].value) {
+	    		error = "Parent collection can't be the same collection.";
+	   		} else if (collTypeValue == collTypes[2]) { // ProvenanceCollectionPart
+	   			if (parentCollType != collTypes[1]) 
+	   				error = "A " + collTypes[2] + " can only have a " + collTypes[1] + " parent.";
+	    	} else if (collTypeValue == collTypes[1]) { // ProvenanceCollection
+	   			if (parentCollType != collTypes[0])
+    				error = "A " + collTypes[1] + " can only have a " + collTypes[0] + " parent.";
+	   		} else if (collTypeValue == collTypes[0]) { // AssembledCollection
+	   			if (parentCollType != collTypes[0])
+    				error = "An " + collTypes[0] + " can only have an " + collTypes[0] + " parent.";
+    		}
+    		
+    		if (error.length > 0) {
+    			alert ("Please select a valid parent collection!" + "\nNote: " + error);
+    			return false;
+    		}
 	    }
         
 	    var message = "Are you sure you want to Create collection '" + collTitle + "'? \n";
