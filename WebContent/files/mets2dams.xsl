@@ -160,7 +160,7 @@
         <dams:Note>
           <dams:type>physical description</dams:type>
           <rdf:value>
-            <xsl:for-each select="mods:physicalDescription/mods:note[@displayLabel='General Physical Description note']|mods:physicalDescription/mods:note[@displayLabel='Physical Facet note']|mods:note[@displayLabel='extent']|mods:physicalDescription/mods:extent|mods:note[@displayLabel='dimensions']">
+            <xsl:for-each select="mods:physicalDescription/mods:note[@displayLabel='General Physical Description note']|mods:physicalDescription/mods:note[@displayLabel='Physical Facet note']|mods:note[@displayLabel='extent']|mods:physicalDescription/mods:extent|mods:note[@displayLabel='dimensions']|mods:note[@type='version identification']">
               <xsl:if test="position() &gt; 1">; </xsl:if>
               <xsl:value-of select="."/>
             </xsl:for-each>
@@ -558,6 +558,9 @@
             <xsl:when test="@type = 'acquisition'">
               <dams:type>custodial history</dams:type>
               <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
+            <xsl:when test="@type = 'version identification'">
+              <!-- see physical-description-note -->
             </xsl:when>
             <xsl:otherwise>
               <xsl:call-template name="generic-note"/>
