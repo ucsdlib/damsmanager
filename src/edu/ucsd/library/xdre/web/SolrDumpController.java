@@ -45,7 +45,7 @@ public class SolrDumpController implements Controller {
 					ds = Constants.DEFAULT_TRIPLESTORE;
 				
 				damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
-				List<String> fsSrcs = damsClient.listFileStores();
+
 				List<String> tsSrcs = damsClient.listTripleStores();
 				collMap = damsClient.listCollections();
 				JSONObject colObj = null;
@@ -66,7 +66,7 @@ public class SolrDumpController implements Controller {
 
 				data.put("triplestore", ds);
 				data.put("triplestores", tsSrcs);
-				data.put("filestores", fsSrcs);
+
 				data.put("collections", colTitleMap.values());
 				data.put("message", (!StringUtils.isBlank(message) ? message : request.getSession().getAttribute("message")));
 			}catch (Exception e){

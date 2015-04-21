@@ -302,19 +302,6 @@
 					</div>
 				</div>
 				<div id="preferenceButtonDiv" <c:if test="${model.activeButton != 'preferenceButton'}">style="display:none;"</c:if>>
-					<div class="processlayout">
-						<span title="FileStore selector" class="menuText">
-							<span class="text-special">&nbsp;FileStore to use:&nbsp;</span>
-							<select id="fs" name="fs" class="inputText">
-								<option value=""> -- FileStore -- </option>							
-								<c:forEach var="entry" items="${model.filestores}">
-									<option value="${entry}" <c:if test="${model.filestore == entry}">selected</c:if>>
-		                       			<c:out value="${entry}" /><c:if test="${model.filestoreDefault == entry}"> (default)</c:if>
-		                        	</option>
-								</c:forEach>
-							</select>
-						</span>
-					</div>
 				</div><!-- End preferenceButtonDiv -->
 			</div>
 		</div>
