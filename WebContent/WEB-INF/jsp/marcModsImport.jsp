@@ -152,7 +152,7 @@
 		displayProgressBar(0);
 	}
 	
-	var fsDefault = "${model.filestoreDefault}";
+
 	function selectCollection(selectObj){
 		var dsIdx = document.mainForm.ts.selectedIndex;
 		var ds = document.mainForm.ts.options[dsIdx].value;
@@ -177,9 +177,9 @@
 	function selectUnit(unitOpt){
 		var unitName = unitOpt.options[unitOpt.selectedIndex].text;
 		var unitID = unitOpt.options[unitOpt.selectedIndex].value;
-		var fsSelected = fsDefault;
+
 		if(unitName == "UCSD Research Data Collections" || unitName.indexOf("Research Data Curation") >= 0 || unitID.indexOf("bb6827300d") >= 0) {
-			fsSelected = "openStack";
+
 			var proOpts = document.mainForm.program.options;
 			for (var i = 0; i < proOpts.length; i++) { 
 				if (proOpts[i].text.indexOf("Research Data") >=0)
@@ -190,7 +190,7 @@
 			if (programText.indexOf("Research Data") >=0)
 				document.mainForm.program.selectedIndex = 0;
 		}
-		document.mainForm.fs.value = fsSelected;
+
 	}
 	
 	function selectSource(){
@@ -484,7 +484,7 @@
 	</table>
 </div>
 <div class="buttonDiv">
-	<input type="hidden" name="fs" value=""/>
+
 	<input type="button" name="atImport" value=" Import " onClick="confirmImport();"/>&nbsp;&nbsp;
 	<input type="button" name="atImportCancel" value=" Cancel " onClick="document.location.href='/damsmanager/'"/>
 </div>

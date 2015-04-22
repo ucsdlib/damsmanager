@@ -267,9 +267,6 @@ public class DerivativeHandler extends CollectionHandler{
 			    				else
 			    					params.put(DFile.USE, "video-service");
 
-			    				String fs = damsClient.getFileStore();
-			    				if(fs != null)
-			    					params.put("fs", fs);
 			    				successful = damsClient.uploadFile(params, replace); 
 			    			}else
 			    				successful = false;

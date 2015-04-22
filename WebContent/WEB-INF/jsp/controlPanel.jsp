@@ -143,7 +143,7 @@
 									   <span class="submenuText"><input type="radio" name="size" value="2" > Service (768px)</span><br />
 									   <span class="submenuText"><input type="radio" name="size" value="6" > Large (1200px)</span><br />
 									   <span class="submenuText"><input type="radio" name="size" value="7" > Huge (1600px)</span><br />
-									   <span class="submenuText"><input type="radio" name="size" value="v" > Videos mp4 (720p) </span><br />
+									   <span class="submenuText"><input type="radio" name="size" value="v" > MP3/MP4 </span><br />
 									</fieldset>
 						</div>
 						<div title="Check this checkbox to replace the derivatives if exist." class="specialmenuText"><input type="checkbox" id="derReplace" name="derReplace" class="pmcheckbox" onClick="confirmSelection(this, 'replace the selected derivative type above', 'createDerivatives');">
@@ -302,19 +302,6 @@
 					</div>
 				</div>
 				<div id="preferenceButtonDiv" <c:if test="${model.activeButton != 'preferenceButton'}">style="display:none;"</c:if>>
-					<div class="processlayout">
-						<span title="FileStore selector" class="menuText">
-							<span class="text-special">&nbsp;FileStore to use:&nbsp;</span>
-							<select id="fs" name="fs" class="inputText">
-								<option value=""> -- FileStore -- </option>							
-								<c:forEach var="entry" items="${model.filestores}">
-									<option value="${entry}" <c:if test="${model.filestore == entry}">selected</c:if>>
-		                       			<c:out value="${entry}" /><c:if test="${model.filestoreDefault == entry}"> (default)</c:if>
-		                        	</option>
-								</c:forEach>
-							</select>
-						</span>
-					</div>
 				</div><!-- End preferenceButtonDiv -->
 			</div>
 		</div>

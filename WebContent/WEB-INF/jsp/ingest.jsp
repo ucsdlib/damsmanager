@@ -95,7 +95,6 @@
 		displayProgressBar(0);
 	}
 	
-	var fsDefault = "${model.filestoreDefault}";
 	function selectCollection(selectObj){
 		var dsIdx = document.mainForm.ts.selectedIndex;
 		var ds = document.mainForm.ts.options[dsIdx].value;
@@ -125,20 +124,6 @@
 		var dsIdx = document.mainForm.ts.selectedIndex;
 		var ds = document.mainForm.ts.options[dsIdx].value;
 		document.location.href="/damsmanager/ingest.do?ts=" + ds;
-	}
-	
-	function selectUnit(unitOpt){
-		var unitName = unitOpt.options[unitOpt.selectedIndex].text;
-		var fsOpts = document.mainForm.fs.options;
-		var fsSelected = fsDefault;
-		if(unitName == "rci" || unitName == "RCI" || unitName.indexOf("Research Data Curation") == 0)
-			fsSelected = "openStack";
-		for(var i=0; i<fsOpts.length; i++){
-			if(fsOpts[i].value == fsSelected){
-				fsOpts[i].selected = true;
-				break;
-			}
-		}
 	}
 	
 	var crumbs = [{"Home":"http://libraries.ucsd.edu"}, {"Digital Library Collections":"/curator"},{"DAMS Manager":"/damsmanager/"}, {"Staging Ingest":""}];
@@ -194,22 +179,9 @@
 	<table>
 		<tr align ="left">
 			<td height="25px">
-				<span class="submenuText"><b>FileStore to use: </b></span>
-				</td><td>
-					<select id="fs" name="fs" class="inputText">
-						<c:forEach var="entry" items="${model.filestores}">
-							<option value="${entry}" <c:if test="${model.filestore == entry}">selected</c:if>>
-                       			<c:out value="${entry}" /><c:if test="${model.filestoreDefault == entry}"> (default)</c:if>
-                        	</option>
-						</c:forEach>
-					</select>
-			</td>
-		</tr>
-		<tr align ="left">
-			<td height="25px">
 				<span class="submenuText"><b>Admin Unit: </b></span>
 				</td><td>
-					<select id="unit" name="unit" class="inputText" onChange="selectUnit(this);">
+					<select id="unit" name="unit" class="inputText">
 						<option value=""> -- units -- </option>
 						<c:forEach var="entry" items="${model.units}">
 							<option value="${entry.value}" <c:if test="${model.unit == entry.value}">selected</c:if>>
