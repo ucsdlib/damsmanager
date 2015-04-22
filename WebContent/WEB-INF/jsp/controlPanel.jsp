@@ -143,7 +143,7 @@
 									   <span class="submenuText"><input type="radio" name="size" value="2" > Service (768px)</span><br />
 									   <span class="submenuText"><input type="radio" name="size" value="6" > Large (1200px)</span><br />
 									   <span class="submenuText"><input type="radio" name="size" value="7" > Huge (1600px)</span><br />
-									   <span class="submenuText"><input type="radio" name="size" value="v" > Videos mp4 (720p) </span><br />
+									   <span class="submenuText"><input type="radio" name="size" value="v" > MP3/MP4 </span><br />
 									</fieldset>
 						</div>
 						<div title="Check this checkbox to replace the derivatives if exist." class="specialmenuText"><input type="checkbox" id="derReplace" name="derReplace" class="pmcheckbox" onClick="confirmSelection(this, 'replace the selected derivative type above', 'createDerivatives');">
