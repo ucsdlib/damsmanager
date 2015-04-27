@@ -39,7 +39,6 @@ public class IngestController implements Controller {
 		String unit =  request.getParameter("unit");
 		String reset = request.getParameter("reset");
 		String message = request.getParameter("message");
-		String fileStore = request.getParameter("fs");
 
 		HttpSession session = request.getSession();	
 		DAMSClient damsClient = null;
@@ -53,13 +52,11 @@ public class IngestController implements Controller {
 			damsClient.setTripleStore(ds);
 			if(collectionId == null && reset != null){
 				filePath = "";
-				fileStore = "";
 				session.removeAttribute("filePath");
 				session.removeAttribute("fileFilter");
 				session.removeAttribute("collectionId");
 				session.removeAttribute("arkSetting");
 				session.removeAttribute("preferedOrder");
-				session.removeAttribute("fileStore");
 				session.removeAttribute("unit");
 			 	session.removeAttribute("fileSuffixes");
 			 	session.removeAttribute("fileUse");
@@ -76,11 +73,7 @@ public class IngestController implements Controller {
 			Map<String, String> collectionMap = damsClient.listCollections();
 			Map<String, String> unitsMap = damsClient.listUnits();
 			List<String> tsSrcs = damsClient.listTripleStores();
-			List<String> fsSrcs = damsClient.listFileStores();
-			String fsDefault = damsClient.defaultFilestore();
-			if(fileStore == null || fileStore.length() == 0)
-				fileStore = fsDefault;
-			
+
 			dataMap.put("categories", collectionMap);
 			dataMap.put("category", collectionId);
 			dataMap.put("units", unitsMap);
@@ -92,9 +85,6 @@ public class IngestController implements Controller {
 			dataMap.put("message", message);
 			dataMap.put("triplestore", ds);
 			dataMap.put("triplestores", tsSrcs);
-			dataMap.put("filestores", fsSrcs);
-			dataMap.put("filestore", fileStore);
-			dataMap.put("filestoreDefault", fsDefault);
 			dataMap.put("fileSuffixes", fileSuffixes);
 			dataMap.put("fileUse", fileUse);
 			dataMap.put("preferedOrder", preferedOrder);

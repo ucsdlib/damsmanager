@@ -390,7 +390,7 @@ public class FileCountValidaionHandler extends CollectionHandler{
 	 */
 	public String getExeInfo() {
 		String missingObjectsMessage = " object" + (missingObjectsCount>1?"s have ":" has ") + " no master files";
-		String missingFilesMessage = " file" + (missingFilesCount>1?"s are ":" is ") + " missing from " + damsClient.getFileStore();
+		String missingFilesMessage = " file" + (missingFilesCount>1?"s are ":" is ") + " missing from filestore.";
 		String ingestedMessage = " file" + (ingestedCount>1?"s are ":" is ") + " ingested";
 		String ingestFailedMessage = " file" + (ingestFailedCount>1?"s are ":" is ") + " failed to be ingested";
 		String derivFailedMessage = " file" + (derivFailedCount>1?"s are ":" is ") + " failed for derivatives creation";

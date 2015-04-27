@@ -119,7 +119,7 @@ public class DAMSClient {
 	private HttpRequestBase request = null; // HTTP request
 	private HttpResponse response = null; // HTTP response
 	private HttpContext httpContext = null;
-	private String fileStore = null;
+
 	private String tripleStore = null;
 	private String solrURLBase = null; // SOLR URL
 	private String user = null;
@@ -294,35 +294,6 @@ public class DAMSClient {
 		HttpGet get = new HttpGet(url);
 		JSONObject resObj = getJSONResult(get);
 		return  (String)resObj.get("defaultTriplestore");
-	}
-	
-	/**
-	 * Retrieve the fileStores in use.
-	 * @return
-	 * @throws Exception 
-	 */
-	public List<String> listFileStores() throws Exception{
-		//String url = storageURL + "system/filestores?format=json";
-		String url = getDAMSFunctionURL("system", "filestores", "json");
-		HttpGet get = new HttpGet(url);
-		JSONObject resObj = getJSONResult(get);
-		JSONArray jsonArr = (JSONArray) resObj.get("filestores");
-		List<String> filestores = new ArrayList<String>();
-		for(int i=0; i<jsonArr.size(); i++)
-			filestores.add((String) jsonArr.get(i));
-		return filestores;
-	}
-	
-	/**
-	 * Retrieve the default filestore.
-	 * @return
-	 * @throws Exception 
-	 */
-	public String defaultFilestore() throws Exception{
-		String url = getDAMSFunctionURL("system", "filestores", "json");
-		HttpGet get = new HttpGet(url);
-		JSONObject resObj = getJSONResult(get);
-		return (String)resObj.get("defaultFilestore");
 	}
 
 	/**
@@ -1593,7 +1564,7 @@ public class DAMSClient {
 	 */
 	public String toDAMSURL(String[] urlParts, String format){
 		NameValuePair[] params = {new BasicNameValuePair("format", format), new BasicNameValuePair("ts",tripleStore), 
-				new BasicNameValuePair("fs", fileStore), new BasicNameValuePair("user", StringUtils.isBlank(user) ? "":user),
+				new BasicNameValuePair("user", StringUtils.isBlank(user) ? "":user),
 				new BasicNameValuePair("client", StringUtils.isBlank(clientInfo) ? "" : clientInfo)};
 		String paramsStr = concatParams(params);
 		//System.out.println(storageURL + toUrlPath(urlParts) + (paramsStr.length()>0?"?":"") + paramsStr);
@@ -1856,24 +1827,6 @@ public class DAMSClient {
 			}
 			closeable = null;
 		}
-	}
-	
-	/**
-	 * Get the fileStore name
-	 * 
-	 * @return
-	 */
-	public String getFileStore() {
-		return fileStore;
-	}
-
-	/**
-	 * Set the fileStore name
-	 * 
-	 * @return
-	 */
-	public void setFileStore(String fileStore) {
-		this.fileStore = fileStore;
 	}
 
 	/**

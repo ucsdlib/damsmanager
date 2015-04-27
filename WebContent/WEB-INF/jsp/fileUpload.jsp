@@ -55,20 +55,7 @@
     	getAssignment("mainForm");
 		displayProgressBar(0);
 	}
-	
-	var fsDefault = "${model.filestoreDefault}";
-	function setFilestore(){
-		document.getElementById("fsSpan").style.display = "none";
-		document.getElementById("fsSelectSpan").style.display = "inline";
-	}
-	
-	function resetFilestore(){
-		document.getElementById("fsSpan").style.display = "inline";
-		var selIdx = mainForm.fs.selectedIndex;
-		document.getElementById("fsSpan").innerHTML = mainForm.fs.options[selIdx].text;
-		document.getElementById("fsSelectSpan").style.display = "none";
-	}
-	
+
 	function reloadPage(inputID){
 		var filesPath = document.getElementById(inputID).value; 
 		document.location.href = "/damsmanager/fileUpload.do?filesPath=" + encodeURIComponent(filesPath);
@@ -97,19 +84,6 @@
 <form id="mainForm" name="mainForm" method="post" action="/damsmanager/operationHandler.do?fileUpload" >
 <div class="emBox_ark">
 <div class="emBoxBanner">File Upload</div>
-<div style="background:#DDDDDD;padding-top:8px;padding-bottom:8px;padding-left:25px;" align="left">
-	<span class="submenuText" style="margin-top:3px;padding-left:22px;"><strong>FileStore to use:</strong>&nbsp;</span>
-	<span id="fsSpan" class="submenuText" Title="Double click to choose a filestore for file upload." ondblclick="setFilestore();" onMouseOver="this.style.cursor='pointer'">${model.filestore}<c:if test="${model.filestoreDefault == model.filestore}"> (default)</c:if></span>
-	<span id="fsSelectSpan" ondblclick="resetTriplestore();" style="display:none" >
-		<select id="fs" name="fs" class="inputText" onChange="resetFilestore();">						
-			<c:forEach var="entry" items="${model.filestores}">
-				<option value="${entry}" <c:if test="${model.filestore == entry}">selected</c:if>>
-                    <c:out value="${entry}" /><c:if test="${model.filestoreDefault == entry}"> (default)</c:if>
-                </option>
-			</c:forEach>
-		</select>
-	</span>
-</div>
 <div style="margin-top:10px;padding-left:20px;min-height:300px" align="left">
 	<table width="600px">
 		<tr align="left">

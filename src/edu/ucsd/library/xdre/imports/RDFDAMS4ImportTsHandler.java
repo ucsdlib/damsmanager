@@ -725,11 +725,6 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 												params.put("fid", dfid);
 												params.put("local", dst.getAbsolutePath());
 
-												String fs = damsClient.getFileStore();
-												if(fs != null) {
-													params.put("fs", fs);
-												}
-
 												derCreated = damsClient.uploadFile(params, replace);
 											} else {
 												successful = false;

@@ -154,12 +154,13 @@
                or mods:physicalDescription/mods:note[@displayLabel='General Physical Description note']
                or mods:physicalDescription/mods:note[@displayLabel='Physical Facet note']
                or mods:note[@displayLabel='extent']
-               or mods:note[@diplayLabel='dimensions']">
+               or mods:note[@diplayLabel='dimensions']
+               or mods:note[@type='version identification']">
       <dams:note>
         <dams:Note>
           <dams:type>physical description</dams:type>
           <rdf:value>
-            <xsl:for-each select="mods:physicalDescription/mods:note[@displayLabel='General Physical Description note']|mods:physicalDescription/mods:note[@displayLabel='Physical Facet note']|mods:note[@displayLabel='extent']|mods:physicalDescription/mods:extent|mods:note[@displayLabel='dimensions']">
+            <xsl:for-each select="mods:physicalDescription/mods:note[@displayLabel='General Physical Description note']|mods:physicalDescription/mods:note[@displayLabel='Physical Facet note']|mods:note[@displayLabel='extent']|mods:physicalDescription/mods:extent|mods:note[@displayLabel='dimensions']|mods:note[@type='version identification']">
               <xsl:if test="position() &gt; 1">; </xsl:if>
               <xsl:value-of select="."/>
             </xsl:for-each>
@@ -531,9 +532,35 @@
             <xsl:when test="@displayLabel = 'dimensions' or @displayLabel = 'extent'">
               <!-- see physical-description-note -->
             </xsl:when>
-            <xsl:when test="@type = 'performers'">
-              <dams:type>performers</dams:type>
+            <xsl:when test="@type = 'performers'
+                         or @type = 'thesis'
+                         or @type = 'bibliography'
+                         or @type = 'preferred citation'">
+              <dams:type><xsl:value-of select="@type"/></dams:type>
               <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
+            <xsl:when test="@type = 'creation/production credits'">
+              <dams:type>credits</dams:type>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
+            <xsl:when test="@type = 'numbering'">
+              <dams:type>extent</dams:type>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
+            <xsl:when test="@type = 'publications'">
+              <dams:type>publication</dams:type>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
+            <xsl:when test="@type = 'biographical/historical'">
+              <dams:type>biography</dams:type>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
+            <xsl:when test="@type = 'acquisition'">
+              <dams:type>custodial history</dams:type>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
+            <xsl:when test="@type = 'version identification'">
+              <!-- see physical-description-note -->
             </xsl:when>
             <xsl:otherwise>
               <xsl:call-template name="generic-note"/>

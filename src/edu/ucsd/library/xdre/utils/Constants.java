@@ -43,7 +43,6 @@ public class Constants {
 	public static String DAMS_STAGING = "";
 	public static String SOLR_URL_BASE = "";
 	public static String DEFAULT_TRIPLESTORE = "";
-	public static String DEFAULT_FILESTORE = "";
 	public static String DEFAULT_DERIVATIVES = "";
 	
 	public static String MAILSENDER_DAMSSUPPORT = "";
@@ -140,9 +139,8 @@ public class Constants {
 				}
 			}
 			
-			// Retrieve the default triplestore and filestore
+			// Retrieve the default triplestore
 			DAMSClient damsClient = new DAMSClient(DAMS_STORAGE_URL);		
-			DEFAULT_FILESTORE = damsClient.defaultFilestore(); //Default filestore
 			DEFAULT_TRIPLESTORE = damsClient.defaultTriplestore(); //Default triplestore
 
 			// Weblog location

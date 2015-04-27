@@ -44,7 +44,6 @@ public class CollectionManagementController implements Controller {
 
 		String message = request.getParameter("message");
 		String ts = request.getParameter("ts");
-		String fs = request.getParameter("fs");
 
 		if(message == null)
 			message = "";
@@ -65,9 +64,6 @@ public class CollectionManagementController implements Controller {
 			if(ts == null || ts.length() == 0)
 				ts = damsClient.defaultTriplestore();
 			
-			if(fs == null || fs.length() == 0)
-				fs = damsClient.defaultFilestore();
-			
 			if(category != null && category.length() > 0)
 				itemsCount = damsClient.countObjects(category);
 			
@@ -80,9 +76,6 @@ public class CollectionManagementController implements Controller {
 			dataMap.put("collections", damsClient.listCollections());
 			dataMap.put("triplestore", ts);
 			dataMap.put("triplestores", damsClient.listTripleStores());
-			dataMap.put("filestores", damsClient.listFileStores());
-			dataMap.put("filestore", fs);
-			dataMap.put("filestoreDefault", Constants.DEFAULT_FILESTORE);
 			dataMap.put("tripletoreDefault", Constants.DEFAULT_TRIPLESTORE);
 			
 		} catch (Exception e) {

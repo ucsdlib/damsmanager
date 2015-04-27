@@ -39,7 +39,6 @@ public class MarcModsImportController implements Controller {
 		String unit =  request.getParameter("unit");
 		String reset = request.getParameter("reset");
 		String message = request.getParameter("message");
-		String fileStore = request.getParameter("fs");
 		String source = request.getParameter("source");
 		String bibNumber = request.getParameter("bib");
 		String modsXml = request.getParameter("mods");
@@ -66,10 +65,6 @@ public class MarcModsImportController implements Controller {
 			Map<String, String> collectionMap = damsClient.listCollections();
 			Map<String, String> unitsMap = damsClient.listUnits();
 			List<String> tsSrcs = damsClient.listTripleStores();
-			List<String> fsSrcs = damsClient.listFileStores();
-			String fsDefault = damsClient.defaultFilestore();
-			if(fileStore == null || fileStore.length() == 0)
-				fileStore = fsDefault;
 
 			message = (!StringUtils.isBlank(message) || StringUtils.isBlank(collectionId)) ? message : (String)request.getSession().getAttribute("message");
 			request.getSession().removeAttribute("message");
@@ -86,9 +81,6 @@ public class MarcModsImportController implements Controller {
 			dataMap.put("message", message);
 			dataMap.put("triplestore", ds);
 			dataMap.put("triplestores", tsSrcs);
-			dataMap.put("filestores", fsSrcs);
-			dataMap.put("filestore", fileStore);
-			dataMap.put("filestoreDefault", fsDefault);
 			dataMap.put("copyrightStatus", RecordUtil.COPYRIGHT_VALUES);
 			dataMap.put("program", RecordUtil.PROGRAM_VALUES);
 			dataMap.put("accessOverride", accessValues);

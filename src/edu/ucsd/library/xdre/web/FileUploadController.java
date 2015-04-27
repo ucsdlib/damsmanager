@@ -40,7 +40,6 @@ public class FileUploadController implements Controller {
 
 	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String message = request.getParameter("message");
-		String fs = request.getParameter("fs");
 		String filesPath = request.getParameter("filesPath");
 
 		if(message == null)
@@ -53,9 +52,6 @@ public class FileUploadController implements Controller {
 		try {
 			
 			damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
-			
-			if(fs == null || fs.length() == 0)
-				fs = damsClient.defaultFilestore();
 			
 			List<String> ingestFiles = new ArrayList<String>();
 			filesPath = filesPath.trim();
@@ -82,10 +78,7 @@ public class FileUploadController implements Controller {
 			
 			dataMap.put("message", message);
 			dataMap.put("filesPath", filesPath);
-			dataMap.put("filestore", fs);
 			dataMap.put("files", ingestFiles);
-			dataMap.put("filestores", damsClient.listFileStores());
-			dataMap.put("filestoreDefault", Constants.DEFAULT_FILESTORE);
 
 		} catch (Exception e) {
 			e.printStackTrace();

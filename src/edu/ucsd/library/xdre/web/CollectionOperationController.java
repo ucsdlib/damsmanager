@@ -157,7 +157,6 @@ public class CollectionOperationController implements Controller {
 		boolean isExcelImport = getParameter(paramsMap, "excelImport") != null;
 		boolean isCollectionRelease = getParameter(paramsMap, "collectionRelease") != null;
 		boolean isFileUpload = getParameter(paramsMap, "fileUpload") != null;
-		String fileStore = getParameter(paramsMap, "fs");
 		if(activeButton == null || activeButton.length() == 0)
 			activeButton = "validateButton";
 		HttpSession session = request.getSession();
@@ -168,21 +167,18 @@ public class CollectionOperationController implements Controller {
 		if(ds == null || ds.length() == 0)
 			ds = Constants.DEFAULT_TRIPLESTORE;
 		
-		if(fileStore == null || (fileStore=fileStore.trim()).length() == 0)
-			fileStore = null;
-			
-		String forwardTo = "/controlPanel.do?ts=" + ds + (fileStore!=null?"&fs=" + fileStore:"");
+		String forwardTo = "/controlPanel.do?ts=" + ds ;
 		if(dataConvert)
-			forwardTo = "/pathMapping.do?ts=" + ds + (fileStore!=null?"&fs=" + fileStore:"");
+			forwardTo = "/pathMapping.do?ts=" + ds;
 		else if(isIngest){
 			String unit = getParameter(paramsMap, "unit");
-			forwardTo = "/ingest.do?ts=" + ds + (fileStore!=null?"&fs=" + fileStore:"") + (unit!=null?"&unit=" + unit:"");
+			forwardTo = "/ingest.do?ts=" + ds + (unit!=null?"&unit=" + unit:"");
 		}else if(isDevUpload)
-			forwardTo = "/devUpload.do?" + (fileStore!=null?"&fs=" + fileStore:"");
+			forwardTo = "/devUpload.do?";
 		else if(isSolrDump)
 			forwardTo = "/solrDump.do" + (StringUtils.isBlank(collectionId) ? "" : "#colsTab");
 		else if(isSerialization)
-			forwardTo = "/serialize.do?" + (fileStore!=null?"&fs=" + fileStore:"");
+			forwardTo = "/serialize.do?";
 		else if(isMarcModsImport)
 			forwardTo = "/marcModsImport.do?";
 		else if(isExcelImport)
@@ -362,10 +358,9 @@ public class CollectionOperationController implements Controller {
 				throw new ServletException("Can't sync triplestore from " + ds + " to destination " + dsDest + ".");
 		}
 		
-		String fileStore = getParameter(paramsMap, "fs");
+
 		damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
 		damsClient.setTripleStore(ds);
-		damsClient.setFileStore(fileStore);
 		damsClient.setUser((String)session.getAttribute("user"));
 
 		String clientVersion = session.getServletContext().getInitParameter("src-version");
@@ -398,7 +393,7 @@ public class CollectionOperationController implements Controller {
 			 message = "";
 			
 			 if(i == 0){
-				 session.setAttribute("status", opMessage + "File Count Validation for FileStore " + fileStore + " ...");
+				 session.setAttribute("status", opMessage + "File Count Validation ...");
 				 boolean ingestFile = getParameter(paramsMap, "ingestFile") != null;
 				 boolean dams4FileRename = getParameter(paramsMap, "dams4FileRename") != null;
 				 handler = new FileCountValidaionHandler(damsClient, collectionId);
@@ -412,7 +407,7 @@ public class CollectionOperationController implements Controller {
 					 ((FileCountValidaionHandler)handler).setFilesPaths(ingestFiles.toArray(new String[ingestFiles.size()]));
 				 }
 			 }else if (i == 1){
-				   session.setAttribute("status", opMessage + "Checksum Validation for FileStore " + fileStore + " ...");
+				   session.setAttribute("status", opMessage + "Checksum Validation ...");
 				   handler = new ChecksumsHandler(damsClient, collectionId, null);
 			 }else if (i == 2){	
 				  session.setAttribute("status", opMessage + "Importing metadata ...");
@@ -1129,7 +1124,7 @@ public class CollectionOperationController implements Controller {
 						 handler = new FilestoreSerializationHandler(damsClient, collectionId);
 				 }
 			 } else if (i == 15) {	
-				 session.setAttribute("status", opMessage + "Uploading files from dams-staging to " + damsClient.getFileStore() + " ...");
+				 session.setAttribute("status", opMessage + "Uploading files from dams-staging to filestore ...");
 				 Map<String, String> filesMap = new TreeMap<String, String>();
 				 for(Iterator<String> it = paramsMap.keySet().iterator(); it.hasNext();){
 					 String key = it.next();
