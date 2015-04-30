@@ -190,13 +190,21 @@ public class ExcelSource implements RecordSource
 
 	                    // check for invalid control values
 	                    List<String> validValue = CONTROL_VALUES.get(header);
-	                    if (validValue != null && validValue.size() > 0 && !validValue.contains(value.toLowerCase())) 
+	                    if (validValue != null && validValue.size() > 0) 
 	                    {
-	    	                String existing = invalids.get(header);
-	    	                if ( existing == null )
-	    	                	invalids.put(originalHeaders.get(header), value);
-	    	                else
-	    	                    values.put(originalHeaders.get(header), existing + DELIMITER + value);
+	                    	// validate cell with multiple values
+	                    	String[] vals2Valid = value.split("\\" + DELIMITER);
+	                    	for (String val : vals2Valid) 
+	                    	{
+		                    	if (!validValue.contains(val.trim().toLowerCase())) {
+		                    		String originalHeader = originalHeaders.get(header);
+			    	                String existing = invalids.get(originalHeader);
+			    	                if ( existing == null )
+			    	                	invalids.put(originalHeader, val);
+			    	                else
+			    	                	invalids.put(originalHeader, existing + " " + DELIMITER + " " + val);
+		                    	}
+	                    	}
 	                    }
 	                } catch (UnsupportedEncodingException e) {
 	                    e.printStackTrace();
@@ -260,69 +268,115 @@ public class ExcelSource implements RecordSource
     public synchronized static void initControlValues(File columns, File cvs) throws InvalidFormatException, IOException 
     {
     	if ( CONTROL_VALUES == null || CONTROL_VALUES.size() == 0 )
-    	{
-    		CONTROL_VALUES = new HashMap<>();
-    		List<String> cvHeaders = new ArrayList<>();
-    		
-    		// Initiate control values
+    	{    		
+    		// all control values
     		Workbook book = WorkbookFactory.create(cvs);
-    		Sheet sheet = book.getSheetAt(0);
-    		for ( Iterator<Row> it = sheet.rowIterator(); it.hasNext(); )
-    		{
-    			Row row = it.next();
-				int lastCellNum = row.getLastCellNum();
-				for ( int i = 0; i < lastCellNum; i++ )
-				{
-					Cell cell = row.getCell(i);
-					if ( cell != null )
-					{
-						cell.setCellType(Cell.CELL_TYPE_STRING);
-	                    String value = cell.toString();
-	                    if ( value != null && !(value = value.trim()).equals("") )
-	    	            {
-	                    	value = value.toLowerCase();
-							if (row.getRowNum() == 0) 
-							{
-								cvHeaders.add( value );
-								CONTROL_VALUES.put(value, new ArrayList<String>());
-							} 
-							else
-							{
-								value = new String(value.getBytes("UTF-8"));
-								String header = cvHeaders.get(cell.getColumnIndex());
-								CONTROL_VALUES.get(header).add(value);
-							}
-	    	            }
-					}
-				}
-    		}
-    		
-    		// ARK column
-    		if (!CONTROL_VALUES.containsKey("ark"))
-    			CONTROL_VALUES.put("ark", new ArrayList<String>());
-    		
-    		// add all valid column names
+    		Sheet cvsSheet = book.getSheetAt(0);
+
+    		// all valid column names
     		book = WorkbookFactory.create(columns);
-    		sheet = book.getSheetAt(0);
-    		for ( Iterator<Row> it = sheet.rowIterator(); it.hasNext(); )
-    		{
-    			Row row = it.next();
-				int lastCellNum = row.getLastCellNum();
-				for ( int i = 0; i < lastCellNum; i++ )
+    		Sheet columnsSheet = book.getSheetAt(0);
+
+    		// initiate the control values for column names
+    		initControlValues(columnsSheet, cvsSheet);
+    	}
+    }
+
+    /**
+     * Initiate control values with standard input template for column names (sheet name: All) and field values (sheet name: CV values) 
+     * @param template
+     * @throws IOException 
+     * @throws InvalidFormatException 
+     */
+    public synchronized static void initControlValues(File template) throws InvalidFormatException, IOException 
+    {
+    	if ( CONTROL_VALUES == null || CONTROL_VALUES.size() == 0 )
+    	{
+    		Workbook book = WorkbookFactory.create(template);
+
+    		// all control values
+    		Sheet cvsSheet = book.getSheet("CV values");
+
+    		// all valid column names
+    		Sheet columnsSheet = book.getSheet("All");
+
+    		// initiate the control values for column names
+    		initControlValues(columnsSheet, cvsSheet);
+    	}
+    }
+
+    /**
+     * Initiate control values for column names and field values with data in the columns sheet and cvs sheet
+     * @param columns
+     * @param cvs
+     * @throws IOException 
+     * @throws InvalidFormatException 
+     */
+    private static void initControlValues(Sheet columns, Sheet cvs) throws InvalidFormatException, IOException 
+    {
+		CONTROL_VALUES = new HashMap<>();
+		List<String> cvHeaders = new ArrayList<>();
+		
+		// Initiate control values
+		for ( Iterator<Row> it = cvs.rowIterator(); it.hasNext(); )
+		{
+			Row row = it.next();
+			int lastCellNum = row.getLastCellNum();
+			for ( int i = 0; i < lastCellNum; i++ )
+			{
+				Cell cell = row.getCell(i);
+				if ( cell != null )
 				{
-					Cell cell = row.getCell(i);
-					if ( cell != null )
-					{
-						cell.setCellType(Cell.CELL_TYPE_STRING);
-	                    String value = cell.toString();
-	                    if ( value != null && !(value = value.trim()).equals("") && !CONTROL_VALUES.containsKey(value.toLowerCase()) )
-	    	            {
+					cell.setCellType(Cell.CELL_TYPE_STRING);
+                    String value = cell.toString();
+                    if ( value != null && !(value = value.trim()).equals("") )
+    	            {
+                    	value = value.toLowerCase();
+						if (row.getRowNum() == 0) 
+						{
+							cvHeaders.add( value );
+							CONTROL_VALUES.put(value, new ArrayList<String>());
+						} 
+						else
+						{
+							value = new String(value.getBytes("UTF-8"));
+							String header = cvHeaders.get(cell.getColumnIndex());
+							CONTROL_VALUES.get(header).add(value);
+						}
+    	            }
+				}
+			}
+		}
+		
+		// ARK column
+		if (!CONTROL_VALUES.containsKey("ark"))
+			CONTROL_VALUES.put("ark", new ArrayList<String>());
+		
+		// add all valid column names
+		for ( Iterator<Row> it = columns.rowIterator(); it.hasNext(); )
+		{
+			Row row = it.next();
+			int lastCellNum = row.getLastCellNum();
+			for ( int i = 0; i < lastCellNum; i++ )
+			{
+				Cell cell = row.getCell(i);
+				if ( cell != null )
+				{
+					cell.setCellType(Cell.CELL_TYPE_STRING);
+                    String value = cell.toString();
+                    if ( value != null && !(value = value.trim()).equals("") )
+    	            {
+                    	if ( !CONTROL_VALUES.containsKey(value.toLowerCase()) )
+                    	{
 	                    	value = value.toLowerCase();
 	                    	CONTROL_VALUES.put(value, new ArrayList<String>());
-	    	            }
-					}
+                    	}
+
+                    	// skip comments in other cells
+                    	break;
+    	            }
 				}
-    		}
-    	}
+			}
+		}
     }
 }

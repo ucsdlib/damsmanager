@@ -314,8 +314,11 @@ public class TabularRecord implements Record
         // language /////////////////////////////////////////////////////////////////////
         for ( String lang : split(data.get("language")) )
         {
+        	String[] elemValues = lang.split("-");
             Element elem = addVocabElement(e,"language",damsNS,"Language",madsNS);
-            addTextElement(elem,"code",madsNS,lang);
+            addTextElement(elem,"code",madsNS,elemValues[0].trim());
+            if (elemValues.length == 2)
+            	addTextElement(elem,"authoritativeLabel",madsNS,elemValues[1].trim());
         }
 
         // cartographics ////////////////////////////////////////////////////////////////
