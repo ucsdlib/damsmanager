@@ -33,6 +33,7 @@ public class TabularRecord implements Record
     public static final String SUBCOMPONENT = "sub-component";
     public static final String DELIMITER = "|";
     public static final String DELIMITER_CELL = "@";
+    public static final String DELIMITER_LANG_ELEMENT = "-";
     public static final String[] ACCEPTED_DATE_FORMATS = {"yyyy-MM-dd", "yyyy-MM", "yyyy"};
     private static DateFormat[] dateFormats = {new SimpleDateFormat(ACCEPTED_DATE_FORMATS[0]), 
     	new SimpleDateFormat(ACCEPTED_DATE_FORMATS[1]), new SimpleDateFormat(ACCEPTED_DATE_FORMATS[2])};
@@ -314,7 +315,7 @@ public class TabularRecord implements Record
         // language /////////////////////////////////////////////////////////////////////
         for ( String lang : split(data.get("language")) )
         {
-        	String[] elemValues = lang.split("-");
+        	String[] elemValues = lang.split("\\" + DELIMITER_LANG_ELEMENT);
             Element elem = addVocabElement(e,"language",damsNS,"Language",madsNS);
             addTextElement(elem,"code",madsNS,elemValues[0].trim());
             if (elemValues.length == 2)

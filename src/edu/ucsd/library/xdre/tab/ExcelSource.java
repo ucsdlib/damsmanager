@@ -5,6 +5,7 @@ import static edu.ucsd.library.xdre.tab.TabularRecord.DELIMITER;
 import static edu.ucsd.library.xdre.tab.TabularRecord.OBJECT_COMPONENT_TYPE;
 import static edu.ucsd.library.xdre.tab.TabularRecord.COMPONENT;
 import static edu.ucsd.library.xdre.tab.TabularRecord.SUBCOMPONENT;
+import static edu.ucsd.library.xdre.tab.TabularRecord.DELIMITER_LANG_ELEMENT;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -197,7 +198,11 @@ public class ExcelSource implements RecordSource
 	                    	String[] vals2Valid = value.split("\\" + DELIMITER);
 	                    	for (String val : vals2Valid) 
 	                    	{
-		                    	if (!validValue.contains(val.trim())) {
+	                    		String normVal = val.trim();
+								if (header.equalsIgnoreCase("Language"))
+									normVal = normalizeFieldValue(normVal, DELIMITER_LANG_ELEMENT);
+
+								if (!validValue.contains(normVal)) {
 			    	                String existing = invalids.get(originalHeader);
 			    	                if ( existing == null )
 			    	                	invalids.put(originalHeader, val);
@@ -340,6 +345,9 @@ public class ExcelSource implements RecordSource
 						{
 							value = new String(value.getBytes("UTF-8"));
 							String header = cvHeaders.get(cell.getColumnIndex());
+							if (header.equalsIgnoreCase("Language"))
+								value = normalizeFieldValue(value, DELIMITER_LANG_ELEMENT);
+
 							CONTROL_VALUES.get(header).add(value);
 						}
     	            }
@@ -376,5 +384,13 @@ public class ExcelSource implements RecordSource
 				}
 			}
 		}
+    }
+
+    private static String normalizeFieldValue(String value, String delimiter) 
+    {
+		String[] langElems = value.split("\\" + delimiter);
+		if (langElems.length == 2)
+			value = langElems[0].trim() + delimiter + langElems[1].trim();
+		return value;
     }
 }
