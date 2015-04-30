@@ -87,7 +87,7 @@ public class ExcelSource implements RecordSource
                 // keep the original header for error report
                 originalHeaders.put(lcHeader, header);
                 if ( CONTROL_VALUES != null && CONTROL_VALUES.size() > 0 
-                		&& StringUtils.isNotBlank(lcHeader) && !CONTROL_VALUES.containsKey(lcHeader) )
+                		&& StringUtils.isNotBlank(header) && !CONTROL_VALUES.containsKey(header) )
                 {
                 	invalidHeaders.add(header);     		
                 }
@@ -189,15 +189,15 @@ public class ExcelSource implements RecordSource
 	                    value = new String(value.trim().getBytes("UTF-8"));
 
 	                    // check for invalid control values
-	                    List<String> validValue = CONTROL_VALUES.get(header);
+	                    String originalHeader = originalHeaders.get(header);
+	                    List<String> validValue = CONTROL_VALUES.get(originalHeader);
 	                    if (validValue != null && validValue.size() > 0) 
 	                    {
 	                    	// validate cell with multiple values
 	                    	String[] vals2Valid = value.split("\\" + DELIMITER);
 	                    	for (String val : vals2Valid) 
 	                    	{
-		                    	if (!validValue.contains(val.trim().toLowerCase())) {
-		                    		String originalHeader = originalHeaders.get(header);
+		                    	if (!validValue.contains(val.trim())) {
 			    	                String existing = invalids.get(originalHeader);
 			    	                if ( existing == null )
 			    	                	invalids.put(originalHeader, val);
@@ -331,7 +331,6 @@ public class ExcelSource implements RecordSource
                     String value = cell.toString();
                     if ( value != null && !(value = value.trim()).equals("") )
     	            {
-                    	value = value.toLowerCase();
 						if (row.getRowNum() == 0) 
 						{
 							cvHeaders.add( value );
@@ -349,8 +348,8 @@ public class ExcelSource implements RecordSource
 		}
 		
 		// ARK column
-		if (!CONTROL_VALUES.containsKey("ark"))
-			CONTROL_VALUES.put("ark", new ArrayList<String>());
+		if (!CONTROL_VALUES.containsKey("ARK"))
+			CONTROL_VALUES.put("ARK", new ArrayList<String>());
 		
 		// add all valid column names
 		for ( Iterator<Row> it = columns.rowIterator(); it.hasNext(); )
@@ -366,9 +365,8 @@ public class ExcelSource implements RecordSource
                     String value = cell.toString();
                     if ( value != null && !(value = value.trim()).equals("") )
     	            {
-                    	if ( !CONTROL_VALUES.containsKey(value.toLowerCase()) )
+                    	if ( !CONTROL_VALUES.containsKey(value) )
                     	{
-	                    	value = value.toLowerCase();
 	                    	CONTROL_VALUES.put(value, new ArrayList<String>());
                     	}
 
