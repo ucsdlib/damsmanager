@@ -43,10 +43,9 @@ public class ExcelImportController implements Controller {
 		try{
 			
 			// initiate column name and control values for validation
-			String columns = request.getServletContext().getRealPath("files/valid_columns.xlsx");
-			String cvs = request.getServletContext().getRealPath("files/valid_cv_values.xlsx");
+			String validateTemplate = request.getServletContext().getRealPath("files/xls_standard_input_template.xlsx");
 			try {
-				ExcelSource.initControlValues(new File(columns), new File(cvs));
+				ExcelSource.initControlValues(new File( validateTemplate));
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
