@@ -584,11 +584,16 @@ public class DAMSClient {
 		// http://gimili.ucsd.edu:8080/dams/api/files/bb01010101/1/1.tif/fixity?format=json
 		// {"crc32":"5ffa698b","md5":"f69c4f85cafbe05e55068cedd4353146","statusCode":200,"request":"\/files\/bb01010101\/1\/1.tif\/fixity","status":"OK"}
 		JSONObject resObj = null;
-		String url = getFilesURL(object, compId, fileName, "fixity", "json");
-		HttpGet get = new HttpGet(url);
-		resObj = getJSONResult(get);
-		String status = (String) resObj.get("status");
-		return status != null && status.equalsIgnoreCase("ok");
+		if(exists(object, compId, fileName)) {
+			String url = getFilesURL(object, compId, fileName, "fixity", "json");
+			HttpGet get = new HttpGet(url);
+			resObj = getJSONResult(get);
+			if (resObj != null) {
+				String status = (String) resObj.get("status");
+				return status != null && status.equalsIgnoreCase("ok");
+			}
+		}
+		return false;
 	}
 	
 	/**
