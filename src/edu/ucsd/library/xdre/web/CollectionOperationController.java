@@ -62,6 +62,7 @@ import edu.ucsd.library.xdre.collection.MetadataImportHandler;
 import edu.ucsd.library.xdre.collection.SOLRIndexHandler;
 import edu.ucsd.library.xdre.imports.RDFDAMS4ImportTsHandler;
 import edu.ucsd.library.xdre.tab.ExcelSource;
+import edu.ucsd.library.xdre.tab.FilesChecker;
 import edu.ucsd.library.xdre.tab.Record;
 import edu.ucsd.library.xdre.tab.RecordSource;
 import edu.ucsd.library.xdre.tab.InputStreamRecord;
@@ -582,12 +583,22 @@ public class CollectionOperationController implements Controller {
 				  String[] dataPaths = getParameter(paramsMap, "dataPath").split(";");
 				  String[] filesPaths = getParameter(paramsMap, "filesPath").split(";");
 				  String importOption = getParameter(paramsMap, "importOption");
+				  String preingestOption = getParameter(paramsMap, "preingestOption");
+				  String[] filesCheckPaths = getParameter(paramsMap, "filesCheckPath").split(";");
+
+				  boolean preprocessing = importOption == null;
+				  boolean filesCheck = preingestOption != null && preingestOption.startsWith("file-");
+				  
 				  List<String> ingestFiles = new ArrayList<String>();
+				  if (preprocessing)
+					  filesPaths = filesCheckPaths;  
+
 				  for(int j=0; j<filesPaths.length; j++){
 					  if((filesPaths[j]=filesPaths[j].trim()).length() > 0)
 						  ingestFiles.add(new File(Constants.DAMS_STAGING + "/" + filesPaths[j]).getAbsolutePath());
+					  System.out.println(j + " files path: " + filesPaths[j] + "=>" + new File(Constants.DAMS_STAGING + "/" + filesPaths[j]).getAbsolutePath());
 				  }
-				  
+
 				  List<File> dataFiles = new ArrayList<File>();
 				  for(int j=0; j<dataPaths.length; j++){
 					  String dataPath = dataPaths[j];
@@ -626,8 +637,7 @@ public class CollectionOperationController implements Controller {
 				  Element rdfPreview = null;
 				  StringBuilder duplicatRecords = new StringBuilder();
 				  List<String> ids = new ArrayList<String>();
-				  boolean preprocessing = importOption.equalsIgnoreCase("pre-processing");
-				  boolean ingestWithFiles = importOption.equalsIgnoreCase("metadataAndFiles");
+				  boolean ingestWithFiles = ingestFiles.size() > 0;
 				  
 				  if (preprocessing) {
 					  Document doc = new DocumentFactory().createDocument();
@@ -850,34 +860,97 @@ public class CollectionOperationController implements Controller {
 							  }
 						  }
 					  }
-					  
-					  // Logging the result for pre-processing
-					  if (preprocessing || !preSuccessful) {
-						  message = "\nPre-processing " + (preSuccessful?"successful":"failed") + ": \n"
-								  + (proMessage.length() == 0 ? "" : "\n " + proMessage.toString());
-						  handler.logMessage(message);
-					  }
-					  handler.release();
-					  handler = null;
 
 					  if (preSuccessful) {
-						  // Write the converted RDF/xml for preview
-						  if (preprocessing) {
-							  File destFile = new File(Constants.TMP_FILE_DIR, "preview-" + submissionId + "-rdf.xml");
-							  writeXml(destFile, rdfPreview.getDocument().asXML());
-							  
-							  dataLink = "\nThe converted RDF/XML is ready for <a href=\"" + logLink
-									  + "&file=" + destFile.getName() + "\">download</a>.\n";
 
-						  }else{
-							  // Ingest the converted RDF/XML files
+						  if (preprocessing) {
+							  // pre-processing only, no ingest
+
+							  if (filesCheck) {
+								  // pre-processing for files check omly
+								  proMessage = new StringBuilder();
+								  List<Node> srcFiles = rdfPreview.getDocument().selectNodes("//dams:Object//dams:File/dams:sourceFileName");
+								  List<String> srcFileNames = new ArrayList<String>();
+								  for (Node srcFile : srcFiles ) {
+									  	srcFileNames.add(srcFile.getText());
+								  }
+								  
+								  FilesChecker filesChecker = new FilesChecker(srcFileNames, ingestFiles.toArray(new String[ingestFiles.size()]));
+								  if (preingestOption.equalsIgnoreCase("file-match")) {
+									  
+									  List<String> matchedFiles = filesChecker.getMatchedFiles();
+									  List<String> missingFiles = filesChecker.getMissingFiles();
+									  Map<String, File> extraFiles = filesChecker.getExtraFiles();
+									  message = "\nPre-ingest validatation result for files match: \n";
+									  
+									  boolean matched = filesChecker.filesMatch();
+
+									  // report files that are matched in selected source file location
+									  proMessage.append("\n" + (matchedFiles.size() == 0 ? "No" : "There are " + matchedFiles.size()) + " matched files found in the metadata.\n");
+
+									  String selectedPaths = "";
+									  for(int j=0; j<filesPaths.length; j++) {
+										  selectedPaths += StringUtils.isNotBlank(filesPaths[j]) ? filesPaths[j] + "; " : "";
+										  selectedPaths = selectedPaths.length() > 0 ? selectedPaths.substring(0, selectedPaths.length() - 2) : "";
+									  }
+
+									  // report files that are in the metadata but missing from the selected source file location
+									  proMessage.append("\n" + (matched ? "No" : "The following " + missingFiles.size()) + " files are found in the metadata but missing from the selected file location"); 
+									  proMessage.append(" '" + selectedPaths + "'" + (matched ? "." : ": ") + "\n");
+									  for (String missingFile : missingFiles) {
+										  proMessage.append("* " + missingFile + "\n");
+									  }
+
+									  // report files that are found in the selected source file location but not in the metadata
+									  proMessage.append("\n" + (extraFiles.size() == 0 ? "No" : "The following " + extraFiles.size()) + " files are found in the selected file location");
+									  proMessage.append(" '" + selectedPaths + "' but not in the metadata" + (matched ? "." : ":") + "\n");
+									  for (String extraFile : extraFiles.keySet()) {
+										  proMessage.append("* " + extraFile + " => " + extraFiles.get(extraFile).getParent() + "\n");
+									  }
+
+									  message += proMessage.toString();
+									  handler.logMessage(message);
+								  }
+								  
+							  } else {
+								  // Write the converted RDF/xml for preview
+								  File destFile = new File(Constants.TMP_FILE_DIR, "preview-" + submissionId + "-rdf.xml");
+								  writeXml(destFile, rdfPreview.getDocument().asXML());
+								  dataLink = "\nThe converted RDF/XML is ready for <a href=\"" + logLink
+										  + "&file=" + destFile.getName() + "\">download</a>.\n";
+
+								  // Logging the result for pre-processing
+								  message = "\nPre-processing " + (preSuccessful?"successful":"failed") + ": \n"
+										  + (proMessage.length() == 0 ? "" : "\n " + proMessage.toString());
+								  handler.logMessage(message);
+							  }
+						  } else {
+							  // handler clean up for pre-processing
+							  handler.release();
+							  handler = null;
+
+							  // ingest objects with the converted RDF/XML
+							  importOption = "metadataAndFiles";
+
 							  handler = new RDFDAMS4ImportTsHandler(damsClient, dataFiles.toArray(new File[dataFiles.size()]), importOption);
 							  ((RDFDAMS4ImportTsHandler)handler).setFilesPaths(ingestFiles.toArray(new String[ingestFiles.size()]));
 							  ((RDFDAMS4ImportTsHandler)handler).setReplace(true);
 						  }
 					  } else {
 						  successful = false;
+						  // Logging the result for failed pre-processing
+						  message = "\nPre-processing " + (preSuccessful?"successful":"failed") + ": \n"
+								  + (proMessage.length() == 0 ? "" : "\n " + proMessage.toString());
+						  handler.logMessage(message);
 					  }
+					  
+					  // handler clean up
+					  if (preprocessing || !preSuccessful) {
+						  handler.release();
+						  handler = null;
+						  Thread.sleep(100);
+					  }
+
 				  } else {
 					  successful = false;
 					  message += "\nUnknown source type: " + source;
