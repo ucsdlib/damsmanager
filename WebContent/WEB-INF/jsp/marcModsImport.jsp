@@ -57,6 +57,10 @@
         	document.mainForm.enctype = "multipart/form-data";
         }
         
+	    var isIngest = document.getElementById("importOption").checked;
+	    var preingestOption = $('input[name="preingestOption"]:checked').val();
+
+       	if (isIngest || preingestOption == 'pre-processing') {
 		var unitIndex = document.mainForm.unit.selectedIndex;  
 	    if(unitIndex == 0){
 	    	alert("Please select a unit.");
@@ -136,12 +140,30 @@
 	       			return false;
 		       	}
 	       	}
+		    }
+	    } else {
+	    	var filesCheckPath = document.mainForm.filesCheckPath.value.trim();
+	    	if (filesCheckPath.length == 0) {
+	    		alert ("Please choose a file location from the staging area!");
+       			document.mainForm.filesCheckPath.focus();
+       			return false;
+	    	}
 	    }
         
-	    var message = "Are you sure to import objects from METS/MODS metadata source? \n";
+	    var message = "Are you sure to you want to do pre-ingest validation for files check? \n";;
+
+	    if (isIngest) {
+	    	message = "This will create new objects in DAMS production. \nHave all pre-ingest validations been completed? \n";
+	    	var filesPath = document.mainForm.filesPath.value.trim();
+	    	if (filesPath.length == 0)
+	    		message = "No file location selscted for dams ingest! \n" + message;
+	    } else if (preingestOption == 'pre-processing')
+		    message = "Are you sure to you want to review the converted RDF/XML? \n";
+
 	    if(collectionIndex == 0){
-	    	message = "No collections selected for DAMS staging ingest! \nAre you sure to continue?";
+	    	message = "No collections selected! \n" + message;
 	    }
+
 	    var exeConfirm = confirm(message);
 	    if(!exeConfirm)
 	    	return false;
@@ -152,6 +174,14 @@
 		displayProgressBar(0);
 	}
 	
+	function onIngestSelectionChange(obj) {
+		$('input[name="preingestOption"]').each(function(){
+			if ($(obj).prop('checked'))
+				$(this).attr('disabled', true);
+			else
+				$(this).attr('disabled', false);
+		});
+	}
 
 	function selectCollection(selectObj){
 		var dsIdx = document.mainForm.ts.selectedIndex;
@@ -458,26 +488,32 @@
 		</tr>
 		<tr align="left">
 			<td colspan="2">
+				<div title="Ingest metadata and files" class="menuText">
+					<input class="pcheckbox" type="checkbox" name="importOption" id="importOption" onchange="onIngestSelectionChange(this);">
+					<span class="submenuText" style="vertical-align:2px;"><b>Ingest metadata and files</b></span>
+				</div>
+			    <div class="submenuText" style="margin-top:3px;padding-left:25px;"  title="Enter a filter path for the location to speek up the search. From the popup, click on the folder to select/deselect a location. Multiple loations allowed.">Master Files location: 
+					<input type="text" id="filesPath" name="filesPath" size="48" value="">&nbsp;<input type="button" onclick="showFilePicker('filesPath', event)" value="&nbsp;...&nbsp;">
+				</div>
+			</td>
+		</tr>
+		<tr align="left">
+			<td colspan="2">
 				<div>
-					 <fieldset class="groupbox_modsIngestOpts"><legend class="slegandText">Import Options</legend>
+					<fieldset class="groupbox_modsIngestOpts"><legend class="slegandText">Pre-ingest validation</legend>
 					    <div title="Check this checkbox for no ingest but pre-processing only." class="submenuText">
-							<input checked type="radio" name="importOption" value="pre-processing" checked>
+							<input checked type="radio" name="preingestOption" value="pre-processing" checked>
 							<span class="submenuText">Preview the converted RDF/XML only, no ingest.</span>
 						</div>
-					 	<div title="Check this checkbox to import metadata and files." class="submenuText">
-							<input type="radio" name="importOption" value="metadataAndFiles">
-							<span class="text-special">Ingest metadata and files</span>
+					 	<div title="Check this checkbox to check files matching." class="submenuText">
+							<input type="radio" name="preingestOption" value="file-match">
+							<span class="text-special">File Match</span>
 							<div class="submenuText" style="margin-top:3px;padding-left:25px;"  title="Enter a filter path for the location to speek up the search. From the popup, click on the folder to select/deselect a location. Multiple loations allowed.">Master Files location: 
-								<input type="text" id="filesPath" name="filesPath" size="48" value="">&nbsp;<input type="button" onclick="showFilePicker('filesPath', event)" value="&nbsp;...&nbsp;">
+								<input type="text" id="filesCheckPath" name="filesCheckPath" size="48" value="">&nbsp;<input type="button" onclick="showFilePicker('filesCheckPath', event)" value="&nbsp;...&nbsp;">
 							</div>
-						 </div>
-						 <div title="Check this checkbox to import metadata only." class="submenuText">
-							<input type="radio" name="importOption" value="metadata">
-							<span class="submenuText">Ingest metadata only</span>
-						 </div>
-					  </fieldset>
+						</div>
+					</fieldset>
 				</div>
-													  
 			</td>
 		</tr>
 		<tr><td colspan="2" style="padding-left:6px;"><span class="submenuText"><span class="requiredLabel">*</span><b>Required Field</b></span></td>
@@ -485,7 +521,7 @@
 </div>
 <div class="buttonDiv">
 
-	<input type="button" name="atImport" value=" Import " onClick="confirmImport();"/>&nbsp;&nbsp;
+	<input type="button" name="atImport" value=" Submit " onClick="confirmImport();"/>&nbsp;&nbsp;
 	<input type="button" name="atImportCancel" value=" Cancel " onClick="document.location.href='/damsmanager/'"/>
 </div>
 </div>
