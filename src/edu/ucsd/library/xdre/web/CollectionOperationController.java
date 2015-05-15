@@ -867,7 +867,7 @@ public class CollectionOperationController implements Controller {
 							  // pre-processing only, no ingest
 
 							  if (filesCheck) {
-								  // pre-processing for files check omly
+								  // pre-processing for files check only
 								  proMessage = new StringBuilder();
 								  List<Node> srcFiles = rdfPreview.getDocument().selectNodes("//dams:Object//dams:File/dams:sourceFileName");
 								  List<String> srcFileNames = new ArrayList<String>();
@@ -875,6 +875,12 @@ public class CollectionOperationController implements Controller {
 									  	srcFileNames.add(srcFile.getText());
 								  }
 								  
+								  String selectedPaths = "";
+								  for(int j=0; j<filesPaths.length; j++) {
+									  selectedPaths += StringUtils.isNotBlank(filesPaths[j]) ? filesPaths[j] + "; " : "";
+									  selectedPaths = selectedPaths.length() > 0 ? selectedPaths.substring(0, selectedPaths.length() - 2) : "";
+								  }
+
 								  FilesChecker filesChecker = new FilesChecker(srcFileNames, ingestFiles.toArray(new String[ingestFiles.size()]));
 								  if (preingestOption.equalsIgnoreCase("file-match")) {
 									  
@@ -888,11 +894,6 @@ public class CollectionOperationController implements Controller {
 									  // report files that are matched in selected source file location
 									  proMessage.append("\n" + (matchedFiles.size() == 0 ? "No" : "There are " + matchedFiles.size()) + " matched files found in the metadata.\n");
 
-									  String selectedPaths = "";
-									  for(int j=0; j<filesPaths.length; j++) {
-										  selectedPaths += StringUtils.isNotBlank(filesPaths[j]) ? filesPaths[j] + "; " : "";
-										  selectedPaths = selectedPaths.length() > 0 ? selectedPaths.substring(0, selectedPaths.length() - 2) : "";
-									  }
 
 									  // report files that are in the metadata but missing from the selected source file location
 									  proMessage.append("\n" + (matched ? "No" : "The following " + missingFiles.size()) + " files are found in the metadata but missing from the selected file location"); 
@@ -906,6 +907,36 @@ public class CollectionOperationController implements Controller {
 									  proMessage.append(" '" + selectedPaths + "' but not in the metadata" + (matched ? "." : ":") + "\n");
 									  for (String extraFile : extraFiles.keySet()) {
 										  proMessage.append("* " + extraFile + " => " + extraFiles.get(extraFile).getParent() + "\n");
+									  }
+
+									  message += proMessage.toString();
+									  handler.logMessage(message);
+								  } else {
+									  // pre-processing for files validation only  
+									  if (StringUtils.isNotBlank(Constants.EXIFTOOL_COMMAND))
+										  filesChecker.setCommand(Constants.EXIFTOOL_COMMAND);
+
+									  boolean valid = filesChecker.filesValidate();
+									  
+									  List<String> matchedFiles = filesChecker.getMatchedFiles();
+									  Map<File, String> invalidFiles = filesChecker.getInvalidFiles();
+									  message = "\nPre-ingest validatation result for files validation: \n";
+
+									  // report files that are valid in selected source file location
+									  int validFilesCount = matchedFiles.size() - invalidFiles.size();
+									  String validMessage = "There are total " + validFilesCount + " matched files are valid";
+									  if (validFilesCount <= 0)
+										  validMessage = "No files are valid";
+									  else if (validFilesCount != matchedFiles.size())
+										  validMessage = "There are total " + validFilesCount + " over " + matchedFiles.size() + " valid files are found";
+									  validMessage += " in the selected location " + " '" + selectedPaths + "'.";
+									  proMessage.append(validMessage + "\n");
+
+									  // report files that are invalid
+									  int invalidFilesCount = invalidFiles.size();
+									  proMessage.append("\n" + (valid ? "No" : "The following " + invalidFilesCount) + " invalid files are found" + (valid ? "." : ": ") + "\n"); 
+									  for (File invalidFile : invalidFiles.keySet()) {
+										  proMessage.append("* " + invalidFile.getName() + " => " + invalidFile.getParent() + " - " + invalidFiles.get(invalidFile) + "\n");
 									  }
 
 									  message += proMessage.toString();

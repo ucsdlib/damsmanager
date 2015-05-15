@@ -53,6 +53,7 @@ public class Constants {
 	public static String FFMPEG_COMMAND = "";
 	public static String FFMPEG_VIDEO_PARAMS = "";
 	public static String FFMPEG_AUDIO_PARAMS = "";
+	public static String EXIFTOOL_COMMAND = "exiftool";
 	
 	/* begin stats declaration*/
 	public static String CURATOR_ROLE ="";
@@ -127,6 +128,9 @@ public class Constants {
 			FFMPEG_AUDIO_PARAMS = props.getProperty("ffmpeg.audio.params");
 
 			VIDEO_SIZE = props.getProperty("video.size");
+
+			//ExifTool command
+			EXIFTOOL_COMMAND = props.getProperty("exiftool.command");
 
 			// Namespace prefix
 			NS_PREFIX = props.getProperty("ns.prefix");

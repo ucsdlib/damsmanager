@@ -508,6 +508,10 @@
 					 	<div title="Check this checkbox to check files matching." class="submenuText">
 							<input type="radio" name="preingestOption" value="file-match">
 							<span class="text-special">File Match</span>
+						</div>
+					 	<div title="Check this checkbox to validate the files that match those in the metadata." class="submenuText">
+							<input type="radio" name="preingestOption" value="file-validation">
+							<span class="text-special">File Validation</span>
 							<div class="submenuText" style="margin-top:3px;padding-left:25px;"  title="Enter a filter path for the location to speek up the search. From the popup, click on the folder to select/deselect a location. Multiple loations allowed.">Master Files location: 
 								<input type="text" id="filesCheckPath" name="filesCheckPath" size="48" value="">&nbsp;<input type="button" onclick="showFilePicker('filesCheckPath', event)" value="&nbsp;...&nbsp;">
 							</div>
