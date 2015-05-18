@@ -258,18 +258,21 @@ public class CollectionOperationController implements Controller {
 		}
 		//send email
 		try {
+			String log = (Constants.TMP_FILE_DIR==null||Constants.TMP_FILE_DIR.length()==0?"":Constants.TMP_FILE_DIR+"/") + "damslog-" + session.getAttribute("submissionId") + ".txt";
 			String sender = Constants.MAILSENDER_DAMSSUPPORT;
 			if(emails == null && user != null){
 				emails = new String[1];
 				emails[0] = user + "@ucsd.edu";
 			}
+			
+			String[] attachments = {log};
 			if(emails == null)
-				DAMSClient.sendMail(sender, new String[] {sender}, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
+				DAMSClient.sendMail(sender, new String[] {sender}, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu", attachments);
 			else
-				DAMSClient.sendMail(sender, emails, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
+				DAMSClient.sendMail(sender, emails, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu", attachments);
 		} catch (AddressException e) {
 			e.printStackTrace();
-		} catch (MessagingException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
@@ -342,6 +345,7 @@ public class CollectionOperationController implements Controller {
 		operations[19] = getParameter(paramsMap, "jhoveReport") != null;
 
 		int submissionId = (int)System.currentTimeMillis();
+		session.setAttribute("submissionId", submissionId);
 		String logLink = "https://" + (Constants.CLUSTER_HOST_NAME.indexOf("localhost")>=0?"localhost:8443" :
 			Constants.CLUSTER_HOST_NAME.indexOf("lib-ingest")>=0?Constants.CLUSTER_HOST_NAME+".ucsd.edu:8443" :
 				Constants.CLUSTER_HOST_NAME+".ucsd.edu") + "/damsmanager/downloadLog.do?submissionId=" + submissionId;
@@ -1339,7 +1343,6 @@ public class CollectionOperationController implements Controller {
 	}else
 		returnMessage = message;
 	
-	String logMessage = "For details, please download " + "<a href=\"" + logLink + "\">log</a>" + ".";
 	if(returnMessage.length() > 1000){
 		returnMessage = returnMessage.substring(0, 1000);
 		int idx = returnMessage.lastIndexOf("\n");
@@ -1352,7 +1355,7 @@ public class CollectionOperationController implements Controller {
 		}
 		returnMessage = "\n" + returnMessage + "\n    ...     ";
 	}
-	returnMessage +=  "\n" + dataLink + "\n" + logMessage;
+	returnMessage +=  "\n" + dataLink;
 	RequestOrganizer.addResultMessage(session, returnMessage.replace("\n", "<br />") + "<br />");
 	return returnMessage;
 	}

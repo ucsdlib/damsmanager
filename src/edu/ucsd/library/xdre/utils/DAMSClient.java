@@ -25,13 +25,16 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
 
+import javax.activation.DataHandler;
 import javax.activation.FileDataSource;
 import javax.mail.Message;
 import javax.mail.MessagingException;
+import javax.mail.Multipart;
 import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -2253,7 +2256,22 @@ public class DAMSClient {
 	 * @throws MessagingException
 	 */
 	public static void sendMail(String from, String [] to, String subject, 
-			String content, String contenType, String smtp) throws MessagingException{
+			String content, String contenType, String smtp) throws Exception{
+		sendMail(from, to, subject, content, contenType, smtp, null);
+	}
+
+	/**
+	 * Static method to send mail with attachment
+	 * @param from
+	 * @param to
+	 * @param subject
+	 * @param content
+	 * @param contenType
+	 * @param smtp
+	 * @throws Exception
+	 */
+	public static void sendMail(String from, String [] to, String subject, 
+			String content, String contenType, String smtp, String[] attachments) throws Exception{
 		// Create mail session
 		Properties props = new Properties();
 		props.put("mail.smtp.host", smtp);
@@ -2274,8 +2292,31 @@ public class DAMSClient {
 		message.setFrom(new InternetAddress(from));
 		message.setRecipients(Message.RecipientType.TO, dests);
 		message.setSubject(subject);
-		message.setContent(content, contenType);
 
+	    if (attachments != null) {
+		    Multipart mp = new MimeMultipart();
+		    // create and fill the message body part
+			javax.mail.internet.MimeBodyPart body = new  javax.mail.internet.MimeBodyPart();
+			body.setText(content, null, contenType.replace("text/", ""));
+			mp.addBodyPart(body);
+
+			for (String attachment : attachments) {
+				if (StringUtils.isNotBlank(attachment) && new File(attachment).exists()) {
+				    // create the attachment parts
+				    javax.mail.internet.MimeBodyPart aPart = new  javax.mail.internet.MimeBodyPart();
+		
+				    // attach the file to the message
+				    FileDataSource fds = new FileDataSource(attachment);
+				    aPart.setDataHandler(new DataHandler(fds));
+				    aPart.setFileName(fds.getName());
+				    mp.addBodyPart(aPart);
+				}
+			}
+			message.setContent(mp);
+
+		} else 
+			message.setContent(content, contenType);
+	    
 		// Send the mail
 		Transport.send(message);
 	}
