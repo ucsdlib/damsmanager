@@ -590,6 +590,8 @@ public class DAMSClient {
 			resObj = getJSONResult(get);
 			if (resObj != null) {
 				String status = (String) resObj.get("status");
+				if (!status.equalsIgnoreCase("ok") && resObj.containsKey("crc32"))
+					throw new Exception ("Checksum error: " + resObj.get("crc32"));
 				return status != null && status.equalsIgnoreCase("ok");
 			}
 		}
@@ -1590,7 +1592,7 @@ public class DAMSClient {
 		try {
 			status = execute(req);
 		
-			if(status == 200){
+			if(status == 200 || (req.getURI().toString().indexOf("/fixity") > 0 && status == 500)){
 				in = response.getEntity().getContent();
 				reader = new InputStreamReader(in);
 				resObj = (JSONObject) JSONValue.parse(reader);
