@@ -38,6 +38,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.dom4j.Attribute;
 import org.dom4j.Document;
@@ -238,7 +239,16 @@ public abstract class CollectionHandler implements ProcessHandler {
 			}
 		}
 	}
-	
+
+	public File getArkReportFile () {
+		return new File ((StringUtils.isBlank(Constants.TMP_FILE_DIR) ? "" : Constants.TMP_FILE_DIR + "/")
+				+ "damslog-" + submissionId + "-arkReport" + ".csv");
+	}
+
+	public File getLogFile() {
+		return new File ((StringUtils.isBlank(Constants.TMP_FILE_DIR) ? "" : Constants.TMP_FILE_DIR + "/") + "damslog-" + session.getAttribute("submissionId") + ".txt");
+	}
+
 	public void logError(String message){
 		exeResult = false;
 		log.error(message);
@@ -259,10 +269,9 @@ public abstract class CollectionHandler implements ProcessHandler {
 				synchronized (session) {
 					// Write to the log file
 					if (logWriter == null) {
-						String logFileName = (Constants.TMP_FILE_DIR==null||Constants.TMP_FILE_DIR.length()==0?"":Constants.TMP_FILE_DIR+"/")
-								+ "damslog-" + submissionId + ".txt";
+						File logFile = getLogFile();
 						try {
-							logWriter = new FileWriter(logFileName, true);
+							logWriter = new FileWriter(logFile, true);
 							logWriter.write("\n"
 									+ "-------------------------------- "
 									+ (new Date()).toString()
