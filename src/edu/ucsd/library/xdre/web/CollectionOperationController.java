@@ -887,7 +887,7 @@ public class CollectionOperationController implements Controller {
 									  List<String> matchedFiles = filesChecker.getMatchedFiles();
 									  List<String> missingFiles = filesChecker.getMissingFiles();
 									  Map<String, File> extraFiles = filesChecker.getExtraFiles();
-									  message = "\nPre-ingest validatation result for files match: \n";
+									  message = "\nPre-ingest validation result for files match: \n";
 									  
 									  boolean matched = filesChecker.filesMatch();
 
@@ -920,7 +920,7 @@ public class CollectionOperationController implements Controller {
 									  
 									  List<String> matchedFiles = filesChecker.getMatchedFiles();
 									  Map<File, String> invalidFiles = filesChecker.getInvalidFiles();
-									  message = "\nPre-ingest validatation result for files validation: \n";
+									  message = "\nPre-ingest validation result for files validation: \n";
 
 									  // report files that are valid in selected source file location
 									  int validFilesCount = matchedFiles.size() - invalidFiles.size();
