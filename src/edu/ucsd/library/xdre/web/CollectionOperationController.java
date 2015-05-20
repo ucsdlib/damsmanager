@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import javax.annotation.PostConstruct;
-import javax.mail.MessagingException;
 import javax.mail.internet.AddressException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -63,9 +62,9 @@ import edu.ucsd.library.xdre.collection.SOLRIndexHandler;
 import edu.ucsd.library.xdre.imports.RDFDAMS4ImportTsHandler;
 import edu.ucsd.library.xdre.tab.ExcelSource;
 import edu.ucsd.library.xdre.tab.FilesChecker;
+import edu.ucsd.library.xdre.tab.InputStreamRecord;
 import edu.ucsd.library.xdre.tab.Record;
 import edu.ucsd.library.xdre.tab.RecordSource;
-import edu.ucsd.library.xdre.tab.InputStreamRecord;
 import edu.ucsd.library.xdre.tab.TabularRecord;
 import edu.ucsd.library.xdre.tab.XsltSource;
 import edu.ucsd.library.xdre.utils.Constants;
@@ -189,8 +188,6 @@ public class CollectionOperationController implements Controller {
 		else if(isFileUpload)
 			forwardTo = "/fileUpload.do?";
 
-		String[] emails = null;
-		String user = request.getRemoteUser();
 		if(( !(getParameter(paramsMap, "solrRecordsDump") != null || isBSJhoveReport || isDevUpload || isFileUpload)
 				&& getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "externalImport") == null 
 				&& getParameter(paramsMap, "dataConvert") == null ) && getParameter(paramsMap, "marcModsImport") == null
@@ -218,24 +215,12 @@ public class CollectionOperationController implements Controller {
 			}
 			
 			session.setAttribute("status", "Processing request ...");
-			DAMSClient damsClient = null;
 			try {
-				//user = getUserName(request);
-				//email = getUserEmail(request);
-				damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
-				JSONArray mailArr = (JSONArray)damsClient.getUserInfo(user).get("mail");
-				if(mailArr != null && mailArr.size() > 0){
-					emails = new String[mailArr.size()];
-					mailArr.toArray(emails);
-				}
 				message = handleProcesses(paramsMap, request.getSession());
 			} catch (Exception e) {
 				e.printStackTrace();
 				//throw new ServletException(e.getMessage());
 				message += "<br />Internal Error: " + e.getMessage();
-			}finally{
-				if(damsClient != null)
-					damsClient.close();
 			}
 		}
 		System.out.println("XDRE Manager execution for " + request.getRemoteUser() + " from IP " + request.getRemoteAddr() + ": ");
@@ -255,22 +240,6 @@ public class CollectionOperationController implements Controller {
 			RequestOrganizer.clearSession(session);
 		}catch(IllegalStateException e){
 			//e.printStackTrace();
-		}
-		//send email
-		try {
-			String sender = Constants.MAILSENDER_DAMSSUPPORT;
-			if(emails == null && user != null){
-				emails = new String[1];
-				emails[0] = user + "@ucsd.edu";
-			}
-			if(emails == null)
-				DAMSClient.sendMail(sender, new String[] {sender}, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
-			else
-				DAMSClient.sendMail(sender, emails, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), message, "text/html", "smtp.ucsd.edu");
-		} catch (AddressException e) {
-			e.printStackTrace();
-		} catch (MessagingException e) {
-			e.printStackTrace();
 		}
 		
 		if(isSolrDump || isMarcModsImport || isExcelImport || isCollectionRelease || isFileUpload) {
@@ -342,6 +311,7 @@ public class CollectionOperationController implements Controller {
 		operations[19] = getParameter(paramsMap, "jhoveReport") != null;
 
 		int submissionId = (int)System.currentTimeMillis();
+		session.setAttribute("submissionId", submissionId);
 		String logLink = "https://" + (Constants.CLUSTER_HOST_NAME.indexOf("localhost")>=0?"localhost:8443" :
 			Constants.CLUSTER_HOST_NAME.indexOf("lib-ingest")>=0?Constants.CLUSTER_HOST_NAME+".ucsd.edu:8443" :
 				Constants.CLUSTER_HOST_NAME+".ucsd.edu") + "/damsmanager/downloadLog.do?submissionId=" + submissionId;
@@ -360,10 +330,20 @@ public class CollectionOperationController implements Controller {
 		}
 		
 
+		String user = (String)session.getAttribute("user");
 		damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
 		damsClient.setTripleStore(ds);
-		damsClient.setUser((String)session.getAttribute("user"));
+		damsClient.setUser(user);
 
+		File logFile = null;
+		File arkReportFile = null;
+		String[] emails = null;
+		JSONArray mailArr = (JSONArray)damsClient.getUserInfo(user).get("mail");
+		if(mailArr != null && mailArr.size() > 0){
+			emails = new String[mailArr.size()];
+			mailArr.toArray(emails);
+		}
+		
 		String clientVersion = session.getServletContext().getInitParameter("src-version");
 		String clientTool = "Custom";
 
@@ -977,6 +957,7 @@ public class CollectionOperationController implements Controller {
 					  
 					  // handler clean up
 					  if (preprocessing || !preSuccessful) {
+						  logFile = handler.getLogFile();
 						  handler.release();
 						  handler = null;
 						  Thread.sleep(100);
@@ -1291,6 +1272,11 @@ public class CollectionOperationController implements Controller {
 	 				if(handler.getCollectionId() == null && (collectionId != null && collectionId.length()>0))
 	 					handler.setCollectionId(collectionId);
 
+	 				if (logFile == null)
+	 					logFile = handler.getLogFile();
+	 				if (arkReportFile == null)
+	 					arkReportFile = handler.getArkReportFile();
+
 	 				successful = handler.execute();
 	 			}catch (InterruptedException e) {
 	 				successful = false;
@@ -1339,7 +1325,6 @@ public class CollectionOperationController implements Controller {
 	}else
 		returnMessage = message;
 	
-	String logMessage = "For details, please download " + "<a href=\"" + logLink + "\">log</a>" + ".";
 	if(returnMessage.length() > 1000){
 		returnMessage = returnMessage.substring(0, 1000);
 		int idx = returnMessage.lastIndexOf("\n");
@@ -1352,8 +1337,28 @@ public class CollectionOperationController implements Controller {
 		}
 		returnMessage = "\n" + returnMessage + "\n    ...     ";
 	}
-	returnMessage +=  "\n" + dataLink + "\n" + logMessage;
+	returnMessage +=  "\n" + dataLink;
 	RequestOrganizer.addResultMessage(session, returnMessage.replace("\n", "<br />") + "<br />");
+
+	//send email
+	try {
+		String sender = Constants.MAILSENDER_DAMSSUPPORT;
+		if(emails == null && user != null){
+			emails = new String[1];
+			emails[0] = user + "@ucsd.edu";
+		}
+		
+		String[] attachments = {(arkReportFile != null && arkReportFile.exists() ? arkReportFile.getAbsolutePath() : null), (logFile != null && logFile.exists() ? logFile.getAbsolutePath() : null)};
+		if(emails == null)
+			DAMSClient.sendMail(sender, new String[] {sender}, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), returnMessage, "text/html", "smtp.ucsd.edu", attachments);
+		else
+			DAMSClient.sendMail(sender, emails, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), returnMessage, "text/html", "smtp.ucsd.edu", attachments);
+	} catch (AddressException e) {
+		e.printStackTrace();
+	} catch (Exception e) {
+		e.printStackTrace();
+	}
+
 	return returnMessage;
 	}
 	

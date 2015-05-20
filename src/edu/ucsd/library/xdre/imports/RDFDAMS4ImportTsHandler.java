@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.Normalizer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -79,6 +80,8 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 	private StringBuilder metadataFailed = new StringBuilder();
 	private StringBuilder derivativesFailed = new StringBuilder();
 	private StringBuilder filesIngested = new StringBuilder();
+	private StringBuilder arkReport = new StringBuilder();
+	private StringBuilder objectArkReport = null;
 
 	private boolean replace = false;
 
@@ -154,8 +157,10 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		String currFile = null;
 		SAXReader saxReader = new SAXReader();
 		for(int i=0; i<fLen&&!interrupted; i++){
-			if (i == 0)
+			if (i == 0) {
 				logMessage ("Object Import status:\n[Object title]   -   [URI]   -   [Status]   -   [Timestamp]");
+				toArkReport (arkReport, "ARK", "Title", "File name", "Outcome", "Event date");
+			}
 
 			recordsToReplace = new ArrayList<>();
 			currFile = rdfFiles[i].getName();
@@ -376,7 +381,9 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 					for (int k = 0; k <messages.length; k++) {
 						messages[k] = new StringBuilder();
 					}
+					objectArkReport = new StringBuilder();
 					
+					String eventDate = damsDateFormat.format(new Date());
 					Model objModel = null;
 					graph = new RDFStore();
 					recordsCount++;
@@ -405,6 +412,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 						status[processIndex] = succeeded;
 						messages[processIndex].append(damsDateFormat.format(new Date()));
 
+						eventDate =  damsDateFormat.format(new Date());
 						if(!succeeded){
 							if(metadataFailed.indexOf(currFile) < 0)
 								failedCount++;
@@ -472,6 +480,22 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 							String title = getTitle(objModel, subjectId);
 							if (StringUtils.isBlank(title))
 								title = "[Unknown Title]";
+
+							String damsNsPrefixUri = objModel.getNsPrefixURI("dams");
+							ExtendedIterator<Triple> filesIt = objModel.getGraph().find(ResourceFactory.createResource(subjectId).asNode(), 
+									ResourceFactory.createProperty(damsNsPrefixUri + "hasFile").asNode(), com.hp.hpl.jena.graph.Node.ANY);
+							// csv format ark report for object records with no files
+							if (!filesIt.hasNext()) {
+								toArkReport (
+										arkReport, 
+										subjectId.substring(subjectId.lastIndexOf("/") + 1), 
+										(StringUtils.isNotBlank(title) ? title : "[Unknown Title]"), 
+										"No associated file", 
+										status[processIndex] ? "successful" : "failed", 
+										eventDate
+										);							
+							}
+							arkReport.append(objectArkReport.toString());
 
 							logMessage ("\n" + title + " - " + resultMessage);
 							if (!status[processIndex] || !status[solrRequestIndex]) {
@@ -544,6 +568,20 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 				messages[processIndex].append("Client canceled - " + damsDateFormat .format(new Date()));
 			}
 		}
+
+		// write the ark report to file
+		if (arkReport.length() > 0) {
+			FileOutputStream out = null;
+			File arkReportFile = getArkReportFile();
+			try {
+				out = new FileOutputStream(arkReportFile);
+				out.write(arkReport.toString().getBytes());
+			} catch (Exception e) {
+				e.printStackTrace();
+			} finally {
+				close(out);
+			}
+		}
 		return exeResult;
 	}
 	
@@ -562,16 +600,20 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		RDFNode oNode = null;
 		Map<String, String> params = null;
 		List<Statement> oStmt = rdf.listStatements().toList();
+		List<String> ocArkReported = new ArrayList<>();
+		Map<String, Statement> fileStmts = new TreeMap<String, Statement>();
 		int iLen = oStmt.size();
 		// Retrieve the statements for files
 		for(int l=0; l<iLen&&!interrupted;l++){
 			stmt = oStmt.remove(0);
 			prop = stmt.getPredicate();
 			if(prop.getLocalName().equals(HAS_FILE) && stmt.getSubject().getURI().indexOf(subjectURL) >= 0){
-				oStmt.add(stmt);
+				fileUrl = stmt.getObject().asResource().getURI();
+				fileStmts.put(fileUrl, stmt);
 			}
 		}
-
+		// sorted list
+		oStmt = Arrays.asList(fileStmts.values().toArray(new Statement[fileStmts.size()]));
 		
 		boolean successful = true;
 		iLen = oStmt.size();
@@ -623,25 +665,27 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 					srcFile = filesMap.get(fName);
 				}
 
-				if(srcFile == null){
-					ingestFailedCount++;
-					ingestFailed.append(fileUrl + " (" + srcFileName + ")\t\n");
-					log.error("Source file for " + srcFileName + " in " + srcName + " doesn't exist. Please choose a correct file location from the dams staging area.");
+				// Ingest the file
+				DamsURI dURI = null;
+				try{
+					dURI = DamsURI.toParts(fileUrl, null);
+					dURI = DamsURI.toParts(fileUrl, null);
+					oid = dURI.getObject();
+					cid = dURI.getComponent();
+					fid = dURI.getFileName();
 					
-					ingested = false;
-					successful = false;
-					ingestLog.append("\n    Ingest - failed - " + damsDateFormat.format(new Date()) + " - " + "Source file is not found.");
-				}else{
-					// Ingest the file
-					DamsURI dURI = null;
-					
-					String tmpFile = srcFile.getAbsolutePath();
-					try{
-						dURI = DamsURI.toParts(fileUrl, null);
-						oid = dURI.getObject();
-						cid = dURI.getComponent();
-						fid = dURI.getFileName();
+					if(srcFile == null){
+						ingestFailedCount++;
+						ingestFailed.append(fileUrl + " (" + srcFileName + ")\t\n");
+						log.error("Source file for " + srcFileName + " in " + srcName + " doesn't exist. Please choose a correct file location from the dams staging area.");
 						
+						ingested = false;
+						successful = false;
+						ingestLog.append("\n    Ingest - failed - " + damsDateFormat.format(new Date()) + " - " + "Source file is not found.");
+					}else{
+						
+						String tmpFile = srcFile.getAbsolutePath();
+
 						params = new HashMap<String, String>();
 						params.put("oid", oid);
 						params.put("cid", cid);
@@ -769,23 +813,23 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 								}
 							}
 						}
-					} catch(Exception e) {
-						e.printStackTrace();
-						
-						ingestFailedCount++;
-						ingestFailed.append(srcFileName + " (" + fileUrl + ")\t\n");
-						log.error("Failed to ingest file " + fileUrl + " (" + srcFileName + ", " + (l+1) + " of " + iLen + ") in " + srcName + ": " + e.getMessage());
-						
-						ingested = false;
-						successful = false;
-						String error = e.getMessage();
-						if (error.indexOf("Error Jhove extraction") >= 0) {
-							ingestLog.append("\n    Ingest - successful - " + damsDateFormat.format(new Date()));
-							ingestLog.append("\n    JHOVE extraction - failed - " + damsDateFormat.format(new Date()) + " - " + error);
-						} else 
-							ingestLog.append("\n    Ingest - failed - " + damsDateFormat.format(new Date()) + " - " + error);
-						
 					}
+				} catch(Exception e) {
+					e.printStackTrace();
+					
+					ingestFailedCount++;
+					ingestFailed.append(srcFileName + " (" + fileUrl + ")\t\n");
+					log.error("Failed to ingest file " + fileUrl + " (" + srcFileName + ", " + (l+1) + " of " + iLen + ") in " + srcName + ": " + e.getMessage());
+					
+					ingested = false;
+					successful = false;
+					String error = e.getMessage();
+					if (error.indexOf("Error Jhove extraction") >= 0) {
+						ingestLog.append("\n    Ingest - successful - " + damsDateFormat.format(new Date()));
+						ingestLog.append("\n    JHOVE extraction - failed - " + damsDateFormat.format(new Date()) + " - " + error);
+					} else 
+						ingestLog.append("\n    Ingest - failed - " + damsDateFormat.format(new Date()) + " - " + error);
+					
 				}
 			}else{
 				ingestFailedCount++;
@@ -817,7 +861,31 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 			messages[processIndex].append("\n**  " + srcFileName + " (" + fileUrl + ") - " + (ingested ? "successful" : "failed") + " - " + damsDateFormat.format(new Date()));
 			if (!ingested)
 				messages[processIndex].append(ingestLog.toString());
-				
+
+			// determine whether the current sourceFileName should be used for ark report
+			String nextOcUri = "";
+			if (l + 1 < iLen) {
+				String nextFileUrl = oStmt.get(l + 1).getObject().asResource().getURI();
+				nextOcUri = nextFileUrl.substring(0, (nextFileUrl.lastIndexOf("/") > 0 ? nextFileUrl.lastIndexOf("/") : nextFileUrl.length()));
+			}
+
+			String ocUri = fileUrl.substring(0, (fileUrl.lastIndexOf("/") > 0 ? fileUrl.lastIndexOf("/") : fileUrl.length()));
+			String ocid = ocUri.replace(Constants.DAMS_ARK_URL_BASE + "/" + Constants.ARK_ORG + "/", "");
+			if ( StringUtils.isNotBlank(use) && use.contains("source")
+					|| oStmt.size() == 1 
+					|| !ocArkReported.contains(ocUri) && !ocUri.equals(nextOcUri)) {
+				// CSV format ARK Report for source files
+				ocArkReported.add(ocUri);
+				String title = getTitle(rdf, ocUri);
+				toArkReport (
+						objectArkReport, 
+						ocid, 
+						(StringUtils.isNotBlank(title) ? title : "[Unknown Title]"), 
+						(StringUtils.isNotBlank(srcFileName) ? srcFileName : "No associated file"), 
+						successful ? "successful" : "failed", 
+						damsDateFormat.format(new Date())
+						);
+			}
 		}
 
 		messages[processIndex].insert(0, damsDateFormat.format(new Date()));
@@ -1116,6 +1184,31 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 			}
 		}
 		return title;
+	}
+
+	private void toArkReport (StringBuilder reportBuilder, String ark, String title, String fileName, String outcome, String eventDate) {
+		// ARK column
+		reportBuilder.append(ark);
+		// title column
+		reportBuilder.append("," + escapeCsvValue(title));
+		// source file name column 
+		reportBuilder.append("," + escapeCsvValue(fileName));
+		// outcome column
+		reportBuilder.append("," + outcome);
+		// event date column
+		reportBuilder.append("," + eventDate);
+		reportBuilder.append("\n");
+	}
+
+	private String escapeCsvValue (String value) {
+		String csvValue = value;
+		if (StringUtils.isNotBlank(csvValue)) {
+			if (csvValue.contains("\n") || csvValue.contains(",") || csvValue.contains("\"")) {
+				csvValue = value.replace("\"", "\"\"");
+				csvValue = "\"" + csvValue + "\"";
+			}
+		}
+		return StringUtils.isBlank(csvValue) ? "" : csvValue;
 	}
 
 	/**
