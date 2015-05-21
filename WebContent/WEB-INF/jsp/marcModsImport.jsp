@@ -92,7 +92,7 @@
 			return false;
 	    }
 	    
-	    if (csSelectedValue == 'Copyrighted (Person)' || csSelectedValue == 'Copyrighted (Corporate)' || csSelectedValue == 'Copyrighted (Other)') {
+	    if (csSelectedValue == 'Copyright UC Regents' || csSelectedValue == 'Copyrighted (Person)' || csSelectedValue == 'Copyrighted (Corporate)' || csSelectedValue == 'Copyrighted (Other)') {
 		    var countryCode = document.mainForm.countryCode.value.trim(); 
 		    var accessOverrideVal = document.mainForm.accessOverride.options[accessOverride.selectedIndex].value;
 		    if(accessOverrideVal.indexOf ("Creative Commons") < 0){
@@ -253,20 +253,13 @@
 			$(accessOverrideField).hide();
 			$(licenseBeginDateField).hide();
 			$(licenseEndDateField).hide();
-		} else if (csSelectedValue == 'Copyright UC Regents') {
+		} else if (csSelectedValue == 'Copyright UC Regents' || csSelectedValue == 'Copyrighted (Person)' || csSelectedValue == 'Copyrighted (Corporate)' || csSelectedValue == 'Copyrighted (Other)') {
 			$(copyrightOwnerField).show();
-			$("#copyrightOwner").val("UC Regents").prop('disabled', true);
 
-			// access override
-			$(accessOverrideField).show();
-			var aoOptions = ["Curator", "Click through - cultural sensitivity", "Restricted - cultural sensitivity"];
-			addAccessOverrideOptions(aoOptions);
-
-			$(licenseBeginDateField).hide();
-			$(licenseEndDateField).hide();
-		} else if (csSelectedValue == 'Copyrighted (Person)' || csSelectedValue == 'Copyrighted (Corporate)' || csSelectedValue == 'Copyrighted (Other)') {
-			$(copyrightOwnerField).show();
-			$("#copyrightOwner").val("").prop('disabled', false);
+            if (csSelectedValue == 'Copyright UC Regents')
+                $("#copyrightOwner").val("UC Regents").prop('disabled', true);
+            else
+                $("#copyrightOwner").val("").prop('disabled', false);
 
 			// access override
 			$(accessOverrideField).show();
