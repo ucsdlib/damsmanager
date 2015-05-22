@@ -92,7 +92,7 @@
 			return false;
 	    }
 	    
-	    if (csSelectedValue == 'Copyrighted (Person)' || csSelectedValue == 'Copyrighted (Corporate)' || csSelectedValue == 'Copyrighted (Other)') {
+	    if (csSelectedValue == 'Copyright UC Regents' || csSelectedValue == 'Copyrighted (Person)' || csSelectedValue == 'Copyrighted (Corporate)' || csSelectedValue == 'Copyrighted (Other)') {
 		    var countryCode = document.mainForm.countryCode.value.trim(); 
 		    var accessOverrideVal = document.mainForm.accessOverride.options[accessOverride.selectedIndex].value;
 		    if(accessOverrideVal.indexOf ("Creative Commons") < 0){
@@ -253,20 +253,13 @@
 			$(accessOverrideField).hide();
 			$(licenseBeginDateField).hide();
 			$(licenseEndDateField).hide();
-		} else if (csSelectedValue == 'Copyright UC Regents') {
+		} else if (csSelectedValue == 'Copyright UC Regents' || csSelectedValue == 'Copyrighted (Person)' || csSelectedValue == 'Copyrighted (Corporate)' || csSelectedValue == 'Copyrighted (Other)') {
 			$(copyrightOwnerField).show();
-			$("#copyrightOwner").val("UC Regents").prop('disabled', true);
 
-			// access override
-			$(accessOverrideField).show();
-			var aoOptions = ["Curator", "Click through - cultural sensitivity", "Restricted - cultural sensitivity"];
-			addAccessOverrideOptions(aoOptions);
-
-			$(licenseBeginDateField).hide();
-			$(licenseEndDateField).hide();
-		} else if (csSelectedValue == 'Copyrighted (Person)' || csSelectedValue == 'Copyrighted (Corporate)' || csSelectedValue == 'Copyrighted (Other)') {
-			$(copyrightOwnerField).show();
-			$("#copyrightOwner").val("").prop('disabled', false);
+            if (csSelectedValue == 'Copyright UC Regents')
+                $("#copyrightOwner").val("UC Regents").prop('disabled', true);
+            else
+                $("#copyrightOwner").val("").prop('disabled', false);
 
 			// access override
 			$(accessOverrideField).show();
@@ -508,6 +501,10 @@
 					 	<div title="Check this checkbox to check files matching." class="submenuText">
 							<input type="radio" name="preingestOption" value="file-match">
 							<span class="text-special">File Match</span>
+						</div>
+					 	<div title="Check this checkbox to validate the files that match those in the metadata." class="submenuText">
+							<input type="radio" name="preingestOption" value="file-validation">
+							<span class="text-special">File Validation</span>
 							<div class="submenuText" style="margin-top:3px;padding-left:25px;"  title="Enter a filter path for the location to speek up the search. From the popup, click on the folder to select/deselect a location. Multiple loations allowed.">Master Files location: 
 								<input type="text" id="filesCheckPath" name="filesCheckPath" size="48" value="">&nbsp;<input type="button" onclick="showFilePicker('filesCheckPath', event)" value="&nbsp;...&nbsp;">
 							</div>
