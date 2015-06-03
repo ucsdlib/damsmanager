@@ -30,6 +30,7 @@ public class FilesChecker {
 	private List<String> missingFiles = null;
 	private Map<String, File> extraFiles = null;
 	private Map<File, String> invalidFiles = null;
+	private Map<File, String> unknownFiles = null;
 	private String command = "exiftool";
 	private static final String ERROR = "Error";
 	private static final String WARNING = "Warning";
@@ -74,6 +75,7 @@ public class FilesChecker {
 		missingFiles = new ArrayList<String> ();
 		extraFiles = new TreeMap<String, File> ();
 		invalidFiles = new TreeMap<File, String> ();
+		unknownFiles = new TreeMap<File, String> (); 
 	}
 	
 	public List<String> getMatchedFiles() {
@@ -94,6 +96,10 @@ public class FilesChecker {
 
 	public Map<File, String> getInvalidFiles() {
 		return invalidFiles;
+	}
+
+	public Map<File, String> getUnknownFiles() {
+		return unknownFiles;
 	}
 
 	/**
@@ -130,15 +136,26 @@ public class FilesChecker {
 			Map<String, String> m = extractMetadata(src);
 			if (m.containsKey(ERROR) || m.containsKey(WARNING)) {
 				String message = "";
-				if (m.containsKey(ERROR))
-					message = ERROR + ": " + m.get(ERROR);
-				if (m.containsKey(WARNING))
+				if (m.containsKey(ERROR)) 
+				{
+					String error = m.get(ERROR);
+					if (error.toLowerCase().indexOf("unknown file type") >= 0)
+						unknownFiles.put(src, error);
+					else
+					{
+						message = ERROR + ": " + error;
+						invalidFiles.put(src, message);
+					}
+				}
+				if (m.containsKey(WARNING)) 
+				{
 					message += (message.length() > 0 ? " || " : "") + WARNING + ": " + m.get(WARNING);
+					invalidFiles.put(src, message);
+				}
 
-				invalidFiles.put(src, message);
 			}
 		}
-		return invalidFiles.size() <= 0;
+		return invalidFiles.size() <= 0 && unknownFiles.size() <= 0;
 	}
 
 	private Map<String, String> extractMetadata(File src) 
@@ -154,6 +171,8 @@ public class FilesChecker {
 			// Build the command for file validation
 			List<String> cmd = new ArrayList<>();
 			cmd.add( command );
+			cmd.add( "-api" );
+			cmd.add( "largefilesupport=1" );
 			cmd.add( src.getAbsolutePath());
 			
 			log = new StringBuffer();
@@ -167,7 +186,7 @@ public class FilesChecker {
 			buf = new BufferedReader(reader);
 			for ( String line = null; (line=buf.readLine()) != null; ) 
 			{
-				String[] pair = line.split("\\:");
+				String[] pair = line.split("\\:", 2);
 				String v = "";
 				if (pair.length == 2)
 					v = StringUtils.isBlank(pair[1]) ? "" : pair[1].trim();

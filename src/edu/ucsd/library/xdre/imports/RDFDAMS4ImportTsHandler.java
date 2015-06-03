@@ -1256,7 +1256,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		int objectsCount = objRecords.size();
 		
 		if(exeResult)
-			exeReport.append("Import summary: successful - Imported " + objectsCount + " objets in " + rdfFiles.length + " metadata file" + (rdfFiles.length>1?"s":"")
+			exeReport.append("Import summary: successful - Imported " + objectsCount + " objects in " + rdfFiles.length + " metadata file" + (rdfFiles.length>1?"s":"")
 					+ " \n- Total " + recordsCount + " records ingested. \n- " + (filesCount==0?"No":"Total " + filesCount) + " files ingested.\n");
 		else {
 			exeReport.append("Import summary: failed - Found " +  objectsCount + " objet" + (objectsCount>1?"s":"") 
