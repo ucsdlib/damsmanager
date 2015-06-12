@@ -21,7 +21,7 @@ public class InputStreamRecord implements Record {
     protected Document rdf;
 	
 	public InputStreamRecord(Record record, Map<String, String> collections, String unit, 
-			String copyrightStatus, String copyrightJurisdiction, String copyrightOwner,
+			String copyrightStatus, String copyrightJurisdiction, String[] copyrightOwner,
 			String program, String access, String beginDate, String endDate) throws Exception {
 		this.id = record.recordID();
 		this.rdf = record.toRDFXML();

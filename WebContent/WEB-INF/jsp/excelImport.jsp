@@ -11,6 +11,9 @@
 <jsp:include flush="true" page="/jsp/libheader.jsp" />
 <script src="//code.jquery.com/jquery-1.10.2.js"></script>
 <script src="//code.jquery.com/ui/1.11.1/jquery-ui.js"></script>
+<style>
+.i_group { width: 320px; }
+</style>
 </head>
 <body style="background-color:#fff;">
 <script type="text/javascript">
@@ -332,7 +335,7 @@
 				<span class="submenuText"><span class="requiredLabel">*</span><b>Admin Unit: </b></span>
 			</td>
 			<td>
-				<select id="unit" name="unit" class="inputText" onChange="selectUnit(this);">
+				<select id="unit" name="unit" class="inputText i_group" onChange="selectUnit(this);">
 					<option value=""> -- units -- </option>
 					<c:forEach var="entry" items="${model.units}">
 						<option value="${entry.value}" <c:if test="${model.unit == entry.value}">selected</c:if>>
@@ -347,7 +350,7 @@
 				<span class="submenuText"><span class="requiredLabel">*</span><b>Program: </b></span>
 			</td>
 			<td>
-				<select id="program" name="program" class="inputText">
+				<select id="program" name="program" class="inputText i_group">
 					<option value=""> -- program -- </option>
 					<c:forEach var="val" items="${model.program}">
 						<option value="${val}"><c:out value="${val}" /></option>
@@ -360,7 +363,7 @@
 				<span class="submenuText"><span class="requiredLabel">*</span><b>Copyright Status: </b></span>
 			</td>
 			<td>
-				<select id="copyrightStatus" name="copyrightStatus" class="inputText" onChange="copyrightStatusChanged();">
+				<select id="copyrightStatus" name="copyrightStatus" class="inputText i_group" onChange="copyrightStatusChanged();">
 					<option value=""> -- copyright -- </option>
 					<c:forEach var="val" items="${model.copyrightStatus}">
 						<option value="${val}"><c:out value="${val}" /></option>
@@ -374,7 +377,7 @@
 			</td>
 			<td  align="left">
 				<span class="submenuText">
-					<select id="countryCode" name="countryCode" class="inputText">
+					<select id="countryCode" name="countryCode" class="inputText i_group">
 						<c:forEach var="entry" items="${model.countryCodes}">
 							<option value="${entry.value}" <c:if test="${entry.value == 'US'}">selected</c:if>>
 	                      			<c:out value="${entry.key}" />
@@ -389,7 +392,7 @@
 				<span class="submenuText"><span class="requiredLabel" id="copyrightOwner_required">*</span><b>Copyright Owner: </b></span>
 			</td>
 			<td  align="left">
-				<span class="submenuText"><input type="text" id="copyrightOwner" name="copyrightOwner" size="20"></span>
+				<span class="submenuText"><input type="text" id="copyrightOwner" name="copyrightOwner" class="i_group"></span>
 			</td>
 		</tr>
 		<tr align ="left" id="accessOverrideField" style="display:none;">
@@ -397,7 +400,7 @@
 				<span class="submenuText"><span class="requiredLabel" id="accessOverride_required" style="padding-left:6px;"></span><b>Access Override: </b></span>
 			</td>
 			<td>
-				<select id="accessOverride" name="accessOverride" class="inputText">
+				<select id="accessOverride" name="accessOverride" class="inputText i_group">
 					<option value=""> -- access override -- </option>
 					<c:forEach var="val" items="${model.accessOverride}">
 						<option value="${val}"><c:out value="${val}" /></option>
