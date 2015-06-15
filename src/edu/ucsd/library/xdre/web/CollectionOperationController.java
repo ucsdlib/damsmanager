@@ -721,6 +721,10 @@ public class CollectionOperationController implements Controller {
 						  String id = "";
 						  String info = "";
 						  if (recordSource != null && preSuccessful) {
+							  String[] copyrightOwners = null;
+							  if (StringUtils.isNotBlank(copyrightOwner))
+								  copyrightOwners = copyrightOwner.split("\\|");
+
 							  for (Record rec = null; (rec = recordSource.nextRecord()) != null;) {
 
 								  String objTitle = "";
@@ -729,7 +733,7 @@ public class CollectionOperationController implements Controller {
 								  try {
 									  
 									  record = new InputStreamRecord (rec, collections, unit, copyrightStatus, copyrightJurisdiction, 
-											  copyrightOwner, program, access, beginDate, endDate );
+											  copyrightOwners, program, access, beginDate, endDate );
 									  
 									  objTitle = getTitle(record.toRDFXML());
 									  info = "Pre-processing record with ID " + id + " ... ";
