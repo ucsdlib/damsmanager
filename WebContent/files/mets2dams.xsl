@@ -613,6 +613,23 @@
       <xsl:when test="@displayLabel = 'Conditions Governing Use note'"></xsl:when>
     </xsl:choose>
   </xsl:template>
+  <xsl:template name="publicationNote">
+    <xsl:param name="position"/>
+    <dams:note>
+    <dams:Note>
+      <dams:type>publication</dams:type>
+      <rdf:value>
+        <xsl:if test="../mods:place[$position]/mods:placeTerm[@type !='code' or not(@type)] != ''">
+          <xsl:value-of select="../mods:place[$position]/mods:placeTerm[@type!='code' or not(@type)]"/>
+        </xsl:if>
+        <xsl:if test="text() != '' and ../mods:place[$position]/mods:placeTerm[@type!='code' or not(@type)] != ''">, </xsl:if>
+        <xsl:if test="text() != ''">
+          <xsl:value-of select="."/>
+        </xsl:if>
+      </rdf:value>
+    </dams:Note>
+  </dams:note>
+  </xsl:template>
   <xsl:template match="mods:identifier">
     <xsl:if test="not(@invalid) or @invalid != 'yes'">
       <xsl:variable name="type">
@@ -693,20 +710,12 @@
       </dams:date>
     </xsl:if>
     <xsl:if test="mods:publisher|mods:place">
-      <dams:note>
-        <dams:Note>
-          <dams:type>publication</dams:type>
-          <rdf:value>
-            <xsl:if test="mods:place/mods:placeTerm[@type !='code' or not(@type)] != ''">
-              <xsl:value-of select="mods:place/mods:placeTerm[@type!='code' or not(@type)]"/>
-            </xsl:if>
-            <xsl:if test="mods:publisher != '' and mods:place/mods:placeTerm[@type!='code' or not(@type)] != ''">, </xsl:if>
-            <xsl:if test="mods:publisher != ''">
-              <xsl:value-of select="mods:publisher"/>
-            </xsl:if>
-          </rdf:value>
-        </dams:Note>
-      </dams:note>
+      <xsl:for-each select="mods:publisher">
+        <xsl:variable name="position"><xsl:value-of select="position()"/></xsl:variable>
+        <xsl:call-template name="publicationNote">
+            <xsl:with-param name="position"><xsl:value-of select="position()"/></xsl:with-param>
+        </xsl:call-template>
+      </xsl:for-each>
     </xsl:if>
   </xsl:template>
   <xsl:template match="mods:mods/mods:name">
