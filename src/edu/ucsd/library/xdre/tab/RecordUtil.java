@@ -146,7 +146,7 @@ public class RecordUtil
      * @param endDate End of any license permission or restriction (in YYYY-MM-DD format).
     **/
     public static void addRights( Document doc, String unitURI, Map<String, String> collections,
-        String copyrightStatus, String copyrightJurisdiction, String copyrightOwner,
+        String copyrightStatus, String copyrightJurisdiction, String[] copyrightOwners,
         String program, String access, String beginDate, String endDate )
     {
         Element o = (Element)doc.selectSingleNode("//dams:Object");
@@ -197,9 +197,10 @@ public class RecordUtil
             }
 
             if ( copyrightStatus.equals( copyrightRegents ) ) {
-                addRightsHolder( o, copyrightStatus, "UC Regents");
-            } else if ( !isBlank(copyrightOwner) ) {
-                addRightsHolder( o, copyrightStatus, copyrightOwner );
+                String[] rightsHolders = {"UC Regents"};
+                addRightsHolder( o, copyrightStatus, rightsHolders);
+            } else if ( copyrightOwners != null && copyrightOwners.length > 0 ) {
+                addRightsHolder( o, copyrightStatus, copyrightOwners );
             }
 
             // copyright boilerplate
@@ -374,7 +375,7 @@ public class RecordUtil
             }
         }
     }
-    private static void addRightsHolder( Element o, String copyrightStatus, String rightsHolder )
+    private static void addRightsHolder( Element o, String copyrightStatus, String[] rightsHolders )
     {
         String predicate = null;
         String nameClass = null;
@@ -393,12 +394,19 @@ public class RecordUtil
             predicate = "dams:rightsHolderName";
             nameClass = "mads:Name";
         }
-        Element name = o.addElement(predicate,damsURI).addElement(nameClass,madsURI);
-        name.addElement("mads:authoritativeLabel",madsURI).setText(rightsHolder);
-        Element el = name.addElement("mads:elementList");
-        el.addAttribute( new QName("parseType",rdfNS), "Collection" );
-        el.addElement("mads:FullNameElement", madsURI).addElement("mads:elementValue", madsURI)
-            .setText(rightsHolder);
+
+        for (String rightsHolder : rightsHolders)
+        {
+            if (!isBlank (rightsHolder))
+            {
+                Element name = o.addElement(predicate,damsURI).addElement(nameClass,madsURI);
+                name.addElement("mads:authoritativeLabel",madsURI).setText(rightsHolder);
+                Element el = name.addElement("mads:elementList");
+                el.addAttribute( new QName("parseType",rdfNS), "Collection" );
+                el.addElement("mads:FullNameElement", madsURI).addElement("mads:elementValue", madsURI)
+                    .setText(rightsHolder.trim());
+            }
+        }
     }
 
     private static String getCreativeCommonsNote( String attribution )

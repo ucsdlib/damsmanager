@@ -721,6 +721,10 @@ public class CollectionOperationController implements Controller {
 						  String id = "";
 						  String info = "";
 						  if (recordSource != null && preSuccessful) {
+							  String[] copyrightOwners = null;
+							  if (StringUtils.isNotBlank(copyrightOwner))
+								  copyrightOwners = copyrightOwner.split("\\|");
+
 							  for (Record rec = null; (rec = recordSource.nextRecord()) != null;) {
 
 								  String objTitle = "";
@@ -729,7 +733,7 @@ public class CollectionOperationController implements Controller {
 								  try {
 									  
 									  record = new InputStreamRecord (rec, collections, unit, copyrightStatus, copyrightJurisdiction, 
-											  copyrightOwner, program, access, beginDate, endDate );
+											  copyrightOwners, program, access, beginDate, endDate );
 									  
 									  objTitle = getTitle(record.toRDFXML());
 									  info = "Pre-processing record with ID " + id + " ... ";
@@ -900,6 +904,7 @@ public class CollectionOperationController implements Controller {
 									  
 									  List<String> matchedFiles = filesChecker.getMatchedFiles();
 									  Map<File, String> invalidFiles = filesChecker.getInvalidFiles();
+									  Map<File, String> unknownFiles = filesChecker.getUnknownFiles();
 									  message = "\nPre-ingest validation result for files validation: \n";
 
 									  // report files that are valid in selected source file location
@@ -908,15 +913,24 @@ public class CollectionOperationController implements Controller {
 									  if (validFilesCount <= 0)
 										  validMessage = "No files are valid";
 									  else if (validFilesCount != matchedFiles.size())
-										  validMessage = "There are total " + validFilesCount + " over " + matchedFiles.size() + " valid files are found";
+										  validMessage = "There are " + validFilesCount + " of " + matchedFiles.size() + " total matched files are valid";
 									  validMessage += " in the selected location " + " '" + selectedPaths + "'.";
 									  proMessage.append(validMessage + "\n");
 
 									  // report files that are invalid
 									  int invalidFilesCount = invalidFiles.size();
-									  proMessage.append("\n" + (valid ? "No" : "The following " + invalidFilesCount) + " invalid files are found" + (valid ? "." : ": ") + "\n"); 
+									  proMessage.append("\n" + (invalidFilesCount <= 0 ? "No" : "The following " + invalidFilesCount) + " invalid files are found" + (invalidFilesCount <= 0 ? "." : ": ") + "\n"); 
 									  for (File invalidFile : invalidFiles.keySet()) {
 										  proMessage.append("* " + invalidFile.getName() + " => " + invalidFile.getParent() + " - " + invalidFiles.get(invalidFile) + "\n");
+									  }
+
+									  // report files that are not supported by ExifTool
+									  int unknownFilesCount = unknownFiles.size();
+									  if (unknownFilesCount > 0) {
+										  proMessage.append("\nThe following files are unknown file type: \n"); 
+										  for (File unknownFile : unknownFiles.keySet()) {
+											  proMessage.append("* " + unknownFile.getName() + " => " + unknownFile.getParent() + "\n");
+										  }
 									  }
 
 									  message += proMessage.toString();
