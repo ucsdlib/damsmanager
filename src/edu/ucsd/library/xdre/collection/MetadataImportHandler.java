@@ -43,6 +43,7 @@ public class MetadataImportHandler extends CollectionHandler{
 	protected int failedCount = 0;
 	protected RDFStore rdfStore = null;
 	protected Map<String, List<DamsURI>> objects = null;
+	protected List<String> errors = new ArrayList<String>();
 
 	/**
 	 * Constructor for MetadataImportHandler
@@ -312,6 +313,7 @@ public class MetadataImportHandler extends CollectionHandler{
 					eMessage += "(" + (i+1) + " of " + itemsCount + ")";
 					setStatus( eMessage + (message.length()>0?": "+message.replace("\n", "<br/>"):".")); 
 					logError(eMessage + (message.length()>0?": "+message:"."));
+					errors.add(eMessage);
 				}else{				
 					// Updated SOLR
 					if(delete){
@@ -327,6 +329,7 @@ public class MetadataImportHandler extends CollectionHandler{
 						eMessage = "SOLR " + (delete?"delete":"update") + " failed for " + subjectId + ".";
 						setStatus( eMessage); 
 						logError(eMessage);
+						errors.add(eMessage);
 					}else
 						logMessage((delete?"Deleted":"Updated") + " record " + subjectId + (delete?" from ":" in ") + "SOLR.");
 				}
@@ -339,6 +342,7 @@ public class MetadataImportHandler extends CollectionHandler{
 				setStatus( eMessage  + "(" +(i+1)+ " of " + itemsCount + ")"); 
 				log("log", eMessage );
 				log.info(eMessage );
+				errors.add(eMessage);
 			}
 			setProgressPercentage( ((i + 1) * 100) / itemsCount);
 
@@ -352,6 +356,7 @@ public class MetadataImportHandler extends CollectionHandler{
 				clearSession();
 				log("log", eMessage.replace("\n", ""));
 				log.info(eMessage, e1);
+				errors.add(eMessage);
 				break;
 			}
 		}
@@ -373,5 +378,12 @@ public class MetadataImportHandler extends CollectionHandler{
 		String exeInfo = exeReport.toString();
 		log("log", exeInfo);
 		return exeInfo;
+	}
+
+	/**
+	 * Get the errors
+	 */
+	public List<String> getErrors() {
+		return errors;
 	}
 }
