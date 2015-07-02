@@ -1,5 +1,11 @@
 body {font-family: Arial, Helvetica, sans-serif;font-size: 12px;}
 a {color: #336699;}
+input[type="button"], input[type="submit"], input[type="reset"]{
+	cursor: pointer;
+}
+.bodytable {
+	padding: 0px 0px 20px 0px;
+}
 .padding {
 	padding-right: 5px;
 	font-weight: normal;
@@ -180,6 +186,15 @@ a {color: #336699;}
 	margin-top:10px;
 	border: 1px solid #999;
 	width:700px;
+	overflow:auto;
+}
+.emBox_edit {
+	text-align:center;
+	background:#F8F8F8;
+	padding-bottom:30px;
+	margin-top:10px;
+	border: 1px solid #999;
+	width:880px;
 	overflow:auto;
 }
 .emBoxBanner{
