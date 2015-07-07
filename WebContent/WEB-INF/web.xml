@@ -109,6 +109,9 @@
 	        <url-pattern>/collectionRelease.do</url-pattern>
 	        <url-pattern>/collection.do</url-pattern>
 	        <url-pattern>/operationHandler.do</url-pattern>
+	        <url-pattern>/rdfImport.do</url-pattern>
+	        <url-pattern>/rdfEdit.do</url-pattern>
+	        <url-pattern>/metadataImport.do</url-pattern>
     	</web-resource-collection>
     	<auth-constraint>
         	<role-name>32</role-name>

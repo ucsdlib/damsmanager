@@ -24,7 +24,9 @@
 	<bean name="/serialize.do" class="edu.ucsd.library.xdre.web.CollectionsViewController" />
 	<bean name="/marcModsImport.do" class="edu.ucsd.library.xdre.web.MarcModsImportController"></bean>
 	<bean name="/excelImport.do" class="edu.ucsd.library.xdre.web.ExcelImportController"></bean>
-	<!--<bean name="/metaDataImport.do" class="edu.ucsd.library.xdre.web.MetadataImportController" />-->
+	<bean name="/rdfImport.do" class="edu.ucsd.library.xdre.web.RdfImportFormController"></bean>
+	<bean name="/rdfEdit.do" class="edu.ucsd.library.xdre.web.RdfImportFormController"></bean>
+	<bean name="/metadataImport.do" class="edu.ucsd.library.xdre.web.MetadataImportController" />
 	<!--<bean name="/solrIndex.do" class="edu.ucsd.library.xdre.web.SolrIndexController" />-->
 	<!--<bean name="/collectionUpdate.do" class="edu.ucsd.library.xdre.web.CollectionUpdateController"></bean>-->
 	<bean name="/controlPanel.do" class="edu.ucsd.library.xdre.web.CollectionManagementController"></bean>
