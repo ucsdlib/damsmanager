@@ -200,7 +200,7 @@ public class CollectionReleaseHandler extends CollectionHandler{
 					}
 						
 					damsClient.delete(collectionId, null, null);
-					if(!updateSOLR(collectionId)) {
+					if(!solrDelete(collectionId)) {
 						failedCount++;
 						solrUpdateFailed.append("\t" + collectionId);
 					}
