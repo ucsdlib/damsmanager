@@ -190,8 +190,15 @@ public class CollectionReleaseHandler extends CollectionHandler{
 			}
 
 			if (exeResult) {
-				// Remove the stub collection for merge one-offs release
+				// Update SOLR for the extent note in the collection with merging, and remove the stub collection for merge/one-offs release
 				if (releaseOption.equalsIgnoreCase(RELEASE_MERGE) || releaseOption.equalsIgnoreCase(RELEASE_ONE_OFFS)) {
+					if (releaseOption.equalsIgnoreCase(RELEASE_MERGE)) {
+						if(!updateSOLR(collectionToMerge)) {
+							failedCount++;
+							solrUpdateFailed.append("\t" + collectionToMerge);
+						}
+					}
+						
 					damsClient.delete(collectionId, null, null);
 					if(!updateSOLR(collectionId)) {
 						failedCount++;
