@@ -105,6 +105,16 @@ public class FFMPEGConverter
 		cmd.add( src.getAbsolutePath());
 		if (StringUtils.isNotBlank(params))
 			cmd.addAll(Arrays.asList(params.split(" ")));
+
+		//add stream mapping for audio/video with multiple tracks
+		List<String> streams = getStreams (src.getAbsolutePath());
+		if (streams.size() > 2 || dst.getAbsolutePath().endsWith(".mp3") && streams.size() > 1) {
+			for (String stream : streams) {
+				cmd.add("-map");
+				cmd.add(stream);
+			}
+		}
+			
 		cmd.add( dst.getAbsolutePath() );
 
 		return exec(cmd);
@@ -163,5 +173,57 @@ public class FFMPEGConverter
 		String fsDir = Constants.FILESTORE_DIR+ "/" + DAMSClient.pairPath(DAMSClient.stripID(oid));
 		String fName = Constants.ARK_ORG + "-" + oid + "-" + (cid==null||cid.length()==0?"0-":cid+"-") + fid;
 		return new File(fsDir, fName);
+	}
+
+	private List<String> getStreams (String filename) {
+		List<String> streams = new ArrayList<>();
+
+		Process proc = null;
+		try
+		{
+			// Build the command to extract video/audio tracks
+			String[] params = {command, "-i", filename};
+			ProcessBuilder pb = new ProcessBuilder(Arrays.asList(params));
+			proc = pb.start();
+
+			BufferedReader input = new BufferedReader(
+				new InputStreamReader( proc.getInputStream() )
+			);
+			BufferedReader error = new BufferedReader(
+				new InputStreamReader( proc.getErrorStream() )
+			);
+
+			// Skip the input stream
+			String line = input.readLine();
+			while( line != null )
+			{
+				line = input.readLine();
+			}
+
+			// Parse the metadata in error stream:
+			// Stream #0:2(eng): Audio: pcm_s16le (sowt / 0x74776F73), 48000 Hz, mono, s16, 768 kb/s (default)
+			while( (line=error.readLine()) != null )
+			{
+				if ( line.indexOf( "Stream #") != -1
+					&& (line.indexOf("Video:") != -1 || line.indexOf("Audio:") != -1))
+				{
+					String trackId = line.substring(0, line.indexOf("(")).replace("Stream #", "").trim();
+					streams.add( trackId );
+				}
+			}
+			proc.waitFor();
+		}
+		catch( Exception e )
+		{
+			e.printStackTrace();
+		}
+		finally
+		{
+			if (proc != null)
+			{
+				proc.destroy();
+			}
+		}
+		return streams;
 	}
 }
