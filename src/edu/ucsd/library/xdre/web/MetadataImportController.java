@@ -41,7 +41,7 @@ public class MetadataImportController implements Controller{
 		request.setCharacterEncoding("UTF-8");
 		String ark = request.getParameter("ark");
 		String dataFormat = request.getParameter("dataFormat");
-		String data = request.getParameter("data");
+		String data = request.getParameter("data").trim();
 		String importMode = request.getParameter("importMode");
 		MetadataImportHandler handler = null;	
 
@@ -78,7 +78,28 @@ public class MetadataImportController implements Controller{
 						if (!className.endsWith("Object")) {
 							// Collection or Authority update, need to update SOLR for the linked records.
 							queryObjects ( soluctions, subId, 1, damsClient );
+							List<String> solrFaileds = new ArrayList<>();
+							for (String soluction : soluctions) {
+								boolean successful = false;
+								try {
+									successful = damsClient.solrUpdate(soluction);
+									if (!successful) {
+										solrFaileds.add(soluction);
+									}
+								} catch (Exception e) {
+									e.printStackTrace();
+									solrFaileds.add(soluction);
+								}
+							}
 							objLink = "Total " + soluctions.size() + " records affected by ark " + subId.substring(subId.lastIndexOf("/") + 1) + ".";
+							if (solrFaileds.size() > 0) {
+								StringBuilder builder = new StringBuilder();
+								for (String id : solrFaileds) {
+									builder.append((builder.length() > 0 ? ", " : "") + id);
+								}
+								
+								objLink += " But failed to add the following " + solrFaileds.size() + " records to the queue for SOLR update: \n" + builder.toString();
+							}
 						} else {
 							String damsUrl = "http://" + Constants.CLUSTER_HOST_NAME + (Constants.CLUSTER_HOST_NAME.startsWith("localhost")?"":".ucsd.edu/dc") + "/object/"
 									+ ark.substring(ark.lastIndexOf("/") + 1, ark.length());
@@ -86,7 +107,7 @@ public class MetadataImportController implements Controller{
 						}
 					}
 
-					message = "Update successfully. " + objLink;
+					message = "Update record successfully. " + objLink;
 					session.removeAttribute("data");
 				} else {
 					StringBuilder err = new StringBuilder();
