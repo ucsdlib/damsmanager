@@ -47,7 +47,7 @@ public class RdfImportFormController implements Controller{
 			if (StringUtils.isBlank(data)) {
 				try{
 					damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
-					doc = damsClient.getRecord(ark);
+					doc = damsClient.getRecord(ark.trim());
 					Node titleNode = doc.selectSingleNode("/rdf:RDF/*[local-name()='Object' or contains(local-name(), 'Collection')]/dams:title/mads:Title/mads:authoritativeLabel | /rdf:RDF/*/mads:authoritativeLabel");
 					if (titleNode != null)
 						title = titleNode.getText();
