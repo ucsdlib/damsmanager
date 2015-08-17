@@ -8,6 +8,7 @@
 		 	<li><a href='/damsmanager/collectionRelease.do'>Collection Release</a></li>
 		 	<li><a href='/damsmanager/excelImport.do'>Excel Import</a></li>
 		 	<li><a href='/damsmanager/marcModsImport.do'>MARC/MODS Import</a></li>
+		 	<li><a href='/damsmanager/collectionImport.do'>Collection Import</a></li>
 		 	<li><a href='/damsmanager/rdfImport.do'>RDF Import</a></li>
 			<li><a href='/damsmanager/ingest.do'>Staging Ingest</a></li>
 		 	<li><a href='/damsmanager/controlPanel.do'>Process Manager</a></li>

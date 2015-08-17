@@ -1216,7 +1216,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 	 * @param arkUrl
 	 * @return
 	 */
-	public String toDamsUrl(String arkUrl){
+	public static String toDamsUrl(String arkUrl){
 		if(!arkUrl.startsWith("http")){
 			String arkUrlBase = Constants.DAMS_ARK_URL_BASE;
 			String arkOrg = Constants.ARK_ORG;

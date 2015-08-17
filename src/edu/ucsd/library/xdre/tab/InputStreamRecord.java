@@ -1,15 +1,30 @@
 package edu.ucsd.library.xdre.tab;
 
+import java.io.Closeable;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.ParseException;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.dom4j.Document;
 import org.dom4j.Element;
+import org.dom4j.Namespace;
 import org.dom4j.Node;
 import org.dom4j.QName;
+
+import edu.ucsd.library.xdre.collection.CollectionHandler;
+import edu.ucsd.library.xdre.model.DAMSCollection;
+import edu.ucsd.library.xdre.utils.Constants;
+import edu.ucsd.library.xdre.utils.DAMSClient;
+import edu.ucsd.library.xdre.utils.ImageMagick;
 
 /**
  * Standard InputStreamRecord constructed from the Excel form, AT/Roger form etc.
@@ -30,6 +45,21 @@ public class InputStreamRecord implements Record {
 		assignIDs();
 		RecordUtil.addRights(rdf, unit, collections, copyrightStatus, copyrightJurisdiction, 
 				copyrightOwner, program, access, beginDate, endDate);
+	}
+
+	/**
+	 * Constructor for Collection Input Stream with fields
+	 */
+	public InputStreamRecord(Record record, String id, String title, String type, Map<String, String> collections, String unit, 
+			String visibility) throws Exception {
+		this.id = id;
+		this.rdf = record.toRDFXML();
+		Node node = rdf.selectSingleNode("//*[name()='dams:Object']");
+		node.setName("dams:" + type);
+		if (StringUtils.isNotBlank(id))
+			node.selectSingleNode("@rdf:about").setText(id);
+		
+		addFields((Element)node, title, collections, unit, visibility);
 	}
 
 	@Override
@@ -119,6 +149,200 @@ public class InputStreamRecord implements Record {
 			f.addElement("dams:sourceFileName").setText(fileName);
 			if (!StringUtils.isBlank(fileUse)) {
 				f.addElement("dams:use").setText(fileUse);
+			}
+		}
+	}
+
+	private void addFields(Element p, String title, Map<String, String> collections, 
+			String unitUri, String visibility)
+	{
+		Namespace rdfNS = rdf.getRootElement().getNamespaceForPrefix("rdf");
+		// title
+		addTitle( p, title);
+		// unit
+		p.addElement("dams:unit").addAttribute(new QName("resource",  rdfNS), unitUri);
+		// visibility
+		p.addElement("dams:visibility").setText(visibility);
+        // parent collections
+        if (collections != null && collections.size() > 0) {
+	        for ( Iterator<String> it = collections.keySet().iterator(); it.hasNext(); )
+	        {
+	            String uri = it.next();
+	            String collType = collections.get(uri);
+	            String collPredicate = StringUtils.isNotBlank(collType) ? collType.substring(0, 1).toLowerCase() + collType.substring(1) : "collection";
+	            p.addElement("dams:" + collPredicate).addAttribute(new QName("resource",  rdfNS), uri);
+	        }
+        }
+	}
+
+    private void addTitle( Element e, String title)
+    {
+    	Namespace rdfNS = rdf.getRootElement().getNamespaceForPrefix("rdf");
+		Element titleElem = e.addElement("dams:title").addElement("mads:Title");
+		titleElem.addElement("mads:authoritativeLabel").setText(title);
+		Element elemList = titleElem.addElement("mads:elementList");
+		elemList.addAttribute(new QName("parseType",  rdfNS), "Collection");
+		elemList.addElement("mads:MainTitleElement").addElement("mads:elementValue").setText(title);
+    }
+
+    /**
+	 * Ingest the collection image
+	 * @param files
+	 * @throws Exception
+	 */
+	public void ingestCollectionImage(String[] filesPaths) throws Exception {
+		Map<String, File> filesMap = new HashMap<>();
+		if(filesPaths != null){
+			File file = null;
+			// List the source files
+			for(int i=0; i<filesPaths.length; i++){
+				file = new File(filesPaths[i]);
+				if(file.exists()){
+					CollectionHandler.listFile(filesMap, file);
+				}
+			}
+		}
+		String collectionArk = id.substring(id.lastIndexOf("/"), id.length());
+		// collection thumbnail file in relatedResource
+		Node thumbUriNode = rdf.selectSingleNode("//dams:RelatedResource[dams:type='thumbnail']/dams:uri/@rdf:resource");
+		if (thumbUriNode != null) {
+
+			String thumbnailUri = thumbUriNode.getStringValue();
+
+			File srcFile = filesMap.get(thumbnailUri);
+
+			if (srcFile != null) {
+				File storedSrcFile = new File (Constants.DAMS_CLR_SOURCE_DIR, 
+						collectionArk + (thumbnailUri.lastIndexOf(".") > 0 ? thumbnailUri.substring(thumbnailUri.lastIndexOf(".")) : ""));
+				File thumbnailFile = new File (Constants.DAMS_CLR_THUMBNAILS_DIR, collectionArk + ".jpg");
+				File imgFile = new File (Constants.DAMS_CLR_IMG_DIR, collectionArk + ".jpg");
+
+				if (!storedSrcFile.getParentFile().exists())
+					 storedSrcFile.getParentFile().mkdirs();
+				if (!thumbnailFile.getParentFile().exists())
+					thumbnailFile.getParentFile().mkdirs();
+				if (!imgFile.getParentFile().exists())
+					imgFile.getParentFile().mkdirs();
+
+				// cope the image source file for local storage
+				copyFile (srcFile,  storedSrcFile);
+
+				// create derivatives
+				boolean thumbSuccessful = false;
+				boolean imgSuccessful = false;
+				ImageMagick imageMagick = new ImageMagick(Constants.IMAGEMAGICK_COMMAND);
+				try {
+					thumbSuccessful = imageMagick.makeDerivative(storedSrcFile, thumbnailFile, 150, 150, -1);
+					imgSuccessful = imageMagick.makeDerivative(storedSrcFile, imgFile, 1024, 1024, -1);
+				} catch (Exception e) {
+					throw new Exception(e.getMessage());
+				}
+				if (thumbSuccessful && imgSuccessful) {
+					//Update the thumbnail url
+					thumbUriNode.setText(Constants.DAMS_CLR_URL_BASE + "/" + thumbnailFile.getName());
+				} else
+					throw new Exception ("Failed to create derivative for the collection image.");
+			} else if (thumbnailUri.startsWith("http")) {
+				//rewrite it to thumbnail ark url
+				String ark = thumbnailUri.substring(thumbnailUri.lastIndexOf("/") + 1);
+				if (ark.indexOf(".") < 0) {
+					if (ark.length() == 10) {
+						thumbUriNode.setText(Constants.DAMS_ARK_URL_BASE + "/" + Constants.ARK_ORG + "/"  + ark + "/4.jpg");
+					} else
+						throw new Exception("Invalid object url: " + thumbnailUri);
+				}
+			} else
+				throw new Exception ("Collection image is not found: " + thumbnailUri);
+		}
+	}
+
+	public static void updateCollectionHierarchy (DAMSClient damsClient, DAMSCollection oCollection, DAMSCollection collection) throws Exception {
+		// update parent linking
+		String parentId = collection == null ? null : collection.getParent();
+		String oParentId = oCollection == null ? null : oCollection.getParent();
+		if (collection != null && !collection.isEquals(parentId, oParentId) ) {
+        	
+        	// remove the linkings related the old parent record
+        	if ( StringUtils.isNotBlank(oParentId)) {
+	        	Node oParentRecord = damsClient.getRecord(oParentId)
+	        			.selectSingleNode("//*[contains(@rdf:about, '" + oParentId + "')]");
+	        	// remove the linking from the original parent record
+		    	List<Node> resNodes = oParentRecord.selectNodes("//*[contains(@rdf:resource, '" + oCollection.getId() + "')]");
+		    	for (Node resNode : resNodes) {
+		    		resNode.detach();
+		    	}
+		    	// Removed the extent note when saving the collection record
+		    	removeExtentNote(oParentRecord.getDocument());
+		    	if (!damsClient.updateObject(oParentId, oParentRecord.getDocument().asXML(), Constants.IMPORT_MODE_ALL))
+		    		throw new Exception("Failed to update parent collection for linking: " + oParentId);
+		    		
+        	}
+			
+        	// add linkings related to the new parent
+        	if ( StringUtils.isNotBlank(parentId) ) { 
+	        	Document docParent = damsClient.getRecord(parentId);
+	        	// child linking in the new parent collection 
+	        	Node collNode = docParent.selectSingleNode("//*[contains(@rdf:about, '" + parentId + "')]");
+	        	((Element)collNode).addElement("dams:has" + collection.getType().replace("ProvenanceCollectionPart", "Part"))
+	        			.addAttribute(new QName("resource", docParent.getRootElement().getNamespaceForPrefix("rdf")), collection.getId());
+
+	        	// Removed the extent note when saving the collection record
+	        	removeExtentNote(docParent);
+		    	if (!damsClient.updateObject(parentId, docParent.asXML(), Constants.IMPORT_MODE_ALL))
+		    		throw new Exception("Failed to update parent collection for linking: " + parentId);
+        	}
+        }
+        
+	}
+
+	private static void removeExtentNote(Document doc){
+    	List<Node> nodes = doc.selectNodes("//dams:note/dams:Note[dams:type='extent' and (substring-after(rdf:value, ' ')='digital objects.' or rdf:value='1 digital object.')]");
+    	for (Node node : nodes)
+    		node.getParent().detach();
+	}
+	/**
+	 * Copy file from source to destination
+	 * @param source
+	 * @param dest
+	 * @throws IOException 
+	 */
+	public static void copyFile (File source, File dest) throws IOException {
+		FileInputStream in = null;
+		FileOutputStream out = null;
+		
+		try {
+			in = new FileInputStream(source);
+			out = new FileOutputStream(dest);
+			
+			copy (in, out);
+		} finally {
+			close (in);
+			close (out);
+		}
+	}
+
+	/**
+	 * Copy file from source to destination
+	 * @param source
+	 * @param dest
+	 * @throws IOException 
+	 */
+	public static void copy (InputStream in, OutputStream out) throws IOException {
+		int ch;
+		while ((ch=in.read()) != -1) {
+			out.write(ch);
+		}
+	}
+
+	/**
+	 * Utility function to close a stream
+	 * @param closeable
+	 */
+	public static void close (Closeable closeable) {
+		if (closeable != null) {
+			try{
+				closeable.close();
+			}catch (Exception e) {
 			}
 		}
 	}
