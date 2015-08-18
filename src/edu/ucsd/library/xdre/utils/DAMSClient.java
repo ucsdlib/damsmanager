@@ -113,6 +113,8 @@ public class DAMSClient {
 	public static final int MAX_SIZE = 1000000;
 	public static enum DataFormat {rdf, xml, json, mets, html};
 	private static final Logger log = Logger.getLogger(DAMSClient.class);
+	public static final int PRIORITY_DEFAULT = 4;
+	public static final int PRIORITY_LOW = 2;
 	
 	private static SimpleDateFormat damsDateFormat = new SimpleDateFormat(DAMS_DATE_FORMAT);
 	private static SimpleDateFormat damsDateFormatAlt = new SimpleDateFormat(DAMS_DATE_FORMAT_ALT);
@@ -127,6 +129,7 @@ public class DAMSClient {
 	private String solrURLBase = null; // SOLR URL
 	private String user = null;
 	private String clientInfo = null;
+	private int priority = PRIORITY_DEFAULT;
 
 	/**
 	 * Construct a DAMSClient object.
@@ -1591,7 +1594,8 @@ public class DAMSClient {
 	 * @return
 	 */
 	public String toDAMSURL(String[] urlParts, String format){
-		NameValuePair[] params = {new BasicNameValuePair("format", format), new BasicNameValuePair("ts",tripleStore), 
+		NameValuePair[] params = {new BasicNameValuePair("format", format), new BasicNameValuePair("ts",tripleStore),
+				new BasicNameValuePair("priority", "" + priority),
 				new BasicNameValuePair("user", StringUtils.isBlank(user) ? "":user),
 				new BasicNameValuePair("client", StringUtils.isBlank(clientInfo) ? "" : clientInfo)};
 		String paramsStr = concatParams(params);
@@ -1873,6 +1877,23 @@ public class DAMSClient {
 	 */
 	public String getTripleStore() {
 		return tripleStore;
+	}
+
+	/**
+	 * Get priority for SOLR indexing
+	 * @return
+	 */
+	public int getPriority() {
+		return priority;
+	}
+
+	/**
+	 * 
+	 * Set the priority for SOLR indexing
+	 * @param priority
+	 */
+	public void setPriority(int priority) {
+		this.priority = priority;
 	}
 
 	/**

@@ -1036,6 +1036,10 @@ public class CollectionOperationController implements Controller {
 			 } else if (i == 7) {
 				 session.setAttribute("status", opMessage + "SOLR Index ...");
 				 boolean update = getParameter(paramsMap, "indexReplace") != null;
+
+				 // set priority low for bulk indexing.
+				 damsClient.setPriority(DAMSClient.PRIORITY_LOW);
+
 				 if (getParameter(paramsMap, "solrRecordsDump") != null) {
 					 // Handle single records submission
 					 List<String> items = new ArrayList<String>();
@@ -1072,6 +1076,10 @@ public class CollectionOperationController implements Controller {
 						 }
 					 }
 					 
+					 // for single items submitting from text input, set it to higher priority .
+					 if (StringUtils.isNotBlank(txtInput))
+						 damsClient.setPriority(DAMSClient.PRIORITY_DEFAULT);
+
 					 // Initiate SOLRIndexHandler to index the records
 					 handler = new SOLRIndexHandler( damsClient, null, update );
 					 handler.setItems(items);
