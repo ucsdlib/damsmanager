@@ -296,36 +296,12 @@ public class ExcelSource implements RecordSource
     }
 
     /**
-     * Initiate control values for column names and field values
-     * @param columns
-     * @param cvs
-     * @throws IOException 
-     * @throws InvalidFormatException 
-     */
-    public synchronized static void initControlValues(File columns, File cvs) throws InvalidFormatException, IOException 
-    {
-    	if ( CONTROL_VALUES == null || CONTROL_VALUES.size() == 0 )
-    	{    		
-    		// all control values
-    		Workbook book = WorkbookFactory.create(cvs);
-    		Sheet cvsSheet = book.getSheetAt(0);
-
-    		// all valid column names
-    		book = WorkbookFactory.create(columns);
-    		Sheet columnsSheet = book.getSheetAt(0);
-
-    		// initiate the control values for column names
-    		initControlValues(columnsSheet, cvsSheet);
-    	}
-    }
-
-    /**
-     * Initiate control values with standard input template for column names (sheet name: All) and field values (sheet name: CV values) 
+     * Initiate the control values with the standard input template for column names (sheet name: Item description), 
+     * select header names (sheet name: Select-a-header values) and field values (sheet name: CV values) 
      * @param template
-     * @throws IOException 
-     * @throws InvalidFormatException 
+     * @throws Exception 
      */
-    public synchronized static void initControlValues(File template) throws InvalidFormatException, IOException 
+    public synchronized static void initControlValues(File template) throws Exception 
     {
     	if ( CONTROL_VALUES == null || CONTROL_VALUES.size() == 0 )
     	{
@@ -334,11 +310,14 @@ public class ExcelSource implements RecordSource
     		// all control values
     		Sheet cvsSheet = book.getSheet("CV values");
 
-    		// all valid column names
-    		Sheet columnsSheet = book.getSheet("All");
+    		// header/column names
+    		Sheet columnsSheet = book.getSheet("Item description");
+    		
+    		// Select-a-header values
+    		Sheet selectHeaderSheet = book.getSheet("Select-a-header values");
 
     		// initiate the control values for column names
-    		initControlValues(columnsSheet, cvsSheet);
+    		initControlValues(columnsSheet, selectHeaderSheet, cvsSheet);
     	}
     }
 
@@ -346,13 +325,14 @@ public class ExcelSource implements RecordSource
      * Initiate control values for column names and field values with data in the columns sheet and cvs sheet
      * @param columns
      * @param cvs
-     * @throws IOException 
-     * @throws InvalidFormatException 
+     * @throws Exception 
      */
-    private static void initControlValues(Sheet columns, Sheet cvs) throws InvalidFormatException, IOException 
+    private static void initControlValues(Sheet columns, Sheet selectHeaderSheet, Sheet cvs) throws Exception 
     {
 		CONTROL_VALUES = new HashMap<>();
 		List<String> cvHeaders = new ArrayList<>();
+		List<String> selectHeaders = new ArrayList<>();
+		Map<String, List<String>> selectHeaderValues = new HashMap<>();
 		
 		// Initiate control values
 		for ( Iterator<Row> it = cvs.rowIterator(); it.hasNext(); )
@@ -377,6 +357,11 @@ public class ExcelSource implements RecordSource
 						{
 							value = new String(value.getBytes("UTF-8"));
 							String header = cvHeaders.get(cell.getColumnIndex());
+
+							// customize to ignore \ for Level column as requested in ticket DM-119
+							if (header.equalsIgnoreCase("Level") && value.startsWith("\\"))
+								value = value.substring(1, value.length());
+
 							if (header.equalsIgnoreCase("Language"))
 								value = normalizeFieldValue(value, DELIMITER_LANG_ELEMENT);
 
@@ -391,7 +376,45 @@ public class ExcelSource implements RecordSource
 		if (!CONTROL_VALUES.containsKey("ARK"))
 			CONTROL_VALUES.put("ARK", new ArrayList<String>());
 		
-		// add all valid column names
+		// select-a-header columns names
+		for ( Iterator<Row> it = selectHeaderSheet.rowIterator(); it.hasNext(); )
+		{
+			Row row = it.next();
+			int lastCellNum = row.getLastCellNum();
+			
+			for ( int i = 0; i < lastCellNum; i++ )
+			{
+				Cell cell = row.getCell(i);
+				if ( cell != null )
+				{
+					cell.setCellType(Cell.CELL_TYPE_STRING);
+                    String value = cell.toString();
+                    if ( value != null && !(value = value.trim()).equals("") )
+    	            {
+						if (row.getRowNum() == 0) 
+						{
+							// Select header column names
+							selectHeaders.add( value );
+							selectHeaderValues.put(value, new ArrayList<String>());
+							System.out.println("Select header name " + value + " in Select-a-header values don't match headers in Item description.");
+						} 
+						else
+						{
+							// Select header values
+							value = new String(value.getBytes("UTF-8"));
+							String header = selectHeaders.get(cell.getColumnIndex());
+							
+							selectHeaderValues.get(header).add(value);
+
+							if(row.getRowNum() == 1)
+								System.out.println("Select header value " + header + ": " + value);
+						}
+    	            }
+				}
+			}		
+		}
+
+		// add headers/column names
 		for ( Iterator<Row> it = columns.rowIterator(); it.hasNext(); )
 		{
 			Row row = it.next();
@@ -405,13 +428,20 @@ public class ExcelSource implements RecordSource
                     String value = cell.toString();
                     if ( value != null && !(value = value.trim()).equals("") )
     	            {
-                    	if ( !CONTROL_VALUES.containsKey(value) )
+                    	if (selectHeaderValues.containsKey(value)) 
+                    	{
+                    		List<String> headers = selectHeaderValues.get(value);
+                    		for (String header : headers) {
+                    			if ( !CONTROL_VALUES.containsKey(header) )
+                            	{
+        	                    	CONTROL_VALUES.put(header, new ArrayList<String>());
+                            	}
+                    		}
+                    	} 
+                    	else if ( !CONTROL_VALUES.containsKey(value) )
                     	{
 	                    	CONTROL_VALUES.put(value, new ArrayList<String>());
                     	}
-
-                    	// skip comments in other cells
-                    	break;
     	            }
 				}
 			}

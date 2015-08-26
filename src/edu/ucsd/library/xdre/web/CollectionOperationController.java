@@ -773,7 +773,7 @@ public class CollectionOperationController implements Controller {
 
 							 			 if (recordsCount == 2) {
 											  preSuccessful = false;
-											  errorMessage.append("\n* Found more than one record in the Excel file. Only one records allowed for collection Input Stream!");
+											  proMessage.append("\n* Found more than one record in the Excel file. Only one records allowed for collection Input Stream!");
 											  break;
 										  }
 								  } else
