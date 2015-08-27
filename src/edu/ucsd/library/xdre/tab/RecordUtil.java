@@ -49,7 +49,7 @@ public class RecordUtil
     private static String programDLP = "Digital Library Development Program";
     private static String programSCA = "Special Collections and Archives";
 
-    private static String address = "University of California, San Diego, La Jolla, 92093-0175";
+    private static String address = "UC San Diego, La Jolla, 92093-0175";
     private static String programRDCnote = "Research Data Curation Program, " + address
         + " (http://libraries.ucsd.edu/services/data-curation/)";
     private static String programDLPnote = "Digital Library Development Program, " + address
