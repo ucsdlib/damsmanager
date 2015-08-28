@@ -73,6 +73,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 	private int derivFailedCount = 0;
 	private int solrFailedCount = 0;
 	private Map<String, String> objRecords = new HashMap<String, String>();
+	private Map<String, String> collRecords = new HashMap<String, String>();
 	private List<String> recordsIngested = new ArrayList<String>();
 	
 	private List<String> objWithFiles = new ArrayList<String>();
@@ -213,6 +214,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 							Map<String, String> props= new TreeMap<String, String>();
 							String elemXPath = parentNode.getPath();
 							if (nName.endsWith("Collection") || nName.endsWith("CollectionPart")){
+								collRecords.put(iUri, currFile);
 								// Retrieve the Collection record
 								field = "dams:title/mads:authoritativeLabel";
 								xPath = "dams:title/mads:Title/mads:authoritativeLabel";
@@ -350,6 +352,8 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 					}else{
 						if (nName.endsWith("Object"))
 							objRecords.put(iUri, currFile);
+						if (nName.endsWith("Collection") || nName.endsWith("CollectionPart"))
+							collRecords.put(iUri, currFile);
 						if (replace && !(nName.endsWith("Component") || nName.endsWith("File")))
 							recordsToReplace.add(iUri);
 					}
@@ -476,7 +480,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 						
 						String resultMessage = "http://" + Constants.CLUSTER_HOST_NAME + ".ucsd.edu/dc/object/" + subjectId.substring(subjectId.lastIndexOf("/") + 1)
 								+ " - " + (status[processIndex] && status[solrRequestIndex] ? "successful" : "failed") + " - " + damsDateFormat.format(new Date());
-						if (objRecords.containsKey(subjectId)) {
+						if (objRecords.containsKey(subjectId) || collRecords.containsKey(subjectId)) {
 							String title = getTitle(objModel, subjectId);
 							if (StringUtils.isBlank(title))
 								title = "[Unknown Title]";
@@ -1161,7 +1165,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		Collections.sort(records);
 		List<String> sortedRecords = new ArrayList<>();
 		for (String rec : records) {
-			if (objRecords.containsKey(rec))
+			if (objRecords.containsKey(rec) || collRecords.containsKey(rec))
 				sortedRecords.add(rec);
 		    else
 				sortedRecords.add (count++, rec);
