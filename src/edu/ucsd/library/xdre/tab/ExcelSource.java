@@ -37,6 +37,9 @@ import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 **/
 public class ExcelSource implements RecordSource
 {
+	public static final String[] IGNORED_FIELDS_FOR_OBJECTS = {"CLR image file name", "Brief description"};
+	public static final String[] IGNORED_FIELDS_FOR_COLLECTIONS = {"Level","Title","Subtitle","Part name","Part number","Translation","Variant","File name","File use","File name 2","File use 2"};
+
     private static Map<String, List<String>> CONTROL_VALUES = new HashMap<>();
     
     private Workbook book;
@@ -47,6 +50,7 @@ public class ExcelSource implements RecordSource
     private Map<String, String> originalHeaders = new HashMap<>();
     private List<String> invalidHeaders = new ArrayList<>();
     private List<Map<String, String>> invalidValues = new ArrayList<>();
+    private List<String> ignoredFields = new ArrayList<>();;
     Map<String,String> cache;
 
     /**
@@ -54,7 +58,15 @@ public class ExcelSource implements RecordSource
     **/
     public ExcelSource( File f ) throws IOException, InvalidFormatException
     {
-        this( new FileInputStream(f) );
+        this( f, null );
+    }
+
+    /**
+     * Create an ExcelSource object from an Excel file on disk with ignored fields.
+    **/
+    public ExcelSource( File f, List<String> ignoredFields ) throws IOException, InvalidFormatException
+    {
+        this( new FileInputStream(f), ignoredFields );
     }
 
     /**
@@ -63,6 +75,21 @@ public class ExcelSource implements RecordSource
     public ExcelSource( InputStream in )
         throws IOException, InvalidFormatException
     {
+    	this(in, null);
+    }
+
+    /**
+     * Create an ExcelSource object from an InputStream with ignored fields
+    **/
+    public ExcelSource( InputStream in,  List<String> ignoredFields )
+        throws IOException, InvalidFormatException
+    {
+    	if ( ignoredFields != null )
+    	{
+    		for ( String ignoredFiled : ignoredFields )
+    			this.ignoredFields.add(ignoredFiled.trim().toLowerCase());
+    	}
+
         this.book = WorkbookFactory.create(in);
         
         // always use the the first sheet.
@@ -174,6 +201,11 @@ public class ExcelSource implements RecordSource
 	        for ( int i = 0; i < headers.size(); i++ )
 	        {
 	            String header = headers.get(i);
+
+	            // skip parsing the values in the ignored fields 
+	            if (ignoredFields != null && ignoredFields.indexOf(header) >= 0)
+	            	continue;
+
 	            String value = null;
 	            if ( i < (row.getLastCellNum() + 1) ) 
 	            {

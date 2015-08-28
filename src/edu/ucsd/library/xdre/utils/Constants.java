@@ -33,6 +33,10 @@ public class Constants {
 	public static String DEFAULT_ARK_NAME = "";
 	public static String ARK_ORG = "";
 	public static String DAMS_ARK_URL_BASE = "";
+	public static String DAMS_CLR_URL_BASE = "";
+	public static String DAMS_CLR_IMG_DIR = "";
+	public static String DAMS_CLR_THUMBNAILS_DIR = "";
+	public static String DAMS_CLR_SOURCE_DIR = "";
 	
 	public static String DAMS_STORAGE_URL = "";
 	public static String DAMS_STORAGE_USER = "";
@@ -54,6 +58,7 @@ public class Constants {
 	public static String FFMPEG_VIDEO_PARAMS = "";
 	public static String FFMPEG_AUDIO_PARAMS = "";
 	public static String EXIFTOOL_COMMAND = "exiftool";
+	public static String IMAGEMAGICK_COMMAND = "convert";
 	
 	/* begin stats declaration*/
 	public static String CURATOR_ROLE ="";
@@ -104,6 +109,18 @@ public class Constants {
 			//ARK URL nase
 			DAMS_ARK_URL_BASE = props.getProperty("xdre.ark.urlBase");
 			
+			// Collection URL base
+			DAMS_CLR_URL_BASE = props.getProperty("xdre.clr.urlBase");
+
+			//Collection image dir
+			DAMS_CLR_IMG_DIR = props.getProperty("xdre.clr.imgDir");
+
+			//Collection thumbnails dir
+			DAMS_CLR_THUMBNAILS_DIR = props.getProperty("xdre.clr.thumbnailsDir");
+
+			//Collection image source dir
+			DAMS_CLR_SOURCE_DIR = props.getProperty("xdre.clr.sourceDir");
+			
 			//ARK name
 			DEFAULT_ARK_NAME = props.getProperty("xdre.ark.name");
 			//ARK orgCode
@@ -131,6 +148,9 @@ public class Constants {
 
 			//ExifTool command
 			EXIFTOOL_COMMAND = props.getProperty("exiftool.command");
+
+			//ImageMagick command
+			IMAGEMAGICK_COMMAND = props.getProperty("imageMagick.command");
 
 			// Namespace prefix
 			NS_PREFIX = props.getProperty("ns.prefix");

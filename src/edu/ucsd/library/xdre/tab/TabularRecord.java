@@ -190,7 +190,11 @@ public class TabularRecord implements Record
         String ptNum = data.get("part number");
         String trans = data.get("translation");
         String var   = data.get("variant");
-        addTitle( e, main, sub, ptNam, ptNum, trans, var );
+        // ignore title when no title value provided 
+        if ( pop(main) )
+        {
+            addTitle( e, main, sub, ptNam, ptNum, trans, var );
+        }
 
         // date /////////////////////////////////////////////////////////////////////////
         // first create a date element to hold begin/end date if provided
@@ -285,6 +289,28 @@ public class TabularRecord implements Record
                     addElement(e2, "type", damsNS).setText(type);
                 }
             }
+        }
+
+        // CLR Brief Description (ScopeAndContentNote) /////////////////////////////////////
+        String briefDescription = data.get("brief description");
+        if ( pop(briefDescription) )
+        {
+            Element e2 = addElement( e, "scopeContentNote", damsNS, "ScopeContentNote", damsNS );
+            addTextElement( e2, "value", rdfNS, briefDescription );
+            addElement(e2, "type", damsNS).setText("scopeAndContent");
+            addElement(e2, "displayLabel", damsNS).setText("Scope and Contents");
+        }
+
+        // Collection image related resource //////////////////////////////////////////////////////////////////////////
+        String clrImage = data.get("clr image file name");
+        if ( pop(clrImage) )
+        {
+        	Element rel = addElement( e,"relatedResource", damsNS, "RelatedResource", damsNS );
+        	Element uri = addElement( rel, "uri", damsNS );
+    		addAttribute( uri, "resource", rdfNS, clrImage );
+
+    		addElement( rel, "type", damsNS ).setText("thumbnail");
+
         }
 
         // relationships ////////////////////////////////////////////////////////////////

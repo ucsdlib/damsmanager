@@ -34,6 +34,7 @@
 	<bean name="/progressHandler.do" class="edu.ucsd.library.xdre.web.ProgressController"></bean>
 	<bean name="/fileUpload.do" class="edu.ucsd.library.xdre.web.FileUploadController"></bean>
 	<bean name="/collectionRelease.do" class="edu.ucsd.library.xdre.web.CollectionReleaseController"></bean>
+	<bean name="/collectionImport.do" class="edu.ucsd.library.xdre.web.CollectionImportController"></bean>
 	
 	<!--<bean name="/cancelConvert.do" class="edu.ucsd.library.xdre.web.CancelDataConvertController"></bean>-->
 	<!--<bean name="/dataConverter.do" class="edu.ucsd.library.xdre.web.DataConverterController"></bean>-->

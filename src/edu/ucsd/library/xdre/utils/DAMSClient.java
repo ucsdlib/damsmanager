@@ -948,6 +948,24 @@ public class DAMSClient {
 	}
 
 	/**
+	 * Retrieve a full metatada record
+	 * @param object
+	 * @return
+	 * @throws Exception 
+	 */
+	public Document getFullRecord(String object)
+			throws Exception {
+		String format = "xml";
+		String url = getObjectsURL(object, null, "export", format);
+		HttpGet req = new HttpGet(url);
+		try {
+			return getXMLResult(req);
+		} finally {
+			req.releaseConnection();
+		}
+	}
+
+	/**
 	 * Extract technical metadata with Jhove extraction and additional
 	 * NameValuePairs
 	 * 

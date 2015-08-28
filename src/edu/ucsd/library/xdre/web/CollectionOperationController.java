@@ -60,6 +60,7 @@ import edu.ucsd.library.xdre.collection.MetadataExportHandler;
 import edu.ucsd.library.xdre.collection.MetadataImportHandler;
 import edu.ucsd.library.xdre.collection.SOLRIndexHandler;
 import edu.ucsd.library.xdre.imports.RDFDAMS4ImportTsHandler;
+import edu.ucsd.library.xdre.model.DAMSCollection;
 import edu.ucsd.library.xdre.tab.ExcelSource;
 import edu.ucsd.library.xdre.tab.FilesChecker;
 import edu.ucsd.library.xdre.tab.InputStreamRecord;
@@ -155,6 +156,7 @@ public class CollectionOperationController implements Controller {
 		boolean isSerialization = getParameter(paramsMap, "serialize") != null;
 		boolean isMarcModsImport = getParameter(paramsMap, "marcModsImport") != null;
 		boolean isExcelImport = getParameter(paramsMap, "excelImport") != null;
+		boolean isCollectionImport = getParameter(paramsMap, "collectionImport") != null;
 		boolean isCollectionRelease = getParameter(paramsMap, "collectionRelease") != null;
 		boolean isFileUpload = getParameter(paramsMap, "fileUpload") != null;
 		if(activeButton == null || activeButton.length() == 0)
@@ -183,6 +185,8 @@ public class CollectionOperationController implements Controller {
 			forwardTo = "/marcModsImport.do?";
 		else if(isExcelImport)
 			forwardTo = "/excelImport.do?";
+		else if(isCollectionImport)
+			forwardTo = "/collectionImport.do?";
 		else if(isCollectionRelease)
 			forwardTo = "/collectionRelease.do?";
 		else if(isFileUpload)
@@ -191,7 +195,7 @@ public class CollectionOperationController implements Controller {
 		if(( !(getParameter(paramsMap, "solrRecordsDump") != null || isBSJhoveReport || isDevUpload || isFileUpload)
 				&& getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "externalImport") == null 
 				&& getParameter(paramsMap, "dataConvert") == null ) && getParameter(paramsMap, "marcModsImport") == null
-				&& getParameter(paramsMap, "excelImport") == null 
+				&& getParameter(paramsMap, "excelImport") == null && getParameter(paramsMap, "collectionImport") == null 
 				&& (collectionId == null || (collectionId=collectionId.trim()).length() == 0)){
 			message = "Please choose a collection ...";
 		}else{
@@ -242,7 +246,7 @@ public class CollectionOperationController implements Controller {
 			//e.printStackTrace();
 		}
 		
-		if(isSolrDump || isMarcModsImport || isExcelImport || isCollectionRelease || isFileUpload) {
+		if(isSolrDump || isMarcModsImport || isExcelImport || isCollectionImport || isCollectionRelease || isFileUpload) {
 			session.setAttribute("message", message.replace("\n", "<br />"));
 			if(collectionId != null && (isMarcModsImport || isExcelImport || isCollectionRelease))
 				forwardTo += "category=" + collectionId;
@@ -293,7 +297,8 @@ public class CollectionOperationController implements Controller {
 		operations[4] = getParameter(paramsMap, "collectionRelease") != null;
 		operations[5] = getParameter(paramsMap, "externalImport") != null;
 		operations[6] = getParameter(paramsMap, "marcModsImport") != null
-				|| getParameter(paramsMap, "excelImport") != null;
+				|| getParameter(paramsMap, "excelImport") != null
+				|| getParameter(paramsMap, "collectionImport") != null;
 		operations[7] = getParameter(paramsMap, "luceneIndex") != null
 				|| getParameter(paramsMap, "solrDump") != null
 				|| getParameter(paramsMap, "solrRecordsDump") != null;
@@ -566,6 +571,7 @@ public class CollectionOperationController implements Controller {
 				  String preingestOption = getParameter(paramsMap, "preingestOption");
 				  String[] filesCheckPaths = getParameter(paramsMap, "filesCheckPath").split(";");
 
+				  boolean collectionImport = getParameter(paramsMap, "collectionImport") != null;
 				  boolean preprocessing = importOption == null;
 				  boolean filesCheck = preingestOption != null && preingestOption.startsWith("file-");
 				  
@@ -598,7 +604,7 @@ public class CollectionOperationController implements Controller {
 					  }
 				  } else {
 					  List<String> filters = new ArrayList<>();
-					  if (getParameter(paramsMap, "excelImport") != null) {
+					  if (getParameter(paramsMap, "excelImport") != null || collectionImport) {
 						  // Excel Input Stream
 						  source = "excel";
 						  filters.add("xls");
@@ -624,6 +630,7 @@ public class CollectionOperationController implements Controller {
 					  rdfPreview = TabularRecord.createRdfRoot (doc);
 				  }
 				  
+				  int recordsCount = 0;
 				  boolean preSuccessful = true;
 				  StringBuilder proMessage = new StringBuilder();
 				  if (source != null && (source.equalsIgnoreCase("bib") || source.equalsIgnoreCase("mods") || source.equalsIgnoreCase("excel"))) {
@@ -656,8 +663,16 @@ public class CollectionOperationController implements Controller {
 						  try {
 							  if (source.equalsIgnoreCase("excel")) {
 								  clientTool = "Excel";
+
+								  // initiate ignored fields for objects and collections
+								  List<String> ignoredFields = null;
+								  if (collectionImport)
+									  ignoredFields = Arrays.asList(ExcelSource.IGNORED_FIELDS_FOR_COLLECTIONS);
+								  else
+									  ignoredFields = Arrays.asList(ExcelSource.IGNORED_FIELDS_FOR_OBJECTS);
+
 								  // Handling Excel Input Stream records
-								  recordSource = new ExcelSource((File)srcRecord);
+								  recordSource = new ExcelSource((File)srcRecord, ignoredFields);
 
 								  // Report for Excel column name validation
 								  List<String> invalidColumns = ((ExcelSource)recordSource).getInvalidColumns();
@@ -727,12 +742,43 @@ public class CollectionOperationController implements Controller {
 
 							  for (Record rec = null; (rec = recordSource.nextRecord()) != null;) {
 
+								  recordsCount++;
 								  String objTitle = "";
 								  id = rec.recordID();  
 								  StringBuilder errorMessage = new StringBuilder(); 
 								  try {
+									  if (collectionImport) {
+										  String collTitle = getParameter(paramsMap, "collTitle");
+										  String collType = getParameter(paramsMap, "collType");
+										  String visibility = getParameter(paramsMap, "visibility");
+										  String parentCollection = getParameter(paramsMap, "parentCollection");
+							 			  Map<String, String> parentCollections = new HashMap<String, String>();
+							 			  if (StringUtils.isNotBlank(parentCollection)) {
+							 				  String parentType = damsClient.getCollectionType(parentCollection);
+							 				 parentCollections.put(parentCollection, parentType);
+							 			  }
+
+										  id = collectionId;
+										  if (!preprocessing && StringUtils.isBlank(id)) {
+											  collectionId = id = RDFDAMS4ImportTsHandler.toDamsUrl(damsClient.mintArk(Constants.DEFAULT_ARK_NAME));
+										  }
+							 			  record = new InputStreamRecord(rec, id, collTitle, collType, parentCollections, unit, visibility);
+
+							 			 String existed = checkRecord (collTitle, damsClient);
+							 			 if (StringUtils.isNotBlank(existed) && !existed.endsWith(id)) {
+							 				String existingCollection = "http://" + Constants.CLUSTER_HOST_NAME + (Constants.CLUSTER_HOST_NAME.startsWith("localhost") ? "" : ".ucsd.edu/dc") 
+							 						+ "/collection/" + existed.substring(existed.lastIndexOf("/") + 1);
+							 				errorMessage.append("\n* Collection with title \"" + collTitle +  "\" exists for " + existingCollection + "! Please use another title.");
+							 			 }
+
+							 			 if (recordsCount == 2) {
+											  preSuccessful = false;
+											  errorMessage.append("\n* Found more than one record in the Excel file. Only one records allowed for collection Input Stream!");
+											  break;
+										  }
+								  } else
 									  
-									  record = new InputStreamRecord (rec, collections, unit, copyrightStatus, copyrightJurisdiction, 
+										  record = new InputStreamRecord (rec, collections, unit, copyrightStatus, copyrightJurisdiction, 
 											  copyrightOwners, program, access, beginDate, endDate );
 									  
 									  objTitle = getTitle(record.toRDFXML());
@@ -817,7 +863,10 @@ public class CollectionOperationController implements Controller {
 
 									  if (preprocessing) {
 										 // Pre-processing with rdf preview
-										  rdfPreview.add(record.toRDFXML().selectSingleNode("//dams:Object").detach()); 
+										  if(collectionImport) {
+											  rdfPreview = record.toRDFXML().getRootElement(); 
+										  } else
+											  rdfPreview.add(record.toRDFXML().selectSingleNode("//dams:Object").detach()); 
 									  } else {
 										  // Write the converted rdf/xml to file system
 										  File tmpDir = new File (Constants.TMP_FILE_DIR + File.separatorChar + "converted");
@@ -825,6 +874,9 @@ public class CollectionOperationController implements Controller {
 											  tmpDir.mkdir();
 										  File convertedFile = new File(tmpDir.getAbsolutePath(), id.replaceAll("[\\//:.*]+","") + ".rdf.xml");
 										  try{
+											  if (collectionImport) {
+												  record.ingestCollectionImage(ingestFiles.toArray(new String[ingestFiles.size()]));
+											  }
 											  writeXml(convertedFile, record.toRDFXML().asXML());
 										  } finally {										  
 											  convertedFile.deleteOnExit();
@@ -1291,7 +1343,21 @@ public class CollectionOperationController implements Controller {
 	 				if (arkReportFile == null)
 	 					arkReportFile = handler.getArkReportFile();
 
+	 				// Collection Import need to keep the origin parent record for updating collection links
+	 				DAMSCollection oCollection = null;
+	 				DAMSCollection collection = null;
+	 				boolean collectionImport = getParameter(paramsMap, "collectionImport") != null;
+	 				if (collectionImport && StringUtils.isNotBlank(collectionId) && damsClient.exists(collectionId, "", "")) {
+	 					oCollection = DAMSCollection.getRecord(damsClient, collectionId);
+	 				}
+
 	 				successful = handler.execute();
+
+	 				// update parent linking for Collection Import
+	 				if (collectionImport && successful && StringUtils.isNotBlank(collectionId)) {
+	 					collection = DAMSCollection.getRecord(damsClient, collectionId);
+	 					InputStreamRecord.updateCollectionHierarchy (damsClient, oCollection, collection);
+	 				}
 	 			}catch (InterruptedException e) {
 	 				successful = false;
 	 				exeInfo += e.getMessage();
@@ -1475,10 +1541,21 @@ public class CollectionOperationController implements Controller {
 	
 	private static String getTitle(Document doc) {
 		String title = "";
-		Node node = doc.selectSingleNode("//dams:Object/dams:title/mads:Title/mads:authoritativeLabel");
+		Node node = doc.selectSingleNode("//*[contains(name(), 'dams:Object') or contains(name(), 'Collection')]/dams:title/mads:Title/mads:authoritativeLabel");
 		if (node != null) {
 			title = node.getText();
 		}
 		return title;
+	}
+
+	private static String checkRecord (String collTitle, DAMSClient damsClient) throws Exception {
+		Map<String, String> collMap = damsClient.listCollections();
+		for (String key : collMap.keySet()){
+			String title = key.substring(0, key.lastIndexOf(" [")).trim();
+			if (title.equalsIgnoreCase(collTitle)) {
+				return collMap.get(key);
+			}
+		}
+		return null;
 	}
 }
