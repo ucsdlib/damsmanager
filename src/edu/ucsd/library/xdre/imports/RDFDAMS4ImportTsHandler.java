@@ -56,6 +56,8 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 	public static final String NOTE = "Note";
 	public static final String MADSSCHEME = "MADSScheme";
 	public static final String LANGUAGE = "Language";
+	public static final String SCIENTIFICNAME = "ScientificName";
+	public static final String COMMONNAME = "CommonName";
 	private static Logger log = Logger.getLogger(RDFDAMS4ImportTsHandler.class);
 
 	private Map<String, String> idsMap = new HashMap<String, String>();
@@ -274,7 +276,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 								xPath = "dams:type";
 								tNode = parentNode.selectSingleNode(xPath);
 								props = dateProperties(parentNode);
-							} else if(elemXPath.indexOf("mads", elemXPath.lastIndexOf('/') + 1) >= 0){
+							} else if(elemXPath.indexOf("mads", elemXPath.lastIndexOf('/') + 1) >= 0 || nName.endsWith(SCIENTIFICNAME) || nName.equals(COMMONNAME)){
 								// MADSScheme and Language
 								if(nName.endsWith(MADSSCHEME)){
 									field = "mads:code";
