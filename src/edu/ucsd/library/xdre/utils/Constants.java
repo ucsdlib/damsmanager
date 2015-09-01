@@ -59,6 +59,9 @@ public class Constants {
 	public static String FFMPEG_AUDIO_PARAMS = "";
 	public static String EXIFTOOL_COMMAND = "exiftool";
 	public static String IMAGEMAGICK_COMMAND = "convert";
+	public static String IMAGEMAGICK_PARAMS = "";
+	public static String COLLECTION_THUMBNAILS_SIZE = "150x150";
+	public static String COLLECTION_IMAGE_SIZE = "1024x1024";
 	
 	/* begin stats declaration*/
 	public static String CURATOR_ROLE ="";
@@ -151,7 +154,16 @@ public class Constants {
 
 			//ImageMagick command
 			IMAGEMAGICK_COMMAND = props.getProperty("imageMagick.command");
+			
+			//ImageMagick params
+			IMAGEMAGICK_PARAMS = props.getProperty("imageMagick.params");
 
+			//Collection thumbnails size
+			COLLECTION_THUMBNAILS_SIZE = props.getProperty("xdre.clr.thumbnailsSize");
+
+			//Collection image size
+			COLLECTION_IMAGE_SIZE = props.getProperty("xdre.clr.imgSize");
+					
 			// Namespace prefix
 			NS_PREFIX = props.getProperty("ns.prefix");
 			NS_PREFIX_MAP = new HashMap<String, String>();

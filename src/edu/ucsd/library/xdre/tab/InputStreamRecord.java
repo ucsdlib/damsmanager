@@ -232,8 +232,12 @@ public class InputStreamRecord implements Record {
 				boolean imgSuccessful = false;
 				ImageMagick imageMagick = new ImageMagick(Constants.IMAGEMAGICK_COMMAND);
 				try {
-					thumbSuccessful = imageMagick.makeDerivative(storedSrcFile, thumbnailFile, 150, 150, -1);
-					imgSuccessful = imageMagick.makeDerivative(storedSrcFile, imgFile, 1024, 1024, -1);
+					String[] devrSize = Constants.COLLECTION_THUMBNAILS_SIZE.split("x");
+					thumbSuccessful = imageMagick.makeDerivative(storedSrcFile, thumbnailFile, 
+							Integer.parseInt(devrSize[0].trim()), Integer.parseInt(devrSize[1].trim()), -1, Constants.IMAGEMAGICK_PARAMS);
+					devrSize = Constants.COLLECTION_IMAGE_SIZE.split("x");
+					imgSuccessful = imageMagick.makeDerivative(storedSrcFile, imgFile, 
+							Integer.parseInt(devrSize[0].trim()), Integer.parseInt(devrSize[1].trim()), -1, Constants.IMAGEMAGICK_PARAMS);
 				} catch (Exception e) {
 					throw new Exception(e.getMessage());
 				}
