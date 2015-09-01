@@ -191,18 +191,24 @@
           <!-- attach variants to first titleInfo -->
           <xsl:if test=". = ../mods:titleInfo[not(@type)][1]">
             <xsl:for-each select="../mods:titleInfo[@type='alternative' or @type='uniform']">
-              <mads:hasVariant>
-                <mads:Variant>
-                  <mads:variantLabel>
-                    <xsl:call-template name="title-label"/>
-                  </mads:variantLabel>
-                </mads:Variant>
-              </mads:hasVariant>
+              <xsl:call-template name="variant-title"/>
+            </xsl:for-each>
+            <xsl:for-each select="/mods:mods/mods:relatedItem[not(mods:location/mods:url)]/mods:titleInfo">
+              <xsl:call-template name="variant-title"/>
             </xsl:for-each>
           </xsl:if>
         </mads:Title>
       </dams:title>
     </xsl:if>
+  </xsl:template>
+  <xsl:template name="variant-title">
+    <mads:hasVariant>
+      <mads:Variant>
+        <mads:variantLabel>
+          <xsl:call-template name="title-label"/>
+        </mads:variantLabel>
+      </mads:Variant>
+    </mads:hasVariant>
   </xsl:template>
   <xsl:template name="title-label">
     <xsl:value-of select="mods:nonSort"/>
@@ -290,13 +296,11 @@
               </xsl:if>
             </dams:description>
           </xsl:if>
-          <xsl:if test="mods:location/mods:url">
-            <xsl:if test="mods:location/mods:url/@note">
-              <dams:description>
-                <xsl:value-of select="mods:location/mods:url/@note"/>
-              </dams:description>
-              <dams:uri><xsl:value-of select="mods:location/mods:url"/></dams:uri>
-            </xsl:if>
+          <xsl:if test="mods:location/mods:url/@note">
+            <dams:description>
+              <xsl:value-of select="mods:location/mods:url/@note"/>
+            </dams:description>
+            <dams:uri><xsl:value-of select="mods:location/mods:url"/></dams:uri>
           </xsl:if>
         </dams:RelatedResource>
       </dams:relatedResource>
@@ -722,7 +726,7 @@
     <dams:relationship>
       <dams:Relationship>
         <dams:role>
-          <mads:Authority rdf:about="{generate-id()}">
+          <mads:Authority rdf:about="{generate-id(mods:role|text())}">
             <xsl:choose>
               <xsl:when test="mods:role">
                 <xsl:for-each select="mods:role/mods:roleTerm[@type='code']">

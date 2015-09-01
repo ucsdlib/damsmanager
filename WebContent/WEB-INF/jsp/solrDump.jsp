@@ -189,14 +189,14 @@
 		    </td>
 		  </tr>
 		  <tr>
-			<td height="30px" align="right">
+			<td height="30px" align="right" valign="top">
 				<span class="submenuText">
 					<span id="sourceTitle" style="font-weight:bold;font-size:14px;">Subjects/ARKs</span><b>: </b>&nbsp;&nbsp;
 				</span>
 			</td>
 			<td  align="left">
 				<div class="submenuText">
-					<div id="text"><input type="text" id="textInput" name="textInput" size="50" value=""><span class="note"> (Delimiter comma <strong>,</strong>)</span></div>
+					<div id="text"><input type="text" id="textInput" name="textInput" size="50" value=""><div class="note"> (Comma-separated list of ARKs for normal priority indexing.)</div></div>
 					<div id="file" style="display:none"><input type="file" id="fileInput" name="fileInput" size="48"></div>
 				</div>
 			</td>
