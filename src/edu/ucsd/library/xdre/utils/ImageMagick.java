@@ -7,6 +7,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Interface to generate derivatives with ImageMagic.
@@ -40,9 +44,33 @@ public class ImageMagick
 		}
 	}
 
-	
-	/* generate a derivative image for a specific page using image magick */
+	/**
+	 * generate a derivative image for a specific page using image magick
+	 * @param src
+	 * @param dst
+	 * @param width
+	 * @param height
+	 * @param frameNo
+	 * @return
+	 * @throws Exception
+	 */
 	public boolean makeDerivative( File src, File dst, int width, int height, int frameNo ) throws Exception
+	{
+		return makeDerivative( src, dst, width, height, frameNo, "" );
+	}
+
+	/**
+	 * generate a derivative image with specific parameters for a specific page using image magick
+	 * @param src
+	 * @param dst
+	 * @param width
+	 * @param height
+	 * @param frameNo
+	 * @param params
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean makeDerivative( File src, File dst, int width, int height, int frameNo, String params ) throws Exception
 	{
 		// build the command
 		ArrayList<String> cmd = new ArrayList<String>();
@@ -53,6 +81,17 @@ public class ImageMagick
 		cmd.add( "'*'" );
 		cmd.add( "-resize" );      // resize to specified pixel dimensions
 		cmd.add( width + "x" + height );
+		if (StringUtils.isNotBlank(params)) // other parameters
+		{
+			List<String> paramList = Arrays.asList(params.split(" "));
+			for (String param : paramList) 
+			{
+				if ( param != null && StringUtils.isNotBlank(param = param.trim()) ) 
+				{
+					cmd.add( param );
+				}
+			}
+		}
 		cmd.add( src.getAbsolutePath() + (frameNo!=-1?"[" + frameNo + "]":"") );
 		cmd.add( dst.getAbsolutePath() );
 

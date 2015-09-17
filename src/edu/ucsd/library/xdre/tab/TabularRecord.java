@@ -4,7 +4,6 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -37,8 +36,6 @@ public class TabularRecord implements Record
     public static final String[] ACCEPTED_DATE_FORMATS = {"yyyy-MM-dd", "yyyy-MM", "yyyy"};
     private static DateFormat[] dateFormats = {new SimpleDateFormat(ACCEPTED_DATE_FORMATS[0]), 
     	new SimpleDateFormat(ACCEPTED_DATE_FORMATS[1]), new SimpleDateFormat(ACCEPTED_DATE_FORMATS[2])};
-    private static String[] related_resource_types = {"artifact", "basket", "depiction", "journal entry",
-    	"news release", "online exhibit", "online finding aid", "related"};
 
     // namespaces
     private static final Namespace rdfNS  = new Namespace(
@@ -338,6 +335,10 @@ public class TabularRecord implements Record
                 "temporal", damsNS, null );
         addSubject( data, e, "subject:topic", "Topic", madsNS, "topic", damsNS, null );
 
+        // special dams element for scientific name, common name etc.
+        addSubject( data, e, "subject:common name", "CommonName", damsNS, "commonName", damsNS, null );
+        addSubject( data, e, "subject:scientific name", "ScientificName", damsNS, "scientificName", damsNS, null );
+
         // language /////////////////////////////////////////////////////////////////////
         for ( String lang : split(data.get("language")) )
         {
@@ -372,7 +373,14 @@ public class TabularRecord implements Record
             String key = it.next();
             if ( key.startsWith("related resource") )
             {
-                String values = data.get( key );
+            	String type = "";
+            	String[] tokens = key.split("\\:");
+            	if (tokens.length == 2) 
+            	{
+            		type = tokens[1].trim();
+            	}
+
+            	String values = data.get( key );
                 for ( String value : split(values) )
                 {
 	                String[] elemValues = value.split("\\" + DELIMITER_CELL);
@@ -382,6 +390,11 @@ public class TabularRecord implements Record
 	            	}
 	            	
 	            	Element rel = addElement(e,"relatedResource", damsNS, "RelatedResource", damsNS);
+
+	            	if ( pop(type) ) { 
+	            		addElement(rel, "type", damsNS).setText(type);
+	            	}
+
 	            	if ( pop(elemValues[0]) ) { 
 	            		addElement(rel, "description", damsNS).setText(elemValues[0].trim());
 	            	}
@@ -390,15 +403,6 @@ public class TabularRecord implements Record
 	            		Element uri = addElement(rel, "uri", damsNS);
 	            		addAttribute( uri, "resource", rdfNS, elemValues[1].trim() );
 	            	}
-
-	            	String type = "";
-	            	if (key.indexOf(":") > 0 && key.length() > key.indexOf(":") + 1)
-		            	type = key.substring( key.indexOf(":") + 1 ).trim().toLowerCase();
-	            	
-	            	if (Arrays.asList(related_resource_types).contains(type))
-	            		addElement(rel, "type", damsNS).setText(type);
-	            	else
-	            		throw new Exception("Invalid Related Resource type value for column name: " + key );
                 }
             }
         }
@@ -484,7 +488,11 @@ public class TabularRecord implements Record
             Element el = addElement( sub, "elementList", madsNS );
             addAttribute( el, "parseType", rdfNS, "Collection" );
             if ( element == null ) { element = type; }
-            addMadsElement( el, element, value );
+
+            if ( header.endsWith("scientific name") || header.endsWith("common name") )
+            	addDamsElement( el, element, value );
+            else
+            	addMadsElement( el, element, value );
         }
     }
     private static void addTitle( Element e, String mainTitle, String subTitle,
@@ -526,6 +534,10 @@ public class TabularRecord implements Record
         addTextElement(list,name + "Element", madsNS,"elementValue",madsNS, value);
     }
 
+    private static void addDamsElement( Element list, String name, String value )
+    {
+        addTextElement(list, name + "Element", damsNS, "elementValue", madsNS, value);
+    }
     /////////////////////////////////////////////////////////////////////////////////////
     // xml utilities ////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////
