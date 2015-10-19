@@ -77,10 +77,8 @@ public class ImageMagick
 		cmd.add( magick );
 		cmd.add( "-auto-orient" ); // auto-rotate images according to metadata
 		//cmd.add( "-trim" );        // remove whitespace
-		cmd.add( "+profile" );     // remove EXIF, etc. metadata
-		cmd.add( "'*'" );
-		cmd.add( "-resize" );      // resize to specified pixel dimensions
-		cmd.add( width + "x" + height );
+		//cmd.add( "+profile" );     // remove EXIF, etc. metadata
+		//cmd.add( "'*'" );
 		if (StringUtils.isNotBlank(params)) // other parameters
 		{
 			List<String> paramList = Arrays.asList(params.split(" "));
@@ -92,6 +90,8 @@ public class ImageMagick
 				}
 			}
 		}
+		cmd.add( "-resize" );      // resize to specified pixel dimensions
+		cmd.add( width + "x" + height );
 		cmd.add( src.getAbsolutePath() + (frameNo!=-1?"[" + frameNo + "]":"") );
 		cmd.add( dst.getAbsolutePath() );
 
