@@ -116,6 +116,7 @@
 <tr>
 <td align="center">
 <div id="main" class="mainDiv" style="margin-bottom:50px;margin-top:30px;">
+<div class="doc_link"><a href=" https://lisn.ucsd.edu/display/dlpg/DAMS+4+Access+Control+Implementation#DAMS4AccessControlImplementation-ProductionIngestProposalProductionIngestProposal(AT/MARCandExcelingesttools)" target="_blank">View Documentation</a></div>
 <form id="mainForm" name="mainForm" method="post" action="/damsmanager/operationHandler.do?collectionRelease" >
 <div class="emBox_ark">
 <div class="emBoxBanner">Collection Release</div>

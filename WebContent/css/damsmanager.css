@@ -602,7 +602,8 @@ input[type="button"], input[type="submit"], input[type="reset"]{
 	background:url("../images/sprite.gif") 0 -900px no-repeat;
 }
 
-
+.doc_link {margin-left:132px;margin-bottom:-6px;text-align:left;font-size:14px;}
+.doc_link a {text-decoration:none; cursor:pointer;}
 .logout {  float:right;font:13px;/* for IE6/7 */*font-size:small;/* for IE Quirks Mode */*font:x-small;}
 
 #tdr_crumbs{display: inline;}
