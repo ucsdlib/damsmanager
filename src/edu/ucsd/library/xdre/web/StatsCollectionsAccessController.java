@@ -102,21 +102,13 @@ public class StatsCollectionsAccessController implements Controller {
 						strBuf.append("\n");
 					}
 					
-					int idx = -1;
-					String colId = null;
 					String colTitle = null;
 					int[] colStatsArr = null;
 					Map<String, int[]> colStatsData = (Map<String, int[]>)model.get("colStatsData");
 					for(Iterator<String> it=colStatsData.keySet().iterator(); it.hasNext();){
-						colId = (String)it.next();
-						colTitle = colMap.get(colId);
-						if(colTitle == null){
-							colTitle = colId;
-							continue;
-						}
-						idx = colTitle.lastIndexOf("[");
-						colStatsArr = (int[])colStatsData.get(colId);
-						strBuf.append(colTitle.substring(0, (idx>0?idx:colTitle.length())) + "\t");
+						colTitle = (String)it.next();
+						colStatsArr = (int[])colStatsData.get(colTitle);
+						strBuf.append(colTitle + "\t");
 						for(int j=0; j<colStatsArr.length; j++){
 							strBuf.append(colStatsArr[j]);
 							if(j < colStatsArr.length - 1)
