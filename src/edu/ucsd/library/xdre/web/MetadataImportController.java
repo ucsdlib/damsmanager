@@ -69,41 +69,45 @@ public class MetadataImportController implements Controller{
 				handler = new MetadataImportHandler(damsClient, null, data.trim(), dataFormat, importMode);
 				result = handler.execute();
 				if(result) {
-					List<String> soluctions = new ArrayList<>();
-					List<Node> nodes = doc.selectNodes("//@rdf:about");
+					List<String> solutions = new ArrayList<>();
+					// exclude File and Component elements from related records looking up 
+					List<Node> nodes = doc.selectNodes("//*[not(local-name()='File' or local-name()='Component')]/@rdf:about");
 					for (Node node : nodes) {
-						String subId = node.getStringValue();
-						String className = node.getParent().getName();
-
-						if (!className.endsWith("Object")) {
-							// Collection or Authority update, need to update SOLR for the linked records. Recursive lookup for collections.
-							queryObjects ( soluctions, subId, 1, damsClient, doc );
-							List<String> solrFaileds = new ArrayList<>();
-							for (String soluction : soluctions) {
-								boolean successful = false;
-								try {
-									successful = damsClient.solrUpdate(soluction);
-									if (!successful) {
-										solrFaileds.add(soluction);
+						// exclude empty elements from related records looking up since no change to the empty elements.
+						if(node.getParent().hasContent()) {
+							String subId = node.getStringValue();
+							String className = node.getParent().getName();
+	
+							if (!className.endsWith("Object")) {
+								// Collection or Authority update, need to update SOLR for the linked records. Recursive lookup for collections.
+								queryObjects ( solutions, subId, 1, damsClient, doc );
+								List<String> solrFailures = new ArrayList<>();
+								for (String solution : solutions) {
+									boolean successful = false;
+									try {
+										successful = damsClient.solrUpdate(solution);
+										if (!successful) {
+											solrFailures.add(solution);
+										}
+									} catch (Exception e) {
+										e.printStackTrace();
+										solrFailures.add(solution);
 									}
-								} catch (Exception e) {
-									e.printStackTrace();
-									solrFaileds.add(soluction);
 								}
-							}
-							objLink = "Total " + (soluctions.size() - 1) + " records affected by ark " + subId.substring(subId.lastIndexOf("/") + 1) + ".";
-							if (solrFaileds.size() > 0) {
-								StringBuilder builder = new StringBuilder();
-								for (String id : solrFaileds) {
-									builder.append((builder.length() > 0 ? ", " : "") + id);
+								objLink += "Total " + (solutions.size() - 1) + " records affected by ark " + subId.substring(subId.lastIndexOf("/") + 1) + ". ";
+								if (solrFailures.size() > 0) {
+									StringBuilder builder = new StringBuilder();
+									for (String id : solrFailures) {
+										builder.append((builder.length() > 0 ? ", " : "") + id);
+									}
+									
+									objLink += " But failed to add the following " + solrFailures.size() + " records to the queue for SOLR update: \n" + builder.toString();
 								}
-								
-								objLink += " But failed to add the following " + solrFaileds.size() + " records to the queue for SOLR update: \n" + builder.toString();
+							} else {
+								String damsUrl = "http://" + Constants.CLUSTER_HOST_NAME + (Constants.CLUSTER_HOST_NAME.startsWith("localhost")?"":".ucsd.edu/dc") + "/object/"
+										+ ark.substring(ark.lastIndexOf("/") + 1, ark.length());
+								objLink += "View item <a href=\"" + damsUrl +  "\" target=\"dc\">" + ark + "</a>. ";
 							}
-						} else {
-							String damsUrl = "http://" + Constants.CLUSTER_HOST_NAME + (Constants.CLUSTER_HOST_NAME.startsWith("localhost")?"":".ucsd.edu/dc") + "/object/"
-									+ ark.substring(ark.lastIndexOf("/") + 1, ark.length());
-							objLink = "View item <a href=\"" + damsUrl +  "\" target=\"dc\">" + ark + "</a>.";
 						}
 					}
 
