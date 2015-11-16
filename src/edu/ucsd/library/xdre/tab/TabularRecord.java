@@ -338,6 +338,11 @@ public class TabularRecord implements Record
         // special dams element for scientific name, common name etc.
         addSubject( data, e, "subject:common name", "CommonName", damsNS, "commonName", damsNS, null );
         addSubject( data, e, "subject:scientific name", "ScientificName", damsNS, "scientificName", damsNS, null );
+        // special dams element for culturalContext, lithology, series, cruise etc.
+        addSubject( data, e, "subject:culturalcontext", "CulturalContext", damsNS, "culturalContext", damsNS, null );
+        addSubject( data, e, "subject:lithology", "Lithology", damsNS, "lithology", damsNS, null );
+        addSubject( data, e, "subject:series", "Series", damsNS, "series", damsNS, null );
+        addSubject( data, e, "subject:cruise", "Cruise", damsNS, "cruise", damsNS, null );
 
         // language /////////////////////////////////////////////////////////////////////
         for ( String lang : split(data.get("language")) )
@@ -489,7 +494,9 @@ public class TabularRecord implements Record
             addAttribute( el, "parseType", rdfNS, "Collection" );
             if ( element == null ) { element = type; }
 
-            if ( header.endsWith("scientific name") || header.endsWith("common name") )
+            if ( header.endsWith("scientific name") || header.endsWith("common name") 
+            		|| header.endsWith("culturalcontext") || header.endsWith("lithology") || header.endsWith("series") || header.endsWith("cruise") )
+            	// special dams elements
             	addDamsElement( el, element, value );
             else
             	addMadsElement( el, element, value );
