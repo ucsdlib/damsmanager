@@ -158,8 +158,10 @@
 	    if (isIngest) {
 	    	message = "This will create new objects in DAMS production. \nHave all pre-ingest validations been completed? \n";
 	    	var filesPath = document.mainForm.filesPath.value.trim();
-	    	if (filesPath.length == 0)
-	    		message = "No file location selscted for dams ingest! \n" + message;
+	    	if (filesPath.length == 0) {
+	    		alert("No Master Files location selected for dams ingest! Please select a Master Files location.\n");
+	    		return false;
+	    	}
 	    } else if (preingestOption == 'pre-processing')
 		    message = "Are you sure to you want to review the converted RDF/XML? \n";
 
