@@ -32,6 +32,14 @@ import edu.ucsd.library.xdre.utils.DamsURI;
  */
 public class MetadataImportController implements Controller{
 	private static Logger log = Logger.getLogger( MetadataImportController.class );
+	// CLR fields restricted to bring up associated records: title, visibility, online finding aid related resource, predicates related to collection hierarchy etc.
+	private static String[] clrAssiotiatedFieldPaths = {
+		"//*[contains(local-name(), 'Collection')]/dams:title/mads:Title/mads:authoritativeLabel",
+		"//*[contains(local-name(), 'Collection')]/dams:visibility",
+		"//*[contains(local-name(), 'Collection')]/*[local-name()='hasPart' or contains(local-name(), 'Collection')]/@rdf:resource",
+		"//*[contains(local-name(), 'Collection')]/dams:relatedResource/dams:RelatedResource[dams:type = 'online finding aid']/*[local-name()='description' or local-name()='uri']",
+		"//*[contains(local-name(), 'Collection')]/dams:relatedResource/dams:RelatedResource[dams:type = 'online finding aid']/dams:uri/@rdf:resource",
+		};
 
     @Override
 	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -78,7 +86,9 @@ public class MetadataImportController implements Controller{
 							String subId = node.getStringValue();
 							String className = node.getParent().getName();
 	
-							if (!className.endsWith("Object")) {
+							Document originDoc = saxReader.read(new ByteArrayInputStream(oData.getBytes("UTF-8")));
+							boolean clrAssociatedLookup = hasClrAssociatedChanges(node, originDoc);
+							if ((!className.endsWith("Object") && className.indexOf("Collection") < 0) || (className.indexOf("Collection") >= 0 && clrAssociatedLookup)) {
 								// Collection or Authority update, need to update SOLR for the linked records. Recursive lookup for collections.
 								queryObjects ( solutions, subId, 1, damsClient, doc );
 								List<String> solrFailures = new ArrayList<>();
@@ -277,5 +287,52 @@ public class MetadataImportController implements Controller{
 
         DetailedDiff diff = new DetailedDiff(XMLUnit.compareXML(oData, data));
 		return diff.getAllDifferences().size() > 0;
+	}
+
+	/*
+	 * CLR: determine changes that need solr re-indexing
+	 */
+	private boolean hasClrAssociatedChanges(Node node, Node origin) {
+		for (String path : clrAssiotiatedFieldPaths) {
+			List<Node> associateNodes = node.selectNodes(path);
+			List<Node> oAssociateNodes = origin.selectNodes(path);
+			
+			if (associateNodes.size() == oAssociateNodes.size()) {
+				if (associateNodes.size() > 0) {
+					// compare values when node size is the same
+					List<String> oAssociateValues = getValues (oAssociateNodes);
+					for (int i=0; i<associateNodes.size(); i++) {
+						Node associateNode = associateNodes.get(i);
+						int index = oAssociateValues.indexOf(getNodeValue(associateNode));
+						if (index < 0) {
+							// new value not found in the original source 
+							return true;
+						} else if (!associateNode.getParent().getName().equals(oAssociateNodes.get(index).getParent().getName())) {
+							// predicate change for a linked resource
+							return true;
+						}
+					}
+				} else
+					return false;
+			} else
+				return true;
+		}
+		return false;
+	}
+
+	private List<String> getValues (List<Node> nodes) {
+		List<String> values = new ArrayList<>();
+		for (Node node : nodes) {
+			values.add(getNodeValue (node));
+		}
+		return values;
+	}
+
+	private String getNodeValue (Node node) {
+		String nodeTypeName = node.getNodeTypeName();
+		if (nodeTypeName.equals("Attribute"))
+			return node.getStringValue();
+		else
+			return node.getText();
 	}
 }

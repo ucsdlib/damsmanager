@@ -56,8 +56,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 	public static final String NOTE = "Note";
 	public static final String MADSSCHEME = "MADSScheme";
 	public static final String LANGUAGE = "Language";
-	public static final String SCIENTIFICNAME = "ScientificName";
-	public static final String COMMONNAME = "CommonName";
+
 	private static Logger log = Logger.getLogger(RDFDAMS4ImportTsHandler.class);
 
 	private Map<String, String> idsMap = new HashMap<String, String>();
@@ -276,7 +275,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 								xPath = "dams:type";
 								tNode = parentNode.selectSingleNode(xPath);
 								props = dateProperties(parentNode);
-							} else if(elemXPath.indexOf("mads", elemXPath.lastIndexOf('/') + 1) >= 0 || nName.endsWith(SCIENTIFICNAME) || nName.equals(COMMONNAME)){
+							} else if(elemXPath.indexOf("mads", elemXPath.lastIndexOf('/') + 1) >= 0){
 								// MADSScheme and Language
 								if(nName.endsWith(MADSSCHEME)){
 									field = "mads:code";
@@ -335,14 +334,20 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 								}
 								
 							} else {
-								// XXX Other Rights records like Statute, License, Other Rights etc. 
-								field = "rdf:value";
-								xPath = "rdf:value";
+								// other dams:Subject records that use mads:authoritativeLabel
+								field = "mads:authoritativeLabel";
+								xPath = "mads:authoritativeLabel";
 								tNode = parentNode.selectSingleNode(xPath);
-								field = "dams:code";
-								if (tNode == null) {
-									xPath = "dams:code";
+								if(tNode == null) {
+									// XXX Other Rights records like Statute, License, Other Rights etc. 
+									field = "rdf:value";
+									xPath = "rdf:value";
 									tNode = parentNode.selectSingleNode(xPath);
+									field = "dams:code";
+									if (tNode == null) {
+										xPath = "dams:code";
+										tNode = parentNode.selectSingleNode(xPath);
+									}
 								}
 							}
 							if(tNode == null && !field.equals("dams:licenseNote")){
