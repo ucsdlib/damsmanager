@@ -633,6 +633,8 @@ public class CollectionOperationController implements Controller {
 				  int recordsCount = 0;
 				  boolean preSuccessful = true;
 				  StringBuilder proMessage = new StringBuilder();
+				  List<String> srcFileNames = new ArrayList<String>();
+
 				  if (source != null && (source.equalsIgnoreCase("bib") || source.equalsIgnoreCase("mods") || source.equalsIgnoreCase("excel"))) {
 					  // Initiate the logging handler 
 					  handler = new MetadataImportHandler(damsClient, null);
@@ -874,10 +876,16 @@ public class CollectionOperationController implements Controller {
 											  tmpDir.mkdir();
 										  File convertedFile = new File(tmpDir.getAbsolutePath(), id.replaceAll("[\\//:.*]+","") + ".rdf.xml");
 										  try{
+											  Document rdf = record.toRDFXML();
 											  if (collectionImport) {
 												  record.ingestCollectionImage(ingestFiles.toArray(new String[ingestFiles.size()]));
+											  } else {
+												  List<Node> srcFiles = rdf.selectNodes("//dams:Object//dams:File/dams:sourceFileName");
+												  for (Node srcFile : srcFiles ) {
+													  	srcFileNames.add(srcFile.getText());
+												  }
 											  }
-											  writeXml(convertedFile, record.toRDFXML().asXML());
+											  writeXml(convertedFile, rdf.asXML());
 										  } finally {										  
 											  convertedFile.deleteOnExit();
 											  dataFiles.add(convertedFile);
@@ -906,7 +914,7 @@ public class CollectionOperationController implements Controller {
 								  // pre-processing for files check only
 								  proMessage = new StringBuilder();
 								  List<Node> srcFiles = rdfPreview.getDocument().selectNodes("//dams:Object//dams:File/dams:sourceFileName");
-								  List<String> srcFileNames = new ArrayList<String>();
+
 								  for (Node srcFile : srcFiles ) {
 									  	srcFileNames.add(srcFile.getText());
 								  }
@@ -1002,16 +1010,45 @@ public class CollectionOperationController implements Controller {
 								  handler.logMessage(message);
 							  }
 						  } else {
-							  // handler clean up for pre-processing
-							  handler.release();
-							  handler = null;
+							  // files existing check
+							  if (srcFileNames.size() > 0) {
+								  FilesChecker filesChecker = new FilesChecker(srcFileNames, ingestFiles.toArray(new String[ingestFiles.size()]));
+								  filesChecker.filesMatch();
+								  List<String> missingFiles = filesChecker.getMissingFiles();
+								  if (missingFiles.size() > 0) {
+									  successful = preSuccessful = false;
+									  String selectedPaths = "";
+									  for(int j=0; j<filesPaths.length; j++) {
+										  selectedPaths += StringUtils.isNotBlank(filesPaths[j]) ? filesPaths[j] + "; " : "";
+										  selectedPaths = selectedPaths.length() > 0 ? selectedPaths.substring(0, selectedPaths.length() - 2) : "";
+									  }
 
-							  // ingest objects with the converted RDF/XML
-							  importOption = "metadataAndFiles";
+									  // report files that are in the metadata but missing from the selected source file location
+									  proMessage = new StringBuilder();
+									  proMessage.append("\nThe following " + missingFiles.size() + " files are found in the metadata but missing from the selected file location"); 
+									  proMessage.append(" '" + selectedPaths + "': " + "\n");
+									  for (String missingFile : missingFiles) {
+										  proMessage.append("* " + missingFile + "\n");
+									  }								 
+									  // Logging the result for failed pre-processing
+									  message = "\nPre-processing failed" + ": " 
+											  + (proMessage.length() == 0 ? "" : "\n " + proMessage.toString());
+									  handler.logMessage(message);
+								  }
+							  }
 
-							  handler = new RDFDAMS4ImportTsHandler(damsClient, dataFiles.toArray(new File[dataFiles.size()]), importOption);
-							  ((RDFDAMS4ImportTsHandler)handler).setFilesPaths(ingestFiles.toArray(new String[ingestFiles.size()]));
-							  ((RDFDAMS4ImportTsHandler)handler).setReplace(true);
+							 if (preSuccessful) {
+								  // handler clean up for pre-processing
+								  handler.release();
+								  handler = null;
+	
+								  // ingest objects with the converted RDF/XML
+								  importOption = "metadataAndFiles";
+	
+								  handler = new RDFDAMS4ImportTsHandler(damsClient, dataFiles.toArray(new File[dataFiles.size()]), importOption);
+								  ((RDFDAMS4ImportTsHandler)handler).setFilesPaths(ingestFiles.toArray(new String[ingestFiles.size()]));
+								  ((RDFDAMS4ImportTsHandler)handler).setReplace(true);
+							 }
 						  }
 					  } else {
 						  successful = false;
