@@ -75,6 +75,7 @@
 	        <url-pattern>/metaDataImport.do</url-pattern>
 	        <url-pattern>/operationHandler.do</url-pattern>
 	        <url-pattern>/fileUpload.do</url-pattern>
+	        <url-pattern>/fileReport.do</url-pattern>
 	        <url-pattern>/customSip.do</url-pattern>
 	        <url-pattern>/login.do</url-pattern>
 	        <url-pattern>/devUpload.do</url-pattern>
@@ -113,6 +114,7 @@
 	        <url-pattern>/rdfImport.do</url-pattern>
 	        <url-pattern>/rdfEdit.do</url-pattern>
 	        <url-pattern>/metadataImport.do</url-pattern>
+	        <url-pattern>/fileReport.do</url-pattern>
     	</web-resource-collection>
     	<auth-constraint>
         	<role-name>32</role-name>
