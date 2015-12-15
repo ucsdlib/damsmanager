@@ -16,6 +16,7 @@
 	</li>
 	<li><a>DAMS</a>
 		<ul>
+            <li><a href='/damsmanager/fileReport.do'>File Report</a></li>
 			<li><a href='/damsmanager/fileUpload.do'>File Upload</a></li>
 			<li><a href='/damsmanager/solrDump.do'>SOLR Dump Utility</a></li>
 			<li><a href='/damsmanager/serialize.do'>Filestore Serialization</a></li>
