@@ -53,6 +53,7 @@ import edu.ucsd.library.xdre.collection.CollectionReleaseHandler;
 import edu.ucsd.library.xdre.collection.DerivativeHandler;
 import edu.ucsd.library.xdre.collection.FileCountValidaionHandler;
 import edu.ucsd.library.xdre.collection.FileIngestionHandler;
+import edu.ucsd.library.xdre.collection.FileReportHandler;
 import edu.ucsd.library.xdre.collection.FileUploadHandler;
 import edu.ucsd.library.xdre.collection.FilestoreSerializationHandler;
 import edu.ucsd.library.xdre.collection.JhoveReportHandler;
@@ -159,6 +160,7 @@ public class CollectionOperationController implements Controller {
 		boolean isCollectionImport = getParameter(paramsMap, "collectionImport") != null;
 		boolean isCollectionRelease = getParameter(paramsMap, "collectionRelease") != null;
 		boolean isFileUpload = getParameter(paramsMap, "fileUpload") != null;
+		boolean isFileReport = getParameter(paramsMap, "fileReport") != null;
 		if(activeButton == null || activeButton.length() == 0)
 			activeButton = "validateButton";
 		HttpSession session = request.getSession();
@@ -191,8 +193,10 @@ public class CollectionOperationController implements Controller {
 			forwardTo = "/collectionRelease.do?";
 		else if(isFileUpload)
 			forwardTo = "/fileUpload.do?";
+		else if(isFileReport)
+			forwardTo = "/fileReport.do?";
 
-		if(( !(getParameter(paramsMap, "solrRecordsDump") != null || isBSJhoveReport || isDevUpload || isFileUpload)
+		if(( !(getParameter(paramsMap, "solrRecordsDump") != null || isBSJhoveReport || isDevUpload || isFileUpload || isFileReport)
 				&& getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "externalImport") == null 
 				&& getParameter(paramsMap, "dataConvert") == null ) && getParameter(paramsMap, "marcModsImport") == null
 				&& getParameter(paramsMap, "excelImport") == null && getParameter(paramsMap, "collectionImport") == null 
@@ -207,7 +211,7 @@ public class CollectionOperationController implements Controller {
 				message = e.getMessage();
 			}
 			if(!vRequest){
-				if(isSolrDump || isCollectionRelease || isFileUpload)
+				if(isSolrDump || isCollectionRelease || isFileUpload || isFileReport)
 					session.setAttribute("message", message);
 				else {
 					forwardTo += "&activeButton=" + activeButton;
@@ -246,9 +250,9 @@ public class CollectionOperationController implements Controller {
 			//e.printStackTrace();
 		}
 		
-		if(isSolrDump || isMarcModsImport || isExcelImport || isCollectionImport || isCollectionRelease || isFileUpload) {
+		if(isSolrDump || isMarcModsImport || isExcelImport || isCollectionImport || isCollectionRelease || isFileUpload || isFileReport) {
 			session.setAttribute("message", message.replace("\n", "<br />"));
-			if(collectionId != null && (isMarcModsImport || isExcelImport || isCollectionRelease))
+			if(collectionId != null && (isMarcModsImport || isExcelImport || isCollectionRelease || isFileReport))
 				forwardTo += "category=" + collectionId;
 		}else{
 			forwardTo += "&activeButton=" + activeButton;
@@ -289,7 +293,7 @@ public class CollectionOperationController implements Controller {
 		DAMSClient damsClient = null;
 		String collectionId = getParameter(paramsMap, "category");
 		
-		boolean[] operations = new boolean[20];
+		boolean[] operations = new boolean[21];
 		operations[0] = getParameter(paramsMap, "validateFileCount") != null;
 		operations[1] = getParameter(paramsMap, "validateChecksums") != null;
 		operations[2] = getParameter(paramsMap, "rdfImport") != null;
@@ -314,6 +318,7 @@ public class CollectionOperationController implements Controller {
 		operations[17] = getParameter(paramsMap, "validateManifest") != null;
 		operations[18] = getParameter(paramsMap, "metadataExport") != null;
 		operations[19] = getParameter(paramsMap, "jhoveReport") != null;
+		operations[20] = getParameter(paramsMap, "fileReport") != null;
 
 		int submissionId = (int)System.currentTimeMillis();
 		session.setAttribute("submissionId", submissionId);
@@ -1369,6 +1374,10 @@ public class CollectionOperationController implements Controller {
 				 handler = new JhoveReportHandler(damsClient, collectionId, bytestreamFilesOnly);
 				 if(update)
 					 ((JhoveReportHandler)handler).setJhoveUpdate(getParameter(paramsMap, "jhoveUpdate"));
+
+			 }else if (i == 20) {
+				 session.setAttribute("status", opMessage + "File report ...");
+				 handler = new FileReportHandler(damsClient, collectionId);
 
 			 }else 	
 		          throw new ServletException("Unhandle operation index: " + i);
