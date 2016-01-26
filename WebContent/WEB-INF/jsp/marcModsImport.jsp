@@ -503,6 +503,10 @@
 							<input checked type="radio" name="preingestOption" value="pre-processing" checked>
 							<span class="submenuText">Preview the converted RDF/XML only, no ingest.</span>
 						</div>
+                        <div title="Check this checkbox for pre-processing to convert to CSV format." class="submenuText">
+                            <input type="radio" name="preingestOption" value="pre-processing-csv">
+                            <span class="submenuText">Preview converted source in CSV format, no ingest.</span>
+                        </div>
 					 	<div title="Check this checkbox to check files matching." class="submenuText">
 							<input type="radio" name="preingestOption" value="file-match">
 							<span class="text-special">File Match</span>

@@ -65,6 +65,7 @@ import edu.ucsd.library.xdre.model.DAMSCollection;
 import edu.ucsd.library.xdre.tab.ExcelSource;
 import edu.ucsd.library.xdre.tab.FilesChecker;
 import edu.ucsd.library.xdre.tab.InputStreamRecord;
+import edu.ucsd.library.xdre.tab.RDFExcelConvertor;
 import edu.ucsd.library.xdre.tab.Record;
 import edu.ucsd.library.xdre.tab.RecordSource;
 import edu.ucsd.library.xdre.tab.TabularRecord;
@@ -1006,8 +1007,19 @@ public class CollectionOperationController implements Controller {
 								  // Write the converted RDF/xml for preview
 								  File destFile = new File(Constants.TMP_FILE_DIR, "preview-" + submissionId + "-rdf.xml");
 								  writeXml(destFile, rdfPreview.getDocument().asXML());
-								  dataLink = "\nThe converted RDF/XML is ready for <a href=\"" + logLink
-										  + "&file=" + destFile.getName() + "\">download</a>.\n";
+								  if (preingestOption.equalsIgnoreCase("pre-processing-csv")) {
+									  // convert to Excel/csv format
+									  String xsl2json = session.getServletContext().getRealPath("files/dams42json.xsl");
+									  RDFExcelConvertor convertor = new RDFExcelConvertor(destFile.getAbsolutePath(), xsl2json);
+									  String jsonString = convertor.convert2CSV();
+									  destFile = new File(Constants.TMP_FILE_DIR, "preview-" + submissionId + ".csv");
+									  write2File (destFile, jsonString);
+									  dataLink = "\nThe converted source in Excel/CSV format is ready for <a href=\"" + logLink;
+								  } else {
+									  dataLink = "\nThe converted RDF/XML is ready for <a href=\"" + logLink;
+								  }
+
+								  dataLink += "&file=" + destFile.getName() + "\">download</a>.\n";
 
 								  // Logging the result for pre-processing
 								  message = "\nPre-processing " + (preSuccessful?"successful":"failed") + ": \n"
@@ -1541,11 +1553,23 @@ public class CollectionOperationController implements Controller {
 	 */
 	public static void writeXml (File destFile, String xml)
 			throws UnsupportedEncodingException, IOException {
+		write2File(destFile, xml);
+	}
+
+	/**
+	 * write content to file
+	 * @param destFile
+	 * @param content
+	 * @throws UnsupportedEncodingException
+	 * @throws IOException
+	 */
+	public static void write2File (File destFile, String content)
+			throws UnsupportedEncodingException, IOException {
 		OutputStream out = null;
 
 		try {
 			out = new FileOutputStream(destFile);
-			out.write(xml.getBytes("UTF-8"));
+			out.write(content.getBytes("UTF-8"));
 		} finally {
 			CollectionHandler.close(out);
 			out = null;
