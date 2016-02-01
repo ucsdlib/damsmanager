@@ -63,7 +63,7 @@
 	    var isIngest = document.getElementById("importOption").checked;
 	    var preingestOption = $('input[name="preingestOption"]:checked').val();
 
-       	if (isIngest || preingestOption == 'pre-processing') {
+       	if (isIngest || preingestOption == 'pre-processing' || preingestOption == 'pre-processing-csv') {
 		var unitIndex = document.mainForm.unit.selectedIndex;  
 	    if(unitIndex == 0){
 	    	alert("Please select a unit.");
@@ -162,8 +162,10 @@
 	    		alert("No Master Files location selected for dams ingest! Please select a Master Files location.\n");
 	    		return false;
 	    	}
-	    } else if (preingestOption == 'pre-processing')
-		    message = "Are you sure to you want to review the converted RDF/XML? \n";
+	    } else if (preingestOption == 'pre-processing') {
+		    message = "Are you sure you want to preview the converted RDF/XML? \n";
+	    } else if (preingestOption == 'pre-processing-csv')
+		    message = "Are you sure you want to preview the converted source in CSV format? \n";
 
 	    if(collectionIndex == 0){
 	    	message = "No collections selected! \n" + message;
@@ -503,6 +505,10 @@
 							<input checked type="radio" name="preingestOption" value="pre-processing" checked>
 							<span class="submenuText">Preview the converted RDF/XML only, no ingest.</span>
 						</div>
+                        <div title="Check this checkbox for pre-processing to convert to CSV format." class="submenuText">
+                            <input type="radio" name="preingestOption" value="pre-processing-csv">
+                            <span class="submenuText">Preview converted source in CSV format, no ingest.</span>
+                        </div>
 					 	<div title="Check this checkbox to check files matching." class="submenuText">
 							<input type="radio" name="preingestOption" value="file-match">
 							<span class="text-special">File Match</span>

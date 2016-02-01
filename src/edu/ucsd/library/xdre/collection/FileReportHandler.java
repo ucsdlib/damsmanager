@@ -1,13 +1,14 @@
 package edu.ucsd.library.xdre.collection;
 
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.dom4j.Document;
+import org.dom4j.Node;
 
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
-import edu.ucsd.library.xdre.utils.DFile;
 
 /**
  * 
@@ -53,31 +54,65 @@ public class FileReportHandler extends CollectionHandler{
     	log("log", "File Name\tFile URL\tFile Use");
 		for(int i=0; i<itemsCount; i++){
 			subjectURI = items.get(i);
-			boolean updateSolr = false;
+
 			try{
 				setStatus("Processing file report for subject " + subjectURI  + " (" + (i+1) + " of " + itemsCount + ") ... " ); 
-				DFile dFile = null;
 	
-				String use = null;
-				List<DFile> files = damsClient.listObjectFiles(subjectURI);
+				String use = "";
+				String fileName = "";
 				
-				for(Iterator<DFile> it=files.iterator(); it.hasNext();){
-					count++;
-					dFile = it.next();
-					use = dFile.getUse();
-					try{
-						setStatus("Processing file report for file " + dFile.getId()  + " (" + (i+1) + " of " + itemsCount + ") ... " ); 
-						if (use != null && (use.toLowerCase().endsWith("-source") || use.toLowerCase().endsWith("-alternate")) || dFile.getId().indexOf("/1.") > 0) {
-							masterCount++;
-							log("log", dFile.getSourceFileName() + "\t" + dFile.getId() + "\t" + dFile.getUse());
+				Document doc = damsClient.getRecord(subjectURI);
+				// retrieve filenames stored in the filename/local identifiers 
+				List<Node> nodes = doc.selectNodes("//dams:Note[dams:type='identifier' and (dams:displayLabel='filename' or dams:displayLabel='Filename' or dams:displayLabel='local')]/rdf:value", ".");
+
+				List<String> fileIdentifiers = new ArrayList<>();
+				if (nodes.size() > 0) {
+					for(Node node : nodes){
+						fileIdentifiers.add(node.getText());
+					}
+				} 
+				
+				// dams:sourceFileName stored on time ingest, could be lost overtime
+				nodes = doc.selectNodes("//dams:File[contains(dams:use, '-source') or contains(dams:use, '-alternate') or contains(@rdf:about, '/1.')]");
+				for(int j = 0; j < nodes.size(); j++) {
+					masterCount++;
+
+					Node node = nodes.get(j);
+					Node srcFileNode = node.selectSingleNode("dams:sourceFileName");
+					Node useNode = node.selectSingleNode("dams:use");
+					String fid = node.selectSingleNode("@rdf:about").getStringValue();
+					if (useNode != null)
+						use = useNode.getStringValue();
+
+					if (srcFileNode != null)
+						fileName = srcFileNode.getStringValue();
+
+					// ark string filename, need to be extracted from the filename/local indentifiers
+					if (fileName.indexOf("20775-") >= 0) {
+						// use the filename/local identifier when there is one master file presented
+						if (fileIdentifiers.size() == 1 && fileIdentifiers.size() == nodes.size()) {
+							fileName = fileIdentifiers.get(0);
+						} else {
+							// more than one files that can't be matched it to the file elements
+							if (j < fileIdentifiers.size()) {
+								fid = subjectURI;
+								use = "";
+								// use the values in the filename/local identifiers
+								fileName = fileIdentifiers.get(j);
+							} else {
+								// use value "Filename not found" if no filename/local identifier presented
+								fileName = "Filename not found";
+							}
 						}
-					} catch (Exception e) {
-						failedCount++;
-						e.printStackTrace();
-						exeResult = false;
-						message = "File report failed: " + e.getMessage();
-						setStatus(message  + "(" +(i+1)+ " of " + itemsCount + ")"); 
-						log.info(message );
+					}
+
+					log("log", fileName + "\t" + fid + "\t" +use);
+				}
+
+				// List all other values in filename/local identifiers 
+				if (fileIdentifiers.size() > nodes.size()) {
+					for (int j = nodes.size(); j < fileIdentifiers.size(); j++) {
+						log("log", fileIdentifiers.get(j) + "\t" + subjectURI + "\t" + "");
 					}
 				}
 			} catch (Exception e) {
@@ -87,12 +122,6 @@ public class FileReportHandler extends CollectionHandler{
 				message = "File report failed: " + e.getMessage();
 				setStatus(message  + "(" +(i+1)+ " of " + itemsCount + ")"); 
 				log.info(message );
-			}
-
-    		
-			// Updated SOLR
-			if(updateSolr && !updateSOLR(subjectURI)){
-				failedCount++;
 			}
 			
 			setProgressPercentage( ((i + 1) * 100) / itemsCount);
