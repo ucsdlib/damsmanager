@@ -317,32 +317,32 @@ public class TabularRecord implements Record
 
         // subjects /////////////////////////////////////////////////////////////////////
         // data, elem, header, class/ns, predicate/ns, element
-        addSubject( data, e, "subject:conference name", "ConferenceName", madsNS,
+        addMadsSubject( data, e, "subject:conference name", "ConferenceName", madsNS,
                 "conferenceName", damsNS, "Name" );
-        addSubject( data, e, "subject:corporate name", "CorporateName", madsNS,
+        addMadsSubject( data, e, "subject:corporate name", "CorporateName", madsNS,
                 "corporateName", damsNS, "Name" );
-        addSubject( data, e, "subject:family name", "FamilyName", madsNS,
+        addMadsSubject( data, e, "subject:family name", "FamilyName", madsNS,
                 "familyName", damsNS, "Name" );
-        addSubject( data, e, "subject:personal name", "PersonalName", madsNS,
+        addMadsSubject( data, e, "subject:personal name", "PersonalName", madsNS,
                 "personalName", damsNS, "FullName" );
-        addSubject( data, e, "subject:genre", "GenreForm", madsNS,
+        addMadsSubject( data, e, "subject:genre", "GenreForm", madsNS,
                 "genreForm", damsNS, null );
-        addSubject( data, e, "subject:geographic", "Geographic", madsNS,
+        addMadsSubject( data, e, "subject:geographic", "Geographic", madsNS,
                 "geographic", damsNS, null );
-        addSubject( data, e, "subject:occupation", "Occupation", madsNS,
+        addMadsSubject( data, e, "subject:occupation", "Occupation", madsNS,
                 "occupation", damsNS, null );
-        addSubject( data, e, "subject:temporal", "Temporal", madsNS,
+        addMadsSubject( data, e, "subject:temporal", "Temporal", madsNS,
                 "temporal", damsNS, null );
-        addSubject( data, e, "subject:topic", "Topic", madsNS, "topic", damsNS, null );
+        addMadsSubject( data, e, "subject:topic", "Topic", madsNS, "topic", damsNS, null );
 
-        // special dams element for scientific name, common name etc.
-        addSubject( data, e, "subject:common name", "CommonName", damsNS, "commonName", damsNS, null );
-        addSubject( data, e, "subject:scientific name", "ScientificName", damsNS, "scientificName", damsNS, null );
-        // special dams element for culturalContext, lithology, series, cruise etc.
-        addSubject( data, e, "subject:culturalcontext", "CulturalContext", damsNS, "culturalContext", damsNS, null );
-        addSubject( data, e, "subject:lithology", "Lithology", damsNS, "lithology", damsNS, null );
-        addSubject( data, e, "subject:series", "Series", damsNS, "series", damsNS, null );
-        addSubject( data, e, "subject:cruise", "Cruise", damsNS, "cruise", damsNS, null );
+        // special dams element for scientific name, common name, culturalContext, lithology, series, cruise etc.
+        addDamsSubject( data, e, "subject:common name", "CommonName", damsNS, "commonName", damsNS, null );
+        addDamsSubject( data, e, "subject:scientific name", "ScientificName", damsNS, "scientificName", damsNS, null );
+        addDamsSubject( data, e, "subject:culturalcontext", "CulturalContext", damsNS, "culturalContext", damsNS, null );
+        addDamsSubject( data, e, "subject:lithology", "Lithology", damsNS, "lithology", damsNS, null );
+        addDamsSubject( data, e, "subject:series", "Series", damsNS, "series", damsNS, null );
+        addDamsSubject( data, e, "subject:cruise", "Cruise", damsNS, "cruise", damsNS, null );
+        addDamsSubject( data, e, "subject:anatomy", "Anatomy", damsNS, "anatomy", damsNS, null );
 
         // language /////////////////////////////////////////////////////////////////////
         for ( String lang : split(data.get("language")) )
@@ -483,25 +483,37 @@ public class TabularRecord implements Record
             }
         }
     }
-    private void addSubject( Map<String,String> data, Element e, String header,
+
+    private void addMadsSubject( Map<String,String> data, Element e, String header,
         String type, Namespace typeNS, String pred, Namespace predNS, String element )
     {
         for ( String value : split(data.get(header)) )
         {
-            Element sub = addVocabElement( e, pred, predNS, type, typeNS );
-            addTextElement( sub, "authoritativeLabel", madsNS, value );
-            Element el = addElement( sub, "elementList", madsNS );
-            addAttribute( el, "parseType", rdfNS, "Collection" );
             if ( element == null ) { element = type; }
-
-            if ( header.endsWith("scientific name") || header.endsWith("common name") 
-            		|| header.endsWith("culturalcontext") || header.endsWith("lithology") || header.endsWith("series") || header.endsWith("cruise") )
-            	// special dams elements
-            	addDamsElement( el, element, value );
-            else
-            	addMadsElement( el, element, value );
+            Element el = createSubject(e, type, typeNS, pred, predNS, value);
+            addMadsElement( el, element, value );
         }
     }
+
+    private void addDamsSubject( Map<String,String> data, Element e, String header,
+            String type, Namespace typeNS, String pred, Namespace predNS, String element )
+    {
+        for ( String value : split(data.get(header)) )
+        {
+            if ( element == null ) { element = type; }
+            Element el = createSubject(e, type, typeNS, pred, predNS, value);
+            addDamsElement( el, element, value );
+        }
+    }
+
+    private Element createSubject( Element e, String type, Namespace typeNS, String pred, Namespace predNS, String value ) {
+        Element sub = addVocabElement( e, pred, predNS, type, typeNS );
+        addTextElement( sub, "authoritativeLabel", madsNS, value );
+        Element el = addElement( sub, "elementList", madsNS );
+        addAttribute( el, "parseType", rdfNS, "Collection" );
+        return el;
+    }
+
     private static void addTitle( Element e, String mainTitle, String subTitle,
         String partName, String partNumber, String translation, String variant )
     {
