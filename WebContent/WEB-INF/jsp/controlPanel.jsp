@@ -146,6 +146,9 @@
 									   <span class="submenuText"><input type="radio" name="size" value="v" > MP3/MP4 </span><br />
 									</fieldset>
 						</div>
+						<div title="Choose the frame no. for video thumbnail creation. Default is 100." class="specialmenuText">
+						    <div style="padding: 5px 0px 3px 24px">Frame no. for video thumbnails: <input type="text" id="frameNo" name="frameNo" size="20" value=""></div>
+						</div>
 						<div title="Check this checkbox to replace the derivatives if exist." class="specialmenuText"><input type="checkbox" id="derReplace" name="derReplace" class="pmcheckbox" onClick="confirmSelection(this, 'replace the selected derivative type above', 'createDerivatives');">
 									 <span class="text-special">Replace the derivatives for the selected type(s)</span>
 						</div>

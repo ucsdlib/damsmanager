@@ -89,6 +89,14 @@
        }
        
        if(createDerivatives == true){
+           // validate the frame number to be positive integers
+           var intRegex = /^\d+$/;
+           var frameNo = trim(formObj.frameNo.value);
+           if(frameNo.length > 0 && !intRegex.test(frameNo)) {
+               alert('Invalid frame number: ' + frameNo + '! Only positive integer will be allowed.');
+               formObj.frameNo.focus();
+               return;
+           }
           operations += "- Create derivatives \n";
        }
        
