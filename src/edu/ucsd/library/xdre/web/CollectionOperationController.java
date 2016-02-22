@@ -411,10 +411,13 @@ public class CollectionOperationController implements Controller {
 				 boolean derReplace = getParameter(paramsMap, "derReplace")==null?false:true;
 				 
 				 String reqSize = getParameter(paramsMap, "size");
+				 String frameNo = getParameter(paramsMap, "frameNo").trim();
 				 String[] sizes = null;
 				 if(reqSize != null && reqSize.length() > 0)
 					 sizes = reqSize.split(",");
 				 handler = new DerivativeHandler(damsClient, collectionId, sizes, derReplace);
+				 if(StringUtils.isNotBlank(frameNo))
+					 ((DerivativeHandler)handler).setFrameNo(frameNo);
 
 			 }else if (i == 4){	
 				 session.setAttribute("status", opMessage + " release collection " + collectionId + " ...");
