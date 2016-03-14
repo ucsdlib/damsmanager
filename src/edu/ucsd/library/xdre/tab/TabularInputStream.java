@@ -44,7 +44,7 @@ public class TabularInputStream extends FilterInputStream
     {
         Document doc = null;
         Element root = null;
-        for ( TabularRecord rec = null; (rec = source.nextRecord()) != null; )
+        for ( Record rec = null; (rec = source.nextRecord()) != null; )
         {
             String id = rec.recordID();
             Document tmp = rec.toRDFXML();
