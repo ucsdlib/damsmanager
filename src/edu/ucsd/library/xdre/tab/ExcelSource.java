@@ -457,6 +457,21 @@ public class ExcelSource implements RecordSource
                             	{
         	                    	CONTROL_VALUES.put(header, new ArrayList<String>());
                             	}
+
+    							// convert column values in "--Select a Subject:[type]--" for subject type validation
+    							if ( value.equalsIgnoreCase("--Select a Subject:[type]--") )
+    							{
+    								String subjectType = header.replace("Subject:", "");
+    								List<String> subjectTypes = CONTROL_VALUES.get(SubjectTabularRecord.SUBJECT_TYPE);
+    								if ( subjectTypes == null )
+    								{
+    									subjectTypes = new ArrayList<>();
+    									CONTROL_VALUES.put(SubjectTabularRecord.SUBJECT_TYPE, subjectTypes);
+    								}
+
+    								if ( !subjectTypes.contains(subjectType) )
+    									subjectTypes.add(subjectType);
+    							}
                     		}
                     	} 
                     	else if ( !CONTROL_VALUES.containsKey(value) )
