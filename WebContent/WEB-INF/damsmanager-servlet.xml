@@ -36,6 +36,7 @@
 	<bean name="/fileReport.do" class="edu.ucsd.library.xdre.web.FileReportController"></bean>
 	<bean name="/collectionRelease.do" class="edu.ucsd.library.xdre.web.CollectionReleaseController"></bean>
 	<bean name="/collectionImport.do" class="edu.ucsd.library.xdre.web.CollectionImportController"></bean>
+	<bean name="/subjectImport.do" class="edu.ucsd.library.xdre.web.SubjectImportController"></bean>
 	
 	<!--<bean name="/cancelConvert.do" class="edu.ucsd.library.xdre.web.CancelDataConvertController"></bean>-->
 	<!--<bean name="/dataConverter.do" class="edu.ucsd.library.xdre.web.DataConverterController"></bean>-->

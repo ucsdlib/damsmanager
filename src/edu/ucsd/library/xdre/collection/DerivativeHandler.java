@@ -3,10 +3,8 @@ package edu.ucsd.library.xdre.collection;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import javax.security.auth.login.LoginException;
 
@@ -111,7 +109,7 @@ public class DerivativeHandler extends CollectionHandler{
 
 				// Create derivative for the designated source file or master image files (source/alternative?), service video files (mp4) etc.
 	        	if((file!=null && file.length()>0 && fileID.endsWith(file)) || 
-	        			(file==null || file.length()==0) && use != null && !use.startsWith("data") && (use.endsWith(Constants.SOURCE) || use.endsWith(Constants.ALTERNATE) || (use.endsWith(Constants.SERVICE) && (fileID.indexOf("/1.")>0 || (reqSizes.length==1 && reqSizes[0].equals("v")))))){
+	        			StringUtils.isBlank(file) && use != null && !use.startsWith("data") && (use.endsWith(Constants.SOURCE) || fileID.indexOf("/1.")>0 )){
 		        	totalFiles += 1;
 					
 	    	    	List<String> sizesList = new ArrayList<String>();
@@ -124,65 +122,33 @@ public class DerivativeHandler extends CollectionHandler{
         			String cid = fileURI.getComponent();
         			String fid = fileURI.getFileName(); // source file id
         			String dfid = null; // derivative file id
+	        		List<String> sizes2create = new ArrayList<>();
+	        		List<String> sizes2replace = new ArrayList<>();
 
 	        		// handle video and audio derivatives creation
 	        		if (sizesList.indexOf("v") >= 0) {
 
-	        			File dst = null;    // derivative file created
 	        			sizesList.remove(sizesList.indexOf("v"));
-	        			Map<String, String> params = new HashMap<String, String>();
-	        			boolean successful = false;
-	        			try {
-			        		if (isVideo(fileID, use)) {
-			        			params.put(DFile.USE, "video-service");
-			        			dfid = "2.mp4";
-			        			if (!replace && damsClient.exists(oid, cid, dfid)) {
-			        				setStatus("Derivative " + damsClient.getRequestURL() + " exists.");
-			        				skipCount++;
-			        			} else {
-				        			setStatus("Creating mp4 derivative for video " + fileID + " (" + (i + 1) + " of " + getFilesCount() + ") ...");
-			        				dst = createMp4Derivatives(oid, cid, fid, dfid);
-			        			}
-			        		} else if (isAudio(fileID, use)) {
-			        			params.put(DFile.USE, "audio-service");
-			        			dfid= "2.mp3";
-			        			if (!replace && damsClient.exists(oid, cid, dfid)) {
-			        				setStatus("Derivative " + damsClient.getRequestURL() + " exists.");
-			        				skipCount++;
-			        			} else {
-				        			setStatus("Creating mp3 derivative for video " + fileID + " (" + (i + 1) + " of " + getFilesCount() + ") ...");
-			        				dst = createMp3Derivatives(oid, cid, fid, dfid);
-			        			}
-			        		} else {
-			        			logError("Unknown source " + fileID + " for audio/video derivative creation.");
-			        		}
-
-		    				if(dst != null){
-			    				// Upload the mp4/mp3 derivative
-			    				params.put("oid", oid);
-			    				params.put("cid", cid);
-			    				params.put("fid", dfid);
-			    				params.put("local", dst.getAbsolutePath());
-
-			    				successful = damsClient.uploadFile(params, replace); 
-			    			}
-
-		    				if (successful)
-		    					updateSOLR = true;
-	        			} catch (Exception e) {
-	        				e.printStackTrace();
-	        				failedsCount += 1;
-	        	    		exeResult = false;
-	        				String eMessage = "Failed to create derivative " + damsClient.getRequestURL() + ": " + e.getMessage();
-	        				setStatus(eMessage);
-	        				log("log", eMessage);
-	        				log.error(eMessage, e);
-	        			}
+	        			boolean isVideo = isVideo(fileID, use);
+		        		if ( isVideo || isAudio(fileID, use) ) {
+		        			if ( isVideo ) {
+		        				dfid = "2.mp4";
+		        			} else {
+		        				dfid = "2.mp3";
+		        			}
+	
+		        			if (!damsClient.exists(oid, cid, dfid)) {
+		        				sizes2create.add(dfid);
+		        			} else {
+			        			sizes2replace.add(dfid);
+		        			}
+		        		} else {
+		        			exeResult = false;
+		        			logError("Unknown source " + fileID + " for audio/video derivative creation.");
+		        		}
 	        		}
 
 	        		// handle jpeg thumbnails/derivatives creation
-	        		List<String> sizes2create = new ArrayList<>();
-	        		List<String> sizes2replace = new ArrayList<>();
 	        		if (sizesList.size() > 0 && !isAudio(fileID, use)) {
 	        			
 		        		for(int j=0; j<sizesList.size(); j++) {
@@ -201,20 +167,20 @@ public class DerivativeHandler extends CollectionHandler{
 		        				sizes2replace.add(derName);
 		        			}
 		        		}
-
-		        		// Replace option. Perform replace with PUT to DAMS for derivatives that were created
-		        		if ( sizes2create.size() > 0 ) {
-		        			if(handleFile(oid, cid, fid, use, sizes2create, false, i))
-		        				updateSOLR = true;
-		        		} else if (!replace)
-		        			skipCount++;
-		        		
-		        		// Replace option. Perform replace with PUT to DAMS for derivatives that were created
-		        		if (replace && sizes2replace.size() > 0){
-		        			if(handleFile(oid, cid, fid, use, sizes2replace, true, i))
-		        				updateSOLR = true;
-		        		}
 		        	}
+
+	        		// Replace option. Perform replace with PUT to DAMS for derivatives that were created
+	        		if ( sizes2create.size() > 0 ) {
+	        			if(handleFile(oid, cid, fid, use, sizes2create, false, i))
+	        				updateSOLR = true;
+	        		} else if (!replace)
+	        			skipCount++;
+	        		
+	        		// Replace option. Perform replace with PUT to DAMS for derivatives that were created
+	        		if (replace && sizes2replace.size() > 0){
+	        			if(handleFile(oid, cid, fid, use, sizes2replace, true, i))
+	        				updateSOLR = true;
+	        		}
 	        	}
 	        }
         	
@@ -278,13 +244,6 @@ public class DerivativeHandler extends CollectionHandler{
 		boolean successful = false;
 		try {
 
-	    	if (isVideo(fid, use)) {
-	    		//Use frame 100 to create derivatives for videos as default.
-	    		if (StringUtils.isBlank(frameNo))
-	    			frameNo = "100";
-	    	} else if (StringUtils.isBlank(frameNo)) 
-	    		frameNo = "-1";
-
 	    	if(derSizes != null && derSizes.size() > 0){
 				// JPEG Derivative Creation/Replacement
 				if(update) {
@@ -292,7 +251,7 @@ public class DerivativeHandler extends CollectionHandler{
 				} else
 					successful = damsClient.createDerivatives(oid, cid, fid, derSizes.toArray(new String[derSizes.size()]), frameNo);
 	    	
-				derivFullName = oid + "/" + (cid!=null?cid+"/":"") + derSizes + ".jpg";
+				derivFullName = oid + "/" + (cid!=null?cid+"/":"") + derSizes;
 				if(!successful){
 					failedsCount += 1;
 	        		setExeResult(false);

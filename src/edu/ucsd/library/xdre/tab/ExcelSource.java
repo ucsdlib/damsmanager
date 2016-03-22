@@ -37,20 +37,22 @@ import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 **/
 public class ExcelSource implements RecordSource
 {
-	public static final String[] IGNORED_FIELDS_FOR_OBJECTS = {"CLR image file name", "Brief description"};
-	public static final String[] IGNORED_FIELDS_FOR_COLLECTIONS = {"Level","Title","Subtitle","Part name","Part number","Translation","Variant","File name","File use","File name 2","File use 2"};
+	public static final String[] IGNORED_FIELDS_FOR_OBJECTS = {"CLR image file name", "Brief description", "subject type"};
+	public static final String[] IGNORED_FIELDS_FOR_COLLECTIONS = {"Level","Title","Subtitle","Part name","Part number","Translation","Variant","File name","File use","File name 2","File use 2", "subject type"};
 
     private static Map<String, List<String>> CONTROL_VALUES = new HashMap<>();
     
+    protected int lastRow;
+    protected int currRow;
+
     private Workbook book;
     private Sheet sheet;
-    private int lastRow;
-    private int currRow;
     private List<String> headers;
     private Map<String, String> originalHeaders = new HashMap<>();
     private List<String> invalidHeaders = new ArrayList<>();
     private List<Map<String, String>> invalidValues = new ArrayList<>();
-    private List<String> ignoredFields = new ArrayList<>();;
+    private List<String> controlFields = new ArrayList<>(); // control fields that need to validate or ignore during validation
+    private boolean validateControlFieldsOnly = false;      // flag to control either validate the control fields or ignore them.
     Map<String,String> cache;
 
     /**
@@ -70,6 +72,15 @@ public class ExcelSource implements RecordSource
     }
 
     /**
+     * Create an ExcelSource object from an Excel file on disk with ignored fields.
+    **/
+    public ExcelSource( File f, List<String> controlFields, boolean validateControlFieldsOnly )
+    		throws IOException, InvalidFormatException
+    {
+        this( new FileInputStream(f), controlFields, validateControlFieldsOnly );
+    }
+
+    /**
      * Create an ExcelSource object from an InputStream
     **/
     public ExcelSource( InputStream in )
@@ -84,11 +95,17 @@ public class ExcelSource implements RecordSource
     public ExcelSource( InputStream in,  List<String> ignoredFields )
         throws IOException, InvalidFormatException
     {
-    	if ( ignoredFields != null )
-    	{
-    		for ( String ignoredFiled : ignoredFields )
-    			this.ignoredFields.add(ignoredFiled.trim().toLowerCase());
-    	}
+    	this(in, ignoredFields, false);
+    }
+    /**
+     * Create an ExcelSource object from an InputStream with ignored fields and allowedFields
+    **/
+    public ExcelSource( InputStream in, List<String> controlFields, boolean validateControlFieldsOnly )
+        throws IOException, InvalidFormatException
+    {
+    	this.validateControlFieldsOnly = validateControlFieldsOnly;
+    	if ( controlFields != null )
+    		this.controlFields.addAll(controlFields);
 
         this.book = WorkbookFactory.create(in);
         
@@ -114,7 +131,12 @@ public class ExcelSource implements RecordSource
                 
                 // keep the original header for error report
                 originalHeaders.put(lcHeader, header);
-                if ( CONTROL_VALUES != null && CONTROL_VALUES.size() > 0 
+                if ( validateControlFieldsOnly )
+                {
+                	// report invalid subject import headers
+                	if ( StringUtils.isNotBlank(header) && !controlFields.contains(header) )
+                		invalidHeaders.add(header); 
+                } else if ( CONTROL_VALUES != null && CONTROL_VALUES.size() > 0 
                 		&& StringUtils.isNotBlank(header) && !CONTROL_VALUES.containsKey(header) )
                 {
                 	invalidHeaders.add(header);     		
@@ -126,7 +148,7 @@ public class ExcelSource implements RecordSource
     }
 
     @Override
-    public TabularRecord nextRecord() throws Exception
+    public Record nextRecord() throws Exception
     {
         if ( currRow < lastRow )
         {
@@ -191,7 +213,7 @@ public class ExcelSource implements RecordSource
     /**
      * Parse a row of data and return it as a Map
     **/
-    private Map<String,String> parseRow( int n )
+    protected Map<String,String> parseRow( int n )
     {
         Row row = sheet.getRow(n);
         Map<String,String> values = new HashMap<>();
@@ -203,7 +225,7 @@ public class ExcelSource implements RecordSource
 	            String header = headers.get(i);
 
 	            // skip parsing the values in the ignored fields 
-	            if (ignoredFields != null && ignoredFields.indexOf(header) >= 0)
+	            if (!validateControlFieldsOnly && controlFields != null && controlFields.indexOf(header) >= 0)
 	            	continue;
 
 	            String value = null;
@@ -396,7 +418,6 @@ public class ExcelSource implements RecordSource
 							// Select header column names
 							selectHeaders.add( value );
 							selectHeaderValues.put(value, new ArrayList<String>());
-							System.out.println("Select header name " + value + " in Select-a-header values don't match headers in Item description.");
 						} 
 						else
 						{
@@ -436,6 +457,21 @@ public class ExcelSource implements RecordSource
                             	{
         	                    	CONTROL_VALUES.put(header, new ArrayList<String>());
                             	}
+
+    							// convert column values in "--Select a Subject:[type]--" for subject type validation
+    							if ( value.equalsIgnoreCase("--Select a Subject:[type]--") )
+    							{
+    								String subjectType = header.replace("Subject:", "");
+    								List<String> subjectTypes = CONTROL_VALUES.get(SubjectTabularRecord.SUBJECT_TYPE);
+    								if ( subjectTypes == null )
+    								{
+    									subjectTypes = new ArrayList<>();
+    									CONTROL_VALUES.put(SubjectTabularRecord.SUBJECT_TYPE, subjectTypes);
+    								}
+
+    								if ( !subjectTypes.contains(subjectType) )
+    									subjectTypes.add(subjectType);
+    							}
                     		}
                     	} 
                     	else if ( !CONTROL_VALUES.containsKey(value) )

@@ -37,7 +37,6 @@ import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.DFile;
 import edu.ucsd.library.xdre.utils.DamsURI;
-import edu.ucsd.library.xdre.utils.FFMPEGConverter;
 import edu.ucsd.library.xdre.utils.RDFStore;
 
 /**
@@ -83,6 +82,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 	private StringBuilder derivativesFailed = new StringBuilder();
 	private StringBuilder filesIngested = new StringBuilder();
 	private StringBuilder arkReport = new StringBuilder();
+	private StringBuilder authorityReport = new StringBuilder();
 	private StringBuilder objectArkReport = null;
 
 	private boolean replace = false;
@@ -158,12 +158,8 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		int fLen = rdfFiles.length;
 		String currFile = null;
 		SAXReader saxReader = new SAXReader();
+		boolean reportTitleAdded = false;
 		for(int i=0; i<fLen&&!interrupted; i++){
-			if (i == 0) {
-				logMessage ("Object Import status:\n[Object title]   -   [URI]   -   [Status]   -   [Timestamp]");
-				toArkReport (arkReport, "ARK", "Title", "File name", "Outcome", "Event date");
-			}
-
 			recordsToReplace = new ArrayList<>();
 			currFile = rdfFiles[i].getName();
 
@@ -180,7 +176,17 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 					String nName = parentNode.getName();				
 					if (iUri.endsWith("/COL") || !(iUri.startsWith("http") && iUri.indexOf("/ark:/") > 0)){
 						// Assign ARK
-						if(nName.endsWith("Object") || nName.endsWith("Component") || nName.endsWith("File") || (((Element)parentNode).isRootElement() || (parentNode.getParent().isRootElement() && parentNode.getParent().getName().equals("RDF")))){
+						Element grNode = parentNode.getParent();
+						if(nName.endsWith("Object") || nName.endsWith("Component") || nName.endsWith("File")
+								|| (nName.indexOf("Collection") >= 0 && (((Element)parentNode).isRootElement() || grNode.getName().equals("RDF")))){
+
+							// add report titles for object/collection import
+							if ( !reportTitleAdded ) {
+								reportTitleAdded = true;
+								logMessage ( (nName.indexOf("Collection") >= 0 ? "Collection" : "Object") + " Import status:\n[Title]   -   [URI]   -   [Status]   -   [Timestamp]");
+								toArkReport (arkReport, "ARK", "Title", "File name", "Outcome", "Event date");
+							}
+
 							String objId = iUri;
 							
 							if(nName.endsWith("Component") || nName.endsWith("File")){
@@ -581,12 +587,18 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		}
 
 		// write the ark report to file
-		if (arkReport.length() > 0) {
+		if (arkReport.length() > 0 || authorityReport.length() > 0) {
 			FileOutputStream out = null;
 			File arkReportFile = getArkReportFile();
 			try {
 				out = new FileOutputStream(arkReportFile);
-				out.write(arkReport.toString().getBytes());
+				if (arkReport.length() > 0) {
+					out.write(arkReport.toString().getBytes());
+				} else {
+					// report authoritative records created/found.
+					out.write("\nSubject Type,Subject Term,Action,ARK\n".getBytes());
+					out.write(authorityReport.toString().getBytes());
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			} finally {
@@ -733,68 +745,12 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 								try {
 									boolean derCreated = false;
 									if (isVideo(fid, use) || isAudio(fid, use)) {
+										String deriName = "2.mp4";
+										if (isAudio(fid, use))
+											deriName = "2.mp3";
 										
-										FFMPEGConverter converter = new FFMPEGConverter();
-										if(Constants.FFMPEG_COMMAND != null && Constants.FFMPEG_COMMAND.length() > 0) {
-											converter.setCommand(Constants.FFMPEG_COMMAND);
-										}
-
-										// initiate the parameter to upload the derivative
-										params = new HashMap<String, String>();
-
-										final File tmpDir = new File(Constants.DAMS_STAGING + "/darry/ffmpeg");
-										if (!tmpDir.exists()) {
-											tmpDir.mkdirs();
-										}
-
-										String dfid = null;
-										File dst = null;
-										try{
-											// Calculate the file index for derivatives
-											int fileIndex = 1;
-											try {
-												if (fid.indexOf(".") > 0) {
-													fileIndex = Integer.parseInt(fid.substring(0, fid.indexOf(".")));
-												} else {
-													fileIndex = Integer.parseInt(fid);
-												}
-											} catch (final NumberFormatException ne) {}
-
-											fileIndex += 1;
-											
-											if (isAudio(fid, use)) {
-												dfid = fileIndex + ".mp3";
-												dst = File.createTempFile("ffmpeg_tmp", oid.substring(oid.lastIndexOf("/") + 1) + "-" + dfid, tmpDir);
-												derCreated = createAudioDerivative(srcFile, dst);
-												params.put(DFile.USE, "audio-service");
-											} else {
-												dfid = fileIndex + ".mp4";
-												dst = File.createTempFile("ffmpeg_tmp", oid.substring(oid.lastIndexOf("/") + 1) + "-" + dfid, tmpDir);
-												derCreated = createVideoDerivative(srcFile, dst);
-												params.put(DFile.USE, "video-service");
-											}
-											if(derCreated){
-												// Upload the mp3/mp4 derivative
-												params.put("oid", oid);
-												params.put("cid", cid);
-												params.put("fid", dfid);
-												params.put("local", dst.getAbsolutePath());
-
-												derCreated = damsClient.uploadFile(params, replace);
-											} else {
-												successful = false;
-											}
-										}finally{
-											if(dst != null && dst.exists()){
-												// Cleanup temp files
-												try {
-													dst.delete();
-												} catch ( final Exception e ) {
-													e.printStackTrace();
-												}
-												dst = null;
-											}
-										}
+										String[] deriSizes = {deriName};
+										derCreated = damsClient.updateDerivatives(oid, cid, fid, deriSizes);
 									} else {
 										derCreated = damsClient.updateDerivatives(oid, cid, fid, null);
 									}
@@ -913,7 +869,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 	 */
 	private void updateDocument(Document doc, Node record, String field, String title, Map<String, String> props) throws Exception{
 		// Skip if the record detached
-		if(record.getDocument() == null)
+		if(record.getDocument() == null && !doc.equals(record))
 			return;
 		
 		// Subject, Authority records use mads:authoritativeLabel
@@ -986,6 +942,8 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 						
 						log.warn("Duplicated records found for " + title + " (" + field + "): " + duids + ".");
 					}	
+
+					authorityReport (record, oid, title, "match");
 				}
 					
 			}
@@ -994,6 +952,8 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 				// Create the record
 				oid = getNewId();
 				aboutAttr.setText(oid);
+
+				authorityReport (record, oid, title, "record created");
 			}else{
 				// Record found. Add to the map, link and remove it.
 				toResourceLinking(oid, record);
@@ -1259,6 +1219,33 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		}
 	}
 	
+	private void authorityReport (Node record, String oid, String title, String action) {
+		String modelLable = getModelLabel(record);
+		title = title.startsWith("\"") ? title.substring(1, title.length()-1) : title; // remove quotes in the title that was added for sparql lookup
+		authorityReport.append( modelLable + "," + escapeCsvValue(title) + "," + action + "," + escapeCsvValue(oid) + "\n");
+	}
+
+	public static String getModelLabel(Node record) {
+		String model = record.getName();
+		//anatomy, common name, conference name, corporate name, cruise, culturalContext, family name, genre, geographic, lithology, occupation, personal name, scientific name, series, temporal, topic
+		switch (model) {
+			case "CulturalContext":
+				model = "culturalContext";
+				break;
+			case "GenreForm":
+				model = "genre";
+				break;
+			default:
+				String[] tokens = model.split("(?<=.)(?=(\\p{Upper}))");
+				model = "";
+				for (String token : tokens)
+					model += token + " ";
+				model = model.trim().toLowerCase();
+				break;
+			}
+		return model;
+	}
+
 	/**
 	 * Execution result message
 	 */
@@ -1293,12 +1280,12 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		
 		int recordSize = recordsIngested.size();
 		if(recordSize > 0){
-			exeReport.append("\nThe following " + recordSize + " record" + (recordSize>1?"s are":" is") + " imported: \n");
+			exeReport.append("\nFound " + (idsMap.size() + objectsCount) + " record" + (idsMap.size() > 1 ? "s" : "") + ". The following " + recordSize + " record" + (recordSize>1?"s are":" is") + " imported: \n");
 			for(Iterator<String> it=recordsIngested.iterator(); it.hasNext();){
 				exeReport.append(it.next() + "\n");
 			}
 		}else
-			exeReport.append("\nNo records were imported.\n");
+			exeReport.append("\nFound " + (idsMap.size() + objectsCount) + " record" + (idsMap.size() > 1 ? "s" : "") + ". No records were imported.\n");
 
 		if(filesIngested.length() > 0){
 			log.info("\nThe following files are ingested successfully: \n" + filesIngested.toString());

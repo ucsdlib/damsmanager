@@ -68,7 +68,10 @@ import edu.ucsd.library.xdre.tab.InputStreamRecord;
 import edu.ucsd.library.xdre.tab.RDFExcelConvertor;
 import edu.ucsd.library.xdre.tab.Record;
 import edu.ucsd.library.xdre.tab.RecordSource;
+import edu.ucsd.library.xdre.tab.SubjectExcelSource;
+import edu.ucsd.library.xdre.tab.SubjectTabularRecord;
 import edu.ucsd.library.xdre.tab.TabularRecord;
+import edu.ucsd.library.xdre.tab.TabularRecordBasic;
 import edu.ucsd.library.xdre.tab.XsltSource;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
@@ -158,6 +161,7 @@ public class CollectionOperationController implements Controller {
 		boolean isSerialization = getParameter(paramsMap, "serialize") != null;
 		boolean isMarcModsImport = getParameter(paramsMap, "marcModsImport") != null;
 		boolean isExcelImport = getParameter(paramsMap, "excelImport") != null;
+		boolean isSubjectImport = getParameter(paramsMap, "subjectImport") != null;
 		boolean isCollectionImport = getParameter(paramsMap, "collectionImport") != null;
 		boolean isCollectionRelease = getParameter(paramsMap, "collectionRelease") != null;
 		boolean isFileUpload = getParameter(paramsMap, "fileUpload") != null;
@@ -190,6 +194,8 @@ public class CollectionOperationController implements Controller {
 			forwardTo = "/excelImport.do?";
 		else if(isCollectionImport)
 			forwardTo = "/collectionImport.do?";
+		else if(isSubjectImport)
+			forwardTo = "/subjectImport.do?";
 		else if(isCollectionRelease)
 			forwardTo = "/collectionRelease.do?";
 		else if(isFileUpload)
@@ -197,7 +203,7 @@ public class CollectionOperationController implements Controller {
 		else if(isFileReport)
 			forwardTo = "/fileReport.do?";
 
-		if(( !(getParameter(paramsMap, "solrRecordsDump") != null || isBSJhoveReport || isDevUpload || isFileUpload || isFileReport)
+		if(( !(getParameter(paramsMap, "solrRecordsDump") != null || isBSJhoveReport || isDevUpload || isFileUpload || isFileReport || isSubjectImport)
 				&& getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "externalImport") == null 
 				&& getParameter(paramsMap, "dataConvert") == null ) && getParameter(paramsMap, "marcModsImport") == null
 				&& getParameter(paramsMap, "excelImport") == null && getParameter(paramsMap, "collectionImport") == null 
@@ -251,7 +257,7 @@ public class CollectionOperationController implements Controller {
 			//e.printStackTrace();
 		}
 		
-		if(isSolrDump || isMarcModsImport || isExcelImport || isCollectionImport || isCollectionRelease || isFileUpload || isFileReport) {
+		if(isSolrDump || isMarcModsImport || isExcelImport || isCollectionImport || isSubjectImport || isCollectionRelease || isFileUpload || isFileReport) {
 			session.setAttribute("message", message.replace("\n", "<br />"));
 			if(collectionId != null && (isMarcModsImport || isExcelImport || isCollectionRelease || isFileReport))
 				forwardTo += "category=" + collectionId;
@@ -294,7 +300,7 @@ public class CollectionOperationController implements Controller {
 		DAMSClient damsClient = null;
 		String collectionId = getParameter(paramsMap, "category");
 		
-		boolean[] operations = new boolean[21];
+		boolean[] operations = new boolean[22];
 		operations[0] = getParameter(paramsMap, "validateFileCount") != null;
 		operations[1] = getParameter(paramsMap, "validateChecksums") != null;
 		operations[2] = getParameter(paramsMap, "rdfImport") != null;
@@ -320,6 +326,7 @@ public class CollectionOperationController implements Controller {
 		operations[18] = getParameter(paramsMap, "metadataExport") != null;
 		operations[19] = getParameter(paramsMap, "jhoveReport") != null;
 		operations[20] = getParameter(paramsMap, "fileReport") != null;
+		operations[21] = getParameter(paramsMap, "subjectImport") != null;
 
 		int submissionId = (int)System.currentTimeMillis();
 		session.setAttribute("submissionId", submissionId);
@@ -1394,6 +1401,156 @@ public class CollectionOperationController implements Controller {
 				 session.setAttribute("status", opMessage + "File report ...");
 				 handler = new FileReportHandler(damsClient, collectionId);
 
+			 }else if (i == 21) {
+				session.setAttribute("status", opMessage + "Subject Import ...");
+
+				String[] dataPaths = getParameter(paramsMap, "dataPath").split(";");
+				String importOption = getParameter(paramsMap, "importOption");
+				boolean preprocessing = importOption == null;
+
+				Element rdfPreview = null;
+				if (preprocessing) {
+					Document doc = new DocumentFactory().createDocument();
+					rdfPreview = TabularRecordBasic.createRdfRoot (doc);
+				}
+
+				boolean preSuccessful = true;
+				StringBuilder proMessage = new StringBuilder();
+				//çallowedFileds = new ArrayList<String>();
+
+				// Initiate the logging handler 
+				handler = new MetadataImportHandler(damsClient, null);
+				handler.setSubmissionId(submissionId);
+	 			handler.setSession(session);
+	 			handler.setUserId(userId);
+	 			
+	 			Map<String, String> collections = new HashMap<String, String>();
+	 			if (StringUtils.isNotBlank(collectionId)) {
+	 				String collType = damsClient.getCollectionType(collectionId);
+	 				 collections.put(collectionId, collType);
+	 			}
+
+				List<File> dataFiles = new ArrayList<File>();
+				for(int j=0; j<dataPaths.length; j++){
+					String dataPath = dataPaths[j];
+					if(dataPath != null && (dataPath=dataPath.trim()).length() > 0){
+						File file = new File(Constants.DAMS_STAGING + "/" + dataPath);
+						CollectionHandler.listFiles(dataFiles, file);
+					}
+				}
+
+				String[] fileFilters = {"xls", "xlsx"};
+				List<File> sources = FileUtils.filterFiles(dataFiles, fileFilters);
+				dataFiles.clear();
+
+	 			for  (int j=0; j<sources.size(); j++) {
+					String sourceID = null;
+					
+					Object srcRecord =  sources.get(j);
+					sourceID = (srcRecord instanceof File ? ((File)srcRecord).getName() : srcRecord.toString());
+					if (preprocessing)
+						handler.setStatus("Pre-processing record " + sourceID + " ... ");
+					else
+						handler.setStatus("Processing record " + sourceID + " ... ");
+					
+					RecordSource recordSource = null;
+					// Handling Excel Input Stream records
+					recordSource = new SubjectExcelSource((File)srcRecord, Arrays.asList(SubjectTabularRecord.ALL_FIELDS_FOR_SUBJECTS));
+
+					// Report for Excel column name validation
+					List<String> invalidColumns = ((SubjectExcelSource)recordSource).getInvalidColumns();
+					if (invalidColumns != null && invalidColumns.size() > 0) {
+						successful = false;
+						preSuccessful = false;
+						proMessage.append("Excel source " + sourceID + " - failed - " + CollectionHandler.damsDateFormat.format(new Date()) + ": \n");
+						if (invalidColumns != null && invalidColumns.size() > 0) {
+							proMessage.append( "****Invalid column name" + (invalidColumns.size() > 1 ? "s" : "") + ": " );
+							for (int k=0; k<invalidColumns.size(); k++) {
+								proMessage.append(invalidColumns.get(k));
+								if (k == invalidColumns.size() - 1)
+									proMessage.append("\n");
+								else
+									proMessage.append("; ");
+							}
+						}
+					}
+
+
+					String id = "";
+					String info = "";
+					if (recordSource != null && preSuccessful) {
+						for (Record rec = null; (rec = recordSource.nextRecord()) != null;) {
+
+							Document rdf = rec.toRDFXML();
+							String subjectType = RDFDAMS4ImportTsHandler.getModelLabel(rdf.selectSingleNode("/rdf:RDF/*"));
+							Node subjectLabelNode = rdf.selectSingleNode("/rdf:RDF/*/mads:authoritativeLabel");
+							id = rdf.selectSingleNode("/rdf:RDF/*/@rdf:about").getStringValue();  
+							String subjectLabel = subjectLabelNode==null ? "[Label]" : subjectLabelNode.getText();
+
+							List<Map<String, String>> invalidControlValues = ((SubjectExcelSource)recordSource).getInvalidValues();
+							String errorMessage = getInvalidControlValues(invalidControlValues);
+							if (StringUtils.isNotBlank(errorMessage)) {
+								preSuccessful = false;
+								invalidControlValues.clear();
+								info = subjectType + " - " + subjectLabel + " - " + " failed - " + CollectionHandler.damsDateFormat.format(new Date());
+								info += "\n****Invalid Control Value: " + errorMessage;
+							} else
+								info = subjectType + " - " + subjectLabel + " - " + " successful - " + CollectionHandler.damsDateFormat.format(new Date());
+
+							proMessage.append("\n\n" + info);
+							log.info(info);
+			
+							if (preprocessing) {
+								 // Pre-processing with rdf preview
+								rdfPreview.add(rdf.selectSingleNode("/rdf:RDF/*").detach()); 
+							} else {
+								// Write the converted rdf/xml to file system
+								File tmpDir = new File (Constants.TMP_FILE_DIR + File.separatorChar + "converted");
+								if(!tmpDir.exists())
+									tmpDir.mkdir();
+								File convertedFile = new File(tmpDir.getAbsolutePath(), id.replaceAll("[\\//:.*]+","") + ".rdf.xml");
+								try{
+									writeXml(convertedFile, rdf.asXML());
+								} finally {										
+									convertedFile.deleteOnExit();
+									dataFiles.add(convertedFile);
+								}
+							}
+
+							handler.setProgressPercentage(j * 100/sources.size()); 
+						}
+					}
+				}
+
+				if (preSuccessful) {
+					if (preprocessing) {
+						// pre-processing only, no ingest, write the converted RDF/xml for preview
+						File destFile = new File(Constants.TMP_FILE_DIR, "preview-" + submissionId + "-rdf.xml");
+						writeXml(destFile, rdfPreview.getDocument().asXML());
+						dataLink = "\nThe converted RDF/XML is ready for <a href=\"" + logLink;
+						dataLink += "&file=" + destFile.getName() + "\">download</a>.\n";
+					} else {
+						// handler clean up for pre-processing
+						handler.release();
+						handler = null;
+
+						// ingest objects with the converted RDF/XML
+						importOption = "metadataAndFiles";
+						handler = new RDFDAMS4ImportTsHandler(damsClient, dataFiles.toArray(new File[dataFiles.size()]), importOption);
+					}
+				}
+				// logging and handler clean up
+				if (preprocessing || !preSuccessful) {
+					// Logging the result for pre-processing
+					message = "\nPre-processing " + (preSuccessful?"successful":"failed") + ": \n"
+							+ (proMessage.length() == 0 ? "" : "\n " + proMessage.toString());
+					handler.logMessage(message);
+
+					logFile = handler.getLogFile();
+					handler.release();
+					handler = null;
+					Thread.sleep(100);
+				}
 			 }else 	
 		          throw new ServletException("Unhandle operation index: " + i);
 			 
@@ -1638,5 +1795,23 @@ public class CollectionOperationController implements Controller {
 			}
 		}
 		return null;
+	}
+
+	private static String getInvalidControlValues(List<Map<String, String>> invalidValues) {
+		List<String> validColumns = Arrays.asList(SubjectTabularRecord.ALL_FIELDS_FOR_SUBJECTS);
+		// process to retrieve control values errors for the record since it will parse the row for the next record
+		StringBuilder cvErrors = new StringBuilder();
+		for (int k = 0; k < invalidValues.size(); k++) {
+			Map<String, String> m = invalidValues.get(k);
+			int len = 0;
+			for (String key : m.keySet()) {
+				if (validColumns.contains(key)) {
+					if (len++ > 0)
+						cvErrors.append(" | ");
+					cvErrors.append(key + " => " + m.get(key));
+				}
+			}
+		}
+		return cvErrors.toString();
 	}
 }
