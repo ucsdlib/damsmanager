@@ -312,7 +312,7 @@ public class ExcelSource implements RecordSource
      * Get the Control Values
      * @return
      */
-    public Map<String, List<String>> getControlValues()
+    public static Map<String, List<String>> getControlValues()
     {
     	return CONTROL_VALUES;
     }
@@ -461,7 +461,6 @@ public class ExcelSource implements RecordSource
     							// convert column values in "--Select a Subject:[type]--" for subject type validation
     							if ( value.equalsIgnoreCase("--Select a Subject:[type]--") )
     							{
-    								String subjectType = header.replace("Subject:", "");
     								List<String> subjectTypes = CONTROL_VALUES.get(SubjectTabularRecord.SUBJECT_TYPE);
     								if ( subjectTypes == null )
     								{
@@ -469,8 +468,8 @@ public class ExcelSource implements RecordSource
     									CONTROL_VALUES.put(SubjectTabularRecord.SUBJECT_TYPE, subjectTypes);
     								}
 
-    								if ( !subjectTypes.contains(subjectType) )
-    									subjectTypes.add(subjectType);
+    								if ( !subjectTypes.contains(header) )
+    									subjectTypes.add(header);
     							}
                     		}
                     	} 

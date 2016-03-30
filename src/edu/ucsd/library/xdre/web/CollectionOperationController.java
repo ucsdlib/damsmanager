@@ -1483,6 +1483,9 @@ public class CollectionOperationController implements Controller {
 
 							Document rdf = rec.toRDFXML();
 							String subjectType = RDFDAMS4ImportTsHandler.getModelLabel(rdf.selectSingleNode("/rdf:RDF/*"));
+							if (ExcelSource.getControlValues().get(SubjectTabularRecord.SUBJECT_TYPE).contains("Subject:" + subjectType))
+								subjectType = "Subject:" + subjectType;
+
 							Node subjectLabelNode = rdf.selectSingleNode("/rdf:RDF/*/mads:authoritativeLabel");
 							id = rdf.selectSingleNode("/rdf:RDF/*/@rdf:about").getStringValue();  
 							String subjectLabel = subjectLabelNode==null ? "[Label]" : subjectLabelNode.getText();

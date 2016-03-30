@@ -33,6 +33,8 @@ import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.util.iterator.ExtendedIterator;
 
 import edu.ucsd.library.xdre.collection.MetadataImportHandler;
+import edu.ucsd.library.xdre.tab.ExcelSource;
+import edu.ucsd.library.xdre.tab.SubjectTabularRecord;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.DFile;
@@ -596,7 +598,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 					out.write(arkReport.toString().getBytes());
 				} else {
 					// report authoritative records created/found.
-					out.write("\nSubject Type,Subject Term,Action,ARK\n".getBytes());
+					out.write("Subject Type,Subject Term,Action,ARK\n".getBytes());
 					out.write(authorityReport.toString().getBytes());
 				}
 			} catch (Exception e) {
@@ -1221,6 +1223,8 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 	
 	private void authorityReport (Node record, String oid, String title, String action) {
 		String modelLable = getModelLabel(record);
+		if (ExcelSource.getControlValues().get(SubjectTabularRecord.SUBJECT_TYPE).contains("Subject:" + modelLable))
+			modelLable = "Subject:" + modelLable;
 		title = title.startsWith("\"") ? title.substring(1, title.length()-1) : title; // remove quotes in the title that was added for sparql lookup
 		authorityReport.append( modelLable + "," + escapeCsvValue(title) + "," + action + "," + escapeCsvValue(oid) + "\n");
 	}
