@@ -192,25 +192,11 @@
 				</select>
 			</td>
 		</tr>
-		<tr align ="left">
-			<td height="25px">
-				<div class="submenuText"><span class="requiredLabel">*</span><b>Visibility: </b></div>
-			</td>
-			<td>
-				<select id="visibility" name="visibility" class="inputText">
-					<option value=""> -- Visibility -- </option>
-					<c:forEach var="entry" items="${model.visibilities}">
-						<option value="${entry}" <c:if test="${model.visibility == entry}">selected</c:if>>
-                      			<c:out value="${entry}" />
-                       	</option>
-					</c:forEach>
-				</select>
-			</td>
-		</tr>
 		<tr><td colspan="2" style="height:40px;padding-top:20px;"><span class="submenuText">(<span class="requiredLabel">*</span>Required Field</span>)</td>
 	</table>
 </div>
 <div class="buttonDiv">
+    <input type="hidden" name="visibility" value="${model.visibility}"/>
     <input type="hidden" name="actionValue" value="${model.actionValue}"/>
 	<input type="button" name="collectionEdit" value=" Submit " onClick="confirmSubmit();"/>&nbsp;&nbsp;
 	<input type="button" name="actionCancel" value=" Cancel " onClick="document.location.href='/damsmanager/'"/>

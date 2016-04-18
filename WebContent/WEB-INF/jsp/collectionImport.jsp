@@ -193,21 +193,6 @@
         </tr>
         <tr align ="left">
             <td height="25px">
-                <div class="submenuText"><span class="requiredLabel">*</span><b>Visibility: </b></div>
-            </td>
-            <td>
-                <select id="visibility" name="visibility"  class="inputText i_group">
-                    <option value=""> -- Visibility -- </option>
-                    <c:forEach var="entry" items="${model.visibilities}">
-                        <option value="${entry}" <c:if test="${model.visibility == entry}">selected</c:if>>
-                                <c:out value="${entry}" />
-                        </option>
-                    </c:forEach>
-                </select>
-            </td>
-        </tr>
-        <tr align ="left">
-            <td height="25px">
                 <span class="submenuText" style="padding-left: 6px"><b>Parent Collection: </b></span>
             </td>
             <td>
@@ -275,6 +260,7 @@
 	</table>
 </div>
 <div class="buttonDiv">
+    <input type="hidden" name="visibility" value="${model.visibility}"/>
     <input checked type="hidden" name="filesCheckPath" value="" />
 	<input type="button" name="import" value=" Submit " onClick="confirmImport();"/>&nbsp;&nbsp;
 	<input type="button" name="cancel" value=" Cancel " onClick="document.location.href='/damsmanager/collectionImport.do'"/>
