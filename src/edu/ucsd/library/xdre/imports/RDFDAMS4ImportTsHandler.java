@@ -1223,7 +1223,8 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 	
 	private void authorityReport (Node record, String oid, String title, String action) {
 		String modelLable = getModelLabel(record);
-		if (ExcelSource.getControlValues().get(SubjectTabularRecord.SUBJECT_TYPE).contains("Subject:" + modelLable))
+		List<String> subjectsTypes = ExcelSource.getControlValues().get(SubjectTabularRecord.SUBJECT_TYPE);
+		if (subjectsTypes != null && subjectsTypes.contains("Subject:" + modelLable))
 			modelLable = "Subject:" + modelLable;
 		title = title.startsWith("\"") ? title.substring(1, title.length()-1) : title; // remove quotes in the title that was added for sparql lookup
 		authorityReport.append( modelLable + "," + escapeCsvValue(title) + "," + action + "," + escapeCsvValue(oid) + "\n");
