@@ -219,6 +219,9 @@
     <xsl:for-each select="mods:partNumber">
       <xsl:text>, </xsl:text><xsl:value-of select="."/>
     </xsl:for-each>
+    <xsl:for-each select="mods:partName">
+      <xsl:text>, </xsl:text><xsl:value-of select="."/>
+    </xsl:for-each>
   </xsl:template>
   <xsl:template match="mods:titleInfo/mods:title">
     <mads:MainTitleElement>
@@ -239,6 +242,11 @@
     <mads:PartNumberElement>
       <mads:elementValue><xsl:value-of select="."/></mads:elementValue>
     </mads:PartNumberElement>
+  </xsl:template>
+  <xsl:template match="mods:titleInfo/mods:partName">
+    <mads:PartNameElement>
+      <mads:elementValue><xsl:value-of select="."/></mads:elementValue>
+    </mads:PartNameElement>
   </xsl:template>
   <xsl:template match="mods:mods/mods:language">
     <dams:language>
