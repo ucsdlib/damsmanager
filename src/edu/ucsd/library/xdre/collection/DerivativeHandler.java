@@ -156,6 +156,10 @@ public class DerivativeHandler extends CollectionHandler{
 		        			dfid = derName + ".jpg";
 
 		        			if (isVideo(fileID, use)) {
+		        				// skip creating redundant .jpg derivatives for videos other than 3 and 4
+		        				if ( !(derName.equals("3") || derName.equals("4")) )
+		        					continue;
+
 		        				// use the .mp4 derivative for jpeg thumbnail creation if one exists 
 		        				if (damsClient.exists(oid, cid, "2.mp4"))
 		        					fid = "2.mp4";
