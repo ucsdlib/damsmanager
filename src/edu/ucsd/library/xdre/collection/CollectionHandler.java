@@ -631,7 +631,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 	 * @param fileName
 	 * @return
 	 */
-	public boolean isImage(String fileName, String use){
+	public static boolean isImage(String fileName, String use){
 		fileName = fileName.toLowerCase();
 		String mimeType = DAMSClient.getMimeType(fileName);
 		if((use!=null && use.toLowerCase().startsWith("image")) || 
@@ -646,7 +646,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 	 * @param fileName
 	 * @return
 	 */
-	public boolean isDocument(String fileName, String use){
+	public static boolean isDocument(String fileName, String use){
 		fileName = fileName.toLowerCase();
 		String mimeType = DAMSClient.getMimeType(fileName);
 		if( mimeType.toLowerCase().indexOf("pdf")>=0 || fileName.toLowerCase().endsWith(".pdf"))
@@ -1172,7 +1172,22 @@ public abstract class CollectionHandler implements ProcessHandler {
 	public static String nextBlankNodeId(){
 		return "_" + (""+random.nextInt()).replace("-", "n");
 	}
-	
+
+	public static boolean isDerivativesRequired(String fid, String use) {
+		if ( StringUtils.isBlank(fid))
+			return false;
+
+		// file formats for derivative creation: images, documents, videos, and audio
+		if (isImage(fid, use) || isDocument(fid, use) || isVideo(fid, use) || isAudio(fid, use)) {
+
+			// default use master files, source files and master service files
+			if ((use == null && fid.startsWith("1.")) || 
+					use != null && (use.endsWith("source") || (use.endsWith("service") && fid.startsWith("1."))))
+				return false;
+		}
+		return true;
+	}
+
 	private static String toSolrQuery(Map<String, String> properties) throws UnsupportedEncodingException{
 		String solrParams = "";
 		String key = null;

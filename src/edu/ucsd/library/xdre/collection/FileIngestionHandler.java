@@ -328,8 +328,7 @@ public class FileIngestionHandler extends CollectionHandler {
 								try{
 									String fileId = uploadHandler.getFileId();
 									String use = uploadHandler.getUse();
-									if(derivatives && (isImage(fileId, use) || isDocument(fileId, use)) 
-											&& (use == null || use.endsWith("source") || use.endsWith("service") || use.endsWith("alternate"))){
+									if( isDerivativesRequired(fileId, use) ){
 										
 										successful = damsClient.createDerivatives(uploadHandler.getSubjectId(), uploadHandler.getCompId(), fileId, null);
 										if(successful){
