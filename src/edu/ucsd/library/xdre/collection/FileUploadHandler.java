@@ -90,8 +90,7 @@ public class FileUploadHandler extends CollectionHandler{
 					log("log", message);
 	
 					//Create derivatives for images and documents PDFs
-					if((isImage(fid, use) || isDocument(fid, use)) 
-							&& (use == null || use.endsWith("source") || use.endsWith("service") || use.endsWith("alternate"))){
+					if( isDerivativesRequired(fid, use) ){
 						
 						successful = damsClient.updateDerivatives(oid, cid, fid, null);
 						if(successful){
