@@ -8,6 +8,7 @@ import java.util.List;
 
 import javax.security.auth.login.LoginException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import edu.ucsd.library.xdre.utils.Constants;
@@ -106,15 +107,16 @@ public class DerivativeHandler extends CollectionHandler{
 	        	String use = dFile.getUse();
 				String fileID = dFile.getId();
 
-	        	DamsURI fileURI = DamsURI.toParts(fileID, dFile.getObject());
-
 				// Create derivative for the designated source file or master image files (source/alternative?), service video files (mp4) etc.
-	        	if( isDerivativesRequired(fileURI.getFileName(), use) ){
+	        	if((file!=null && file.length()>0 && fileID.endsWith(file)) || 
+	        			StringUtils.isBlank(file) && use != null && !use.startsWith("data") && (use.endsWith(Constants.SOURCE) || fileID.indexOf("/1.")>0 )){
 		        	totalFiles += 1;
 					
 	    	    	List<String> sizesList = new ArrayList<String>();
 	    	    	if(reqSizes != null)
 	    	    		sizesList.addAll(Arrays.asList(reqSizes));	        		
+	        		
+		        	DamsURI fileURI = DamsURI.toParts(fileID, dFile.getObject());        		
 
         			String oid = fileURI.getObject();
         			String cid = fileURI.getComponent();
@@ -154,10 +156,6 @@ public class DerivativeHandler extends CollectionHandler{
 		        			dfid = derName + ".jpg";
 
 		        			if (isVideo(fileID, use)) {
-		        				// skip creating redundant .jpg derivatives for videos other than 3 and 4
-		        				if ( !(derName.equals("3") || derName.equals("4")) )
-		        					continue;
-
 		        				// use the .mp4 derivative for jpeg thumbnail creation if one exists 
 		        				if (damsClient.exists(oid, cid, "2.mp4"))
 		        					fid = "2.mp4";

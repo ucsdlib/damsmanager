@@ -742,7 +742,8 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 								objWithFiles.add(oid);
 							
 							//Create/update derivatives for images and documents PDFs
-							if( isDerivativesRequired(fid, use) ) {
+							if((isImage(fid, use) || isDocument(fid, use) || isVideo(fid, use) || isAudio(fid, use))
+									&& (use == null || use.endsWith("source") || use.endsWith("service") || use.endsWith("alternate"))) {
 								try {
 									boolean derCreated = false;
 									if (isVideo(fid, use) || isAudio(fid, use)) {
