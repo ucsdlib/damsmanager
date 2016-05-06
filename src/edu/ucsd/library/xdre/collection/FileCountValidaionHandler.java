@@ -356,8 +356,9 @@ public class FileCountValidaionHandler extends CollectionHandler{
 						filesIngested.append(fileUrl + "\t" + tmpFile + "\t" + damsClient.getRequestURL() + "\n");
 						
 						//Create derivatives for images and documents PDFs
-						if( isDerivativesRequired(fid, use) ){
-
+						if((isImage(fid, use) || isDocument(fid, use)) 
+								&& (use == null || use.endsWith("source") || use.endsWith("alternate"))){
+							
 							successful = damsClient.createDerivatives(oid, cid, fid, null);
 							if(successful){
 								logMessage( "Created derivatives for " + fileUrl + " (" + damsClient.getRequestURL() + ").");
