@@ -742,8 +742,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 								objWithFiles.add(oid);
 							
 							//Create/update derivatives for images and documents PDFs
-							if((isImage(fid, use) || isDocument(fid, use) || isVideo(fid, use) || isAudio(fid, use))
-									&& (use == null || use.endsWith("source") || use.endsWith("service") || use.endsWith("alternate"))) {
+							if( isDerivativesRequired(fid, use) ) {
 								try {
 									boolean derCreated = false;
 									if (isVideo(fid, use) || isAudio(fid, use)) {
@@ -761,6 +760,22 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 										logMessage( "Created derivatives for " + fileUrl + " (" + damsClient.getRequestURL() + ").");
 										
 										ingestLog.append("\n    Derivative creation - - successful - " + damsDateFormat.format(new Date()));
+										if(StringUtils.isNotBlank(use) && use.equalsIgnoreCase("video-source")){
+											// create the .jpg thumbnail for videos from the mp4 derivative
+											String[] sizes = {"4", "3"};
+											derCreated = damsClient.updateDerivatives(oid, cid, "2.mp4", sizes);
+											if(derCreated){
+												logMessage( "Created thumbnails for video " + fileUrl + " (" + damsClient.getRequestURL() + ").");
+											} else {
+												derivFailedCount++;
+												derivativesFailed.append(damsClient.getRequestURL() + ", \n"); 
+												log.error("Failed to created thumbnails for video " + damsClient.getRequestURL() + " (" + tmpFile + ", " + (l+1) + " of " + iLen + "). ");
+												
+												ingested = false;
+												successful = false;
+												ingestLog.append("\n    Thumbnail creation - failed - " + damsDateFormat.format(new Date()));
+											}
+										}
 									} else {
 										derivFailedCount++;
 										derivativesFailed.append(damsClient.getRequestURL() + ", \n"); 
