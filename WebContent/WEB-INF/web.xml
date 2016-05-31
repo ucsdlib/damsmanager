@@ -116,6 +116,8 @@
 	        <url-pattern>/rdfEdit.do</url-pattern>
 	        <url-pattern>/metadataImport.do</url-pattern>
 	        <url-pattern>/fileReport.do</url-pattern>
+	        <url-pattern>/statsRdcpUsage.do</url-pattern>
+	        <url-pattern>/statsRdcpDownload.do</url-pattern>
     	</web-resource-collection>
     	<auth-constraint>
         	<role-name>32</role-name>

@@ -17,6 +17,7 @@ import edu.ucsd.library.xdre.statistic.beans.StatSummary;
  * @author lsitu@ucsd.edu
  */
 public abstract class StatsUsage {
+	public static final String UNIT_CODE_RDCP = "rdcp";
 	public static final String YEARLY_FORMAT = "yyyy";
 	public static final String MONTHLY_FORMAT = "yyyy/MM";
 	public static final String DAILY_FORMAT = "yyyy/MM/dd";
@@ -41,6 +42,8 @@ public abstract class StatsUsage {
 	public static final String DLC_KEYWORDS_LIKE_COUNT_QUERY = "SELECT COUNT(*) FROM (SELECT k.KEYWORD, SUM(k.NUM_ACCESS) as numaccess FROM WEB_STATS s, STATS_DLC_KEYWORDS k WHERE k.TYPE=? AND s.ID=k.STAT_ID AND (s.APP_NAME='pas' OR s.APP_NAME='cas') AND (LOWER(k.KEYWORD) LIKE 'LIKE_KEYWORDS%' OR LOWER(k.KEYWORD) LIKE '% LIKE_KEYWORDS%' OR LOWER(k.KEYWORD) LIKE '%-LIKE_KEYWORDS%' OR LOWER(k.KEYWORD) LIKE '%/LIKE_KEYWORDS%') AND s.STAT_DATE>=to_date(?, '" + Statistics.DATE_FORMAT + "') AND s.STAT_DATE<=to_date(?, '" + Statistics.DATE_FORMAT + "') GROUP BY (k.KEYWORD)) as result";		
 	public static final String PAS_COLLECTIONS_ACCESS_QUERY = "SELECT * FROM (SELECT TO_CHAR(s.STAT_DATE, 'PERIOD_PARAM') AS period, c.COLLECTION_ID as colId, SUM(c.NUM_ACCESS) as num_access FROM WEB_STATS s, STATS_DLP_COL_ACCESS c WHERE s.ID=c.STAT_ID AND s.APP_NAME='pas' AND s.STAT_DATE>=to_date(?, '" + Statistics.DATE_FORMAT + "') AND s.STAT_DATE<=to_date(?, '" + Statistics.DATE_FORMAT + "') GROUP BY TO_CHAR(s.STAT_DATE, 'PERIOD_PARAM'), c.COLLECTION_ID) as result ORDER BY result.period";	
 	public static final String DLP_COLLECTIONS_ACCESS_QUERY = "SELECT * FROM (SELECT TO_CHAR(s.STAT_DATE, 'PERIOD_PARAM') AS period, c.COLLECTION_ID as colId, SUM(c.NUM_ACCESS) as num_access FROM WEB_STATS s, STATS_DLP_COL_ACCESS c WHERE s.ID=c.STAT_ID AND (s.APP_NAME='pas' OR s.APP_NAME='cas') AND s.STAT_DATE>=to_date(?, '" + Statistics.DATE_FORMAT + "') AND s.STAT_DATE<=to_date(?, '" + Statistics.DATE_FORMAT + "') GROUP BY TO_CHAR(s.STAT_DATE, 'PERIOD_PARAM'), c.COLLECTION_ID) as result ORDER BY result.period";	
+	public static final String RDCP_OBJECT_POPULARITY_QUERY = "SELECT * FROM (SELECT TO_CHAR(s.STAT_DATE, 'PERIOD_PARAM') AS period, a.OBJECT_ID as object_id, SUM(a.NUM_VIEW) as num_view FROM WEB_STATS s, STATS_DLP_OBJECT_ACCESS a WHERE s.ID=a.STAT_ID AND NOT a.IS_PRIVATE AND a.UNIT_ID='" + UNIT_CODE_RDCP + "' AND s.APP_NAME='pas' AND num_view>0 AND s.STAT_DATE>=to_date(?, '" + Statistics.DATE_FORMAT + "') AND s.STAT_DATE<=to_date(?, '" + Statistics.DATE_FORMAT + "') GROUP BY TO_CHAR(s.STAT_DATE, 'PERIOD_PARAM'), a.OBJECT_ID ORDER BY num_view DESC) as result"; 
+	public static final String RDCP_FILE_DOWNLOAD_POPULARITY_QUERY = "SELECT * FROM (SELECT TO_CHAR(s.STAT_DATE, 'PERIOD_PARAM') AS period, a.OBJECT_ID as object_id, a.COMP_ID as comp_id, SUM(a.NUM_VIEW) as num_view FROM WEB_STATS s, STATS_FILE_DOWNLOAD a WHERE s.ID=a.STAT_ID AND NOT a.IS_PRIVATE AND a.UNIT_ID='" + UNIT_CODE_RDCP + "' AND s.APP_NAME='pas'  AND s.STAT_DATE>=to_date(?, '" + Statistics.DATE_FORMAT + "') AND s.STAT_DATE<=to_date(?, '" + Statistics.DATE_FORMAT + "') GROUP BY TO_CHAR(s.STAT_DATE, 'PERIOD_PARAM'), a.OBJECT_ID, a.COMP_ID ORDER BY num_view DESC) as result"; 
 	
 	protected SimpleDateFormat dbFormat = new SimpleDateFormat(Statistics.DATE_FORMAT);
 	protected SimpleDateFormat dbMonthFormat = new SimpleDateFormat(Statistics.MONTH_FORMAT);
