@@ -28,7 +28,7 @@
 	<div class="main-title">UCSD Library Digital Asset Management System Statistics</div>
 	<div id="container"></div>
 	<div class="tab-container">
-		<div class="tab-title">RDCP Objects Usage by Month</div>
+		<div class="tab-title">RDCP Downloads by Month</div>
 		<table cellspacing=0 cellpadding=3 border=0 width=100%>
 			<tbody id="stats-tab">
 				<tr class="tab-banner">
