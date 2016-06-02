@@ -6,6 +6,8 @@ import java.sql.SQLException;
 
 import org.apache.log4j.Logger;
 
+import edu.ucsd.library.xdre.utils.DAMSClient;
+
 /**
  * Class WebStatistic
  *

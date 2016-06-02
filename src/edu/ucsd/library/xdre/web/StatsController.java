@@ -41,9 +41,14 @@ public class StatsController implements Controller {
 		String templete = "stats";	
 		
 		boolean isCas = false;
+		boolean isCurator = false; // for role dams-curator
 		String[] apps2sum = {"pas"};
 		if(request.isUserInRole(Constants.CURATOR_ROLE)){
 			isCas = true;
+		}
+
+		if(request.isUserInRole("dams-curator") || request.isUserInRole(Constants.CURATOR_ROLE)){
+			isCurator = true;
 		}
 
 		try {
@@ -68,6 +73,7 @@ public class StatsController implements Controller {
 		}
 		
 		model.put("isCas", isCas);
+		model.put("isCurator", isCurator);
 		model.put("message", message);
 		model.put("clusterHost", "//" + Constants.CLUSTER_HOST_NAME + ".ucsd.edu");
 		

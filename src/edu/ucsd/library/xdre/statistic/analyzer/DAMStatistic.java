@@ -18,7 +18,10 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.dom4j.Document;
+import org.dom4j.Node;
 
 /**
  * Class DAMStatistic
@@ -36,6 +39,7 @@ public class DAMStatistic extends Statistics{
 	protected int numColPage =0;
 	protected int numHomePage =0;
 	protected Map<String, ObjectCounter> itemsMap = null;
+	protected Map<String, ObjectCounter> itemsMapPrivate = null;
 	protected Map<String, Integer> keywordsMap = null;
 	protected Map<String, Integer> phrasesMap = null;
 	protected Map<String, Integer> collsAccessMap = null;
@@ -44,11 +48,12 @@ public class DAMStatistic extends Statistics{
 	public DAMStatistic(String appName){
 		super(appName);
 		itemsMap = new TreeMap<String, ObjectCounter>();
+		itemsMapPrivate = new TreeMap<String, ObjectCounter>();
 		keywordsMap = new HashMap<String, Integer>();
 		phrasesMap = new HashMap<String, Integer>();
 		collsAccessMap = new HashMap<String, Integer>();
 	}
-		
+	
 	public Map<String, String> getCollsMap() {
 		return collsMap;
 	}
@@ -169,7 +174,7 @@ public class DAMStatistic extends Statistics{
 			log.info("DAMS stats invalid uri: " + uri);
 	}
 	
-	public void addObject(String uri){
+	public void addObject(String uri, boolean isPrivateAccess){
 		String subjectId = "";
 		String fileName = "";
 		//String[] parts = uri.replace("?", "&").split("&");
@@ -197,22 +202,51 @@ public class DAMStatistic extends Statistics{
 				return;
 			}
 			
-			if(parts.length == 4 && parts[3] != null && parts[3].startsWith("_"))
+			if(parts.length >= 4 && parts[3] != null && parts[3].startsWith("_"))
 				fileName = parts[3];
-			else if(parts.length == 5 && parts[4] != null)
-				fileName = parts[3] + "/" + parts[4];
 		}
 		
 		if(subjectId == null || subjectId.length()!= 10){
 			System.out.println("Invalid subject " + subjectId + ": " + uri);
 			return;
 		}
-		ObjectCounter objCounter = itemsMap.get(subjectId);
+
+		Map<String, ObjectCounter> iMap = itemsMap;
+		if (isPrivateAccess)
+			iMap = itemsMapPrivate;
+
+		ObjectCounter objCounter = iMap.get(subjectId);
 		if(objCounter == null){
 			objCounter = new ObjectCounter(subjectId);
-			itemsMap.put(subjectId, objCounter);
+			iMap.put(subjectId, objCounter);
 		}
 		objCounter.increaseCounter(fileName);
+		
+		if (uri.endsWith("/download")) {
+			fileDownload(objCounter, fileName);
+		}
+	}
+	
+	private void fileDownload(ObjectCounter objCounter, String file) {
+		String sid = objCounter.getSubjectId();
+		String cid = "";
+		String fid = "";
+		String[] tokens = file.split("_");
+		if (tokens.length == 2)
+			fid = tokens[1];
+		else if (tokens.length == 3) {
+			cid = tokens[1];
+			fid = tokens[2];
+		} else
+			log.warn("Invalid file url: /" + sid + "/" + file );
+		
+		Map<String, FileDownloadCounter> fileDownloads = objCounter.getFileDownloads();
+		FileDownloadCounter counter = fileDownloads.get(file);
+		if (counter == null) {
+			counter = new FileDownloadCounter(sid, cid, fid);
+			fileDownloads.put(file, counter);
+		}
+		counter.increaseCounter();
 	}
 	
 	public String getParamValue(String param){
@@ -295,17 +329,19 @@ public class DAMStatistic extends Statistics{
 		
 		//STATS_DLP_OBJECT_ACCESS_INSERT insert
 		try{
-			ObjectCounter objCounter = null;
-			String key = null;
 			ps = con.prepareStatement(STATS_DLP_OBJECT_ACCESS_INSERT);
-			Iterator<String> it = itemsMap.keySet().iterator();
-			while(it.hasNext()){
-				key = (String) it.next();
-				objCounter = itemsMap.get(key);
-				ps.setInt(1, nextId);
-				returnValue = objCounter.export(ps);
-				ps.clearParameters();
-			}
+			persistObjectAccessStats (nextId, ps, itemsMap, false);
+			persistObjectAccessStats (nextId, ps, itemsMapPrivate, true);
+		}finally{
+			Statistics.close(ps);
+			ps = null;
+		}
+
+		//STATS_FILE_DOWNLOAD_INSERT insert
+		try{
+			ps = con.prepareStatement(STATS_FILE_DOWNLOAD_INSERT);
+			persistFileDownloadStats (nextId, ps, itemsMap, false);
+			persistFileDownloadStats (nextId, ps, itemsMapPrivate, true);
 		}finally{
 			Statistics.close(ps);
 			ps = null;
@@ -343,6 +379,91 @@ public class DAMStatistic extends Statistics{
 			ps = null;
 		}
 		log.info("Inserted " + appName + " statistics record for " + dateFormat.format(calendar.getTime()));
+	}
+
+	private int persistObjectAccessStats (int statsId, PreparedStatement ps, Map<String, ObjectCounter> itemsMap, boolean isPrivate) {
+		int returnValue = 0;
+		String key;
+		Iterator<String> it = itemsMap.keySet().iterator();
+		while(it.hasNext()){
+			key = (String) it.next();
+			ObjectCounter objCounter = itemsMap.get(key);
+			try {
+				String sid = objCounter.getSubjectId();
+				Document doc = Statistics.cacheGet(sid);
+				if (doc == null) {
+					doc = Statistics.getRecordForStats(sid);
+					Statistics.cacheAdd(sid, doc);
+				}
+				
+				String unitId = getUnitCode(doc);;
+				String colId = getCollection(doc);
+				ps.setInt(1, statsId);
+				ps.setBoolean(2, isPrivate);
+				ps.setString(3, unitId);
+				ps.setString(4, colId);
+				returnValue = objCounter.export(ps);
+				ps.clearParameters();
+			}catch(Exception ex) {
+				ex.printStackTrace();
+				log.info("Stats insert failed: " + objCounter.toString() );
+			}
+		}
+		return returnValue;
+	}
+
+	private int persistFileDownloadStats (int statsId, PreparedStatement ps, Map<String, ObjectCounter> itemsMap, boolean isPrivate) {
+		int returnValue = 0;
+		String key;
+		Map<String, FileDownloadCounter> fileDownloads;
+		Iterator<String> it = itemsMap.keySet().iterator();
+		while(it.hasNext()){
+			key = (String) it.next();
+			fileDownloads = itemsMap.get(key).getFileDownloads();
+			for (FileDownloadCounter fCounter : fileDownloads.values()) {
+				try {
+					String sid = fCounter.sid;
+					Document doc = Statistics.cacheGet(sid);
+					if (doc == null) {
+						doc = Statistics.getRecordForStats(sid);
+						Statistics.cacheAdd(sid, doc);
+					}
+					String unitId = getUnitCode(doc);;
+					String colId = getCollection(doc);
+					ps.setInt(1, statsId);
+					ps.setBoolean(2, isPrivate);
+					ps.setString(3, unitId);
+					ps.setString(4, colId);
+					returnValue = fCounter.export(ps);
+					ps.clearParameters();
+				}catch(Exception ex) {
+					ex.printStackTrace();
+					log.info("Stats insert failed: " + fCounter.toString() );
+				}
+			}
+		}
+		return returnValue;
+	}
+
+	public String getUnitCode(Document doc) {
+		if (doc != null) {
+			Node node = doc.selectSingleNode("//doc/arr[@name='unit_code_tesim']/str");
+			if (node != null) {
+				String id = node.getStringValue();
+				return id.substring(id.lastIndexOf("/") + 1);
+			}
+		}
+		return null;
+	}
+
+	public String getCollection(Document doc) {
+		if (doc != null) {
+			Node node = doc.selectSingleNode("//doc/arr[@name='collections_tesim']/str");
+			if (node != null) {
+				return node.getText();
+			}
+		}
+		return null;
 	}
 	
 	public void print(){
@@ -486,6 +607,7 @@ public class DAMStatistic extends Statistics{
 		private String subjectId = null;
 		private int access = 0;
 		private int view = 0;
+		private Map<String, FileDownloadCounter> fileDownloads = new TreeMap<>();
 		public ObjectCounter(String subjectId){
 			this.subjectId = subjectId;
 		}
@@ -507,6 +629,14 @@ public class DAMStatistic extends Statistics{
 			return view;
 		}
 
+		public String getSubjectId() {
+			return subjectId;
+		}
+
+		public Map<String, FileDownloadCounter> getFileDownloads(){
+			return fileDownloads;
+		}
+
 		public boolean isThumbnail(String file){
 			if(file.indexOf("_4.") >=0 || file.indexOf("_5.") >= 0)
 				return true;
@@ -522,9 +652,9 @@ public class DAMStatistic extends Statistics{
 		}
 		
 		public int export(PreparedStatement ps) throws SQLException{
-			ps.setString(2, subjectId);
-			ps.setInt(3, access);
-			ps.setInt(4, view);
+			ps.setString(5, subjectId);
+			ps.setInt(6, access);
+			ps.setInt(7, view);
 			return ps.executeUpdate();
 		}
 		
@@ -533,6 +663,37 @@ public class DAMStatistic extends Statistics{
 		}
 	}
 	
+	class FileDownloadCounter {
+		private String sid = null;
+		private String cid = null;
+		private String fid = null;
+		private int view = 0;
+		public FileDownloadCounter(String sid, String cid, String fid){
+			this.sid = sid;
+			this.cid = cid;
+			this.fid = fid;
+		}
+		public void increaseCounter(){
+			view++;
+		}
+		
+		public int getView() {
+			return view;
+		}
+
+		public int export(PreparedStatement ps) throws SQLException{
+			ps.setString(5, sid);
+			ps.setString(6, cid);
+			ps.setString(7, fid);
+			ps.setInt(8, view);
+			return ps.executeUpdate();
+		}
+		
+		public String toString(){
+			return "	" + sid + (StringUtils.isBlank(cid) ? "" : "/" + cid) +  "/" + fid + ": " + view;
+		}
+	}
+
 	public static void main(String[] args) throws Exception{
 		//String uri = "/apps/public/images/bullet.gif?time=1349809347851&id=&hash=search&q=&fq=Facet_Collection:%22mscl_HermanBacaPhotos%22+OR+Facet_Collection:%22mscl_HermanBacaPosters%22+OR+Facet_CollectionTitle:%22Herman+Baca+Papers%22+OR+Facet_Collection:%22Herman+Baca+Posters%22&sort=titlesort%20asc&fq=NOT+category:(bb36527497+OR+bb1093000r+OR+bb23558110+OR+component)+AND+NOT+attrib:(%22xdre%20updateFlag%20delete%22+OR+%22xdre%20suppress%20true%22)&qt=dismax&rows=20&facet.limit=250&facet.sort=true HTTP/1.1";
 		String line = null;

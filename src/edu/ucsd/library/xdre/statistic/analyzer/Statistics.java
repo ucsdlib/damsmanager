@@ -1,5 +1,7 @@
 package edu.ucsd.library.xdre.statistic.analyzer;
 
+import java.net.URL;
+import java.net.URLEncoder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -8,8 +10,18 @@ import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.dom4j.Document;
+import org.dom4j.Node;
+import org.dom4j.io.SAXReader;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+
+import edu.ucsd.library.xdre.utils.Constants;
 
 /**
  * Abstract class Statistic
@@ -22,7 +34,8 @@ public abstract class Statistics {
 	public static final String MONTH_FORMAT = "yyyy-MM";
 	public static String WEB_STATS_INSERT = "INSERT INTO WEB_STATS(ID, STAT_DATE, NUM_ACCESS, APP_NAME) VALUES (?,?,?,?)";
 	public static String STATS_DLP_INSERT = "INSERT INTO STATS_DLP(STAT_ID, NUM_SEARCH, NUM_BROWSE, NUM_COLPAGE, NUM_HOMEPAGE) VALUES (?,?,?,?,?)";
-	public static String STATS_DLP_OBJECT_ACCESS_INSERT = "INSERT INTO STATS_DLP_OBJECT_ACCESS(STAT_ID, OBJECT_ID, NUM_ACCESS, NUM_VIEW) VALUES (?,?,?,?)";
+	public static String STATS_DLP_OBJECT_ACCESS_INSERT = "INSERT INTO STATS_DLP_OBJECT_ACCESS(STAT_ID, IS_PRIVATE, UNIT_ID, COL_ID, OBJECT_ID, NUM_ACCESS, NUM_VIEW) VALUES (?,?,?,?,?,?,?)";
+	public static String STATS_FILE_DOWNLOAD_INSERT = "INSERT INTO STATS_FILE_DOWNLOAD(STAT_ID, IS_PRIVATE, UNIT_ID, COL_ID, OBJECT_ID, COMP_ID, FILE_ID, NUM_VIEW) VALUES (?,?,?,?,?,?,?,?)";
 	public static String STATS_DLP_COLLECTION_ACCESS_INSERT = "INSERT INTO STATS_DLP_COL_ACCESS(STAT_ID, COLLECTION_ID, NUM_ACCESS) VALUES (?,?,?)";
 	public static String STATS_DLC_KEYWORDS_INSERT = "INSERT INTO STATS_DLC_KEYWORDS(STAT_ID, KEYWORD, NUM_ACCESS, TYPE) VALUES (?,?,?,?)";
 	public static String COLLECTION_STATS_INSERT = "INSERT INTO STATS_DLC_QUAN(ID, STAT_DATE, COLLECTION_ID, COLLECTION_TITLE, NUM_OBJECTS, SIZE_BYTES) VALUES (?,?,?,?,?,?)";
@@ -32,6 +45,11 @@ public abstract class Statistics {
 	public static String COLLECTION_STATS_DELETE_RECORD = "DELETE FROM STATS_DLC_QUAN WHERE to_char(STAT_DATE, '" + MONTH_FORMAT + "')=? AND COLLECTION_ID=?";
 	private static Logger log = Logger.getLogger(Statistics.class);
 	
+	// object caching
+	private static HashMap<String,Document> cacheContent = new HashMap<String,Document>();
+	private static LinkedList<String> cacheAccess = new LinkedList<String>();
+	private static int cacheSize = 1000; // max objects cached, 0 = disabled
+
 	protected int numAccess =0;
 	protected String appName = null;
 	protected Calendar calendar = null;
@@ -153,5 +171,68 @@ public abstract class Statistics {
 			ps = null;
 		}
 		return false;
+	}
+	
+	public static synchronized void cacheAdd( String objid, Document doc )
+	{
+		if ( cacheSize > 0 )
+		{
+			if ( !cacheContent.containsKey(objid) )
+			{
+				while ( cacheContent.size() >= cacheSize )
+				{
+					cacheContent.remove(cacheAccess.pop());
+				}
+			}
+			cacheContent.put(objid,doc);
+			cacheAccess.add(objid);
+		}
+	}
+
+	public static synchronized Document cacheGet( String objid )
+	{
+		if ( cacheSize > 0)
+		{
+			cacheAccess.remove(objid);
+			cacheAccess.add(objid);
+			return cacheContent.get(objid);
+		}
+		else
+		{
+			return null;
+		}
+	}
+
+	public static Document getRecordForStats(String id) throws Exception {
+		URL url = new URL(Constants.SOLR_URL_BASE + "/select?q=id:" + id + "&fl=" + URLEncoder.encode("*title* OR *collection* OR *unit*", "UTF-8"));
+		SAXReader reader = new SAXReader();
+		return reader.read(url);
+	}
+
+	public static String getTextValue (Document doc, String xPath) {
+		String val = "";
+		if (doc != null) {
+			Node node = doc.selectSingleNode(xPath);
+			if (node != null)
+				return node.getText();
+		}
+		return val;
+	}
+
+	public static String getTitleFromJson (String jsonVal) {
+		if (StringUtils.isNotBlank(jsonVal)) {
+			JSONObject obj = (JSONObject) JSONValue.parse(jsonVal);
+			return (String)obj.get("name");
+		}
+		return "";
+	}
+
+	public static String escapeCsv(String value) {
+		if ( StringUtils.isNotBlank(value) ) {
+			if (value.indexOf(",") >= 0 || value.indexOf("\"") >= 0 
+					|| value.indexOf(System.getProperty("line.separator")) >= 0)
+				return "\"" + value.replace("\"", "\"\"") + "\"";
+		}
+		return value;
 	}
 }

@@ -10,8 +10,6 @@ import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -25,6 +23,7 @@ import org.dom4j.Node;
 import org.dom4j.io.SAXReader;
 
 import edu.ucsd.library.xdre.utils.Constants;
+import edu.ucsd.library.xdre.utils.DAMSClient;
 
 /**
  * Class LogAnalyzer
@@ -93,7 +92,11 @@ public class LogAnalyzer{
 						String[] uriParts = (uri.length()>1?uri.substring(1):uri).split("/");
 						if(uriParts.length>1 && uriParts[1].equals("object")){
 							//Object access: /dc/object/oid/cid/_fid
-							pasStats.addObject(uri);
+							int uidIdx = uri.indexOf("access=curator");
+							if (uidIdx > 0)
+								pasStats.addObject(uri, true); // curator access
+							else
+								pasStats.addObject(uri, false); // public access
 						}else{
 							//Home Page: /dc
 							//Search: /dc/search?utf8=%E2%9C%93&q=wagner
