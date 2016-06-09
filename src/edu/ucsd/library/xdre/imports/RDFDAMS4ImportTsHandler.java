@@ -40,6 +40,7 @@ import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.DFile;
 import edu.ucsd.library.xdre.utils.DamsURI;
 import edu.ucsd.library.xdre.utils.RDFStore;
+import edu.ucsd.library.xdre.utils.ZoomifyTilesConverter;
 
 /**
  * 
@@ -796,6 +797,30 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 									ingestLog.append("\n    Derivative creation - failed - " + e.getMessage());
 								}
 							}
+
+							// create zoomify tiles for master image files
+							if ( isImage(fid, use) && fid.startsWith("1.") ) {
+								try {
+									boolean zoomifyTilesCreated = createZoomifyTiles( oid, cid, fid );
+
+									if( zoomifyTilesCreated ){
+										logMessage( "Created zoomify tiles " + fileUrl + " (" + damsClient.getRequestURL() + ").");
+									} else {
+										log.error("Failed to create zoomify tiles for " + damsClient.getRequestURL() + " (" + tmpFile + ", " + (l+1) + " of " + iLen + "). ");
+										
+										ingested = false;
+										successful = false;
+										ingestLog.append("\n    Zoomify tiles - failed - " + damsDateFormat.format(new Date()));
+									}
+								}catch (Exception e) {
+									e.printStackTrace();
+									log.error("Failed to create Zoomify tiles for " + fileUrl + " (" + srcFileName + ", " + (l+1) + " of " + iLen + ") in " + srcName + ": " + e.getMessage());
+
+									ingested = false;
+									successful = false;
+									ingestLog.append("\n    Zoomify tiles creation - failed - " + e.getMessage());
+								}
+							}
 						}
 					}
 				} catch(Exception e) {
@@ -875,6 +900,12 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		messages[processIndex].insert(0, damsDateFormat.format(new Date()));
 
 		return iLen;
+	}
+
+	private boolean createZoomifyTiles( final String oid, final String cid, final String fid ) throws Exception {
+		ZoomifyTilesConverter zoomifyConverter = new ZoomifyTilesConverter( Constants.ZOOMIFY_COMMAND );
+		zoomifyConverter.setFileStoreDir(Constants.FILESTORE_DIR);
+		return zoomifyConverter.createZoomifyTiles(oid, cid, fid);
 	}
 
 	/**
