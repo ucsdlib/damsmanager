@@ -84,12 +84,25 @@ public class LogAnalyzer{
 			int spIdx = -1;
 			while((line=bReader.readLine()) != null){
 				spIdx = line.indexOf("GET /dc");
-				if(spIdx > 0 && line.indexOf(Constants.CLUSTER_HOST_NAME) > 0 
+				if(spIdx > 0 && line.indexOf(Constants.CLUSTER_HOST_NAME + " ") > 0 
 						&& line.indexOf("/assets/") < 0 && line.indexOf("/get_data/") < 0 && line.indexOf("/users/") < 0 && line.indexOf("/images/") < 0 ){
+					// ignore spiders/search engines access
+					if (line.indexOf("\"-\"", spIdx) > 0 || line.indexOf("archive.org_bot", spIdx) > 0)
+						continue;
+
+					// ignore hits from MSCL collection pages: http://library.ucsd.edu/speccoll/
+					if (line.indexOf("http://library.ucsd.edu/speccoll/", spIdx) > 0)
+						continue;
+					
 					uri = getUri(line);
 					if(uri != null){
 						//idx = uri.indexOf("&user=");
 						String[] uriParts = (uri.length()>1?uri.substring(1):uri).split("/");
+						
+						// ignore varieties of formatted metadata views like /dc/object/bb55641580.rdf
+						if(uriParts.length == 3 && uriParts[2].length() > 10 && uriParts[2].charAt(10) == '.')
+							continue;
+
 						if(uriParts.length>1 && uriParts[1].equals("object")){
 							//Object access: /dc/object/oid/cid/_fid
 							int uidIdx = uri.indexOf("access=curator");

@@ -187,27 +187,21 @@ public class DAMStatistic extends Statistics{
 				paramsPart = uri.substring(idx + 1);
 		}else
 			uriPart = uri;
+
 		String[] parts = uriPart.substring(1).split("/");
-		int len = parts.length;
-		for(int i=1;i<len;i++){
-			if(parts.length >= 3 && parts.length <=5 && parts[2] !=null)
-				// /dc/object/oid/cid/_fid
-				subjectId = parts[2];
-			else if(uri.endsWith(NEW_FORM_URL)){
-				// Count new/edit object form for access: /dc/object/new, /dc/object/oid/edit
-				numAccess++;
-				return;
-			}else{
-				System.out.println("DAMS stats unknown uri: " + uri);
-				return;
-			}
-			
-			if(parts.length >= 4 && parts[3] != null && parts[3].startsWith("_"))
-				fileName = parts[3];
+		if(parts.length >= 3 && parts.length <=5 && parts[2] !=null)
+			// /dc/object/oid/_cid_fid/download
+			subjectId = parts[2];
+		else{
+			log.warn("DAMS stats unknown uri: " + uri);
+			return;
 		}
 		
+		if(parts.length >= 4 && parts[3] != null && parts[3].startsWith("_"))
+			fileName = parts[3];
+		
 		if(subjectId == null || subjectId.length()!= 10){
-			System.out.println("Invalid subject " + subjectId + ": " + uri);
+			log.warn("Invalid subject " + subjectId + ": " + uri);
 			return;
 		}
 
@@ -220,10 +214,12 @@ public class DAMStatistic extends Statistics{
 			objCounter = new ObjectCounter(subjectId);
 			iMap.put(subjectId, objCounter);
 		}
-		objCounter.increaseCounter(fileName);
-		
+
+		// differentiate the counts for file download and object access/hits
 		if (uri.endsWith("/download")) {
 			fileDownload(objCounter, fileName);
+		} else {
+			objCounter.increaseCounter(fileName);
 		}
 	}
 	
@@ -613,10 +609,7 @@ public class DAMStatistic extends Statistics{
 		}
 		public void increaseCounter(String file){
 			access++;
-			if(file != null && file.length()>0 && !(isThumbnail(file) || isIcon(file))){
-				// Count edit form as application access
-				if(file.endsWith(EDIT_FORM_URL))
-					numAccess++;
+			if(StringUtils.isBlank(file)){
 				view++;
 			}
 		}
