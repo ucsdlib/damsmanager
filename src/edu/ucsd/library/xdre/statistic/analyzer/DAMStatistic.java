@@ -216,7 +216,7 @@ public class DAMStatistic extends Statistics{
 		}
 
 		// differentiate the counts for file download and object access/hits
-		if (uri.endsWith("/download")) {
+		if (uri.indexOf("/download") > 0) {
 			fileDownload(objCounter, fileName);
 		} else {
 			objCounter.increaseCounter(fileName);

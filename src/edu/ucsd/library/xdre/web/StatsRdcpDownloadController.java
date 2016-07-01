@@ -74,9 +74,13 @@ public class StatsRdcpDownloadController implements Controller {
 			con = Constants.DAMS_DATA_SOURCE.getConnection();
 
 			damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
-			List<RdcpStatsDownloadSummary> statsDownloadSums = getRdcpStats(con, sCal.getTime(), eCal.getTime(), damsClient);
+			List<RdcpStatsDownloadSummary> statsDownloadSums = getRdcpStats(con, sCal.getTime(), eCal.getTime(), false, damsClient);
 	
 			if (export == null) {
+				List<RdcpStatsDownloadSummary> curatorStatsDownloadSums = getRdcpStats(con, sCal.getTime(), eCal.getTime(), true, damsClient);
+				// merge the non-curator ans curator stats 
+				mergeRdcpStats(statsDownloadSums, curatorStatsDownloadSums);
+
 				if (statsDownloadSums.size() > 0) {
 					model.put("periodsList", statsDownloadSums.get(0).getPeriods());
 					model.put("data", statsDownloadSums);
@@ -89,7 +93,7 @@ public class StatsRdcpDownloadController implements Controller {
 				strBuf = new StringBuilder();
 				for(RdcpStatsDownloadSummary statsItemSum : statsDownloadSums) {
 					if (count == 0) {
-						strBuf.append("UCSD Library RDCP File Download Statistics By Month\n");
+						strBuf.append("RDCP File Download Statistics By Month\n");
 						strBuf.append("Collection,Object title,Component title,ARK");
 						for (String period : statsItemSum.getPeriods()) {
 							strBuf.append("," + Statistics.escapeCsv(period));
@@ -133,7 +137,7 @@ public class StatsRdcpDownloadController implements Controller {
 				strBuf.append(message);
 
 			OutputStream out = response.getOutputStream();
-			response.setHeader("Content-Disposition", "inline; filename=rdcp_stats.csv");
+			response.setHeader("Content-Disposition", "inline; filename=dcp_downloads.csv");
 			response.setContentType("text/csv");
 			out.write(strBuf.toString().getBytes());
 			out.close();
@@ -141,7 +145,7 @@ public class StatsRdcpDownloadController implements Controller {
 		}
 	}
 
-	private static List<RdcpStatsDownloadSummary> getRdcpStats(Connection con, Date sDate, Date eDate, DAMSClient damsClient) throws SQLException {
+	private static List<RdcpStatsDownloadSummary> getRdcpStats(Connection con, Date sDate, Date eDate, boolean isPrivate, DAMSClient damsClient) throws SQLException {
 		//RDCP unique items usage
 		List<RdcpStatsDownloadSummary> statsDownloadSums = new ArrayList<>();
 
@@ -159,8 +163,9 @@ public class StatsRdcpDownloadController implements Controller {
 		try{
 			ps = con.prepareStatement(StatsUsage.RDCP_FILE_DOWNLOAD_POPULARITY_QUERY.replace("PERIOD_PARAM", StatsUsage.MONTHLY_FORMAT));
 			
-			ps.setString(1, DB_FORMAT.format(sDate));
-			ps.setString(2, DB_FORMAT.format(eDate));
+			ps.setBoolean(1, isPrivate);
+			ps.setString(2, DB_FORMAT.format(sDate));
+			ps.setString(3, DB_FORMAT.format(eDate));
 			rs = ps.executeQuery();
 			while(rs.next()) {
 				period = rs.getString("period");
@@ -235,5 +240,36 @@ public class StatsRdcpDownloadController implements Controller {
 			}
 		}
 		return statsDownloadSums;
+	}
+
+	private static void mergeRdcpStats(List<RdcpStatsDownloadSummary> stats, List<RdcpStatsDownloadSummary> statsToBeMerged) {
+		Map<String, RdcpStatsDownloadSummary> toBeMergedMap = new HashMap<>();
+		for (RdcpStatsDownloadSummary toBeMerged :  statsToBeMerged) {
+			toBeMergedMap.put(toBeMerged.getSubjectId(), toBeMerged);
+		}
+
+		// merged the non-curator and curator stats for displaying
+		for (RdcpStatsDownloadSummary s : stats) {
+			String subjectId = s.getSubjectId();
+			List<String> periods = s.getPeriods();
+			List<Integer> numOfViews = s.getNumOfViews();
+			RdcpStatsDownloadSummary toBeMerged = toBeMergedMap.get(subjectId);
+			List<String> periodsToBeMerged = toBeMerged != null ? toBeMerged.getPeriods() : new ArrayList<String>();
+			List<Integer> numOfViewsToBeMerged = toBeMerged != null ? toBeMerged.getNumOfViews() : new ArrayList<Integer>();;
+
+			// stats result merged
+			List<Integer> numOfViewsMerged = new ArrayList<>();
+			s.setNumOfViews(numOfViewsMerged);
+			for (int i=0 ; i< periods.size(); i++) {
+				int numOfView = 0;
+				if (toBeMerged != null) {
+					int periodIndex = periodsToBeMerged.indexOf(periods.get(i));
+					if (periodIndex >= 0 && numOfViewsToBeMerged.size() > periodIndex)
+						numOfView = toBeMerged.getNumOfViews().get(i);
+				}
+				numOfViewsMerged.add(numOfViews.get(i));
+				numOfViewsMerged.add(numOfView);
+			}
+		}
 	}
 }
