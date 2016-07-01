@@ -32,12 +32,18 @@
 		<table cellspacing=0 cellpadding=3 border=0 width=100%>
 			<tbody id="stats-tab">
 				<tr class="tab-banner">
-					<th class="tab-banner-first">Collection</th>
-					<th class="tab-banner-first">Object title</th>
-					<th class="tab-banner-first">Component title</th>
-					<th class="tab-banner-first">ARK</th>
+					<th class="tab-banner-first" rowspan="2" style="width:240px;">Collection</th>
+					<th class="tab-banner-first" rowspan="2" style="width:240px;">Object title</th>
+					<th class="tab-banner-first" rowspan="2" style="width:180px;">Component title</th>
+					<th class="tab-banner-first" rowspan="2" style="width:80px;">ARK</th>
 					<c:forEach var="monItem" items="${model.periodsList}">
-						<th>${monItem}</th>
+						<th colspan="2" style="border-right: 1px solid #444;width:80px;">${monItem}</th>
+					</c:forEach>
+				</tr>
+				<tr class="tab-banner">
+					<c:forEach var="monItem" items="${model.periodsList}">
+						<th class="lower-tab">non-curator</th>
+						<th class="lower-tab">curator</th>
 					</c:forEach>
 				</tr>
 				<c:forEach var="sItem" items="${model.data}">
@@ -46,8 +52,8 @@
 						<td style="text-align:left;paddings:0ps 2px;">${sItem.title}</td>
 						<td style="text-align:left;paddings:0ps 2px;">${sItem.componentTitle}</td>
 						<td style="text-align:left;paddings:0ps 2px;">${sItem.subjectId}</td>
-						<c:forEach var="v" items="${sItem.numOfViews}">
-							<td><fmt:formatNumber value="${v}" pattern="#,###" /></td>
+						<c:forEach var="v" items="${sItem.numOfViews}" varStatus="loop">
+							<td <c:if test="${loop.count%2 == 0}">style="color:#336699;"</c:if>><fmt:formatNumber value="${v}" pattern="#,###" /></td>
 						</c:forEach>
 					</tr>
 				</c:forEach>
