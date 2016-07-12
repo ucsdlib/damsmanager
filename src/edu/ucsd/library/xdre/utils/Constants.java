@@ -62,6 +62,8 @@ public class Constants {
 	public static String IMAGEMAGICK_PARAMS = "";
 	public static String COLLECTION_THUMBNAILS_SIZE = "150x150";
 	public static String COLLECTION_IMAGE_SIZE = "1024x1024";
+
+	public static String ZOOMIFY_COMMAND = "";
 	
 	/* begin stats declaration*/
 	public static String CURATOR_ROLE ="";
@@ -163,7 +165,10 @@ public class Constants {
 
 			//Collection image size
 			COLLECTION_IMAGE_SIZE = props.getProperty("xdre.clr.imgSize");
-					
+
+			//Zoomify command
+			ZOOMIFY_COMMAND = props.getProperty("zoomfy.command");
+
 			// Namespace prefix
 			NS_PREFIX = props.getProperty("ns.prefix");
 			NS_PREFIX_MAP = new HashMap<String, String>();
