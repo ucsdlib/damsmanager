@@ -179,13 +179,18 @@
   </xsl:template>
   <xsl:template match="mods:titleInfo">
     <xsl:if test="not(@type) or (@type != 'alternative' and @type != 'uniform')">
+      <xsl:variable name="title">
+        <xsl:call-template name="title-label"/>
+      </xsl:variable>
       <dams:title>
         <mads:Title>
           <mads:authoritativeLabel>
-            <xsl:call-template name="title-label"/>
+            <xsl:value-of select="$title" />
           </mads:authoritativeLabel>
           <mads:elementList rdf:parseType="Collection">
-            <xsl:apply-templates/>
+            <mads:MainTitleElement>
+              <mads:elementValue><xsl:value-of select="$title"/></mads:elementValue>
+            </mads:MainTitleElement>
           </mads:elementList>
 
           <!-- attach variants to first titleInfo -->
@@ -214,7 +219,7 @@
     <xsl:value-of select="mods:nonSort"/>
     <xsl:value-of select="mods:title"/>
     <xsl:for-each select="mods:subTitle">
-      <xsl:text>, </xsl:text><xsl:value-of select="."/>
+      <xsl:text> </xsl:text><xsl:value-of select="."/>
     </xsl:for-each>
     <xsl:for-each select="mods:partNumber">
       <xsl:text>, </xsl:text><xsl:value-of select="."/>
@@ -222,31 +227,6 @@
     <xsl:for-each select="mods:partName">
       <xsl:text>, </xsl:text><xsl:value-of select="."/>
     </xsl:for-each>
-  </xsl:template>
-  <xsl:template match="mods:titleInfo/mods:title">
-    <mads:MainTitleElement>
-      <mads:elementValue><xsl:value-of select="."/></mads:elementValue>
-    </mads:MainTitleElement>
-  </xsl:template>
-  <xsl:template match="mods:titleInfo/mods:nonSort">
-    <mads:NonSortElement>
-      <mads:elementValue><xsl:value-of select="."/></mads:elementValue>
-    </mads:NonSortElement>
-  </xsl:template>
-  <xsl:template match="mods:titleInfo/mods:subTitle">
-    <mads:SubTitleElement>
-      <mads:elementValue><xsl:value-of select="."/></mads:elementValue>
-    </mads:SubTitleElement>
-  </xsl:template>
-  <xsl:template match="mods:titleInfo/mods:partNumber">
-    <mads:PartNumberElement>
-      <mads:elementValue><xsl:value-of select="."/></mads:elementValue>
-    </mads:PartNumberElement>
-  </xsl:template>
-  <xsl:template match="mods:titleInfo/mods:partName">
-    <mads:PartNameElement>
-      <mads:elementValue><xsl:value-of select="."/></mads:elementValue>
-    </mads:PartNameElement>
   </xsl:template>
   <xsl:template match="mods:mods/mods:language">
     <dams:language>
