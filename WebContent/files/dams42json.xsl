@@ -137,7 +137,12 @@
                </xsl:variable>
                 <xsl:call-template name="appendJsonObject">
                     <xsl:with-param name="key"><xsl:value-of select="$titleName"/></xsl:with-param>
-                    <xsl:with-param name="val"><xsl:value-of select="mads:elementValue"/></xsl:with-param>
+                    <xsl:with-param name="val">
+                        <xsl:choose>
+                            <xsl:when test="../mads:NonSortElement"><xsl:value-of select="concat(../mads:NonSortElement,' ',mads:elementValue)"/></xsl:when>
+                            <xsl:otherwise><xsl:value-of select="mads:elementValue"/></xsl:otherwise>
+                        </xsl:choose>
+                    </xsl:with-param>
                 </xsl:call-template>
             </xsl:for-each>
         </xsl:for-each>

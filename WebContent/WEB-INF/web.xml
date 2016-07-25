@@ -100,8 +100,6 @@
     <security-constraint>
     	<web-resource-collection>
 	        <web-resource-name>Protected Area</web-resource-name>
-	        <url-pattern>/loginPas.do</url-pattern>
-	        <url-pattern>/statusItems.do</url-pattern>
 	        <url-pattern>/tsAnalyzer.do</url-pattern>
 	        <url-pattern>/dataConverter.do</url-pattern>
 	        <url-pattern>/progressHandler.do</url-pattern>
@@ -116,19 +114,36 @@
 	        <url-pattern>/rdfEdit.do</url-pattern>
 	        <url-pattern>/metadataImport.do</url-pattern>
 	        <url-pattern>/fileReport.do</url-pattern>
-	        <url-pattern>/statsRdcpUsage.do</url-pattern>
-	        <url-pattern>/statsRdcpDownload.do</url-pattern>
     	</web-resource-collection>
     	<auth-constraint>
         	<role-name>32</role-name>
         	<role-name>4708</role-name>
-        	<role-name>dams-curator</role-name>
+        	<role-name>dams-editor</role-name>
         	<role-name>dams-manager-admin</role-name>
       	</auth-constraint>
         <user-data-constraint>
             <transport-guarantee>CONFIDENTIAL</transport-guarantee>
         </user-data-constraint>
     </security-constraint>    
+
+    <!-- Role for accessing the tagging tool. -->
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>DAMS Statistics Protected Area</web-resource-name>
+            <url-pattern>/loginPas.do</url-pattern>
+            <url-pattern>/statusItems.do</url-pattern>
+            <url-pattern>/statsRdcpUsage.do</url-pattern>
+            <url-pattern>/statsRdcpDownload.do</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>dams-curator</role-name>
+            <role-name>dams-editor</role-name>
+            <role-name>dams-manager-admin</role-name>
+        </auth-constraint>
+        <user-data-constraint>
+            <transport-guarantee>CONFIDENTIAL</transport-guarantee>
+        </user-data-constraint>
+    </security-constraint>
 
 	<security-role>
 		<role-name>32</role-name>
@@ -143,5 +158,8 @@
 	</security-role>
 	<security-role>
 		<role-name>dams-curator</role-name>
+	</security-role>
+	<security-role>
+		<role-name>dams-editor</role-name>
 	</security-role>
 </web-app>
