@@ -2,9 +2,11 @@ package edu.ucsd.library.xdre.collection;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.dom4j.Document;
 import org.dom4j.Node;
@@ -95,6 +97,19 @@ public class FileUploadHandler extends CollectionHandler{
 						successful = damsClient.updateDerivatives(oid, cid, fid, null);
 						if(successful){
 							logMessage( "Created derivatives for " + subjectURI + " (" + damsClient.getRequestURL() + ").");
+
+							if (isAudio(fid, use)) {
+								// add embedded metadata for mp3 derivatives
+								String fileUrl = oid + (StringUtils.isNotBlank(cid) ? "/" + cid : "") + "/2.mp3";
+								if(damsClient.ffmpegEmbedMetadata(oid, cid, "2.mp3", "audio-service")) {
+									logMessage( "Embedded metadata for audio " + fileUrl + " (" + damsClient.getRequestURL() + ").");
+								} else {
+									successful = false;
+									message = "Derivative creation (embed metadata) - failed - " + damsDateFormat.format(new Date());
+									log("log", message);
+									setStatus(message);
+								}
+							}
 						} else {
 							derivFailed.add(damsClient.getRequestURL() + ", \n"); 
 							logError("Failed to created derivatives " + damsClient.getRequestURL() + " (" + (i+1) + " of " + itemsCount + ") ... " );
