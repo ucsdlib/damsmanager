@@ -8,6 +8,7 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -45,6 +46,22 @@ public class FFMPEGConverter
 	}
 
 	/**
+	 * method to embed metadata
+	 * @param oid
+	 * @param cid
+	 * @param mfid
+	 * @param dfid
+	 * @param params
+	 * @param metadata
+	 * @return
+	 * @throws Exception
+	 */
+	public File metadataEmbed(String oid, String cid, String mfid, String dfid, String params,
+			Map<String, String> metadata) throws Exception {
+		return createDerivative(oid, cid, mfid, dfid, (params == null ? "" : params) + " -id3v2_version 3", metadata);
+	}
+
+	/**
 	 * Create derivative
 	 * @param oid
 	 * @param cid
@@ -55,6 +72,22 @@ public class FFMPEGConverter
 	 * @throws Exception
 	 */
 	public File createDerivative(String oid, String cid, String mfid, String dfid, String params) throws Exception {
+		return createDerivative(oid, cid, mfid, dfid, params);
+	}
+
+	/**
+	 * Create derivative with embedded metadata
+	 * @param oid
+	 * @param cid
+	 * @param mfid
+	 * @param dfid
+	 * @param params
+	 * @param metadata
+	 * @return
+	 * @throws Exception
+	 */
+	public File createDerivative(String oid, String cid, String mfid, String dfid, String params,
+			Map<String, String> metadata) throws Exception {
 		File src = createArkFile(oid, cid, mfid);
 		File dst =  createArkFile(oid, cid, dfid);
 
@@ -74,7 +107,7 @@ public class FFMPEGConverter
 		}
 
 		dst = File.createTempFile("ffmpeg_tmp", oid+"-"+dst.getName(), tmpDir);
-		boolean succssful = createDerivative( src, dst, params );
+		boolean succssful = createDerivative( src, dst, params, metadata );
 		if ( !succssful ) {
 			if(dst != null && dst.exists()){
 				// Cleanup temp files
@@ -97,7 +130,21 @@ public class FFMPEGConverter
 	 * @return
 	 * @throws Exception
 	 */
-	public boolean createDerivative( File src, File dst, String params) throws Exception{
+	public boolean createDerivative( File src, File dst, String params ) throws Exception{
+		return createDerivative( src, dst, params );
+	}
+
+	/**
+	 * Create derivative
+	 * @param src
+	 * @param dst
+	 * @param params
+	 * @return metadata
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean createDerivative( File src, File dst, String params,
+			Map<String, String> metadata ) throws Exception{
 		// Build the ffmpeg command to create derivative
 		List<String> cmd = new ArrayList<>();
 		cmd.add( command );
@@ -106,12 +153,10 @@ public class FFMPEGConverter
 		if (StringUtils.isNotBlank(params))
 			cmd.addAll(Arrays.asList(params.split(" ")));
 
-		//add stream mapping for audio/video with multiple tracks
-		List<String> streams = getStreams (src.getAbsolutePath());
-		if (streams.size() > 2 || dst.getAbsolutePath().endsWith(".mp3") && streams.size() > 1) {
-			for (String stream : streams) {
-				cmd.add("-map");
-				cmd.add(stream);
+		if (metadata != null) {
+			for (String fieldName : metadata.keySet()) {
+				cmd.add("-metadata");
+				cmd.add(fieldName + "=" + metadata.get(fieldName));
 			}
 		}
 			

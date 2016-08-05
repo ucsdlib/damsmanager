@@ -776,6 +776,18 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 												successful = false;
 												ingestLog.append("\n    Thumbnail creation - failed - " + damsDateFormat.format(new Date()));
 											}
+										} else if (isAudio(fid, use)) {
+											// add embedded metadata for mp3 derivatives
+											if(damsClient.ffmpegEmbedMetadata(oid, cid, "2.mp3", "audio-service")) {
+												logMessage( "Embedded metadata for audio " + fileUrl + " (" + damsClient.getRequestURL() + ").");
+											} else {
+												derivFailedCount++;
+												derivativesFailed.append(damsClient.getRequestURL() + ", \n"); 
+												log.error("Failed to embedd metadata for audio " + damsClient.getRequestURL() + " (" + tmpFile + ", " + (l+1) + " of " + iLen + "). ");
+												ingested = false;
+												successful = false;
+												ingestLog.append("\n    Derivative creation (embed metadata) - failed - " + damsDateFormat.format(new Date()));
+											}
 										}
 									} else {
 										derivFailedCount++;
