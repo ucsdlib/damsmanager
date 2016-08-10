@@ -3,11 +3,13 @@ package edu.ucsd.library.xdre.collection;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
 import javax.security.auth.login.LoginException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import edu.ucsd.library.xdre.utils.Constants;
@@ -248,7 +250,20 @@ public class DerivativeHandler extends CollectionHandler{
 					successful = damsClient.updateDerivatives(oid, cid, fid, derSizes.toArray(new String[derSizes.size()]), frameNo, update);				
 				} else
 					successful = damsClient.createDerivatives(oid, cid, fid, derSizes.toArray(new String[derSizes.size()]), frameNo);
-	    	
+		    	
+				if (isAudio(fid, use)) {
+					// add embedded metadata for mp3 derivatives
+					String fileUrl = oid + (StringUtils.isNotBlank(cid) ? "/" + cid : "") + "/2.mp3";
+					if(damsClient.ffmpegEmbedMetadata(oid, cid, "2.mp3", "audio-service")) {
+						logMessage( "Embedded metadata for audio " + fileUrl + " (" + damsClient.getRequestURL() + ").");
+					} else {
+						successful = false;
+						message = "Derivative creation (embed metadata) - failed - " + damsDateFormat.format(new Date());
+						log("log", message);
+						setStatus(message);
+					}
+				}
+				
 				derivFullName = oid + "/" + (cid!=null?cid+"/":"") + derSizes;
 				if(!successful){
 					failedsCount += 1;

@@ -703,6 +703,36 @@ public class DAMSClient {
 		return updateDerivatives(object, compId, fileName, sizes, null, true);
 	}
 
+	/**
+	 * embed metadata using ffmpeg
+	 * 
+	 * @param oid
+	 * @param cid
+	 * @param fid
+	 * @return
+	 * @throws Exception 
+	 */
+	public boolean ffmpegEmbedMetadata(String oid, String cid, String fid, String fileUse) throws Exception {
+		AudioMetadata audioMetadata = new AudioMetadata(this);
+		String fileUrl = oid + (StringUtils.isNotBlank(cid) ? "/" + cid : "") + "/" + fid;
+		Map<String, String> metadata = audioMetadata.getMetadata(oid, fileUrl);
+		FFMPEGConverter ffmpeg = new FFMPEGConverter(Constants.FFMPEG_COMMAND);
+		File dst = ffmpeg.metadataEmbed(DAMSClient.stripID(oid), cid, fid, fid, Constants.FFMPEG_AUDIO_PARAMS, metadata);
+
+		Map<String, String> params = new HashMap<>();
+		if(dst != null) {
+			params.clear();
+			// Upload the mp4/mp3 derivative
+			params.put("oid", oid);
+			params.put("cid", cid);
+			params.put("fid", fid);
+			params.put(DFile.USE, fileUse);
+			params.put("local", dst.getAbsolutePath());
+			return uploadFile(params, true); 
+		}
+		return false;
+	}
+
 	public boolean mergeRecords(String object, String[] records2merge) throws Exception {
 		//POST /objects/bb1234567x/index
 		String format = "json";
@@ -958,8 +988,23 @@ public class DAMSClient {
 	 */
 	public Document getFullRecord(String object)
 			throws Exception {
+		return getFullRecord(object, false);
+	}
+
+	/**
+	 * Retrieve a full metadata record with/without events
+	 * @param object
+	 * @param excludeEvent
+	 * @return
+	 * @throws Exception 
+	 */
+	public Document getFullRecord(String object, boolean excludeEvent)
+			throws Exception {
 		String format = "xml";
 		String url = getObjectsURL(object, null, "export", format);
+		if (excludeEvent)
+			url += "&es=no";
+
 		HttpGet req = new HttpGet(url);
 		try {
 			return getXMLResult(req);
