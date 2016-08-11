@@ -1,25 +1,23 @@
 package edu.ucsd.library.xdre.utils;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
 import org.dom4j.Document;
 import org.dom4j.Node;
 
 /**
- * Utility class to extract embedded metadata for audio
+ * Utility class to extract embedded metadata for videos
  * @author lsitu
  */
-public class AudioMetadata extends EmbeddedMetadata{
+public class VideoMetadata extends EmbeddedMetadata{
 
-	public AudioMetadata (DAMSClient damsClient) throws Exception {
+	public VideoMetadata (DAMSClient damsClient) throws Exception {
 		super(damsClient);
 	}
 
 	/**
-	 * Extract metadata for audio
+	 * Extract metadata for video
 	 * @param oid
 	 * @param fileUri
 	 * @return
@@ -44,11 +42,10 @@ public class AudioMetadata extends EmbeddedMetadata{
 		// artist
 		metadata.put("date", getYear (containerNode));
 
-		// publisher
-		metadata.put("publisher", oid + " - " + getPublisher (rdf.selectSingleNode("/rdf:RDF/dams:Object")));
-
-		// copyright
-		metadata.put("copyright", getCopyright (rdf.selectSingleNode("/rdf:RDF/dams:Object")));
+		// comments and copyright
+		String comments = getComments (rdf.selectSingleNode("/rdf:RDF/dams:Object"));
+		String copyright = getCopyright (rdf.selectSingleNode("/rdf:RDF/dams:Object"));
+		metadata.put("comment", oid + " - " + comments + ". " + copyright);
 
 		return metadata;
 	}

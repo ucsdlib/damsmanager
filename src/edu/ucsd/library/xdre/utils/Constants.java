@@ -74,7 +74,10 @@ public class Constants {
 	//Namespace prefix
 	public static String NS_PREFIX = "";
 	public static Map<String, String> NS_PREFIX_MAP = null;
-	
+
+	// ffmpeg parameters for embedded metadata
+	public static Map<String, String> FFMPEG_EMBED_PARAMS = new HashMap<>();
+
 	static {
 		InputStream in = null;
 		try {
@@ -191,6 +194,13 @@ public class Constants {
 			// DAMS stats datasource
 			DAMS_DATA_SOURCE = (DataSource) ctx.lookup("java:comp/env/jdbc/dams");
 			
+			// ffmpeg parameters for embedded metadata
+			String ffmpegEmbedParams = props.getProperty("ffmpeg.embed.params");
+			String[] formats = ffmpegEmbedParams.split(";");
+			for (String format : formats) {
+				String[] token = format.split("\\|");
+				FFMPEG_EMBED_PARAMS.put(token[0].trim(), token[1].trim());
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally{

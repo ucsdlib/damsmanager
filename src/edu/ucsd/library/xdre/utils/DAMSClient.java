@@ -704,20 +704,21 @@ public class DAMSClient {
 	}
 
 	/**
-	 * embed metadata using ffmpeg
+	 * embedded metadata using ffmpeg
 	 * 
 	 * @param oid
 	 * @param cid
 	 * @param fid
+	 * @param fileUse
+	 * @param commandParams
+	 * @param metadata
 	 * @return
 	 * @throws Exception 
 	 */
-	public boolean ffmpegEmbedMetadata(String oid, String cid, String fid, String fileUse) throws Exception {
-		AudioMetadata audioMetadata = new AudioMetadata(this);
-		String fileUrl = oid + (StringUtils.isNotBlank(cid) ? "/" + cid : "") + "/" + fid;
-		Map<String, String> metadata = audioMetadata.getMetadata(oid, fileUrl);
+	public boolean ffmpegEmbedMetadata(String oid, String cid, String fid, String fileUse,
+			String commandParams, Map<String, String> metadata) throws Exception {
 		FFMPEGConverter ffmpeg = new FFMPEGConverter(Constants.FFMPEG_COMMAND);
-		File dst = ffmpeg.metadataEmbed(DAMSClient.stripID(oid), cid, fid, fid, Constants.FFMPEG_AUDIO_PARAMS, metadata);
+		File dst = ffmpeg.metadataEmbed(DAMSClient.stripID(oid), cid, fid, fid, commandParams, metadata);
 
 		Map<String, String> params = new HashMap<>();
 		if(dst != null) {

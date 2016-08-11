@@ -11,9 +11,12 @@ import org.apache.log4j.Logger;
 import org.dom4j.Document;
 import org.dom4j.Node;
 
+import edu.ucsd.library.xdre.utils.AudioMetadata;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.DamsURI;
+import edu.ucsd.library.xdre.utils.EmbeddedMetadata;
+import edu.ucsd.library.xdre.utils.VideoMetadata;
 
 /**
  * 
@@ -98,14 +101,31 @@ public class FileUploadHandler extends CollectionHandler{
 						if(successful){
 							logMessage( "Created derivatives for " + subjectURI + " (" + damsClient.getRequestURL() + ").");
 
-							if (isAudio(fid, use)) {
-								// add embedded metadata for mp3 derivatives
-								String fileUrl = oid + (StringUtils.isNotBlank(cid) ? "/" + cid : "") + "/2.mp3";
-								if(damsClient.ffmpegEmbedMetadata(oid, cid, "2.mp3", "audio-service")) {
-									logMessage( "Embedded metadata for audio " + fileUrl + " (" + damsClient.getRequestURL() + ").");
+							if (isAudio(fid, use) || isVideo(fid, use)) {
+								// extract embedded metadata
+								EmbeddedMetadata embeddedMetadata = null;
+								String derName = null;
+								String fileUse = null;
+								String commandParams = null;
+								if (isAudio(fid, use)) {
+									embeddedMetadata = new AudioMetadata(damsClient);
+									derName = "2.mp3";
+									fileUse = "audio-service";
+									commandParams = Constants.FFMPEG_EMBED_PARAMS.get("mp3");
+								} else {
+									embeddedMetadata = new VideoMetadata(damsClient);
+									derName = "2.mp4";
+									fileUse = "video-service";
+									commandParams = Constants.FFMPEG_EMBED_PARAMS.get("mp4");
+								}
+								// embedded metadata for audio and video derivatives
+								String fileUrl = oid + (StringUtils.isNotBlank(cid) ? "/" + cid : "") + "/" + derName;
+								if(damsClient.ffmpegEmbedMetadata(oid, cid, derName, fileUse, commandParams,
+										embeddedMetadata.getMetadata(oid, fileUrl))) {
+									logMessage( "Embedded metadata for " + fileUrl + " (" + damsClient.getRequestURL() + ").");
 								} else {
 									successful = false;
-									message = "Derivative creation (embed metadata) - failed - " + damsDateFormat.format(new Date());
+									message = "Derivative creation (embed metadata) for " + fileUrl + " - failed - " + damsDateFormat.format(new Date());
 									log("log", message);
 									setStatus(message);
 								}
