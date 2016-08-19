@@ -937,7 +937,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		return iLen;
 	}
 
-	private boolean createZoomifyTiles( final String oid, final String cid, final String fid ) throws Exception {
+	public static boolean createZoomifyTiles( final String oid, final String cid, final String fid ) throws Exception {
 		ZoomifyTilesConverter zoomifyConverter = new ZoomifyTilesConverter( Constants.ZOOMIFY_COMMAND );
 		zoomifyConverter.setFileStoreDir(Constants.FILESTORE_DIR);
 		return zoomifyConverter.createZoomifyTiles(oid, cid, fid);

@@ -83,6 +83,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 
 	protected HttpSession session = null;
 	protected StringBuilder exeReport = null;
+	protected StringBuilder errorReport = null;
 	protected FileWriter logWriter = null;
 
 	protected String collectionData = null;
@@ -136,6 +137,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 	 */
 	protected void init() throws Exception {
 		exeReport = new StringBuilder();
+		errorReport = new StringBuilder();
 		collectionsMap = new HashMap<String, String>();
 		unitsMap = damsClient.listUnits();
 		Map<String, String> colls = damsClient.listCollections();
@@ -387,7 +389,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 						RequestOrganizer.PROGRESS_PERCENTAGE_ATTRIBUTE,
 						Long.toString(percent));
 			} catch (IllegalStateException e) {
-				e.printStackTrace();
+				//e.printStackTrace();
 			}
 		}
 	}
@@ -634,8 +636,9 @@ public abstract class CollectionHandler implements ProcessHandler {
 	public static boolean isImage(String fileName, String use){
 		fileName = fileName.toLowerCase();
 		String mimeType = DAMSClient.getMimeType(fileName);
-		if((use!=null && use.toLowerCase().startsWith("image")) || 
-				mimeType.indexOf("image")>=0 || fileName.endsWith(".tif") || fileName.endsWith(".png"))
+		if((use!=null && use.toLowerCase().startsWith("image")) || mimeType.indexOf("image")>=0
+				|| fileName.endsWith(".tif") || fileName.endsWith(".jpg")
+				|| fileName.endsWith(".png") || fileName.endsWith(".gif"))
 			return true;
 		else
 			return false;
@@ -665,7 +668,7 @@ public abstract class CollectionHandler implements ProcessHandler {
 		fileName = fileName.toLowerCase();
 		String mimeType = DAMSClient.getMimeType(fileName);
 		if((use!=null && use.toLowerCase().startsWith("video")) || mimeType.indexOf("video")>=0
-				|| fileName.endsWith("mp4") || fileName.endsWith("avi") || fileName.endsWith("mov")) {
+				|| fileName.endsWith("mp4") || fileName.endsWith("avi") || fileName.endsWith("mov") || fileName.endsWith("wmv")) {
 			return true;
 		} else {
 			return false;
@@ -1181,8 +1184,8 @@ public abstract class CollectionHandler implements ProcessHandler {
 		if (isImage(fid, use) || isDocument(fid, use) || isVideo(fid, use) || isAudio(fid, use)) {
 
 			// default use master files, source files and master service files
-			if ((use == null && fid.startsWith("1.")) || 
-					use != null && (use.endsWith("source") || (use.endsWith("service") && fid.startsWith("1."))))
+			if ((StringUtils.isBlank(use) && fid.startsWith("1.")) || 
+					StringUtils.isNotBlank(use) && (use.endsWith("source") || (use.endsWith("service") && fid.startsWith("1."))))
 				return true;
 		}
 		return false;
@@ -1205,6 +1208,10 @@ public abstract class CollectionHandler implements ProcessHandler {
 				solrParams = solrParams.substring(0, len-5);
 		}
 		return solrParams;
+	}
+
+	public String getErrorReport(){
+		return errorReport.toString();
 	}
 
 	/**
