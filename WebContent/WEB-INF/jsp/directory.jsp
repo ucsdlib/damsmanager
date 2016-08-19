@@ -13,6 +13,8 @@
 	var dirRoot = 'dirPanel';
 	function loadPicker(output, paths){
 		var dirobj;
+		var option = "${model.option}";
+		var optionVal = option == null || option.length == 0 ? "" : "&" + option;
 		if(output == null)
 			output = document.getElementById(dirRoot);
 		if(paths == null){
@@ -22,7 +24,7 @@
 		}else{
 		  $(output).html("<img src=\"/damsmanager/images/indicator.gif\" />");
 		  $.ajax({
-			  url: "/damsmanager/directory.do?listOnly&subList&filter=" +paths,
+			  url: "/damsmanager/directory.do?listOnly&subList" + optionVal + "&filter=" +paths,
 			  dataType: "json",
 			  success: function(data){
 					var dbo = new DebuggableObject(data);

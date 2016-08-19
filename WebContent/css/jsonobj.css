@@ -30,9 +30,11 @@
 }
 .dbg-value .dbg-toggle-open .dbg-toggle {
   list-style-image : url("../images/minus.gif");
+  cursor : pointer;
 }
 .dbg-value .dbg-toggle-closed .dbg-toggle {
   list-style-image : url("../images/plus.gif");
+  cursor : pointer;
 }
 
 .ident {

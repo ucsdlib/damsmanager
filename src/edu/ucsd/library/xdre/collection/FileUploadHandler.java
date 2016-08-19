@@ -11,6 +11,7 @@ import org.apache.log4j.Logger;
 import org.dom4j.Document;
 import org.dom4j.Node;
 
+import edu.ucsd.library.xdre.imports.RDFDAMS4ImportTsHandler;
 import edu.ucsd.library.xdre.utils.AudioMetadata;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
@@ -65,17 +66,20 @@ public class FileUploadHandler extends CollectionHandler{
 			String fid = damsURI.getFileName();
 			
 			try {
-				if (damsClient.exists(damsURI.getObject(), null, null)) {
+				log.info("Uploading file " + subjectURI + " (" + f + ") ...");
+				if (damsClient.exists(oid, null, null)) {
 					try {
 						Document doc = damsClient.getRecord(oid);
-						Node fileNode = doc.selectSingleNode("//File[@rdf:about='" + subjectURI + "']");
+						Node fileNode = doc.selectSingleNode("//dams:File[@rdf:about='" + subjectURI + "']");
 						if (fileNode != null) {
 							Node useNode = fileNode.selectSingleNode("dams:use");
 							if (useNode != null)
 								use = useNode.getText();
 						}
 					}catch (Exception e) {
-						logError("Unable to retrieve file use property for object " + oid + ": " + e.getMessage());
+						message = "Unable to retrieve file use property for object " + oid + ": " + e.getMessage();
+						logError(message);
+						errorReport.append(message + "\n");
 					}
 				}
 						
@@ -96,8 +100,34 @@ public class FileUploadHandler extends CollectionHandler{
 	
 					//Create derivatives for images and documents PDFs
 					if( isDerivativesRequired(fid, use) ){
-						
-						successful = damsClient.updateDerivatives(oid, cid, fid, null);
+
+						if (isVideo(fid, use) || isAudio(fid, use)) {
+							String deriName = "2.mp4";
+							if (isAudio(fid, use))
+								deriName = "2.mp3";
+							
+							String[] deriSizes = {deriName};
+							successful = damsClient.updateDerivatives(oid, cid, fid, deriSizes);
+
+							if(StringUtils.isNotBlank(use) && use.equalsIgnoreCase("video-source")
+									|| isVideo(fid, use) && fid.startsWith("1.")){
+								// create the .jpg thumbnail for videos from the mp4 derivative
+								String[] sizes = {"4", "3"};
+								successful = damsClient.updateDerivatives(oid, cid, "2.mp4", sizes);
+								if(successful){
+									logMessage( "Created thumbnails for video " + subjectURI + " (" + damsClient.getRequestURL() + ").");
+								} else {
+									successful = false;
+									failedCount++;
+									derivFailed.add(damsClient.getRequestURL()); 
+									log.error("Failed to created thumbnails for video " + damsClient.getRequestURL() + ".");
+									logError("\n    Thumbnail creation - failed - " + damsDateFormat.format(new Date()));
+								}
+							}
+						} else {
+							successful = damsClient.updateDerivatives(oid, cid, fid, null);
+						}
+
 						if(successful){
 							logMessage( "Created derivatives for " + subjectURI + " (" + damsClient.getRequestURL() + ").");
 
@@ -120,14 +150,36 @@ public class FileUploadHandler extends CollectionHandler{
 								}
 								// embedded metadata for audio and video derivatives
 								String fileUrl = oid + (StringUtils.isNotBlank(cid) ? "/" + cid : "") + "/" + derName;
+								log.info("File url: " + fileUrl);
 								if(damsClient.ffmpegEmbedMetadata(oid, cid, derName, fileUse, commandParams,
 										embeddedMetadata.getMetadata(oid, fileUrl))) {
 									logMessage( "Embedded metadata for " + fileUrl + " (" + damsClient.getRequestURL() + ").");
 								} else {
 									successful = false;
 									message = "Derivative creation (embed metadata) for " + fileUrl + " - failed - " + damsDateFormat.format(new Date());
-									log("log", message);
+									logError(message);
 									setStatus(message);
+								}
+							}
+
+							// create zoomify tiles for master image files
+							if ( isImage(fid, use) && fid.startsWith("1.") ) {
+								try {
+									boolean zoomifyTilesCreated = RDFDAMS4ImportTsHandler.createZoomifyTiles( oid, cid, fid );
+
+									if( zoomifyTilesCreated ){
+										logMessage( "Created zoomify tiles " + subjectURI + " (" + damsClient.getRequestURL() + ").");
+									} else {
+										log.error("Failed to create zoomify tiles for " + damsClient.getRequestURL() + ".");
+										successful = false;
+										log("log", "\n    Zoomify tiles - failed - " + damsDateFormat.format(new Date()));
+									}
+								}catch (Exception e) {
+									e.printStackTrace();
+									log.error("Failed to create Zoomify tiles for " + subjectURI + ": " + e.getMessage());
+
+									successful = false;
+									logError("\n    Zoomify tiles creation - failed - " + e.getMessage());
 								}
 							}
 						} else {
@@ -154,11 +206,13 @@ public class FileUploadHandler extends CollectionHandler{
 	
 				setProgressPercentage( ((i + 1) * 100) / itemsCount);
 			} catch (Exception e) {
+				e.printStackTrace();
 				exeResult = false;
 				ingestFailed.add(f);
 				message = "Failed to ingest file " + subjectURI  + " (" + f + "): \n" + e.getMessage();
 				setStatus(message);
 				logError(message);
+				errorReport.append(e.getMessage() + "\n");
 			}
 
 			try{
