@@ -137,7 +137,7 @@ public class StatsRdcpDownloadController implements Controller {
 				strBuf.append(message);
 
 			OutputStream out = response.getOutputStream();
-			response.setHeader("Content-Disposition", "inline; filename=dcp_downloads.csv");
+			response.setHeader("Content-Disposition", "inline; filename=rdcp_downloads.csv");
 			response.setContentType("text/csv");
 			out.write(strBuf.toString().getBytes());
 			out.close();
@@ -255,7 +255,7 @@ public class StatsRdcpDownloadController implements Controller {
 			List<Integer> numOfViews = s.getNumOfViews();
 			RdcpStatsDownloadSummary toBeMerged = toBeMergedMap.get(subjectId);
 			List<String> periodsToBeMerged = toBeMerged != null ? toBeMerged.getPeriods() : new ArrayList<String>();
-			List<Integer> numOfViewsToBeMerged = toBeMerged != null ? toBeMerged.getNumOfViews() : new ArrayList<Integer>();;
+			List<Integer> numOfViewsToBeMerged = toBeMerged != null ? toBeMerged.getNumOfViews() : new ArrayList<Integer>();
 
 			// stats result merged
 			List<Integer> numOfViewsMerged = new ArrayList<>();
@@ -265,7 +265,7 @@ public class StatsRdcpDownloadController implements Controller {
 				if (toBeMerged != null) {
 					int periodIndex = periodsToBeMerged.indexOf(periods.get(i));
 					if (periodIndex >= 0 && numOfViewsToBeMerged.size() > periodIndex)
-						numOfView = toBeMerged.getNumOfViews().get(i);
+						numOfView = numOfViewsToBeMerged.get(periodIndex);
 				}
 				numOfViewsMerged.add(numOfViews.get(i));
 				numOfViewsMerged.add(numOfView);
