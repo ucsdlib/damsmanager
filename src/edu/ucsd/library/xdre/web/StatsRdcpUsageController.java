@@ -251,7 +251,7 @@ public class StatsRdcpUsageController implements Controller {
 				if (toBeMerged != null) {
 					int periodIndex = periodsToBeMerged.indexOf(periods.get(i));
 					if (periodIndex >= 0 && numOfViewsToBeMerged.size() > periodIndex)
-						numOfView = toBeMerged.getNumOfViews().get(i);
+						numOfView = numOfViewsToBeMerged.get(periodIndex);
 				}
 				numOfViewsMerged.add(numOfViews.get(i));
 				numOfViewsMerged.add(numOfView);
