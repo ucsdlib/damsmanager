@@ -35,11 +35,14 @@ import com.hp.hpl.jena.util.iterator.ExtendedIterator;
 import edu.ucsd.library.xdre.collection.MetadataImportHandler;
 import edu.ucsd.library.xdre.tab.ExcelSource;
 import edu.ucsd.library.xdre.tab.SubjectTabularRecord;
+import edu.ucsd.library.xdre.utils.AudioMetadata;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.DFile;
 import edu.ucsd.library.xdre.utils.DamsURI;
+import edu.ucsd.library.xdre.utils.EmbeddedMetadata;
 import edu.ucsd.library.xdre.utils.RDFStore;
+import edu.ucsd.library.xdre.utils.VideoMetadata;
 import edu.ucsd.library.xdre.utils.ZoomifyTilesConverter;
 
 /**
@@ -776,17 +779,37 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 												successful = false;
 												ingestLog.append("\n    Thumbnail creation - failed - " + damsDateFormat.format(new Date()));
 											}
-										} else if (isAudio(fid, use)) {
-											// add embedded metadata for mp3 derivatives
-											if(damsClient.ffmpegEmbedMetadata(oid, cid, "2.mp3", "audio-service")) {
-												logMessage( "Embedded metadata for audio " + fileUrl + " (" + damsClient.getRequestURL() + ").");
+										}
+
+										// embedded metadata for audio mp3 and video mp4 derivatives
+										if ((isAudio(fid, use) || isVideo(fid, use)) && StringUtils.isNotBlank(use) && use.endsWith("-source")) {
+											// extract embedded metadata
+											EmbeddedMetadata embeddedMetadata = null;
+											String derName = null;
+											String fileUse = null;
+											String commandParams = null;
+											if (isAudio(fid, use)) {
+												embeddedMetadata = new AudioMetadata(damsClient);
+												derName = "2.mp3";
+												fileUse = "audio-service";
+												commandParams = Constants.FFMPEG_EMBED_PARAMS.get("mp3");
+											} else {
+												embeddedMetadata = new VideoMetadata(damsClient);
+												derName = "2.mp4";
+												fileUse = "video-service";
+												commandParams = Constants.FFMPEG_EMBED_PARAMS.get("mp4");
+											}
+
+											Map<String, String> metadata = embeddedMetadata.getMetadata(oid, fileUrl);
+											if(damsClient.ffmpegEmbedMetadata(oid, cid, derName, fileUse, commandParams, metadata)) {
+												logMessage( "Embedded metadata for " + fileUrl + " (" + damsClient.getRequestURL() + ").");
 											} else {
 												derivFailedCount++;
 												derivativesFailed.append(damsClient.getRequestURL() + ", \n"); 
-												log.error("Failed to embedd metadata for audio " + damsClient.getRequestURL() + " (" + tmpFile + ", " + (l+1) + " of " + iLen + "). ");
+												log.error("Failed to embedd metadata for " + damsClient.getRequestURL() + " (" + tmpFile + ", " + (l+1) + " of " + iLen + "). ");
 												ingested = false;
 												successful = false;
-												ingestLog.append("\n    Derivative creation (embed metadata) - failed - " + damsDateFormat.format(new Date()));
+												ingestLog.append("\n    Derivative creation (embed metadata) for " + damsClient.getRequestURL() + " - failed - " + damsDateFormat.format(new Date()));
 											}
 										}
 									} else {
@@ -914,7 +937,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		return iLen;
 	}
 
-	private boolean createZoomifyTiles( final String oid, final String cid, final String fid ) throws Exception {
+	public static boolean createZoomifyTiles( final String oid, final String cid, final String fid ) throws Exception {
 		ZoomifyTilesConverter zoomifyConverter = new ZoomifyTilesConverter( Constants.ZOOMIFY_COMMAND );
 		zoomifyConverter.setFileStoreDir(Constants.FILESTORE_DIR);
 		return zoomifyConverter.createZoomifyTiles(oid, cid, fid);

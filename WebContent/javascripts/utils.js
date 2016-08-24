@@ -131,12 +131,14 @@
      }
    }
 
-  function showFilePicker(id, event, handler){
+  function showFilePicker(id, event, handler, option){
 	  gField = id;
+
 	  if (handler != null)
 		  callback = handler;
 	  else
 		  callback = getSid();
+
 	  var dirFilter = trim(document.getElementById(id).value);
 	  if (dirFilter.indexOf(";") == dirFilter.length - 1)
 		  dirFilter = dirFilter.substr(0, dirFilter.length - 1);
@@ -147,7 +149,8 @@
 		  }
 		  dirFilter = "filter=" + dirFilter;
 	  }
-	  var popwin = window.open("/damsmanager/directory.do?listOnly&"+dirFilter, "dirPicker", "toolbar=0,scrollbars=1,location=0,statusbar=0,menubar=0,resizable=0,width=500,height=420,left=400,top=184");
+
+	  var popwin = window.open("/damsmanager/directory.do?listOnly&" + (option==null?"":"&" + option) + "&" +dirFilter, "dirPicker", "toolbar=0,scrollbars=1,location=0,statusbar=0,menubar=0,resizable=0,width=500,height=420,left=400,top=184");
 	  popwin.focus();
   }
   

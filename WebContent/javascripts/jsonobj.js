@@ -26,14 +26,26 @@ function isFunction(a) {
 var rootText = "[Staging Area]";	 
 function renderObject(obj, element, depth) {
   if (isPrintable(obj)) {
+ 	 var className = 'dbg-toggle';
  	 var toggle = document.createElement('div');
+ 	 var icon = "/damsmanager/images/dir.gif";
+ 	 if (obj.startsWith("*")) {
+ 	 	obj = obj.substring(2);
+ 	 	icon = "/damsmanager/images/file.png";
+ 	 	className = '';
+ 	 	toggle.style.paddingLeft = '6';
+ 	 }
+
+	 toggle.style.cursor = 'pointer';
  	 toggle.setAttribute("title",obj);
  	 var folder = document.createElement('img');
- 	 folder.setAttribute("src","/damsmanager/images/dir.gif");
+ 	 folder.setAttribute("src",icon);
+ 	 folder.style.width = '16px';
+ 	 folder.style.height = '16px';
  	 folder.style.paddingRight = '2';
  	 toggle.appendChild(folder);
  	 toggle.appendChild(document.createTextNode(obj));
- 	 toggle.className = 'dbg-toggle';
+ 	 toggle.className = className;
      element.appendChild(toggle);
      toggle.onclick = function() {
      	var parent = toggle.parentNode;
@@ -247,7 +259,7 @@ function addDir(directory){
     }
     if(toAdd){
     	if (dirValues.indexOf(";") > 0) {
-	    	var res = confirm("Are you sure to add another directory: " + directory + "?");
+	    	var res = confirm("Are you sure to add another directory: " + directory + "? \nTo remove a selection, please click on it again.");
 	    	if (res == true) {
 	    		dirValues += directory + ";";
 	    	}

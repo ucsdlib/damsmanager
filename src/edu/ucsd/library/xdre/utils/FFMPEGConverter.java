@@ -58,7 +58,7 @@ public class FFMPEGConverter
 	 */
 	public File metadataEmbed(String oid, String cid, String mfid, String dfid, String params,
 			Map<String, String> metadata) throws Exception {
-		return createDerivative(oid, cid, mfid, dfid, (params == null ? "" : params) + " -id3v2_version 3", metadata);
+		return createDerivative(oid, cid, mfid, dfid, params, metadata);
 	}
 
 	/**
