@@ -62,7 +62,7 @@
 		<div class="export">
 			<a href="/damsmanager/statsRdcpDownload.do?start=${model.start}&export">
 				<img src="images/excel-icon.png" border="0" width="16px" />
-				<span style="display:table-cell;vertical-align:top;font-size:11ps;font-weight:bold;">&nbsp;Export SCV</span></a>
+				<span style="display:table-cell;vertical-align:top;font-size:11ps;font-weight:bold;">&nbsp;Export CSV</span></a>
 		</div>
 	</div>
 	<div id="message" align="left" class="errorBody">${model.message}</div>

@@ -30,7 +30,8 @@ public class TabularRecord implements Record
     public static final String OBJECT_COMPONENT_TYPE = "level";
     public static final String COMPONENT = "component";
     public static final String SUBCOMPONENT = "sub-component";
-    public static final String DELIMITER = "|";
+    public static final char DELIMITER = '|';
+    public static final char ESCAPE_CHAR = '\\';
     public static final String DELIMITER_CELL = "@";
     public static final String DELIMITER_LANG_ELEMENT = "-";
     public static final String[] ACCEPTED_DATE_FORMATS = {"yyyy-MM-dd", "yyyy-MM", "yyyy"};
@@ -612,11 +613,31 @@ public class TabularRecord implements Record
         {
             if ( s.indexOf(DELIMITER) != -1 )
             {
-                String[] parts = s.split("\\" + DELIMITER);
-                for ( int i = 0; i < parts.length; i++ )
+                StringBuilder sb = new StringBuilder();
+                boolean escaped = false;
+                for( char ch : s.toCharArray() )
                 {
-                    if ( pop(parts[i]) ) { list.add( parts[i].trim() ); }
+                    if( escaped )
+                    { 
+                        sb.append( ch );
+                        escaped = false;
+                    }
+                    else if ( ch == ESCAPE_CHAR )
+                    {
+                        escaped = true;
+                    }
+                    else if ( ch == DELIMITER )
+                    {
+                        list.add( sb.toString().trim() );
+                        sb.setLength( 0 );
+                    }
+                    else
+                    {
+                        sb.append( ch );
+                    }
                 }
+
+                list.add( sb.toString().trim() );
             }
             else
             {
