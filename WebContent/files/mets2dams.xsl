@@ -13,6 +13,9 @@
   <xsl:variable name="madsNS">http://www.loc.gov/mads/rdf/v1#</xsl:variable>
   <xsl:variable name="damsid">http://library.ucsd.edu/ark:/20775/</xsl:variable>
 
+  <xsl:variable name="lowercase" select="'abcdefghijklmnopqrstuvwxyz'" />
+  <xsl:variable name="uppercase" select="'ABCDEFGHIJKLMNOPQRSTUVWXYZ'" />
+
   <!-- handle bare mods records -->
   <xsl:template match="/mods:mods">
     <dams:Object rdf:about="{generate-id()}">
@@ -800,6 +803,7 @@
     </xsl:if>
   </xsl:template>
   <xsl:template name="name" match="mods:subject/mods:name">
+    <xsl:if test="//mods:subject[translate(@authority, $lowercase, $uppercase)='FAST'] and translate(@authority, $lowercase, $uppercase)='FAST' or count(//mods:subject[translate(@authority, $lowercase, $uppercase)='FAST']) = 0">
     <xsl:variable name="elementName">
       <xsl:choose>
         <xsl:when test="@type='personal'">PersonalName</xsl:when>
@@ -866,9 +870,14 @@
           </xsl:when>
         </xsl:choose>
       </mads:elementList>
+      <xsl:if test="string-length(../@valueURI) > 0">
+        <mads:hasExactExternalAuthority rdf:resource="{../@valueURI}"/>
+      </xsl:if>
     </xsl:element>
+    </xsl:if>
   </xsl:template>
   <xsl:template match="mods:mods/mods:subject">
+    <xsl:if test="//mods:subject[translate(@authority, $lowercase, $uppercase)='FAST'] and translate(@authority, $lowercase, $uppercase)='FAST' or count(//mods:subject[translate(@authority, $lowercase, $uppercase)='FAST']) = 0">
     <xsl:choose>
       <xsl:when test="count(*) &gt; 1">
         <dams:complexSubject>
@@ -900,6 +909,9 @@
             <mads:componentList rdf:parseType="Collection">
               <xsl:apply-templates/>
             </mads:componentList>
+            <xsl:if test="string-length(@valueURI) > 0">
+              <mads:hasExactExternalAuthority rdf:resource="{@valueURI}"/>
+            </xsl:if>
           </mads:ComplexSubject>
         </dams:complexSubject>
       </xsl:when>
@@ -946,6 +958,9 @@
                 </mads:elementValue>
               </mads:GeographicElement>
             </mads:elementList>
+            <xsl:if test="string-length(@valueURI) > 0">
+              <mads:hasExactExternalAuthority rdf:resource="{@valueURI}"/>
+            </xsl:if>
           </mads:Geographic>
         </dams:geographic>
       </xsl:when>
@@ -953,8 +968,10 @@
         <xsl:apply-templates/>
       </xsl:otherwise>
     </xsl:choose>
+    </xsl:if>
   </xsl:template>
   <xsl:template match="mods:mods/mods:genre">
+    <xsl:if test="//mods:mods/mods:genre[translate(@authority, $lowercase, $uppercase)='FAST'] and translate(@authority, $lowercase, $uppercase)='FAST' or count(//mods:mods/mods:genre[translate(@authority, $lowercase, $uppercase)='FAST']) = 0">
     <xsl:variable name="upper">ABCDEFGHIJKLMNOPQRSTUVWXYZ</xsl:variable>
     <xsl:variable name="lower">abcdefghijklmnopqrstuvwxyz</xsl:variable>
     <xsl:variable name="value">
@@ -963,6 +980,10 @@
     </xsl:variable>
     <xsl:if test="not(//mods:subject/mods:genre[text() = $value])">
       <dams:genreForm><xsl:call-template name="simplesubject"/></dams:genreForm>
+    </xsl:if>
+      <xsl:if test="string-length(../@valueURI) > 0">
+        <mads:hasExactExternalAuthority rdf:resource="{../@valueURI}"/>
+      </xsl:if>
     </xsl:if>
   </xsl:template>
   <xsl:template name="simplesubject" match="mods:genre|mods:geographic|mods:occupation|mods:temporal|mods:topic">
@@ -993,6 +1014,9 @@
           </mads:elementValue>
         </xsl:element>
       </mads:elementList>
+      <xsl:if test="string-length(../@valueURI) > 0">
+        <mads:hasExactExternalAuthority rdf:resource="{../@valueURI}"/>
+      </xsl:if>
     </xsl:element>
   </xsl:template>
 </xsl:stylesheet>
