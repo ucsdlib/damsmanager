@@ -287,10 +287,17 @@
               </xsl:if>
             </dams:description>
           </xsl:if>
-          <xsl:if test="mods:location/mods:url/@note">
+          <xsl:if test="mods:location/mods:url">
+            <xsl:if test="mods:location/mods:url/@note">
             <dams:description>
               <xsl:value-of select="mods:location/mods:url/@note"/>
             </dams:description>
+            </xsl:if>
+            <xsl:if test="mods:location/mods:url/@displayLabel">
+            <dams:type>
+              <xsl:value-of select="mods:location/mods:url/@displayLabel"/>
+            </dams:type>
+            </xsl:if>
             <dams:uri><xsl:value-of select="mods:location/mods:url"/></dams:uri>
           </xsl:if>
         </dams:RelatedResource>
@@ -803,7 +810,6 @@
     </xsl:if>
   </xsl:template>
   <xsl:template name="name" match="mods:subject/mods:name">
-    <xsl:if test="//mods:subject[translate(@authority, $lowercase, $uppercase)='FAST'] and translate(@authority, $lowercase, $uppercase)='FAST' or count(//mods:subject[translate(@authority, $lowercase, $uppercase)='FAST']) = 0">
     <xsl:variable name="elementName">
       <xsl:choose>
         <xsl:when test="@type='personal'">PersonalName</xsl:when>
@@ -815,6 +821,9 @@
       <xsl:attribute name="rdf:about">
         <xsl:value-of select="generate-id()"/>
       </xsl:attribute>
+      <xsl:call-template name="authority">
+        <xsl:with-param name="auth" select="../@authority"/>
+      </xsl:call-template>
       <mads:authoritativeLabel>
         <xsl:choose>
           <xsl:when test="mods:displayForm != ''">
@@ -874,10 +883,9 @@
         <mads:hasExactExternalAuthority rdf:resource="{../@valueURI}"/>
       </xsl:if>
     </xsl:element>
-    </xsl:if>
   </xsl:template>
   <xsl:template match="mods:mods/mods:subject">
-    <xsl:if test="//mods:subject[translate(@authority, $lowercase, $uppercase)='FAST'] and translate(@authority, $lowercase, $uppercase)='FAST' or count(//mods:subject[translate(@authority, $lowercase, $uppercase)='FAST']) = 0">
+    <xsl:if test="//mods:subject[translate(@authority, $lowercase, $uppercase)='FAST'] and translate(@authority, $lowercase, $uppercase)='FAST'">
     <xsl:choose>
       <xsl:when test="count(*) &gt; 1">
         <dams:complexSubject>
@@ -971,7 +979,7 @@
     </xsl:if>
   </xsl:template>
   <xsl:template match="mods:mods/mods:genre">
-    <xsl:if test="//mods:mods/mods:genre[translate(@authority, $lowercase, $uppercase)='FAST'] and translate(@authority, $lowercase, $uppercase)='FAST' or count(//mods:mods/mods:genre[translate(@authority, $lowercase, $uppercase)='FAST']) = 0">
+    <xsl:if test="//mods:mods/mods:genre[translate(@authority, $lowercase, $uppercase)='FAST'] and translate(@authority, $lowercase, $uppercase)='FAST'">
     <xsl:variable name="upper">ABCDEFGHIJKLMNOPQRSTUVWXYZ</xsl:variable>
     <xsl:variable name="lower">abcdefghijklmnopqrstuvwxyz</xsl:variable>
     <xsl:variable name="value">
