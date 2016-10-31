@@ -989,9 +989,6 @@
     <xsl:if test="not(//mods:subject/mods:genre[text() = $value])">
       <dams:genreForm><xsl:call-template name="simplesubject"/></dams:genreForm>
     </xsl:if>
-      <xsl:if test="string-length(../@valueURI) > 0">
-        <mads:hasExactExternalAuthority rdf:resource="{../@valueURI}"/>
-      </xsl:if>
     </xsl:if>
   </xsl:template>
   <xsl:template name="simplesubject" match="mods:genre|mods:geographic|mods:occupation|mods:temporal|mods:topic">
@@ -1010,7 +1007,7 @@
         <xsl:value-of select="generate-id()"/>
       </xsl:attribute>
       <xsl:call-template name="authority">
-        <xsl:with-param name="auth" select="../@authority"/>
+        <xsl:with-param name="auth" select="../@authority | @authority"/>
       </xsl:call-template>
       <mads:authoritativeLabel>
         <xsl:value-of select="."/>
@@ -1022,8 +1019,8 @@
           </mads:elementValue>
         </xsl:element>
       </mads:elementList>
-      <xsl:if test="string-length(../@valueURI) > 0">
-        <mads:hasExactExternalAuthority rdf:resource="{../@valueURI}"/>
+      <xsl:if test="string-length(../@valueURI | @valueURI) > 0">
+        <mads:hasExactExternalAuthority rdf:resource="{../@valueURI | @valueURI}"/>
       </xsl:if>
     </xsl:element>
   </xsl:template>
