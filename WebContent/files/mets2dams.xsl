@@ -888,40 +888,64 @@
     <xsl:if test="//mods:subject[translate(@authority, $lowercase, $uppercase)='FAST'] and translate(@authority, $lowercase, $uppercase)='FAST'">
     <xsl:choose>
       <xsl:when test="count(*) &gt; 1">
-        <dams:complexSubject>
-          <mads:ComplexSubject rdf:about="{generate-id()}">
-            <xsl:call-template name="authority">
-              <xsl:with-param name="auth" select="@authority"/>
-            </xsl:call-template>
-            <mads:authoritativeLabel>
-              <xsl:for-each select="*">
-                <xsl:if test="position() &gt; 1">--</xsl:if>
-                <xsl:choose>
-                  <xsl:when test="local-name() = 'name'">
-                    <xsl:for-each select="mods:namePart">
-                      <xsl:if test="position() &gt; 1">, </xsl:if>
-                      <xsl:choose>
-                        <xsl:when test="mods:displayForm">
-                          <xsl:value-of select="mods:displayForm"/>
-                        </xsl:when>
-                        <xsl:otherwise><xsl:value-of select="."/></xsl:otherwise>
-                      </xsl:choose>
-                    </xsl:for-each>
-                  </xsl:when>
-                  <xsl:otherwise>
-                    <xsl:value-of select="."/>
-                  </xsl:otherwise>
-                </xsl:choose>
-              </xsl:for-each>
-            </mads:authoritativeLabel>
-            <mads:componentList rdf:parseType="Collection">
-              <xsl:apply-templates/>
-            </mads:componentList>
-            <xsl:if test="string-length(@valueURI) > 0">
-              <mads:hasExactExternalAuthority rdf:resource="{@valueURI}"/>
-            </xsl:if>
-          </mads:ComplexSubject>
-        </dams:complexSubject>
+        <xsl:variable name="predicateName">
+          <xsl:choose>
+            <xsl:when test="name(*[1]) = 'mods:name' and *[1]/@type='personal'">personalName</xsl:when>
+            <xsl:when test="name(*[1]) = 'mods:name'  and *[1]/@type='corporate'">corporateName</xsl:when>
+            <xsl:when test="name(*[1]) = 'mods:name'">name</xsl:when>
+            <xsl:when test="name(*[1]) = 'mods:genre'">genreForm</xsl:when>
+            <xsl:otherwise>
+              <xsl:value-of select='local-name(*[1])'/>
+            </xsl:otherwise>
+          </xsl:choose>
+        </xsl:variable>
+        <xsl:variable name="elemName">
+          <xsl:value-of select="concat(translate(substring($predicateName,1,1), $lowercase, $uppercase), substring($predicateName,2,string-length($predicateName)-1))"/>
+        </xsl:variable>
+        <xsl:variable name='authoritativeLabel'>
+          <xsl:for-each select="*">
+            <xsl:if test="position() &gt; 1">--</xsl:if>
+            <xsl:choose>
+              <xsl:when test="local-name() = 'name'">
+                <xsl:for-each select="mods:namePart">
+                  <xsl:if test="position() &gt; 1">, </xsl:if>
+                  <xsl:choose>
+                    <xsl:when test="mods:displayForm">
+                      <xsl:value-of select="mods:displayForm"/>
+                    </xsl:when>
+                    <xsl:otherwise><xsl:value-of select="."/></xsl:otherwise>
+                  </xsl:choose>
+                </xsl:for-each>
+              </xsl:when>
+              <xsl:otherwise>
+                <xsl:value-of select="."/>
+              </xsl:otherwise>
+            </xsl:choose>
+          </xsl:for-each>
+        </xsl:variable>
+        <xsl:element name="dams:{$predicateName}">
+            <xsl:element name="mads:{$elemName}">
+              <xsl:attribute name="rdf:about">
+                <xsl:value-of select="generate-id()"/>
+              </xsl:attribute>
+              <xsl:call-template name="authority">
+                <xsl:with-param name="auth" select="../@authority | @authority"/>
+              </xsl:call-template>
+              <mads:authoritativeLabel>
+                <xsl:value-of select="$authoritativeLabel"/>
+              </mads:authoritativeLabel>
+              <mads:elementList rdf:parseType="Collection">
+                <xsl:element name="mads:{$elemName}Element">
+                  <mads:elementValue>
+                    <xsl:value-of select="$authoritativeLabel"/>
+                  </mads:elementValue>
+                </xsl:element>
+              </mads:elementList>
+              <xsl:if test="string-length(../@valueURI | @valueURI) > 0">
+                <mads:hasExactExternalAuthority rdf:resource="{../@valueURI | @valueURI}"/>
+              </xsl:if>
+            </xsl:element>
+        </xsl:element>
       </xsl:when>
       <xsl:when test="mods:name[@type='personal']">
         <dams:personalName><xsl:apply-templates/></dams:personalName>
@@ -986,7 +1010,7 @@
       <xsl:value-of select="translate( substring(., 1, 1), $lower, $upper)"/>
       <xsl:value-of select="substring(., 2)"/>
     </xsl:variable>
-    <xsl:if test="not(//mods:subject/mods:genre[text() = $value])">
+    <xsl:if test="not(//mods:subject/mods:genre[text() = $value and count(../*) = 1])">
       <dams:genreForm><xsl:call-template name="simplesubject"/></dams:genreForm>
     </xsl:if>
     </xsl:if>
