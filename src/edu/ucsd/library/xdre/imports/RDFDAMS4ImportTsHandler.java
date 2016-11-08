@@ -321,27 +321,16 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 										Node diplayLabelNode = parentNode.selectSingleNode("*[name()='dams:displayLabel']");
 										props.put("dams:displayLabel", encodeLiteralValue(diplayLabelNode));
 									}
-									// Mapping for mads:isMemberOfMADSScheme
-									String madsScheme = null;
-									Node madsSchemeNode = parentNode.selectSingleNode("mads:isMemberOfMADSScheme");
-									if(madsSchemeNode != null){
-										Node msValueNode = madsSchemeNode.selectSingleNode("@rdf:resource");
-										if (msValueNode != null){
-											madsScheme = madsSchemeNode.getStringValue();
-											props.put("mads:isMemberOfMADSScheme", "<" + madsScheme + ">");
-										}else if ((madsSchemeNode = madsSchemeNode.selectSingleNode("mads:MADSScheme")) != null && madsSchemeNode.hasContent()){
-											if ((msValueNode=madsSchemeNode.selectSingleNode("mads:code")) != null){
-												madsScheme = encodeLiteralValue(msValueNode);
-												props.put("mads:isMemberOfMADSScheme/mads:code", madsScheme);
-											}else if((msValueNode=madsSchemeNode.selectSingleNode("rdfs:label")) != null){
-												madsScheme = encodeLiteralValue( msValueNode);
-												props.put("mads:isMemberOfMADSScheme/rdfs:label", madsScheme);
-											}
-										}else{
-											props.put("mads:isMemberOfMADSScheme/rdfs:label", "\"\"");
+
+									// ID matching for mads:hasExactExternalAuthority
+									String madsHasExactExternalAuthority = null;
+									Node madsHasExactExternalAuthorityNode = parentNode.selectSingleNode("mads:hasExactExternalAuthority");
+									if(madsHasExactExternalAuthorityNode != null){
+										Node mhValueNode = madsHasExactExternalAuthorityNode.selectSingleNode("@rdf:resource");
+										if (mhValueNode != null){
+											madsHasExactExternalAuthority = madsHasExactExternalAuthorityNode.getStringValue();
+											props.put("mads:hasExactExternalAuthority", "<" + madsHasExactExternalAuthority + ">");
 										}
-									}else{
-										props.put("mads:isMemberOfMADSScheme/rdfs:label", null);
 									}
 								}
 								
@@ -963,25 +952,43 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		String elemName = xPath.substring(xPath.lastIndexOf("/")+1);
 		
 		String modelName = elemName;
-		String nKey = INFO_MODEL_PREFIX + modelName + "::" + title;
-		if(props != null){
-			for(Iterator<String> it=props.keySet().iterator(); it.hasNext();){
-				String iKey = it.next();
-				nKey += "_" + iKey + "::" + props.get(iKey);
+		
+		List<Map<String,String>> oids = null;
+		String oid = null;
+		// First perform ID lookup with mads:hasExactExternalAuthority
+		String fastIdKey = "mads:hasExactExternalAuthority";
+		String fastId = props.remove(fastIdKey);
+		if(props != null && props.containsKey(fastIdKey)) {
+			oid = idsMap.get(fastId);
+			if(StringUtils.isBlank(oid)) {
+				oids = lookupRecordsFromTs(fastIdKey, fastId, null, null);
+				if (oids != null && oids.size() > 0) {
+					oid = oids.get(0).values().iterator().next();
+					idsMap.put(fastId, oid);
+				}
 			}
 		}
-		String oid = idsMap.get(nKey);
 
 		if(oid == null){
+			String nKey = INFO_MODEL_PREFIX + modelName + "::" + title;
+			if(props != null){
+				for(Iterator<String> it=props.keySet().iterator(); it.hasNext();){
+					String iKey = it.next();
+					nKey += "_" + iKey + "::" + props.get(iKey);
+				}
+			}
+			oid = idsMap.get(nKey);
+
 			//Lookup records from the triplestore, matching the required properties that are null or empty.
-			List<Map<String,String>> oids = lookupRecordsFromTs(field, title, "\""+ modelName + "\"", props);
+			oids = lookupRecordsFromTs(field, title, "\""+ modelName + "\"", props);
+
 			if(oids != null && oids.size() > 0){
 				
 				String propName = null;
 				String propValue = null;
 				Document recDoc = null;
 				Node cNode = null;
-				if(props != null){
+				if(props != null && props.size() > 0){
 					List<Map<String,String>> oidsCopy = new ArrayList<Map<String,String>>();
 					oidsCopy.addAll(oids);
 					for(int i=0; i< oidsCopy.size(); i++){
@@ -1041,7 +1048,10 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 				// Record found. Add to the map, link and remove it.
 				toResourceLinking(oid, record);
 			}
+	
 			idsMap.put(nKey, oid);
+			if (StringUtils.isNotBlank(fastId))
+				idsMap.put(fastId, oid);
 		}else{	
 			// Record added. Add linking, remove it.
 			toResourceLinking(oid, record);
