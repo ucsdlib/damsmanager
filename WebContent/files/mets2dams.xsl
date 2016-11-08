@@ -751,6 +751,7 @@
           <xsl:choose>
             <xsl:when test="@type='personal'">personalName</xsl:when>
             <xsl:when test="@type='corporate'">corporateName</xsl:when>
+            <xsl:when test="@type='conference'">conferenceName</xsl:when>
             <xsl:otherwise>name</xsl:otherwise>
           </xsl:choose>
         </xsl:variable>
@@ -814,6 +815,7 @@
       <xsl:choose>
         <xsl:when test="@type='personal'">PersonalName</xsl:when>
         <xsl:when test="@type='corporate'">CorporateName</xsl:when>
+        <xsl:when test="@type='conference'">ConferenceName</xsl:when>
         <xsl:otherwise>Name</xsl:otherwise>
       </xsl:choose>
     </xsl:variable>
@@ -892,6 +894,7 @@
           <xsl:choose>
             <xsl:when test="name(*[1]) = 'mods:name' and *[1]/@type='personal'">personalName</xsl:when>
             <xsl:when test="name(*[1]) = 'mods:name'  and *[1]/@type='corporate'">corporateName</xsl:when>
+            <xsl:when test="name(*[1]) = 'mods:name'  and *[1]/@type='conference'">conferenceName</xsl:when>
             <xsl:when test="name(*[1]) = 'mods:name'">name</xsl:when>
             <xsl:when test="name(*[1]) = 'mods:genre'">genreForm</xsl:when>
             <xsl:otherwise>
@@ -952,6 +955,9 @@
       </xsl:when>
       <xsl:when test="mods:name[@type='corporate']">
         <dams:corporateName><xsl:apply-templates/></dams:corporateName>
+      </xsl:when>
+      <xsl:when test="mods:name[@type='conference']">
+        <dams:conferenceName><xsl:apply-templates/></dams:conferenceName>
       </xsl:when>
       <xsl:when test="mods:name">
         <dams:name><xsl:apply-templates/></dams:name>
