@@ -13,6 +13,7 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
@@ -1277,12 +1278,13 @@ public class DAMSClient {
 			
 			String pName = null;
 			String pValue = null;
+			Charset encoding = Charset.forName("UTF-8");
 			MultipartEntity ent = toMultiPartEntity(srcFile);
 			for(Iterator<String> it=params.keySet().iterator(); it.hasNext();){
 				pName = it.next();
 				pValue = params.get(pName);
 				if(pValue != null && (pValue=pValue.trim()).length() > 0)
-					ent.addPart(pName, new StringBody(pValue));
+					ent.addPart(pName, new StringBody(pValue, encoding));
 			}
 			
 			req.setEntity(ent);
@@ -2034,21 +2036,22 @@ public class DAMSClient {
 	 * @throws UnsupportedEncodingException
 	 */
 	public static MultipartEntity toMultiPartEntity(String srcFile) throws UnsupportedEncodingException{
+		Charset encoding = Charset.forName("UTF-8");
 		File file = new File(srcFile);
 		MultipartEntity ent = new MultipartEntity();
 		String srcAbsPath = file.getAbsolutePath();
 		String stagingAbsPath = new File(Constants.DAMS_STAGING).getAbsolutePath();
 		int idx = srcAbsPath.indexOf(stagingAbsPath);
 		if(idx == 0){
-			ent.addPart("local", new StringBody(srcAbsPath.substring(idx+stagingAbsPath.length()).replace("\\", "/")));
+			ent.addPart("local", new StringBody(srcAbsPath.substring(idx+stagingAbsPath.length()).replace("\\", "/"), encoding));
 		}else{
 			String contentType = new FileDataSource(srcFile).getContentType();
 			FileBody fileBody = new FileBody(file, contentType);
 			ent.addPart("file", fileBody);
 			// Add field dateCreated, sourceFileName, sourcePath etc.
-			ent.addPart("sourcePath", new StringBody(file.getParent()));
-			ent.addPart("sourceFileName", new StringBody(file.getName()));
-			ent.addPart("dateCreated", new StringBody(damsDateFormat.format(file.lastModified())));
+			ent.addPart("sourcePath", new StringBody(file.getParent(), encoding));
+			ent.addPart("sourceFileName", new StringBody(file.getName(), encoding));
+			ent.addPart("dateCreated", new StringBody(damsDateFormat.format(file.lastModified()), encoding));
 		}
 			
 		return ent;
@@ -2076,13 +2079,14 @@ public class DAMSClient {
 	 */
 	public static MultipartEntity toMultiPartEntity(List<NameValuePair> pros) throws UnsupportedEncodingException{
 		NameValuePair n = null;
+		Charset encoding = Charset.forName("UTF-8");
 		MultipartEntity ent = new MultipartEntity();
 		String value = null;
 		for(Iterator<NameValuePair> it=pros.iterator(); it.hasNext();){
 			n = it.next();
 			value = n.getValue();
 			if(value != null)
-				ent.addPart(n.getName(), new StringBody(value));
+				ent.addPart(n.getName(), new StringBody(value, encoding));
 		}
 		return ent;
 	}
