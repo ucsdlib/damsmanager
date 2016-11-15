@@ -74,11 +74,11 @@ public class StatsRdcpUsageController implements Controller {
 			damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
 			List<RdcpStatsItemSummary> statsItemSums = getRdcpStats(con, sCal.getTime(), eCal.getTime(), false, damsClient);
 	
-			if (export == null) {
-				List<RdcpStatsItemSummary> curatorStatsItemSums = getRdcpStats(con, sCal.getTime(), eCal.getTime(), true, damsClient);
-				// merge the non-curator ans curator stats 
-				mergeRdcpStats(statsItemSums, curatorStatsItemSums);
+			List<RdcpStatsItemSummary> curatorStatsItemSums = getRdcpStats(con, sCal.getTime(), eCal.getTime(), true, damsClient);
+			// merge the non-curator ans curator stats 
+			mergeRdcpStats(statsItemSums, curatorStatsItemSums);
 
+			if (export == null) {
 				if (statsItemSums.size() > 0) {
 					model.put("periodsList", statsItemSums.get(0).getPeriods());
 					model.put("data", statsItemSums);
@@ -94,7 +94,8 @@ public class StatsRdcpUsageController implements Controller {
 						strBuf.append("RDCP Objects Unique Views by Month\n");
 						strBuf.append("Collection,Object Title,ARK");
 						for (String period : statsItemSum.getPeriods()) {
-							strBuf.append("," + Statistics.escapeCsv(period));
+							strBuf.append("," + Statistics.escapeCsv(period + "(public)"));
+							strBuf.append("," + Statistics.escapeCsv(period + "(curator)"));
 						}
 						strBuf.append("\n");
 					}
