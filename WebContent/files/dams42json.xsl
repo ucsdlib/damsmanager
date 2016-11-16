@@ -93,7 +93,7 @@
             </xsl:call-template>
         </xsl:for-each>
 
-        <xsl:for-each select="*[local-name() = 'conferenceName' or local-name() = 'corporateName' or local-name() = 'familyName' or local-name() = 'genre' or local-name() = 'geographic' or local-name() = 'occupation' or local-name() = 'personalName' or local-name() = 'temporal' or local-name() = 'topic']/*">
+        <xsl:for-each select="*[local-name() = 'conferenceName' or local-name() = 'corporateName' or local-name() = 'familyName' or local-name() = 'genreForm' or local-name() = 'geographic' or local-name() = 'occupation' or local-name() = 'personalName' or local-name() = 'temporal' or local-name() = 'topic']/*">
             <xsl:sort select="name()" order="descending"/>
             <xsl:variable name="columnName">
                 <xsl:choose>
