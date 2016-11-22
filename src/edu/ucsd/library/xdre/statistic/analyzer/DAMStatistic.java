@@ -325,6 +325,13 @@ public class DAMStatistic extends Statistics{
 		
 		//STATS_DLP_OBJECT_ACCESS_INSERT insert
 		try{
+			// eliminate the counts from curator access with redirected
+			for (String key : itemsMapPrivate.keySet()) {
+				if (itemsMap.containsKey(key)) {
+					int pubAccess = itemsMap.get(key).getView() - itemsMapPrivate.get(key).getView();
+					itemsMap.get(key).setView(pubAccess);
+				}
+			}
 			ps = con.prepareStatement(STATS_DLP_OBJECT_ACCESS_INSERT);
 			persistObjectAccessStats (nextId, ps, itemsMap, false);
 			persistObjectAccessStats (nextId, ps, itemsMapPrivate, true);
@@ -620,6 +627,10 @@ public class DAMStatistic extends Statistics{
 
 		public int getView() {
 			return view;
+		}
+
+		public void setView(int numOfViews) {
+			view = numOfViews;
 		}
 
 		public String getSubjectId() {

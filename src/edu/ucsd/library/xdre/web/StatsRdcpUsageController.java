@@ -91,7 +91,7 @@ public class StatsRdcpUsageController implements Controller {
 				strBuf = new StringBuilder();
 				for(RdcpStatsItemSummary statsItemSum : statsItemSums) {
 					if (count == 0) {
-						strBuf.append("RDCP Objects Unique Views by Month\n");
+						strBuf.append("RDCP Objects Views by Month\n");
 						strBuf.append("Collection,Object Title,ARK");
 						for (String period : statsItemSum.getPeriods()) {
 							strBuf.append("," + Statistics.escapeCsv(period + "(public)"));
