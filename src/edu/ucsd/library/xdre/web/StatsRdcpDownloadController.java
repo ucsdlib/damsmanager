@@ -76,11 +76,11 @@ public class StatsRdcpDownloadController implements Controller {
 			damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
 			List<RdcpStatsDownloadSummary> statsDownloadSums = getRdcpStats(con, sCal.getTime(), eCal.getTime(), false, damsClient);
 	
-			if (export == null) {
-				List<RdcpStatsDownloadSummary> curatorStatsDownloadSums = getRdcpStats(con, sCal.getTime(), eCal.getTime(), true, damsClient);
-				// merge the non-curator ans curator stats 
-				mergeRdcpStats(statsDownloadSums, curatorStatsDownloadSums);
+			List<RdcpStatsDownloadSummary> curatorStatsDownloadSums = getRdcpStats(con, sCal.getTime(), eCal.getTime(), true, damsClient);
+			// merge the non-curator ans curator stats 
+			mergeRdcpStats(statsDownloadSums, curatorStatsDownloadSums);
 
+			if (export == null) {
 				if (statsDownloadSums.size() > 0) {
 					model.put("periodsList", statsDownloadSums.get(0).getPeriods());
 					model.put("data", statsDownloadSums);
@@ -96,7 +96,8 @@ public class StatsRdcpDownloadController implements Controller {
 						strBuf.append("RDCP File Download Statistics By Month\n");
 						strBuf.append("Collection,Object title,Component title,ARK");
 						for (String period : statsItemSum.getPeriods()) {
-							strBuf.append("," + Statistics.escapeCsv(period));
+							strBuf.append("," + Statistics.escapeCsv(period + "(public)"));
+							strBuf.append("," + Statistics.escapeCsv(period + "(curator)"));
 						}
 						strBuf.append("\n");
 					}
