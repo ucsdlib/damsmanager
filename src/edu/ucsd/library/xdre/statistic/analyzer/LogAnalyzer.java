@@ -104,12 +104,23 @@ public class LogAnalyzer{
 							continue;
 
 						if(uriParts.length>1 && uriParts[1].equals("object")){
-							//Object access: /dc/object/oid/cid/_fid
+							String httpStatus = "";
+							//Object access: /dc/object/oid/_cid_fid
 							int uidIdx = uri.indexOf("access=curator");
-							if (uidIdx > 0)
-								pasStats.addObject(uri, true); // curator access
-							else
-								pasStats.addObject(uri, false); // public access
+							int sidx = line.indexOf("\" ") + 2;
+							if (sidx > 0)
+								httpStatus = line.substring(sidx, sidx + 3);
+
+							if (uidIdx > 0 && uriParts.length >= 4 && uriParts[3].startsWith("_"))
+								// file access from curator
+								pasStats.addObject(uri, true);
+							else if (uidIdx > 0 && httpStatus.startsWith("3"))
+								// view from curator with redirect
+								pasStats.addObject(uri, true);
+							else if (!httpStatus.startsWith("3"))
+								// access with no redirect
+								pasStats.addObject(uri, false);
+
 						}else{
 							//Home Page: /dc
 							//Search: /dc/search?utf8=%E2%9C%93&q=wagner
