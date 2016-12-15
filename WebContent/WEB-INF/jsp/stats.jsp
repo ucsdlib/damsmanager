@@ -103,6 +103,8 @@
 			<c:if test="${model.isCurator}">
 				<li><div class="item"><a href="statsRdcpUsage.do">RDCP Objects Views by Month</a></div></li>
 				<li><div class="item"><a href="statsRdcpDownload.do">RDCP File Download By Month</a></div></li>
+				<li><div class="item"><a href="statsCollection.do">Collection Hits by Month</a></div></li>
+				<li><div class="item"><a href="statsCollection.do?type=downloads">Collection Downloads By Month</a></div></li>
 			</c:if>
 		</ul>
 	</div>
