@@ -135,6 +135,7 @@
             <url-pattern>/statusItems.do</url-pattern>
             <url-pattern>/statsRdcpUsage.do</url-pattern>
             <url-pattern>/statsRdcpDownload.do</url-pattern>
+            <url-pattern>/statsCollection.do</url-pattern>
         </web-resource-collection>
         <auth-constraint>
             <role-name>dams-curator</role-name>
