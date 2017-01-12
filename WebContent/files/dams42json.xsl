@@ -75,7 +75,7 @@
         <xsl:for-each select="*[local-name()='note' and dams:Note/dams:type='identifier']/*">
             <xsl:call-template name="damsNoteIdentifier"/>
         </xsl:for-each>
-        <xsl:for-each select="*[local-name()='note' and not(contains(dams:Note/dams:type,'identifier'))]">
+        <xsl:for-each select="*[local-name()='note' and not(contains(dams:Note/dams:type,'identifier')) and not(contains(dams:Note/dams:type,'local attribution'))]">
             <xsl:apply-templates />
         </xsl:for-each>
         <xsl:for-each select="*[local-name() = 'anatomy' or local-name() = 'commonName' or local-name() = 'cruise' or local-name() = 'culturalContext' or local-name() = 'lithology' or local-name() = 'scientificName' or local-name() = 'series']/*">
@@ -197,7 +197,7 @@
         <xsl:variable name="role"><xsl:value-of select="dams:role/mads:Authority/mads:authoritativeLabel | dams:role/mads:Authority/rdf:value"/></xsl:variable>
         <xsl:variable name="name">
             <xsl:choose>
-                <xsl:when test="*[contains(local-name(), 'personal')]">Personal</xsl:when>
+                <xsl:when test="*[contains(local-name(), 'personal')]">Person</xsl:when>
                 <xsl:when test="*[contains(local-name(), 'corporate')]">Corporate</xsl:when>
                 <xsl:otherwise>Name</xsl:otherwise>
             </xsl:choose>
@@ -209,8 +209,14 @@
     </xsl:template>
 
     <xsl:template name="damsDate" match="dams:Date">
+        <xsl:variable name="type">
+            <xsl:choose>
+                <xsl:when test="string-length(dams:type) > 0"><xsl:value-of select="dams:type"/></xsl:when>
+                <xsl:otherwise>creation</xsl:otherwise>
+            </xsl:choose>
+        </xsl:variable>
         <xsl:call-template name="appendJsonObject">
-           <xsl:with-param name="key">Date:<xsl:value-of select="dams:type"/></xsl:with-param>
+           <xsl:with-param name="key">Date:<xsl:value-of select="$type"/></xsl:with-param>
            <xsl:with-param name="val"><xsl:value-of select="rdf:value"/></xsl:with-param>
         </xsl:call-template>
         <xsl:if test="dams:beginDate">
@@ -228,8 +234,14 @@
     </xsl:template>
 
     <xsl:template name="damsNoteIdentifier" match="dams:Note[dams:type='identifier']" priority="1">
+        <xsl:variable name="label">
+           <xsl:choose>
+               <xsl:when test="dams:displayLabel='Roger record'">roger record</xsl:when>
+               <xsl:otherwise><xsl:value-of select="dams:displayLabel"/></xsl:otherwise>
+           </xsl:choose>
+        </xsl:variable>
         <xsl:call-template name="appendJsonObject">
-           <xsl:with-param name="key">Identifier:<xsl:value-of select="dams:displayLabel"/></xsl:with-param>
+           <xsl:with-param name="key">Identifier:<xsl:value-of select="$label"/></xsl:with-param>
            <xsl:with-param name="val"><xsl:value-of select="rdf:value"/></xsl:with-param>
         </xsl:call-template>
     </xsl:template>
