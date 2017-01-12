@@ -488,11 +488,11 @@
 		</tr>
 		<tr align="left">
 			<td colspan="2">
-				<div title="Ingest metadata and files" class="menuText" style="display:none;">
+				<div title="Ingest metadata and files" class="menuText">
 					<input class="pcheckbox" type="checkbox" name="importOption" id="importOption" onchange="onIngestSelectionChange(this);">
 					<span class="submenuText" style="vertical-align:2px;"><b>Ingest metadata and files</b></span>
 				</div>
-			    <div class="submenuText" style="margin-top:3px;padding-left:25px;display:none;"  title="Enter a filter path for the location to speek up the search. From the popup, click on the folder to select/deselect a location. Multiple loations allowed.">Master Files location: 
+			    <div class="submenuText" style="margin-top:3px;padding-left:25px;"  title="Enter a filter path for the location to speek up the search. From the popup, click on the folder to select/deselect a location. Multiple loations allowed.">Master Files location: 
 					<input type="text" id="filesPath" name="filesPath" size="48" value="">&nbsp;<input type="button" onclick="showFilePicker('filesPath', event)" value="&nbsp;...&nbsp;">
 				</div>
 			</td>
@@ -501,12 +501,12 @@
 			<td colspan="2">
 				<div>
 					<fieldset class="groupbox_modsIngestOpts"><legend class="slegandText">Pre-ingest validation</legend>
-					    <div title="Check this checkbox for no ingest but pre-processing only." class="submenuText" style="display:none;">
-							<input checked type="radio" name="preingestOption" value="pre-processing">
+					    <div title="Check this checkbox for no ingest but pre-processing only." class="submenuText">
+							<input checked type="radio" name="preingestOption" value="pre-processing" checked>
 							<span class="submenuText">Preview the converted RDF/XML only, no ingest.</span>
 						</div>
                         <div title="Check this checkbox for pre-processing to convert to CSV format." class="submenuText">
-                            <input type="radio" name="preingestOption" value="pre-processing-csv" checked>
+                            <input type="radio" name="preingestOption" value="pre-processing-csv">
                             <span class="submenuText">Preview converted source in CSV format, no ingest.</span>
                         </div>
 					 	<div title="Check this checkbox to check files matching." class="submenuText">
