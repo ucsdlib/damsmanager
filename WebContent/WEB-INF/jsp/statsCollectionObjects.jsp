@@ -50,7 +50,7 @@
 			</tbody>
 		</table>
 		<div class="export">
-			<a href="/damsmanager/statsCollection.do?type=${model.type}&start=${model.start}&export">
+			<a href="/damsmanager/statsCollectionObjects.do?type=${model.type}&start=${model.start}&export">
 				<img src="images/excel-icon.png" border="0" width="16px" />
 				<span style="display:table-cell;vertical-align:top;font-size:11ps;font-weight:bold;">&nbsp;Export CSV</span></a>
 		</div>

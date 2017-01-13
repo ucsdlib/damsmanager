@@ -58,6 +58,11 @@ public class StatsCollectionItemsController implements Controller {
 		SimpleDateFormat dbFormat = null;
 
 		DAMSClient damsClient = null;
+
+		String statsTitle = "Object/Collection Hits by Month";
+		if (StringUtils.isNotBlank(type) && type.equalsIgnoreCase("downloads"))
+			statsTitle = "Object/Collection Downloads by Month";
+
 		try {
 			
 			dbFormat = new SimpleDateFormat(Statistics.DATE_FORMAT);
@@ -89,7 +94,7 @@ public class StatsCollectionItemsController implements Controller {
 				strBuf = new StringBuilder();
 				for(StatsCollectionItemSummary statsItemSum : statsItemSums) {
 					if (count == 0) {
-						strBuf.append("Collection Hits by Month\n");
+						strBuf.append(statsTitle + "\n");
 						strBuf.append("Collection,ARK");
 						for (String period : statsItemSum.getPeriods()) {
 							strBuf.append("," + Statistics.escapeCsv(period));
@@ -123,16 +128,12 @@ public class StatsCollectionItemsController implements Controller {
 		}
 
 		if(export == null) {
-			String statsTitle = "Collection Hits by Month";
-			if (StringUtils.isNotBlank(type) && type.equalsIgnoreCase("downloads"))
-				statsTitle = "Collection Downloads by Month";
-
-				model.put("message", message);
+			model.put("message", message);
 			model.put("statsTitle", statsTitle);
 			model.put("type", (StringUtils.isBlank(type)?"hits":type));
 			model.put("start", dbFormat.format(sCal.getTime()));
 
-			return new ModelAndView("statsCollection", "model", model);
+			return new ModelAndView("statsCollectionObjects", "model", model);
 		}else{
 			if(message != null && message.length() > 0)
 				strBuf.append(message);
