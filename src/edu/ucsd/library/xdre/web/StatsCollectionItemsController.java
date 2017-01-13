@@ -59,9 +59,9 @@ public class StatsCollectionItemsController implements Controller {
 
 		DAMSClient damsClient = null;
 
-		String statsTitle = "Object/Collection Hits by Month";
+		String statsTitle = "DAMS Object Hits by Month";
 		if (StringUtils.isNotBlank(type) && type.equalsIgnoreCase("downloads"))
-			statsTitle = "Object/Collection Downloads by Month";
+			statsTitle = "DAMS Object Downloads by Month";
 
 		try {
 			
