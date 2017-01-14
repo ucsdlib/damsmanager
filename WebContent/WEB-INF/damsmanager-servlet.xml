@@ -81,7 +81,7 @@
 	<bean name="/statsCollections.do" class="edu.ucsd.library.xdre.web.StatsCollectionsAccessController"></bean>
 	<bean name="/statsRdcpUsage.do" class="edu.ucsd.library.xdre.web.StatsRdcpUsageController"></bean>
 	<bean name="/statsRdcpDownload.do" class="edu.ucsd.library.xdre.web.StatsRdcpDownloadController"></bean>
-	<bean name="/statsCollection.do" class="edu.ucsd.library.xdre.web.StatsCollectionItemsController"></bean>
+	<bean name="/statsCollectionObjects.do" class="edu.ucsd.library.xdre.web.StatsCollectionItemsController"></bean>
 
 	<bean id="force-init" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
   		<property name="staticMethod"><value>edu.ucsd.library.xdre.utils.DAMSRoutineManager.startRoutine</value></property>
