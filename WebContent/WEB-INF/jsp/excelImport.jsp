@@ -146,6 +146,7 @@
     	displayMessage("message", "");
     	getAssignment("mainForm");
 		displayProgressBar(0);
+		document.getElementById("import").disabled = false;
 	}
 	
 	function onIngestSelectionChange(obj) {
@@ -277,6 +278,16 @@
 			}
 		 });
 	});
+
+    $( document ).ready(function() {
+      document.getElementById("import").onclick = function() {
+        //disable
+        this.disabled = true;
+
+        if ( !confirmImport() )
+          this.disabled = false;
+      }
+    });
 	
 	var crumbs = [{"Home":"http://library.ucsd.edu"}, {"Digital Library Collections":"/dc"},{"DAMS Manager":"/damsmanager/"}, {"Excel Import":""}];
 	drawBreadcrumbNMenu(crumbs, "tdr_crumbs_content", true);
@@ -465,7 +476,7 @@
 </div>
 <div class="buttonDiv">
 
-	<input type="button" name="import" value=" Submit " onClick="confirmImport();"/>&nbsp;&nbsp;
+	<input type="button" name="import" id="import" value=" Submit "/>&nbsp;&nbsp;
 	<input type="button" name="cancel" value=" Cancel " onClick="document.location.href='/damsmanager/excelImport.do'"/>
 </div>
 </div>
