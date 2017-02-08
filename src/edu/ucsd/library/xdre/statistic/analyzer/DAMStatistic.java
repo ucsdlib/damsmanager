@@ -11,6 +11,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -22,6 +23,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.dom4j.Document;
 import org.dom4j.Node;
+
+import edu.ucsd.library.xdre.utils.Constants;
 
 /**
  * Class DAMStatistic
@@ -44,6 +47,7 @@ public class DAMStatistic extends Statistics{
 	protected Map<String, Integer> phrasesMap = null;
 	protected Map<String, Integer> collsAccessMap = null;
 	protected Map<String, String> collsMap = null;
+	protected List<String> derivativeList = null;
 	
 	public DAMStatistic(String appName){
 		super(appName);
@@ -52,6 +56,8 @@ public class DAMStatistic extends Statistics{
 		keywordsMap = new HashMap<String, Integer>();
 		phrasesMap = new HashMap<String, Integer>();
 		collsAccessMap = new HashMap<String, Integer>();
+		derivativeList = getDerivativesList();
+		log.info("DAMS Statistics derivativs: " + Arrays.toString(derivativeList.toArray()));
 	}
 	
 	public Map<String, String> getCollsMap() {
@@ -216,13 +222,30 @@ public class DAMStatistic extends Statistics{
 		}
 
 		// differentiate the counts for file download and object access/hits
+		String fileSubfix = fileName.substring(fileName.lastIndexOf("_"));
+
 		if (uri.indexOf("/download") > 0) {
+			fileDownload(objCounter, fileName);
+		} else if (StringUtils.isNotBlank(fileName) && derivativeList.indexOf(fileSubfix) < 0) {
+			// count all source files as download
 			fileDownload(objCounter, fileName);
 		} else {
 			objCounter.increaseCounter(fileName);
 		}
 	}
 	
+	private List<String> getDerivativesList() {
+		// DEFAULT_DERIVATIVES: 2,3,4,5,6,7
+		List<String> derSufixes = new ArrayList<String>(Arrays.asList(Constants.DEFAULT_DERIVATIVES.split(",")));
+		for (int i=0; i < derSufixes.size(); i++) {
+			derSufixes.set(i, "_" + derSufixes.get(i) + ".jpg");
+		}
+
+		String[] dersAdditional = {"_2.mp3", "_2.mp4"};
+		derSufixes.addAll(Arrays.asList(dersAdditional));
+		return derSufixes;
+	}
+
 	private void fileDownload(ObjectCounter objCounter, String file) {
 		String sid = objCounter.getSubjectId();
 		String cid = "";
