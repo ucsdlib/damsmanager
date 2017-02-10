@@ -126,7 +126,7 @@ public class ExcelSource implements RecordSource
             for ( int i = 0; i < firstRow.getLastCellNum(); i++ )
             {
             	String header = firstRow.getCell(i).getStringCellValue();
-            	String lcHeader = header.toLowerCase();
+            	String lcHeader = header.trim().toLowerCase();
                 headers.add( lcHeader );
                 
                 // keep the original header for error report
@@ -137,9 +137,9 @@ public class ExcelSource implements RecordSource
                 	if ( StringUtils.isNotBlank(header) && !controlFields.contains(header) )
                 		invalidHeaders.add(header); 
                 } else if ( CONTROL_VALUES != null && CONTROL_VALUES.size() > 0 
-                		&& StringUtils.isNotBlank(header) && !CONTROL_VALUES.containsKey(header) )
+                		&& StringUtils.isNotBlank(header) && !CONTROL_VALUES.containsKey(lcHeader) )
                 {
-                	invalidHeaders.add(header);     		
+                	invalidHeaders.add(header);
                 }
             }
             currRow++;
@@ -245,7 +245,7 @@ public class ExcelSource implements RecordSource
 
 	                    // check for invalid control values
 	                    String originalHeader = originalHeaders.get(header);
-	                    List<String> validValue = CONTROL_VALUES.get(originalHeader);
+	                    List<String> validValue = CONTROL_VALUES.get(header);
 	                    if (validValue != null && validValue.size() > 0) 
 	                    {
 	                    	// validate cell with multiple values
@@ -255,6 +255,9 @@ public class ExcelSource implements RecordSource
 	                    		String normVal = val.trim();
 								if (header.equalsIgnoreCase("Language"))
 									normVal = normalizeFieldValue(normVal, DELIMITER_LANG_ELEMENT);
+								else if (header.equalsIgnoreCase(SubjectTabularRecord.SUBJECT_TYPE))
+									// Subject Import: case insensitive subject header value
+									normVal = val.toLowerCase();
 
 								if (!validValue.contains(normVal)) {
 			    	                String existing = invalids.get(originalHeader);
@@ -366,12 +369,13 @@ public class ExcelSource implements RecordSource
 				Cell cell = row.getCell(i);
 				if ( cell != null )
 				{
-					cell.setCellType(Cell.CELL_TYPE_STRING);
-                    String value = cell.toString();
-                    if ( value != null && !(value = value.trim()).equals("") )
+
+                    String value = getCellValue(cell);
+                    if ( StringUtils.isNotBlank(value) )
     	            {
 						if (row.getRowNum() == 0) 
 						{
+							value = value.toLowerCase();
 							cvHeaders.add( value );
 							CONTROL_VALUES.put(value, new ArrayList<String>());
 						} 
@@ -395,8 +399,8 @@ public class ExcelSource implements RecordSource
 		}
 		
 		// ARK column
-		if (!CONTROL_VALUES.containsKey("ARK"))
-			CONTROL_VALUES.put("ARK", new ArrayList<String>());
+		if (!CONTROL_VALUES.containsKey("ark"))
+			CONTROL_VALUES.put("ark", new ArrayList<String>());
 		
 		// select-a-header columns names
 		for ( Iterator<Row> it = selectHeaderSheet.rowIterator(); it.hasNext(); )
@@ -409,12 +413,12 @@ public class ExcelSource implements RecordSource
 				Cell cell = row.getCell(i);
 				if ( cell != null )
 				{
-					cell.setCellType(Cell.CELL_TYPE_STRING);
-                    String value = cell.toString();
-                    if ( value != null && !(value = value.trim()).equals("") )
+					String value = getCellValue(cell);
+                    if ( StringUtils.isNotBlank(value) )
     	            {
 						if (row.getRowNum() == 0) 
 						{
+							value = value.toLowerCase();
 							// Select header column names
 							selectHeaders.add( value );
 							selectHeaderValues.put(value, new ArrayList<String>());
@@ -425,7 +429,7 @@ public class ExcelSource implements RecordSource
 							value = new String(value.getBytes("UTF-8"));
 							String header = selectHeaders.get(cell.getColumnIndex());
 							
-							selectHeaderValues.get(header).add(value);
+							selectHeaderValues.get(header).add(value.toLowerCase());
 
 							if(row.getRowNum() == 1)
 								System.out.println("Select header value " + header + ": " + value);
@@ -445,10 +449,10 @@ public class ExcelSource implements RecordSource
 				Cell cell = row.getCell(i);
 				if ( cell != null )
 				{
-					cell.setCellType(Cell.CELL_TYPE_STRING);
-                    String value = cell.toString();
-                    if ( value != null && !(value = value.trim()).equals("") )
+					String value = getCellValue(cell);
+                    if ( StringUtils.isNotBlank(value) )
     	            {
+                    	value = value.toLowerCase();
                     	if (selectHeaderValues.containsKey(value)) 
                     	{
                     		List<String> headers = selectHeaderValues.get(value);
@@ -481,6 +485,12 @@ public class ExcelSource implements RecordSource
 				}
 			}
 		}
+    }
+
+    private static String getCellValue(Cell cell) {
+		cell.setCellType(Cell.CELL_TYPE_STRING);
+        String value = cell.toString();
+        return value==null?value:value.trim();
     }
 
     private static String normalizeFieldValue(String value, String delimiter) 
