@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -23,7 +24,6 @@ import org.dom4j.Node;
 import org.dom4j.io.SAXReader;
 
 import edu.ucsd.library.xdre.utils.Constants;
-import edu.ucsd.library.xdre.utils.DAMSClient;
 
 /**
  * Class LogAnalyzer
@@ -90,10 +90,6 @@ public class LogAnalyzer{
 					if (line.indexOf("\"-\"", spIdx) > 0 || line.indexOf("archive.org_bot", spIdx) > 0)
 						continue;
 
-					// ignore hits from MSCL collection pages: http://library.ucsd.edu/speccoll/
-					if (line.indexOf("http://library.ucsd.edu/speccoll/", spIdx) > 0)
-						continue;
-					
 					uri = getUri(line);
 					if(uri != null){
 						//idx = uri.indexOf("&user=");
@@ -117,10 +113,15 @@ public class LogAnalyzer{
 							else if (uidIdx > 0 && httpStatus.startsWith("3"))
 								// view from curator with redirect
 								pasStats.addObject(uri, true);
-							else if (!httpStatus.startsWith("3"))
+							else if (!httpStatus.startsWith("3")) {
 								// access with no redirect
-								pasStats.addObject(uri, false);
-
+								if (line.indexOf("http://library.ucsd.edu/speccoll/", spIdx) > 0) {
+									// access from MSCL exhibits: http://library.ucsd.edu/speccoll/
+									addMsclStats(uri);
+								} else {
+									pasStats.addObject(uri, false);
+								}
+							}
 						}else{
 							//Home Page: /dc
 							//Search: /dc/search?utf8=%E2%9C%93&q=wagner
@@ -163,6 +164,14 @@ public class LogAnalyzer{
 				reader = null;
 			}
 		}
+	}
+	
+	private void addMsclStats(String uri) {
+		if (uri.indexOf("/_2.jpg") > 0) {
+			// count as object view
+			uri = uri.replace("/_2.jpg", "");
+		}
+		pasStats.addObject(uri, false); 
 	}
 	
 	public static String getUri(String line){
