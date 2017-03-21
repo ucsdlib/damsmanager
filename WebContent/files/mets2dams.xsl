@@ -537,7 +537,9 @@
             <xsl:when test="@type = 'performers'
                          or @type = 'thesis'
                          or @type = 'bibliography'
-                         or @type = 'preferred citation'">
+                         or @type = 'preferred citation'
+                         or @type = 'work title'
+                         or @type = 'material details'">
               <dams:type><xsl:value-of select="@type"/></dams:type>
               <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
@@ -721,45 +723,59 @@
     </xsl:if>
   </xsl:template>
   <xsl:template match="mods:mods/mods:name">
-    <dams:relationship>
-      <dams:Relationship>
-        <dams:role>
-          <mads:Authority rdf:about="{generate-id(mods:role|text())}">
-            <xsl:choose>
-              <xsl:when test="mods:role">
-                <xsl:for-each select="mods:role/mods:roleTerm[@type='code']">
-                  <mads:code><xsl:value-of select="."/></mads:code>
-                  <xsl:call-template name="authority">
-                    <xsl:with-param name="auth" select="@authority"/>
-                    <xsl:with-param name="code" select="."/>
-                  </xsl:call-template>
-                </xsl:for-each>
-                <xsl:for-each select="mods:role/mods:roleTerm[@type='text']">
-                  <mads:authoritativeLabel>
-                    <xsl:value-of select="."/>
-                  </mads:authoritativeLabel>
-                </xsl:for-each>
-              </xsl:when>
-              <xsl:otherwise>
+    <xsl:variable name="predicateName">
+      <xsl:choose>
+        <xsl:when test="@type='personal'">personalName</xsl:when>
+        <xsl:when test="@type='corporate'">corporateName</xsl:when>
+        <xsl:when test="@type='conference'">conferenceName</xsl:when>
+        <xsl:otherwise>name</xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
+    <xsl:variable name="name_elem">
+      <xsl:element name="{$predicateName}" namespace="dams">
+        <xsl:call-template name="name"/>
+      </xsl:element>
+    </xsl:variable>
+    <xsl:choose>
+      <xsl:when test="mods:role">
+        <xsl:for-each select="mods:role">
+          <dams:relationship>
+            <dams:Relationship>
+              <dams:role>
+                <mads:Authority rdf:about="{generate-id(mods:role|text())}">
+                  <xsl:for-each select="mods:roleTerm[@type='code']">
+                    <mads:code><xsl:value-of select="."/></mads:code>
+                    <xsl:call-template name="authority">
+                      <xsl:with-param name="auth" select="@authority"/>
+                      <xsl:with-param name="code" select="."/>
+                    </xsl:call-template>
+                  </xsl:for-each>
+                  <xsl:for-each select="mods:roleTerm[@type='text']">
+                    <mads:authoritativeLabel>
+                      <xsl:value-of select="."/>
+                    </mads:authoritativeLabel>
+                  </xsl:for-each>
+                </mads:Authority>
+              </dams:role>
+              <xsl:copy-of select="$name_elem" />
+            </dams:Relationship>
+          </dams:relationship>
+        </xsl:for-each>
+      </xsl:when>
+      <xsl:otherwise>
+        <dams:relationship>
+          <dams:Relationship>
+            <dams:role>
+              <mads:Authority rdf:about="{generate-id()}">
                 <mads:code>cre</mads:code>
                 <rdf:value>Creator</rdf:value>
-              </xsl:otherwise>
-            </xsl:choose>
-          </mads:Authority>
-        </dams:role>
-        <xsl:variable name="predicateName">
-          <xsl:choose>
-            <xsl:when test="@type='personal'">personalName</xsl:when>
-            <xsl:when test="@type='corporate'">corporateName</xsl:when>
-            <xsl:when test="@type='conference'">conferenceName</xsl:when>
-            <xsl:otherwise>name</xsl:otherwise>
-          </xsl:choose>
-        </xsl:variable>
-        <xsl:element name="dams:{$predicateName}">
-          <xsl:call-template name="name"/>
-        </xsl:element>
-      </dams:Relationship>
-    </dams:relationship>
+              </mads:Authority>
+            </dams:role>
+            <xsl:copy-of select="$name_elem" />
+          </dams:Relationship>
+        </dams:relationship>
+      </xsl:otherwise>
+    </xsl:choose>
   </xsl:template>
   <xsl:template name="authority">
     <xsl:param name="auth"/>
@@ -819,7 +835,7 @@
         <xsl:otherwise>Name</xsl:otherwise>
       </xsl:choose>
     </xsl:variable>
-    <xsl:element name="mads:{$elementName}">
+    <xsl:element name="{$elementName}" namespace="mads">
       <xsl:attribute name="rdf:about">
         <xsl:value-of select="generate-id()"/>
       </xsl:attribute>
