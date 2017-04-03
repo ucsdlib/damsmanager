@@ -538,7 +538,7 @@
                          or @type = 'thesis'
                          or @type = 'bibliography'
                          or @type = 'preferred citation'
-                         or @type = 'work title'
+                         or @type = 'work featured'
                          or @type = 'material details'">
               <dams:type><xsl:value-of select="@type"/></dams:type>
               <rdf:value><xsl:value-of select="."/></rdf:value>
