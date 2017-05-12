@@ -222,7 +222,8 @@ public class DAMStatistic extends Statistics{
 		}
 
 		// differentiate the counts for file download and object access/hits
-		String fileSubfix = fileName.substring(fileName.lastIndexOf("_"));
+		int file_name_idx = fileName.lastIndexOf("_");
+		String fileSubfix = file_name_idx >= 0 ? fileName.substring(file_name_idx) : "";
 
 		if (uri.indexOf("/download") > 0) {
 			fileDownload(objCounter, fileName);
