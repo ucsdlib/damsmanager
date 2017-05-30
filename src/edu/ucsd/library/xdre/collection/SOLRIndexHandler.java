@@ -82,8 +82,10 @@ public class SOLRIndexHandler extends CollectionHandler{
 			count++;
 			subjectURI = items.get(i);
 			setStatus("Processing SOLR index for subject " + subjectURI  + " (" + (i+1) + " of " + itemsCount + ") ... " );
-			if(!updateSOLR(subjectURI))
+			if(!updateSOLR(subjectURI)){
 				failedCount++;
+				exeResult = false;
+			}
 			setProgressPercentage( ((i + 1) * 100) / itemsCount);
 			
 			try{
@@ -176,10 +178,10 @@ public class SOLRIndexHandler extends CollectionHandler{
 	 */
 	public String getExeInfo() {
 		if(exeResult)
-			exeReport.append("SOLR index succeeded: \n ");
+			exeReport.append("Successfully added records to the index queue: \n ");
 		else
-			exeReport.append("SOLR index failed (" + failedCount + " of " + count + " failed): \n ");	
-		exeReport.append("Total items found " + itemsCount + " (Number of items updated: " + count);
+			exeReport.append("Failed to add records to the index queue (" + failedCount + " of " + count + " failed): \n ");
+		exeReport.append("Total items found " + itemsCount + " (Number of items added: " + count);
 		if(deletedCount > 0)
 			exeReport.append(", deleted: " + deletedCount);
 		if(cleanUpdateCount > 0)
