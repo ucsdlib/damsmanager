@@ -88,7 +88,7 @@ public class StatsPopularController implements Controller {
 		}
 		
 		String data = "";
-		String solrQuery = Constants.SOLR_URL_BASE + "/select?q=id:(" + subjects+ ")&fl=id+title_tesim+collections_tesim+collection_name_tesim+discover_access_group_ssim+*files_tesim+component_count_isi&rows=200&wt=json";
+		String solrQuery = Constants.SOLR_URL_BASE + "/select?fq=id:(" + subjects+ ")&fl=id+title_tesim+collections_tesim+collection_name_tesim+discover_access_group_ssim+*files_tesim+component_count_isi&rows=200&wt=json";
 		DAMSClient damsClient = null;
 		String clusterHost = "//" + Constants.CLUSTER_HOST_NAME + ".ucsd.edu";
 		try {
