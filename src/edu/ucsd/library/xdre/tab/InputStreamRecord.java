@@ -157,8 +157,10 @@ public class InputStreamRecord implements Record {
 			String unitUri, String visibility)
 	{
 		Namespace rdfNS = rdf.getRootElement().getNamespaceForPrefix("rdf");
-		// title
-		addTitle( p, title);
+		// title: if no title in the source metadata, use the one submitted from the form
+		if (p.selectSingleNode("dams:title") == null) {
+			addTitle( p, title);
+		}
 		// unit
 		p.addElement("dams:unit").addAttribute(new QName("resource",  rdfNS), unitUri);
 		// visibility
