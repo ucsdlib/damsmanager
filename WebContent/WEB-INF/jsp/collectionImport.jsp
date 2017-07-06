@@ -19,15 +19,6 @@
 <script type="text/javascript">
     var collTypes = ["AssembledCollection", "ProvenanceCollection", "ProvenanceCollectionPart"];
     function confirmImport() {
-
-        var collTitle = document.mainForm.collTitle.value.trim();
-        if (collTitle.length == 0) {
-            alert("Please enter a collection title.");
-            document.mainForm.collTitle.focus();
-            return false;
-        }
-
-        
         var collTypeIndex = document.mainForm.collType.selectedIndex;  
         if(collTypeIndex == 0){
             alert("Please select a collection type.");
@@ -73,7 +64,7 @@
             }
         }
         
-        var message = "Are you sure you want to Create collection '" + collTitle + "'? \n";
+        var message = "Are you sure you want to Create a new collection? \n";
         if (collIndex > 0)
             message = "Are you sure you want to replace " + document.mainForm.category.options[collIndex].text + "? \n";
 
@@ -153,14 +144,6 @@
 
 <div style="margin-top:10px;padding-left:20px;" align="left">
     <table>
-        <tr align ="left">
-            <td height="25px">
-                <span class="submenuText"><span class="requiredLabel">*</span><b>Collection Title: </b></span>
-            </td>
-            <td>
-                <span class="submenuText"><input type="text" id="collTitle" name="collTitle" size="59" value="${model.collTitle}"></span>
-            </td>
-        </tr>
         <tr align ="left">
             <td height="25px">
                 <span class="submenuText"><span class="requiredLabel">*</span><b>Collection Type: </b></span>

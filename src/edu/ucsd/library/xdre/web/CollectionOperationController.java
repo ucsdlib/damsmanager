@@ -766,7 +766,6 @@ public class CollectionOperationController implements Controller {
 								  StringBuilder errorMessage = new StringBuilder(); 
 								  try {
 									  if (collectionImport) {
-										  String collTitle = getParameter(paramsMap, "collTitle");
 										  String collType = getParameter(paramsMap, "collType");
 										  String visibility = getParameter(paramsMap, "visibility");
 										  String parentCollection = getParameter(paramsMap, "parentCollection");
@@ -780,8 +779,9 @@ public class CollectionOperationController implements Controller {
 										  if (!preprocessing && StringUtils.isBlank(id)) {
 											  collectionId = id = RDFDAMS4ImportTsHandler.toDamsUrl(damsClient.mintArk(Constants.DEFAULT_ARK_NAME));
 										  }
-							 			  record = new InputStreamRecord(rec, id, collTitle, collType, parentCollections, unit, visibility);
+							 			  record = new InputStreamRecord(rec, id, collType, parentCollections, unit, visibility);
 
+							 			 String collTitle = record.toRDFXML().selectSingleNode("//dams:title/mads:Title/mads:authoritativeLabel").getStringValue();
 							 			 String existed = checkRecord (collTitle, damsClient);
 							 			 if (StringUtils.isNotBlank(existed) && !existed.endsWith(id)) {
 							 				String existingCollection = "http://" + Constants.CLUSTER_HOST_NAME + (Constants.CLUSTER_HOST_NAME.startsWith("localhost") ? "" : ".ucsd.edu/dc") 
