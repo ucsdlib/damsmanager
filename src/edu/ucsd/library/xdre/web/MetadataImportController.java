@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -36,10 +38,20 @@ public class MetadataImportController implements Controller{
 	private static String[] clrAssiotiatedFieldPaths = {
 		"//*[contains(local-name(), 'Collection')]/dams:title/mads:Title/mads:authoritativeLabel",
 		"//*[contains(local-name(), 'Collection')]/dams:visibility",
-		"//*[contains(local-name(), 'Collection')]/*[local-name()='hasPart' or contains(local-name(), 'Collection')]/@rdf:resource",
+	};
+
+	private static String[] clrAssiotiatedFieldOtherPaths = {
 		"//*[contains(local-name(), 'Collection')]/dams:relatedResource/dams:RelatedResource[dams:type = 'online finding aid']/*[local-name()='description' or local-name()='uri']",
 		"//*[contains(local-name(), 'Collection')]/dams:relatedResource/dams:RelatedResource[dams:type = 'online finding aid']/dams:uri/@rdf:resource",
-		};
+	};
+
+	private static String[] clrHierarchyPaths = {
+		"//*[contains(local-name(), 'Collection')]/*[local-name()='hasPart' or contains(local-name(), 'Collection')]/@rdf:resource",
+	};
+
+	private static String[] clrParentChildHierarchyPaths = {
+		"//*[contains(local-name(), 'Collection')]/*[contains(local-name(), 'Collection') and contains(local-name(), 'has') or local-name()='hasPart']/@rdf:resource",
+	};
 
     @Override
 	public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -87,10 +99,26 @@ public class MetadataImportController implements Controller{
 							String className = node.getParent().getName();
 	
 							Document originDoc = saxReader.read(new ByteArrayInputStream(oData.getBytes("UTF-8")));
-							boolean clrAssociatedLookup = hasClrAssociatedChanges(node, originDoc);
-							if ((!className.endsWith("Object") && className.indexOf("Collection") < 0) || (className.indexOf("Collection") >= 0 && clrAssociatedLookup)) {
-								// Collection or Authority update, need to update SOLR for the linked records. Recursive lookup for collections.
-								queryObjects ( solutions, subId, 1, damsClient, doc );
+							boolean clrAssociatedLookup = hasClrAssociatedChanges(node, originDoc, clrAssiotiatedFieldPaths);
+							boolean clrDirectLinkedLookup = hasClrAssociatedChanges(node, originDoc, clrAssiotiatedFieldOtherPaths)
+										|| hasClrAssociatedChanges(node, originDoc, clrHierarchyPaths);
+							if ((!className.endsWith("Object") && className.indexOf("Collection") < 0)
+									|| (className.indexOf("Collection") >= 0 && (clrAssociatedLookup || clrDirectLinkedLookup))) {
+								// Collection or Authority update, need to update SOLR for the linked records.
+								queryObjects ( solutions, subId, 1, damsClient, doc, clrAssociatedLookup );
+
+								if (className.indexOf("Collection") >= 0) {
+									// collection hierarchy is changed, need to re-index all related CLRs
+									Set<String> colls = getClrHierarchyChanges(node, originDoc, clrHierarchyPaths);
+									solutions.addAll(colls);
+
+									// if there is changes in parent/child hierarchy, need to re-index all linked records for those related collections
+									colls = getClrHierarchyChanges(node, originDoc, clrParentChildHierarchyPaths);
+									for (String coll : colls) {
+										queryObjects ( solutions, coll, 1, damsClient, doc, true );
+									}
+								}
+
 								List<String> solrFailures = new ArrayList<>();
 								for (String solution : solutions) {
 									boolean successful = false;
@@ -156,6 +184,10 @@ public class MetadataImportController implements Controller{
 	}
 
 	private void queryObjects( List<String> soluctions, String oid, int level, DAMSClient damsClient, Document parent ) throws Exception {
+		queryObjects( soluctions, oid, level, damsClient, parent, false );
+	}
+
+	private void queryObjects( List<String> soluctions, String oid, int level, DAMSClient damsClient, Document parent, boolean hierarchyUpdate ) throws Exception {
 		int le = level;
 		String[] sparqls =  getQueries(oid, level, parent);
 		for (String sparql : sparqls) {
@@ -174,47 +206,17 @@ public class MetadataImportController implements Controller{
 					if ( !soluctions.contains(sub) ) {
 						soluctions.add(sub);
 						try {
-							Document doc = damsClient.getRecord(sub);
-							// recursive lookup for authority records and collections hierarchy only
-							if (doc.selectSingleNode("/rdf:RDF/*[contains(name(), 'Object') or contains(name(), 'Collection')]" ) == null
-									|| (parent.selectSingleNode("/rdf:RDF/*[contains(name(), 'Collection')]") != null 
-											&& doc.selectSingleNode("/rdf:RDF/*[contains(name(), 'Collection')]") != null)) {
-	
+							// recursive lookup for authority records
+							if (parent.selectSingleNode("/rdf:RDF/*[contains(name(), 'Object') or contains(name(), 'Collection')]" ) == null) {
+								Document doc = damsClient.getRecord(sub);
 								// update the authoritativeLabel for the ComplexSubject
 								boolean isComplexSubject = doc.selectSingleNode("/rdf:RDF/mads:ComplexSubject") != null;
 								if (isComplexSubject) {
-									Document fullDoc = damsClient.getFullRecord(sub);
-	
-									List<Node> subElems = fullDoc.selectNodes("/rdf:RDF/mads:ComplexSubject/mads:componentList/*/mads:authoritativeLabel");
-									if (subElems.size() > 0) {
-										String authoritativeLabel = "";
-										for ( Node subElem : subElems) {
-											authoritativeLabel += (authoritativeLabel.length() > 0 ? "--" : "") + subElem.getText();
-										}
-										
-										doc.selectSingleNode("/rdf:RDF/mads:ComplexSubject/mads:authoritativeLabel").setText(authoritativeLabel);
-										MetadataImportHandler handler = new MetadataImportHandler(damsClient, null, doc.asXML(), null, Constants.IMPORT_MODE_ALL);
-										
-										try {
-											if(handler.execute()) {
-												// need to query linked records for the authority record
-												queryObjects ( soluctions, sub, 1, damsClient, doc );
-											} else
-												throw new Exception ("Failed to update linked record " + sub);
-										} catch (Exception e) {
-											throw new Exception ("Failed to update linked record " + sub, e);
-										}finally{
-											if(handler != null) {
-												handler.release();
-												handler = null;
-											}
-										}
-									}
+									handleComplexSubject( soluctions, sub, damsClient, doc);
 								} else {
 									queryObjects( soluctions, sub, 1, damsClient, doc );
 								}
 							}
-							
 						}catch (Exception e) {
 							throw new Exception ("Failed to retrieve linked records for " + sub, e);
 						}
@@ -231,6 +233,57 @@ public class MetadataImportController implements Controller{
 				} else
 					queryObjects ( soluctions, oid, ++le, damsClient, parent);
 					
+			}
+		}
+
+		// objects in collection hierarchy that need re-index when the title/visibility fields changed
+		if (hierarchyUpdate && parent.selectSingleNode("/rdf:RDF/*[contains(name(), 'Collection')]") != null) {
+			handleCollectionHierarchy(soluctions, oid, damsClient, parent);
+		}
+	}
+
+	private void handleCollectionHierarchy(List<String> solutions, String oid, DAMSClient damsClient, Document doc) throws Exception {
+		Set<Node> nodes = getResources(doc, clrParentChildHierarchyPaths);
+		for (Node node : nodes) {
+			String linkedClr = node.getStringValue();
+			log.debug("Lookuping linked objects in child collection " + linkedClr + " for collection " + oid + ".");
+
+			try {
+				// lookup linked objects
+				Document current = damsClient.getRecord(linkedClr);
+				queryObjects ( solutions, linkedClr, 1, damsClient, current, true );
+			}catch (Exception e) {
+				throw new Exception ("Failed to retrieve linked records for " + linkedClr, e);
+			}
+		}
+	}
+
+	private void handleComplexSubject(List<String> solutions, String oid, DAMSClient damsClient, Document doc) throws Exception {
+		Document fullDoc = damsClient.getFullRecord(oid);
+		
+		List<Node> subElems = fullDoc.selectNodes("/rdf:RDF/mads:ComplexSubject/mads:componentList/*/mads:authoritativeLabel");
+		if (subElems.size() > 0) {
+			String authoritativeLabel = "";
+			for ( Node subElem : subElems) {
+				authoritativeLabel += (authoritativeLabel.length() > 0 ? "--" : "") + subElem.getText();
+			}
+			
+			doc.selectSingleNode("/rdf:RDF/mads:ComplexSubject/mads:authoritativeLabel").setText(authoritativeLabel);
+			MetadataImportHandler handler = new MetadataImportHandler(damsClient, null, doc.asXML(), null, Constants.IMPORT_MODE_ALL);
+			
+			try {
+				if(handler.execute()) {
+					// need to query linked records for the authority record
+					queryObjects ( solutions, oid, 1, damsClient, doc );
+				} else
+					throw new Exception ("Failed to update linked record " + oid);
+			} catch (Exception e) {
+				throw new Exception ("Failed to update linked record " + oid, e);
+			}finally{
+				if(handler != null) {
+					handler.release();
+					handler = null;
+				}
 			}
 		}
 	}
@@ -292,8 +345,8 @@ public class MetadataImportController implements Controller{
 	/*
 	 * CLR: determine changes that need solr re-indexing
 	 */
-	private boolean hasClrAssociatedChanges(Node node, Node origin) {
-		for (String path : clrAssiotiatedFieldPaths) {
+	private boolean hasClrAssociatedChanges(Node node, Node origin, String[] paths) {
+		for (String path : paths) {
 			List<Node> associateNodes = node.selectNodes(path);
 			List<Node> oAssociateNodes = origin.selectNodes(path);
 			
@@ -318,6 +371,30 @@ public class MetadataImportController implements Controller{
 				return true;
 		}
 		return false;
+	}
+
+	/*
+	 * Retrieve value changes in the related elements
+	 */
+	private Set<String> getClrHierarchyChanges(Node node, Node origin, String[] paths) {
+		Set<String> values = new HashSet<>();
+		for (String path : paths) {
+			List<String> associateValues = getValues (node.selectNodes(path));
+			List<String> oAssociateValues = getValues (origin.selectNodes(path));
+			associateValues.removeAll(oAssociateValues);
+			oAssociateValues.removeAll(associateValues);
+			values.addAll(associateValues);
+			values.addAll(oAssociateValues);
+		}
+		return values;
+	}
+
+	private Set<Node> getResources(Document doc, String[] paths) {
+		Set<Node> nodes = new HashSet<>();
+		for (String path: paths) {
+			nodes.addAll(doc.selectNodes(path));
+		}
+		return nodes;
 	}
 
 	private List<String> getValues (List<Node> nodes) {

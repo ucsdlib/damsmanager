@@ -50,7 +50,7 @@ public class InputStreamRecord implements Record {
 	/**
 	 * Constructor for Collection Input Stream with fields
 	 */
-	public InputStreamRecord(Record record, String id, String title, String type, Map<String, String> collections, String unit, 
+	public InputStreamRecord(Record record, String id, String type, Map<String, String> collections, String unit, 
 			String visibility) throws Exception {
 		this.id = id;
 		this.rdf = record.toRDFXML();
@@ -59,7 +59,7 @@ public class InputStreamRecord implements Record {
 		if (StringUtils.isNotBlank(id))
 			node.selectSingleNode("@rdf:about").setText(id);
 		
-		addFields((Element)node, title, collections, unit, visibility);
+		addFields((Element)node, collections, unit, visibility);
 	}
 
 	@Override
@@ -153,12 +153,10 @@ public class InputStreamRecord implements Record {
 		}
 	}
 
-	private void addFields(Element p, String title, Map<String, String> collections, 
+	private void addFields(Element p, Map<String, String> collections, 
 			String unitUri, String visibility)
 	{
 		Namespace rdfNS = rdf.getRootElement().getNamespaceForPrefix("rdf");
-		// title
-		addTitle( p, title);
 		// unit
 		p.addElement("dams:unit").addAttribute(new QName("resource",  rdfNS), unitUri);
 		// visibility
