@@ -31,7 +31,8 @@ import edu.ucsd.library.xdre.utils.Constants;
  * @author lsitu@ucsd.edu
  */
 public class LogAnalyzer{
-	
+	public static String SPEC_COLL_URL = "//library.ucsd.edu/speccoll/";
+
 	private static Logger log = Logger.getLogger(LogAnalyzer.class);
 	private Calendar calendar = null;
 	private DAMStatistic pasStats = null;
@@ -87,7 +88,7 @@ public class LogAnalyzer{
 				if(spIdx > 0 && line.indexOf(Constants.CLUSTER_HOST_NAME + " ") > 0 
 						&& line.indexOf("/assets/") < 0 && line.indexOf("/get_data/") < 0 && line.indexOf("/users/") < 0 && line.indexOf("/images/") < 0 ){
 					// ignore spiders/search engines access
-					if (line.indexOf("\"-\"", spIdx) > 0 || line.indexOf("archive.org_bot", spIdx) > 0)
+					if ((line.indexOf("\"-\"", spIdx) > 0 || line.indexOf("archive.org_bot", spIdx) > 0) && line.indexOf(SPEC_COLL_URL) < 0)
 						continue;
 
 					uri = getUri(line);
@@ -115,7 +116,7 @@ public class LogAnalyzer{
 								pasStats.addObject(uri, true);
 							else if (!httpStatus.startsWith("3")) {
 								// access with no redirect
-								if (line.indexOf("http://library.ucsd.edu/speccoll/", spIdx) > 0) {
+								if (line.indexOf(SPEC_COLL_URL, spIdx) > 0) {
 									// access from MSCL exhibits: http://library.ucsd.edu/speccoll/
 									addMsclStats(uri);
 								} else {
