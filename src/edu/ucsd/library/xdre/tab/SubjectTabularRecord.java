@@ -54,7 +54,7 @@ public class SubjectTabularRecord extends TabularRecordBasic
         String elemName = null;
         String subjectType = data.get(SUBJECT_TYPE.toLowerCase());
         subjectType = subjectType.substring(subjectType.indexOf(":") + 1);
-        String subjectName = toCarmelCase(subjectType);
+        String subjectName = toCamelCase(subjectType);
         if ( subjectType.equalsIgnoreCase("genre") )
         	subjectName = "GenreForm";
         if ( subjectType.equalsIgnoreCase("personal name") )
