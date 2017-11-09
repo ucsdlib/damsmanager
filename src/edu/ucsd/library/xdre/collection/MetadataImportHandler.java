@@ -23,6 +23,7 @@ import com.hp.hpl.jena.rdf.model.StmtIterator;
 
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
+import edu.ucsd.library.xdre.utils.DAMSRepository;
 import edu.ucsd.library.xdre.utils.DFile;
 import edu.ucsd.library.xdre.utils.DamsURI;
 import edu.ucsd.library.xdre.utils.RDFStore;
@@ -300,8 +301,16 @@ public class MetadataImportHandler extends CollectionHandler{
 							succeeded = damsClient.delete(subjectId, null, null);
 						else
 							succeeded = true;
-					}else
-						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), importMode);
+					}else {
+						String rdfXml = graph.export(RDFStore.RDFXML_ABBREV_FORMAT);
+						if (DAMSRepository.isAuthorityRecord(subjectId, graph.getModel())) {
+							try (InputStream in = new ByteArrayInputStream(rdfXml.getBytes("UTF-8"))) {
+								DAMSRepository.getRepository().updateAuthorityRecord(new SAXReader().read(in));
+								succeeded = true;
+							}
+						} else
+							succeeded = damsClient.updateObject(subjectId, rdfXml, importMode);
+					}
 				}else
 					succeeded = false;
 					
