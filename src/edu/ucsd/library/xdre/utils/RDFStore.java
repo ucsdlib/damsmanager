@@ -45,6 +45,14 @@ public class RDFStore {
 	}
 	
 	/**
+	 * Get the model of the RDFStore
+	 * @return Model
+	 */
+	public Model getModel() {
+		return rdfModel;
+	}
+
+	/**
 	 * Create a Statement
 	 * @param subject
 	 * @param predicate
