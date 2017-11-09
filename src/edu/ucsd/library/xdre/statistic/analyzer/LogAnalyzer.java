@@ -191,6 +191,12 @@ public class LogAnalyzer{
 					uri = uri.substring(idx+1, nIdx);
 			}else
 				uri = line.substring(line.indexOf(" ", idx+1) + 1);
+
+			// exclude unexpected url
+			if (uri.indexOf("?") < 0 && uri.indexOf("&") > 0) {
+				log.info("Invalid request url: " + line);
+				return null;
+			}
 			return 	uri;
 		}else{ 
 			log.info("Invalid request: " + line);
