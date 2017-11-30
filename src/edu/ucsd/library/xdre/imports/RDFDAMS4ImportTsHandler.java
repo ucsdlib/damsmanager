@@ -1,8 +1,10 @@
 package edu.ucsd.library.xdre.imports;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.text.Normalizer;
 import java.util.ArrayList;
@@ -38,6 +40,7 @@ import edu.ucsd.library.xdre.tab.SubjectTabularRecord;
 import edu.ucsd.library.xdre.utils.AudioMetadata;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
+import edu.ucsd.library.xdre.utils.DAMSRepository;
 import edu.ucsd.library.xdre.utils.DFile;
 import edu.ucsd.library.xdre.utils.DamsURI;
 import edu.ucsd.library.xdre.utils.EmbeddedMetadata;
@@ -68,6 +71,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 	private Map<String, File> filesMap = new HashMap<String, File>();
 	
 	private DAMSClient damsClient = null;
+	private DAMSRepository damsRepository = null;
 	private String importOption = null;
 	private File[] rdfFiles = null;
 	private String[] filesPaths = null;
@@ -112,6 +116,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		this.damsClient = damsClient;
 		this.rdfFiles = rdfFiles;
 		this.importOption = importOption;
+		this.damsRepository = DAMSRepository.getRepository();
 	}
 
 	public String[] getFilesPaths() {
@@ -412,12 +417,19 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 							objModel = graph.merge(iRdf);
 						}
 						
-						// Update object
-						//log.info(j + " ingesting record " + subjectId + ":\n" + graph.export(RDFStore.RDFXML_ABBREV_FORMAT) + "\n\n");
-						String importMode = Constants.IMPORT_MODE_ADD;
-						if (replace && recordsToReplace.indexOf(subjectId) >= 0)
-							importMode = Constants.IMPORT_MODE_ALL;
-						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), importMode);
+						String rdfXml = graph.export(RDFStore.RDFXML_ABBREV_FORMAT);
+						if (DAMSRepository.isAuthorityRecord(subjectId, graph.getModel())) {
+							// create authority record
+							try (InputStream in = new ByteArrayInputStream(rdfXml.getBytes("UTF-8"))) {
+								succeeded = damsRepository.createAuthorityRecord(saxReader.read(in)) != null;
+							}
+						} else {
+							// Update object
+							String importMode = Constants.IMPORT_MODE_ADD;
+							if (replace && recordsToReplace.indexOf(subjectId) >= 0)
+								importMode = Constants.IMPORT_MODE_ALL;
+							succeeded = damsClient.updateObject(subjectId, rdfXml, importMode);
+						}
 
 						
 						// Logging for Object RDF/XML validation
@@ -458,7 +470,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 						log.error(message);
 						
 						String error = e.getMessage();
-						if (error.indexOf("Invalid RDF input") >= 0) {
+						if (error != null && error.indexOf("Invalid RDF input") >= 0) {
 							messages[processIndex].append(error);
 						} else {
 							status[processIndex] = true;
@@ -979,6 +991,22 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 			}
 			oid = idsMap.get(nKey);
 
+			if (DAMSRepository.isAuthorityRecord(record) && record.selectSingleNode(DAMSRepository.MADS_AUTHORITATIVELABEL) != null) {
+				// Matching authority records with mads:authoritativeLabel: ignoring punctuation and spaces 
+				List<String> results = damsRepository.findAuthority(modelName, StringEscapeUtils.unescapeJava(title));
+				if(results != null && results.size() > 0){
+					oid = results.get(0);
+					if (results.size() > 1){
+						String duids = "";
+						for(Iterator<String> it=results.iterator(); it.hasNext();)
+							duids += (duids.length()>0?", ":"") + it.next();
+						log.warn("Duplicate records found for " + title + " (" + field + "): " + duids + ".");
+					}	
+
+					authorityReport (record, oid, title, "match");
+				}
+			} else {
+
 			//Lookup records from the triplestore, matching the required properties that are null or empty.
 			oids = lookupRecordsFromTs(field, title, "\""+ modelName + "\"", props);
 
@@ -1036,6 +1064,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 					authorityReport (record, oid, title, "match");
 				}
 					
+			}
 			}
 			
 			if(oid == null){
