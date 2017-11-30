@@ -146,18 +146,18 @@ public abstract class TabularRecordBasic implements Record
         return list;
     }
 
-    public static String toCarmelCase(String s)
+    public static String toCamelCase(String s)
     {
         if(StringUtils.isNotBlank( s ))
         {
             String[] tokens = s.split(" ");
-            String carmelCase = "";
+            String camelCase = "";
             for (String token : tokens)
             {
                 if (StringUtils.isNotBlank(token))
-                    carmelCase += token.substring(0, 1).toUpperCase() + (token.length() > 1 ? token.substring(1) : "");
+                    camelCase += token.substring(0, 1).toUpperCase() + (token.length() > 1 ? token.substring(1) : "");
              }
-            return carmelCase;
+            return camelCase;
         }
             return s;
     }

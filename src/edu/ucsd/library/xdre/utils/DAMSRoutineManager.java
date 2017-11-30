@@ -123,6 +123,14 @@ public class DAMSRoutineManager{
 					logger.error("Failed to generate DAMS quantity statistics on " +  Statistics.getDatabaseDateFormater().format(cal.getTime()) + ".");
 				}
 			}
+			
+			// clear authority records cache for nightly refreshing
+			try {
+				DAMSRepository.getRepository().clearCache();
+			} catch (Exception e) {
+				e.printStackTrace();
+				logger.error("Failed to clear authority cache on " +  dFormat.format(cal.getTime()) + ".");
+			}
 		}
 	}
 	

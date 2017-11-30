@@ -51,11 +51,11 @@ public class RecordUtil
 
     private static String address = "UC San Diego, La Jolla, 92093-0175";
     private static String programRDCnote = "Research Data Curation Program, " + address
-        + " (http://libraries.ucsd.edu/services/data-curation/)";
+        + " (https://lib.ucsd.edu/rdcp)";
     private static String programDLPnote = "Digital Library Development Program, " + address
-        + " (http://libraries.ucsd.edu/about/digital-library/)";
+        + " (https://lib.ucsd.edu/digital-library)";
     private static String programSCAnote = "Special Collections & Archives, " + address
-        + " (http://libraries.ucsd.edu/collections/sca/)";
+        + " (https://lib.ucsd.edu/sca)";
 
     private static String culturalSensitivityNote = "Culturally sensitive content: This is an "
         + "image of a person or persons now deceased. In some Aboriginal Communities, hearing "
