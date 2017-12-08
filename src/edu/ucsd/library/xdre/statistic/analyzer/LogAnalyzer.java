@@ -85,10 +85,11 @@ public class LogAnalyzer{
 			int spIdx = -1;
 			while((line=bReader.readLine()) != null){
 				spIdx = line.indexOf("GET /dc");
-				if(spIdx > 0 && line.indexOf(Constants.CLUSTER_HOST_NAME + " ") > 0 
+				if(spIdx > 0 && line.indexOf(Constants.CLUSTER_HOST_NAME + " ") > 0 && !line.contains("/ucsd.ico") && !line.contains("/fonts/") 
 						&& line.indexOf("/assets/") < 0 && line.indexOf("/get_data/") < 0 && line.indexOf("/users/") < 0 && line.indexOf("/images/") < 0 ){
 					// ignore spiders/search engines access
-					if ((line.indexOf("\"-\"", spIdx) > 0 || line.indexOf("archive.org_bot", spIdx) > 0) && line.indexOf(SPEC_COLL_URL) < 0)
+					if ((line.indexOf("\"-\"", spIdx) > 0 || line.contains(" SortSiteCmd/")
+							|| line.indexOf("archive.org_bot", spIdx) > 0) && line.indexOf(SPEC_COLL_URL) < 0)
 						continue;
 
 					uri = getUri(line);
