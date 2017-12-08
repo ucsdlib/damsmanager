@@ -85,11 +85,9 @@ public class LogAnalyzer{
 			int spIdx = -1;
 			while((line=bReader.readLine()) != null){
 				spIdx = line.indexOf("GET /dc");
-				if(spIdx > 0 && line.indexOf(Constants.CLUSTER_HOST_NAME + " ") > 0 && !line.contains("/ucsd.ico") && !line.contains("/fonts/") 
-						&& line.indexOf("/assets/") < 0 && line.indexOf("/get_data/") < 0 && line.indexOf("/users/") < 0 && line.indexOf("/images/") < 0 ){
+				if(spIdx > 0 && line.indexOf(Constants.CLUSTER_HOST_NAME + " ") > 0 && !excludeFromStats(line)) {
 					// ignore spiders/search engines access
-					if ((line.indexOf("\"-\"", spIdx) > 0 || line.contains(" SortSiteCmd/")
-							|| line.indexOf("archive.org_bot", spIdx) > 0) && line.indexOf(SPEC_COLL_URL) < 0)
+					if (isBotAccess(line, spIdx) && line.indexOf(SPEC_COLL_URL) < 0)
 						continue;
 
 					uri = getUri(line);
@@ -214,6 +212,24 @@ public class LogAnalyzer{
 		//casStats.export(con);
 	}
 	
+	private boolean excludeFromStats(String value) {
+		String[] excludePatterns = {"/ucsd.ico", "/fonts/", "/assets/", "/get_data/", "/users/", "/images/"};
+		for (String excludePattern : excludePatterns) {
+			if (value.contains(excludePattern))
+				return true;
+		}
+		return false;
+	}
+
+	private boolean isBotAccess(String value, int fromIndex) {
+		String[] botPatterns = {"\"-\"", " SortSiteCmd/", "archive.org_bot"};
+		for (String botPattern : botPatterns) {
+			if (value.indexOf(botPattern, fromIndex) > 0)
+				return true;
+		}
+		return false;
+	}
+
 	public void print() {
 		pasStats.print();
 		//casStats.print();
