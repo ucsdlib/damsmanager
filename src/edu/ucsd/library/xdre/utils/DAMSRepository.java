@@ -88,7 +88,9 @@ public class DAMSRepository {
 				authorities.put(labelKey,ids);
 			}
 
-			ids.add(solution.get("sub"));
+			// exclude duplicates
+			if (!ids.contains(solution.get("sub")))
+				ids.add(solution.get("sub"));
 		}
 		authoritiesModelMap.put(model, authorities);
 		return authorities;
