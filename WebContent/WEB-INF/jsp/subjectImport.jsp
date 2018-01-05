@@ -112,6 +112,10 @@
                             <input checked type="radio" name="preingestOption" value="pre-processing" checked>
                             <span class="submenuText">Preview the converted RDF/XML only, no ingest.</span>
                         </div>
+                        <div title="Check this checkbox to pre-ingest test for matching subjects." class="submenuText">
+                            <input type="radio" name="preingestOption" value="test-matching">
+                            <span class="text-special">Test for matching subjects</span>
+                        </div>
                     </fieldset>
                 </div>
             </td>
