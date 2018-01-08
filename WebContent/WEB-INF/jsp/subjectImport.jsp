@@ -108,11 +108,11 @@
             <td colspan="2">
                 <div>
                     <fieldset class="groupbox_modsIngestOpts"><legend class="slegandText">Pre-ingest validation</legend>
-                        <div title="Check this checkbox for no ingest but pre-processing only." class="submenuText">
+                        <div title="Select this option for pre-processing only with no ingest." class="submenuText">
                             <input checked type="radio" name="preingestOption" value="pre-processing" checked>
                             <span class="submenuText">Preview the converted RDF/XML only, no ingest.</span>
                         </div>
-                        <div title="Check this checkbox to pre-ingest test for matching subjects." class="submenuText">
+                        <div title="Select this option to generate a matching subjects report prior to ingest." class="submenuText">
                             <input type="radio" name="preingestOption" value="test-matching">
                             <span class="text-special">Test for matching subjects</span>
                         </div>

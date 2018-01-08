@@ -102,23 +102,23 @@ public class SubjectMatching {
 				
 				for (String model : models) {
 					List<String> matchedSubjects = damsRepository.findAuthority(model, subjectTerm);
-					if (matchedSubjects != null) {
-						if(matchedSubjects.size() > 0)
-							result = true;
+					if (matchedSubjects == null || matchedSubjects.size() == 0)
+						continue;
+					
+					result = true;
 
-						for (String subject : matchedSubjects) {
-							String ark = subject;
-							Document doc = damsClient.getRecord(ark);
+					for (String subject : matchedSubjects) {
+						String ark = subject;
+						Document doc = damsClient.getRecord(ark);
 
-							// subject type
-							modelName = getSubjectTypeLabel(doc.selectSingleNode("/rdf:RDF/*").getName());
+						// subject type
+						modelName = getSubjectTypeLabel(doc.selectSingleNode("/rdf:RDF/*").getName());
 
-							String exactMatch = concatValues(doc.selectNodes("/rdf:RDF/*/mads:hasExactExternalAuthority/@rdf:resource"));
-							String closeMatch = concatValues(doc.selectNodes("/rdf:RDF/*/mads:hasCloseExternalAuthority/@rdf:resource"));
+						String exactMatch = concatValues(doc.selectNodes("/rdf:RDF/*/mads:hasExactExternalAuthority/@rdf:resource"));
+						String closeMatch = concatValues(doc.selectNodes("/rdf:RDF/*/mads:hasCloseExternalAuthority/@rdf:resource"));
 
-							String row = escapeRow(modelName, subjectTerm, "match", ark, exactMatch, closeMatch);
-							csvBuilder.append(row);
-						}
+						String row = escapeRow(modelName, subjectTerm, "match", ark, exactMatch, closeMatch);
+						csvBuilder.append(row);
 					}
 				}
 				
