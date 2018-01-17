@@ -18,7 +18,8 @@ public class SubjectTabularRecord extends TabularRecordBasic
     public static final String SUBJECT_TYPE = "subject type";
     public static final String SUBJECT_TERM = "subject term";
     public static final String EXACT_MATCH = "exactMatch";
-	public static final String[] ALL_FIELDS_FOR_SUBJECTS = { "ARK", SUBJECT_TYPE, SUBJECT_TERM, EXACT_MATCH };
+    public static final String CLOSE_MATCH = "closeMatch";
+	public static final String[] ALL_FIELDS_FOR_SUBJECTS = { "ARK", SUBJECT_TYPE, SUBJECT_TERM, EXACT_MATCH, CLOSE_MATCH };
 
 	public SubjectTabularRecord ( Map<String,String> data )
     {
@@ -61,6 +62,7 @@ public class SubjectTabularRecord extends TabularRecordBasic
     		elemName = "FullName";
 
         String exactMatch = (String)data.get(EXACT_MATCH.toLowerCase());
+        String closeMatch = (String)data.get(CLOSE_MATCH.toLowerCase());
         String subjectTerm = (String)data.get(SUBJECT_TERM.toLowerCase());
         switch (subjectType)
         {
@@ -77,37 +79,46 @@ public class SubjectTabularRecord extends TabularRecordBasic
         	case "temporal":
         	case "topic":
                 // mats subject: elem, header, class/ns, predicate/ns, element, header exactMatch
-        		madsSubject( ark, e, subjectName, madsNS, subjectTerm, elemName, exactMatch );
+        		madsSubject( ark, e, subjectName, madsNS, subjectTerm, elemName, exactMatch, closeMatch );
         		break;
         	default:
         		// dams subject: scientific name, common name, culturalContext, lithology, series, cruise etc.
-        		damsSubject( ark, e, subjectName, damsNS, subjectTerm, null, exactMatch );
+        		damsSubject( ark, e, subjectName, damsNS, subjectTerm, null, exactMatch, closeMatch );
         		break;
         }
     }
 
-    protected void madsSubject( String id, Element e, String type, Namespace typeNS, String label, String element, String exactMatch )
+    protected void madsSubject( String id, Element e, String type, Namespace typeNS, String label, String element,
+            String exactMatch, String closeMatch )
     {
         if ( element == null ) { element = type; }
-        Element el = buildSubject( id, e, type, typeNS, label, exactMatch );
+        Element el = buildSubject( id, e, type, typeNS, label, exactMatch, closeMatch );
         addMadsElement( el, element, label );
     }
 
-    protected void damsSubject( String id, Element e, String type, Namespace typeNS, String label, String element, String exactMatch )
+    protected void damsSubject( String id, Element e, String type, Namespace typeNS, String label, String element,
+            String exactMatch, String closeMatch )
     {
         if ( element == null ) { element = type; }
-        Element el = buildSubject( id, e, type, typeNS, label, exactMatch );
+        Element el = buildSubject( id, e, type, typeNS, label, exactMatch, closeMatch );
         addDamsElement( el, element, label );
     }
 
-    protected Element buildSubject( String id, Element e, String type, Namespace typeNS, String value, String exactMatch ) {
+    protected Element buildSubject( String id, Element e, String type, Namespace typeNS, String value,
+            String exactMatch, String closeMatch )
+    {
         Element root = addElement( e, type, typeNS );
         addAttribute( root, "about", rdfNS, StringUtils.isBlank(id) ? "ARK" + counter++ : id );
         addTextElement( root, "authoritativeLabel", madsNS, value );
         if ( StringUtils.isNotBlank( exactMatch ) )
         {
-            Element elem = addElement( root,"hasExactExternalAuthority", madsNS ) ;
+            Element elem = addElement( root, "hasExactExternalAuthority", madsNS ) ;
             addAttribute( elem, "resource", rdfNS, exactMatch );
+        }
+        if ( StringUtils.isNotBlank( closeMatch ) )
+        {
+            Element elem = addElement( root, "hasCloseExternalAuthority", madsNS ) ;
+            addAttribute( elem, "resource", rdfNS, closeMatch );
         }
         Element el = addElement( root, "elementList", madsNS );
         addAttribute( el, "parseType", rdfNS, "Collection" );
