@@ -4,9 +4,11 @@ import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.dom4j.Document;
-import org.dom4j.DocumentFactory;
 import org.dom4j.Element;
-import org.dom4j.Namespace;
+
+import edu.ucsd.library.xdre.model.DamsSubject;
+import edu.ucsd.library.xdre.model.MadsSubject;
+import edu.ucsd.library.xdre.model.Subject;
 
 
 /**
@@ -31,17 +33,13 @@ public class SubjectTabularRecord extends TabularRecordBasic
     **/
     public Document toRDFXML() throws Exception
     {
-        // setup object
-    	Document doc = new DocumentFactory().createDocument();
-    	Element rdf = createRdfRoot (doc);
-
         // get previously-assigned ark
         String ark = data.get("ark");
 
         // object metadata
-        createSubject( rdf, data, ark );
+        Element subjectElem = createSubject( data, ark );
 
-        return rdf.getDocument();
+        return subjectElem.getDocument();
     }
 
  
@@ -49,7 +47,7 @@ public class SubjectTabularRecord extends TabularRecordBasic
      * fields with the key mapping for the subject structure
      * @throws Exception 
     **/
-    private void createSubject( Element e, Map<String,String> data, String ark ) throws Exception
+    private Element createSubject( Map<String,String> data, String ark ) throws Exception
     {
         // subject: data, elem, header, class/ns, predicate/ns, element
         String elemName = null;
@@ -64,6 +62,9 @@ public class SubjectTabularRecord extends TabularRecordBasic
         String exactMatch = (String)data.get(EXACT_MATCH.toLowerCase());
         String closeMatch = (String)data.get(CLOSE_MATCH.toLowerCase());
         String subjectTerm = (String)data.get(SUBJECT_TERM.toLowerCase());
+
+        Subject subject = null;
+        String id = StringUtils.isBlank(ark) ? "ARK_" + counter++ : ark;
         switch (subjectType)
         {
     		case "conference name":
@@ -79,49 +80,16 @@ public class SubjectTabularRecord extends TabularRecordBasic
         	case "temporal":
         	case "topic":
                 // mats subject: elem, header, class/ns, predicate/ns, element, header exactMatch
-        		madsSubject( ark, e, subjectName, madsNS, subjectTerm, elemName, exactMatch, closeMatch );
+                elemName = StringUtils.isBlank(elemName) ? subjectName : elemName;
+        		subject = new MadsSubject(id, subjectName, subjectTerm, elemName, exactMatch, closeMatch);
         		break;
         	default:
         		// dams subject: scientific name, common name, culturalContext, lithology, series, cruise etc.
-        		damsSubject( ark, e, subjectName, damsNS, subjectTerm, null, exactMatch, closeMatch );
+        		elemName = StringUtils.isBlank(elemName) ? subjectName : elemName;
+        		subject = new DamsSubject(id, subjectName, subjectTerm, elemName, exactMatch, closeMatch);
         		break;
         }
-    }
 
-    protected void madsSubject( String id, Element e, String type, Namespace typeNS, String label, String element,
-            String exactMatch, String closeMatch )
-    {
-        if ( element == null ) { element = type; }
-        Element el = buildSubject( id, e, type, typeNS, label, exactMatch, closeMatch );
-        addMadsElement( el, element, label );
-    }
-
-    protected void damsSubject( String id, Element e, String type, Namespace typeNS, String label, String element,
-            String exactMatch, String closeMatch )
-    {
-        if ( element == null ) { element = type; }
-        Element el = buildSubject( id, e, type, typeNS, label, exactMatch, closeMatch );
-        addDamsElement( el, element, label );
-    }
-
-    protected Element buildSubject( String id, Element e, String type, Namespace typeNS, String value,
-            String exactMatch, String closeMatch )
-    {
-        Element root = addElement( e, type, typeNS );
-        addAttribute( root, "about", rdfNS, StringUtils.isBlank(id) ? "ARK" + counter++ : id );
-        addTextElement( root, "authoritativeLabel", madsNS, value );
-        if ( StringUtils.isNotBlank( exactMatch ) )
-        {
-            Element elem = addElement( root, "hasExactExternalAuthority", madsNS ) ;
-            addAttribute( elem, "resource", rdfNS, exactMatch );
-        }
-        if ( StringUtils.isNotBlank( closeMatch ) )
-        {
-            Element elem = addElement( root, "hasCloseExternalAuthority", madsNS ) ;
-            addAttribute( elem, "resource", rdfNS, closeMatch );
-        }
-        Element el = addElement( root, "elementList", madsNS );
-        addAttribute( el, "parseType", rdfNS, "Collection" );
-        return el;
+        return subject.serialize();
     }
 }
