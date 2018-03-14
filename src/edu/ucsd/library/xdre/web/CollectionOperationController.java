@@ -69,6 +69,7 @@ import edu.ucsd.library.xdre.tab.RDFExcelConvertor;
 import edu.ucsd.library.xdre.tab.Record;
 import edu.ucsd.library.xdre.tab.RecordSource;
 import edu.ucsd.library.xdre.tab.SubjectExcelSource;
+import edu.ucsd.library.xdre.tab.SubjectMatching;
 import edu.ucsd.library.xdre.tab.SubjectTabularRecord;
 import edu.ucsd.library.xdre.tab.TabularRecord;
 import edu.ucsd.library.xdre.tab.TabularRecordBasic;
@@ -353,6 +354,7 @@ public class CollectionOperationController implements Controller {
 		damsClient.setTripleStore(ds);
 		damsClient.setUser(user);
 
+		File matchedSubjectsFile = null;
 		File logFile = null;
 		File arkReportFile = null;
 		String[] emails = null;
@@ -1406,7 +1408,9 @@ public class CollectionOperationController implements Controller {
 
 				String[] dataPaths = getParameter(paramsMap, "dataPath").split(";");
 				String importOption = getParameter(paramsMap, "importOption");
+				String preingestOption = getParameter(paramsMap, "preingestOption");
 				boolean preprocessing = importOption == null;
+				boolean testMatching = preprocessing && preingestOption.startsWith("test-matching");
 
 				Element rdfPreview = null;
 				if (preprocessing) {
@@ -1503,7 +1507,7 @@ public class CollectionOperationController implements Controller {
 							proMessage.append("\n\n" + info);
 							log.info(info);
 			
-							if (preprocessing) {
+							if (preprocessing && !testMatching) {
 								 // Pre-processing with rdf preview
 								rdfPreview.add(rdf.selectSingleNode("/rdf:RDF/*").detach()); 
 							} else {
@@ -1526,7 +1530,22 @@ public class CollectionOperationController implements Controller {
 				}
 
 				if (preSuccessful) {
-					if (preprocessing) {
+					// handle pre-ingest test subject matching
+					if (testMatching) {
+						String matchedResult = "";
+						List<String> subjectTypes = ExcelSource.getControlValues().get(SubjectTabularRecord.SUBJECT_TYPE);
+						if (subjectTypes == null || subjectTypes.size() == 0) {
+							matchedResult = "Error: Controll values for subject type are not intitiated propertly.";
+						}
+
+						SubjectMatching subjectMatching = new SubjectMatching(damsClient, dataFiles, subjectTypes);
+						matchedResult = subjectMatching.getMatchSubjects();
+
+						matchedSubjectsFile = new File(Constants.TMP_FILE_DIR, "matched_subjects-" + submissionId + ".csv");
+						writeXml(matchedSubjectsFile, matchedResult);
+						dataLink = "\nThe result of matching subjects is ready for <a href=\"" + logLink;
+						dataLink += "&file=" + matchedSubjectsFile.getName() + "\">download</a>.\n";
+					} else if (preprocessing) {
 						// pre-processing only, no ingest, write the converted RDF/xml for preview
 						File destFile = new File(Constants.TMP_FILE_DIR, "preview-" + submissionId + "-rdf.xml");
 						writeXml(destFile, rdfPreview.getDocument().asXML());
@@ -1656,8 +1675,11 @@ public class CollectionOperationController implements Controller {
 			emails = new String[1];
 			emails[0] = user + "@ucsd.edu";
 		}
-		
-		String[] attachments = {(arkReportFile != null && arkReportFile.exists() ? arkReportFile.getAbsolutePath() : null), (logFile != null && logFile.exists() ? logFile.getAbsolutePath() : null)};
+
+		String arkReportAttachment = arkReportFile != null && arkReportFile.exists() ? arkReportFile.getAbsolutePath() : null;
+		String logFileAttachment = logFile != null && logFile.exists() ? logFile.getAbsolutePath() : null;
+		String matchedSubjectsAttachment = matchedSubjectsFile == null ? null : matchedSubjectsFile.getAbsolutePath();
+		String[] attachments = {arkReportAttachment, logFileAttachment, matchedSubjectsAttachment};
 		if(emails == null)
 			DAMSClient.sendMail(sender, new String[] {sender}, "DAMS Manager Invocation Result - " + Constants.CLUSTER_HOST_NAME.replace("http://", "").replace(".ucsd.edu/", ""), returnMessage, "text/html", "smtp.ucsd.edu", attachments);
 		else
