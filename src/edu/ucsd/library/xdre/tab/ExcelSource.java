@@ -39,11 +39,11 @@ import org.joda.time.format.DateTimeFormatter;
 **/
 public class ExcelSource implements RecordSource
 {
-	public static final String[] IGNORED_FIELDS_FOR_OBJECTS = {"CLR image file name", "Brief description", "subject type"};
-	public static final String[] IGNORED_FIELDS_FOR_COLLECTIONS = {"Level","Title","Subtitle","Part name","Part number","Translation","Variant","File name","File use","File name 2","File use 2", "subject type"};
+    public static final String[] IGNORED_FIELDS_FOR_OBJECTS = {"CLR image file name", "Brief description", "subject type"};
+    public static final String[] IGNORED_FIELDS_FOR_COLLECTIONS = {"Level","Title","Subtitle","Part name","Part number","Translation","Variant","File name","File use","File name 2","File use 2", "subject type"};
 
-	private static final String DATETIME_FORMAT = "yyyy-MM-dd";
-	private static final String BEGIN_DATE = "Begin date";
+    private static final String DATETIME_FORMAT = "yyyy-MM-dd";
+    private static final String BEGIN_DATE = "Begin date";
     private static final String END_DATE = "End date";
 
     private static Map<String, List<String>> CONTROL_VALUES = new HashMap<>();
@@ -81,7 +81,7 @@ public class ExcelSource implements RecordSource
      * Create an ExcelSource object from an Excel file on disk with ignored fields.
     **/
     public ExcelSource( File f, List<String> controlFields, boolean validateControlFieldsOnly )
-    		throws IOException, InvalidFormatException
+            throws IOException, InvalidFormatException
     {
         this( new FileInputStream(f), controlFields, validateControlFieldsOnly );
     }
@@ -92,7 +92,7 @@ public class ExcelSource implements RecordSource
     public ExcelSource( InputStream in )
         throws IOException, InvalidFormatException
     {
-    	this(in, null);
+        this(in, null);
     }
 
     /**
@@ -101,7 +101,7 @@ public class ExcelSource implements RecordSource
     public ExcelSource( InputStream in,  List<String> ignoredFields )
         throws IOException, InvalidFormatException
     {
-    	this(in, ignoredFields, false);
+        this(in, ignoredFields, false);
     }
     /**
      * Create an ExcelSource object from an InputStream with ignored fields and allowedFields
@@ -109,9 +109,9 @@ public class ExcelSource implements RecordSource
     public ExcelSource( InputStream in, List<String> controlFields, boolean validateControlFieldsOnly )
         throws IOException, InvalidFormatException
     {
-    	this.validateControlFieldsOnly = validateControlFieldsOnly;
-    	if ( controlFields != null )
-    		this.controlFields.addAll(controlFields);
+        this.validateControlFieldsOnly = validateControlFieldsOnly;
+        if ( controlFields != null )
+            this.controlFields.addAll(controlFields);
 
         this.book = WorkbookFactory.create(in);
         
@@ -131,21 +131,21 @@ public class ExcelSource implements RecordSource
             Row firstRow = sheet.getRow(0);
             for ( int i = 0; i < firstRow.getLastCellNum(); i++ )
             {
-            	String header = firstRow.getCell(i).getStringCellValue();
-            	String lcHeader = header.trim().toLowerCase();
+                String header = firstRow.getCell(i).getStringCellValue();
+                String lcHeader = header.trim().toLowerCase();
                 headers.add( lcHeader );
                 
                 // keep the original header for error report
                 originalHeaders.put(lcHeader, header);
                 if ( validateControlFieldsOnly )
                 {
-                	// report invalid subject import headers
-                	if ( StringUtils.isNotBlank(header) && !controlFields.contains(header) )
-                		invalidHeaders.add(header); 
+                    // report invalid subject import headers
+                    if ( StringUtils.isNotBlank(header) && !controlFields.contains(header) )
+                        invalidHeaders.add(header); 
                 } else if ( CONTROL_VALUES != null && CONTROL_VALUES.size() > 0 
-                		&& StringUtils.isNotBlank(header) && !CONTROL_VALUES.containsKey(lcHeader) )
+                        && StringUtils.isNotBlank(header) && !CONTROL_VALUES.containsKey(lcHeader) )
                 {
-                	invalidHeaders.add(header);
+                    invalidHeaders.add(header);
                 }
             }
             currRow++;
@@ -165,46 +165,46 @@ public class ExcelSource implements RecordSource
             }
 
             if (cache.size() > 0) {
-	            TabularRecord rec = new TabularRecord();
-	            rec.setData( cache );
-	            String objID = cache.get(OBJECT_ID);
-	            String cmpID = null;
-	
-	            // look for component/sub-component records
-	            while (currRow < lastRow && (cmpID == null || cmpID.equals(objID)))
-	            {
-	                currRow++;
-	                Map<String,String> cmpData = parseRow( currRow );
-	                cmpID = cmpData.get(OBJECT_ID);
-	                String objectComponentType = cmpData.get(OBJECT_COMPONENT_TYPE);
-	                if ( objectComponentType != null && (objectComponentType.equalsIgnoreCase(COMPONENT) || objectComponentType.equalsIgnoreCase(SUBCOMPONENT))
-	                		&& (cmpID == null || cmpID.trim().equals("") || cmpID.equals(objID)) )
-	                {
-	                	TabularRecord component = new TabularRecord();
-	                	component.setData(cmpData);
-	                	if (objectComponentType.equalsIgnoreCase(COMPONENT)) {
-		                    // component record, add to list
-		                    rec.addComponent( component );
-	                	} else if (objectComponentType.equalsIgnoreCase(SUBCOMPONENT)) {
-	                		// sub-component record, add to child list
-	                		List<TabularRecord> components = rec.getComponents();
-	                		if ( components.size() == 0 )
-	                			throw new Exception ("Parent component is missing for sub-component in object " + objID + ".");
-	                		components.get( components.size() - 1 ).addComponent( component );
-	                	} else 
-	                		throw new Exception ("Unknown Level value for object/component/sub-component option in object " + objID + ".");
-	
-	                	cmpID = null;
-	                    cache = null;
-	                }
-	                else
-	                {
-	                    // this is the next object record, save for next time
-	                    cache = cmpData;
-	                    break;
-	                }
-	            }
-	            return rec;
+                TabularRecord rec = new TabularRecord();
+                rec.setData( cache );
+                String objID = cache.get(OBJECT_ID);
+                String cmpID = null;
+
+                // look for component/sub-component records
+                while (currRow < lastRow && (cmpID == null || cmpID.equals(objID)))
+                {
+                    currRow++;
+                    Map<String,String> cmpData = parseRow( currRow );
+                    cmpID = cmpData.get(OBJECT_ID);
+                    String objectComponentType = cmpData.get(OBJECT_COMPONENT_TYPE);
+                    if ( objectComponentType != null && (objectComponentType.equalsIgnoreCase(COMPONENT) || objectComponentType.equalsIgnoreCase(SUBCOMPONENT))
+                            && (cmpID == null || cmpID.trim().equals("") || cmpID.equals(objID)) )
+                    {
+                        TabularRecord component = new TabularRecord();
+                        component.setData(cmpData);
+                        if (objectComponentType.equalsIgnoreCase(COMPONENT)) {
+                            // component record, add to list
+                            rec.addComponent( component );
+                        } else if (objectComponentType.equalsIgnoreCase(SUBCOMPONENT)) {
+                            // sub-component record, add to child list
+                            List<TabularRecord> components = rec.getComponents();
+                            if ( components.size() == 0 )
+                                throw new Exception ("Parent component is missing for sub-component in object " + objID + ".");
+                            components.get( components.size() - 1 ).addComponent( component );
+                        } else 
+                            throw new Exception ("Unknown Level value for object/component/sub-component option in object " + objID + ".");
+
+                        cmpID = null;
+                        cache = null;
+                    }
+                    else
+                    {
+                        // this is the next object record, save for next time
+                        cache = cmpData;
+                        break;
+                    }
+                }
+                return rec;
             }
         }
         else if ( cache != null && cache.size() > 0)
@@ -226,101 +226,101 @@ public class ExcelSource implements RecordSource
         Map<String,String> invalids = new TreeMap<>();
         if (row != null) 
         {
-	        for ( int i = 0; i < headers.size(); i++ )
-	        {
-	            String header = headers.get(i);
+            for ( int i = 0; i < headers.size(); i++ )
+            {
+                String header = headers.get(i);
 
-	            // skip parsing the values in the ignored fields 
-	            if (!validateControlFieldsOnly && controlFields != null && controlFields.indexOf(header) >= 0)
-	            	continue;
+                // skip parsing the values in the ignored fields 
+                if (!validateControlFieldsOnly && controlFields != null && controlFields.indexOf(header) >= 0)
+                    continue;
 
-	            String value = null;
-	            if ( i < (row.getLastCellNum() + 1) ) 
-	            {
-	                Cell cell = row.getCell(i);
-	                if ( cell != null )
-	                {
-	                	cell.setCellType(Cell.CELL_TYPE_STRING);
-	                    value = cell.toString();
-	                }
-	            }
-	            if ( value != null && !value.trim().equals("") )
-	            {
-	                try {
-	                    value = new String(value.trim().getBytes("UTF-8"));
+                String value = null;
+                if ( i < (row.getLastCellNum() + 1) ) 
+                {
+                    Cell cell = row.getCell(i);
+                    if ( cell != null )
+                    {
+                        cell.setCellType(Cell.CELL_TYPE_STRING);
+                        value = cell.toString();
+                    }
+                }
+                if ( value != null && !value.trim().equals("") )
+                {
+                    try {
+                        value = new String(value.trim().getBytes("UTF-8"));
 
-	                    // check for invalid control values
-	                    String originalHeader = originalHeaders.get(header);
-	                    List<String> validValue = CONTROL_VALUES.get(header);
-	                    if (validValue != null && validValue.size() > 0) 
-	                    {
-	                        if (originalHeader.equalsIgnoreCase(BEGIN_DATE) || originalHeader.equalsIgnoreCase(END_DATE))
-	                        {
-	                            // validate date-time format
-	                            boolean validDate = false;
-	                            StringBuilder messageBuilder = new StringBuilder();
-	                            for (String dateFormatter : validValue)
-	                            {
-		                            try {
-		                                validateDateTime(dateFormatter, value);
-		                                validDate = true;
-		                                break;
-		                            } catch (IllegalArgumentException ex) {
-		                                String errorMessage = (messageBuilder.length() > 0 ? " | " : "")
-		                                    + buildErrorReportMessage(values.get(TabularRecord.OBJECT_ID), header, value, ex.getMessage());
-		                                messageBuilder.append(errorMessage);
-		                            }
-	                            }
+                        // check for invalid control values
+                        String originalHeader = originalHeaders.get(header);
+                        List<String> validValue = CONTROL_VALUES.get(header);
+                        if (validValue != null && validValue.size() > 0) 
+                        {
+                            if (originalHeader.equalsIgnoreCase(BEGIN_DATE) || originalHeader.equalsIgnoreCase(END_DATE))
+                            {
+                                // validate date-time format
+                                boolean validDate = false;
+                                StringBuilder messageBuilder = new StringBuilder();
+                                for (String dateFormatter : validValue)
+                                {
+                                    try {
+                                        validateDateTime(dateFormatter, value);
+                                        validDate = true;
+                                        break;
+                                    } catch (IllegalArgumentException ex) {
+                                        String errorMessage = (messageBuilder.length() > 0 ? " | " : "")
+                                            + buildErrorReportMessage(values.get(TabularRecord.OBJECT_ID), header, value, ex.getMessage());
+                                        messageBuilder.append(errorMessage);
+                                    }
+                                }
 
-	                            if (!validDate)
-	                            {
-	                                invalids.put(originalHeader, messageBuilder.toString());
-	                            }
-	                        }
-	                        else
-	                        {
-		                    	// validate cell with multiple values
-		                    	String[] vals2Valid = value.split("\\" + DELIMITER);
-		                    	for (String val : vals2Valid) 
-		                    	{
-		                    		String normVal = val.trim();
-									if (header.equalsIgnoreCase("Language"))
-										normVal = normalizeFieldValue(normVal, DELIMITER_LANG_ELEMENT);
-									else if (header.equalsIgnoreCase(SubjectTabularRecord.SUBJECT_TYPE))
-										// Subject Import: case insensitive subject header value
-										normVal = val.toLowerCase();
-	
-									if (!validValue.contains(normVal)) {
-				    	                String existing = invalids.get(originalHeader);
-				    	                if ( existing == null )
-				    	                	invalids.put(originalHeader, val);
-				    	                else
-				    	                	invalids.put(originalHeader, existing + " " + DELIMITER + " " + val);
-			                    	}
-		                    	}
-	                    	}
-	                    }
-	                } catch (UnsupportedEncodingException e) {
-	                    e.printStackTrace();
-	                }
-	                String existing = values.get(header);
-	                if ( existing == null )
-	                {
-	                    values.put(header, value);
-	                }
-	                else
-	                {
-	                    values.put(header, existing + DELIMITER + value);
-	                }
-	            }
-	        }
-	        
-	        if (invalids.size() > 0) 
-	        {
-	        	invalids.put("row", "" + (n + 1));
-	        	invalids.put(TabularRecord.OBJECT_ID, values.get(TabularRecord.OBJECT_ID));
-	        	invalidValues.add(invalids);
-	        }
+                                if (!validDate)
+                                {
+                                    invalids.put(originalHeader, messageBuilder.toString());
+                                }
+                            }
+                            else
+                            {
+                                // validate cell with multiple values
+                                String[] vals2Valid = value.split("\\" + DELIMITER);
+                                for (String val : vals2Valid) 
+                                {
+                                    String normVal = val.trim();
+                                    if (header.equalsIgnoreCase("Language"))
+                                        normVal = normalizeFieldValue(normVal, DELIMITER_LANG_ELEMENT);
+                                    else if (header.equalsIgnoreCase(SubjectTabularRecord.SUBJECT_TYPE))
+                                        // Subject Import: case insensitive subject header value
+                                        normVal = val.toLowerCase();
+
+                                    if (!validValue.contains(normVal)) {
+                                        String existing = invalids.get(originalHeader);
+                                        if ( existing == null )
+                                            invalids.put(originalHeader, val);
+                                        else
+                                            invalids.put(originalHeader, existing + " " + DELIMITER + " " + val);
+                                    }
+                                }
+                            }
+                        }
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                    String existing = values.get(header);
+                    if ( existing == null )
+                    {
+                        values.put(header, value);
+                    }
+                    else
+                    {
+                        values.put(header, existing + DELIMITER + value);
+                    }
+                }
+            }
+            
+            if (invalids.size() > 0) 
+            {
+                invalids.put("row", "" + (n + 1));
+                invalids.put(TabularRecord.OBJECT_ID, values.get(TabularRecord.OBJECT_ID));
+                invalidValues.add(invalids);
+            }
         }
         return values;
     }
@@ -331,7 +331,7 @@ public class ExcelSource implements RecordSource
      */
     public List<String> getInvalidColumns()
     {
-    	return invalidHeaders;
+        return invalidHeaders;
     }
 
     /**
@@ -340,7 +340,7 @@ public class ExcelSource implements RecordSource
      */
     public List<Map<String, String>> getInvalidValues()
     {
-    	return invalidValues;
+        return invalidValues;
     }
 
     /**
@@ -349,7 +349,7 @@ public class ExcelSource implements RecordSource
      */
     public static Map<String, List<String>> getControlValues()
     {
-    	return CONTROL_VALUES;
+        return CONTROL_VALUES;
     }
 
     /**
@@ -360,22 +360,22 @@ public class ExcelSource implements RecordSource
      */
     public synchronized static void initControlValues(File template) throws Exception 
     {
-    	if ( CONTROL_VALUES == null || CONTROL_VALUES.size() == 0 )
-    	{
-    		Workbook book = WorkbookFactory.create(template);
+        if ( CONTROL_VALUES == null || CONTROL_VALUES.size() == 0 )
+        {
+            Workbook book = WorkbookFactory.create(template);
 
-    		// all control values
-    		Sheet cvsSheet = book.getSheet("CV values");
+            // all control values
+            Sheet cvsSheet = book.getSheet("CV values");
 
-    		// header/column names
-    		Sheet columnsSheet = book.getSheet("Item description");
-    		
-    		// Select-a-header values
-    		Sheet selectHeaderSheet = book.getSheet("Select-a-header values");
+            // header/column names
+            Sheet columnsSheet = book.getSheet("Item description");
+            
+            // Select-a-header values
+            Sheet selectHeaderSheet = book.getSheet("Select-a-header values");
 
-    		// initiate the control values for column names
-    		initControlValues(columnsSheet, selectHeaderSheet, cvsSheet);
-    	}
+            // initiate the control values for column names
+            initControlValues(columnsSheet, selectHeaderSheet, cvsSheet);
+        }
     }
 
     /**
@@ -386,148 +386,148 @@ public class ExcelSource implements RecordSource
      */
     private static void initControlValues(Sheet columns, Sheet selectHeaderSheet, Sheet cvs) throws Exception 
     {
-		CONTROL_VALUES = new HashMap<>();
-		List<String> cvHeaders = new ArrayList<>();
-		List<String> selectHeaders = new ArrayList<>();
-		Map<String, List<String>> selectHeaderValues = new HashMap<>();
-		
-		// Initiate control values
-		for ( Iterator<Row> it = cvs.rowIterator(); it.hasNext(); )
-		{
-			Row row = it.next();
-			int lastCellNum = row.getLastCellNum();
-			for ( int i = 0; i < lastCellNum; i++ )
-			{
-				Cell cell = row.getCell(i);
-				if ( cell != null )
-				{
+        CONTROL_VALUES = new HashMap<>();
+        List<String> cvHeaders = new ArrayList<>();
+        List<String> selectHeaders = new ArrayList<>();
+        Map<String, List<String>> selectHeaderValues = new HashMap<>();
+        
+        // Initiate control values
+        for ( Iterator<Row> it = cvs.rowIterator(); it.hasNext(); )
+        {
+            Row row = it.next();
+            int lastCellNum = row.getLastCellNum();
+            for ( int i = 0; i < lastCellNum; i++ )
+            {
+                Cell cell = row.getCell(i);
+                if ( cell != null )
+                {
 
                     String value = getCellValue(cell);
                     if ( StringUtils.isNotBlank(value) )
-    	            {
-						if (row.getRowNum() == 0) 
-						{
-							value = value.toLowerCase();
-							cvHeaders.add( value );
-							CONTROL_VALUES.put(value, new ArrayList<String>());
-						} 
-						else
-						{
-							value = new String(value.getBytes("UTF-8"));
-							String header = cvHeaders.get(cell.getColumnIndex());
+                    {
+                        if (row.getRowNum() == 0) 
+                        {
+                            value = value.toLowerCase();
+                            cvHeaders.add( value );
+                            CONTROL_VALUES.put(value, new ArrayList<String>());
+                        } 
+                        else
+                        {
+                            value = new String(value.getBytes("UTF-8"));
+                            String header = cvHeaders.get(cell.getColumnIndex());
 
-							// customize to ignore \ for Level column as requested in ticket DM-119
-							if (header.equalsIgnoreCase("Level") && value.startsWith("\\"))
-								value = value.substring(1, value.length());
+                            // customize to ignore \ for Level column as requested in ticket DM-119
+                            if (header.equalsIgnoreCase("Level") && value.startsWith("\\"))
+                                value = value.substring(1, value.length());
 
-							if (header.equalsIgnoreCase("Language"))
-								value = normalizeFieldValue(value, DELIMITER_LANG_ELEMENT);
+                            if (header.equalsIgnoreCase("Language"))
+                                value = normalizeFieldValue(value, DELIMITER_LANG_ELEMENT);
 
-							CONTROL_VALUES.get(header).add(value);
-						}
-    	            }
-				}
-			}
-		}
-		
-		// ARK column
-		if (!CONTROL_VALUES.containsKey("ark"))
-			CONTROL_VALUES.put("ark", new ArrayList<String>());
-		
-		// select-a-header columns names
-		for ( Iterator<Row> it = selectHeaderSheet.rowIterator(); it.hasNext(); )
-		{
-			Row row = it.next();
-			int lastCellNum = row.getLastCellNum();
-			
-			for ( int i = 0; i < lastCellNum; i++ )
-			{
-				Cell cell = row.getCell(i);
-				if ( cell != null )
-				{
-					String value = getCellValue(cell);
+                            CONTROL_VALUES.get(header).add(value);
+                        }
+                    }
+                }
+            }
+        }
+
+        // ARK column
+        if (!CONTROL_VALUES.containsKey("ark"))
+            CONTROL_VALUES.put("ark", new ArrayList<String>());
+        
+        // select-a-header columns names
+        for ( Iterator<Row> it = selectHeaderSheet.rowIterator(); it.hasNext(); )
+        {
+            Row row = it.next();
+            int lastCellNum = row.getLastCellNum();
+
+            for ( int i = 0; i < lastCellNum; i++ )
+            {
+                Cell cell = row.getCell(i);
+                if ( cell != null )
+                {
+                    String value = getCellValue(cell);
                     if ( StringUtils.isNotBlank(value) )
-    	            {
-						if (row.getRowNum() == 0) 
-						{
-							value = value.toLowerCase();
-							// Select header column names
-							selectHeaders.add( value );
-							selectHeaderValues.put(value, new ArrayList<String>());
-						} 
-						else
-						{
-							// Select header values
-							value = new String(value.getBytes("UTF-8"));
-							String header = selectHeaders.get(cell.getColumnIndex());
-							
-							selectHeaderValues.get(header).add(value.toLowerCase());
+                    {
+                        if (row.getRowNum() == 0) 
+                        {
+                            value = value.toLowerCase();
+                            // Select header column names
+                            selectHeaders.add( value );
+                            selectHeaderValues.put(value, new ArrayList<String>());
+                        } 
+                        else
+                        {
+                            // Select header values
+                            value = new String(value.getBytes("UTF-8"));
+                            String header = selectHeaders.get(cell.getColumnIndex());
+                            
+                            selectHeaderValues.get(header).add(value.toLowerCase());
 
-							if(row.getRowNum() == 1)
-								System.out.println("Select header value " + header + ": " + value);
-						}
-    	            }
-				}
-			}		
-		}
+                            if(row.getRowNum() == 1)
+                                System.out.println("Select header value " + header + ": " + value);
+                        }
+                    }
+                }
+            }        
+        }
 
-		// add headers/column names
-		for ( Iterator<Row> it = columns.rowIterator(); it.hasNext(); )
-		{
-			Row row = it.next();
-			int lastCellNum = row.getLastCellNum();
-			for ( int i = 0; i < lastCellNum; i++ )
-			{
-				Cell cell = row.getCell(i);
-				if ( cell != null )
-				{
-					String value = getCellValue(cell);
+        // add headers/column names
+        for ( Iterator<Row> it = columns.rowIterator(); it.hasNext(); )
+        {
+            Row row = it.next();
+            int lastCellNum = row.getLastCellNum();
+            for ( int i = 0; i < lastCellNum; i++ )
+            {
+                Cell cell = row.getCell(i);
+                if ( cell != null )
+                {
+                    String value = getCellValue(cell);
                     if ( StringUtils.isNotBlank(value) )
-    	            {
-                    	value = value.toLowerCase();
-                    	if (selectHeaderValues.containsKey(value)) 
-                    	{
-                    		List<String> headers = selectHeaderValues.get(value);
-                    		for (String header : headers) {
-                    			if ( !CONTROL_VALUES.containsKey(header) )
-                            	{
-        	                    	CONTROL_VALUES.put(header, new ArrayList<String>());
-                            	}
+                    {
+                        value = value.toLowerCase();
+                        if (selectHeaderValues.containsKey(value)) 
+                        {
+                            List<String> headers = selectHeaderValues.get(value);
+                            for (String header : headers) {
+                                if ( !CONTROL_VALUES.containsKey(header) )
+                                {
+                                    CONTROL_VALUES.put(header, new ArrayList<String>());
+                                }
 
-    							// convert column values in "--Select a Subject:[type]--" for subject type validation
-    							if ( value.equalsIgnoreCase("--Select a Subject:[type]--") )
-    							{
-    								List<String> subjectTypes = CONTROL_VALUES.get(SubjectTabularRecord.SUBJECT_TYPE);
-    								if ( subjectTypes == null )
-    								{
-    									subjectTypes = new ArrayList<>();
-    									CONTROL_VALUES.put(SubjectTabularRecord.SUBJECT_TYPE, subjectTypes);
-    								}
+                                // convert column values in "--Select a Subject:[type]--" for subject type validation
+                                if ( value.equalsIgnoreCase("--Select a Subject:[type]--") )
+                                {
+                                    List<String> subjectTypes = CONTROL_VALUES.get(SubjectTabularRecord.SUBJECT_TYPE);
+                                    if ( subjectTypes == null )
+                                    {
+                                        subjectTypes = new ArrayList<>();
+                                        CONTROL_VALUES.put(SubjectTabularRecord.SUBJECT_TYPE, subjectTypes);
+                                    }
 
-    								if ( !subjectTypes.contains(header) )
-    									subjectTypes.add(header);
-    							}
-                    		}
-                    	} 
-                    	else if ( !CONTROL_VALUES.containsKey(value) )
-                    	{
-	                    	CONTROL_VALUES.put(value, new ArrayList<String>());
-                    	}
-    	            }
-				}
-			}
-		}
+                                    if ( !subjectTypes.contains(header) )
+                                        subjectTypes.add(header);
+                                }
+                            }
+                        } 
+                        else if ( !CONTROL_VALUES.containsKey(value) )
+                        {
+                            CONTROL_VALUES.put(value, new ArrayList<String>());
+                        }
+                    }
+                }
+            }
+        }
 
-		// add default ISO date format for validation
-		List<String> validDateFormats = CONTROL_VALUES.get(BEGIN_DATE.toLowerCase());
-		if (validDateFormats.isEmpty()) {
-			validDateFormats.add(DATETIME_FORMAT);
-		}
+        // add default ISO date format for validation
+        List<String> validDateFormats = CONTROL_VALUES.get(BEGIN_DATE.toLowerCase());
+        if (validDateFormats.isEmpty()) {
+            validDateFormats.add(DATETIME_FORMAT);
+        }
 
-		validDateFormats = CONTROL_VALUES.get(END_DATE.toLowerCase());
-		if (validDateFormats.isEmpty()) {
-			validDateFormats.add(DATETIME_FORMAT);
-		}
+        validDateFormats = CONTROL_VALUES.get(END_DATE.toLowerCase());
+        if (validDateFormats.isEmpty()) {
+            validDateFormats.add(DATETIME_FORMAT);
+        }
     }
 
     /*
@@ -560,16 +560,16 @@ public class ExcelSource implements RecordSource
     }
 
     private static String getCellValue(Cell cell) {
-		cell.setCellType(Cell.CELL_TYPE_STRING);
+        cell.setCellType(Cell.CELL_TYPE_STRING);
         String value = cell.toString();
         return value==null?value:value.trim();
     }
 
     private static String normalizeFieldValue(String value, String delimiter) 
     {
-		String[] langElems = value.split("\\" + delimiter);
-		if (langElems.length == 2)
-			value = langElems[0].trim() + delimiter + langElems[1].trim();
-		return value;
+        String[] langElems = value.split("\\" + delimiter);
+        if (langElems.length == 2)
+            value = langElems[0].trim() + delimiter + langElems[1].trim();
+        return value;
     }
 }
