@@ -27,6 +27,8 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 /**
  * RecordSource implementation that uses Apache POI to read Excel (OLE or XML)
@@ -39,6 +41,10 @@ public class ExcelSource implements RecordSource
 {
 	public static final String[] IGNORED_FIELDS_FOR_OBJECTS = {"CLR image file name", "Brief description", "subject type"};
 	public static final String[] IGNORED_FIELDS_FOR_COLLECTIONS = {"Level","Title","Subtitle","Part name","Part number","Translation","Variant","File name","File use","File name 2","File use 2", "subject type"};
+
+	private static final String DATETIME_FORMAT = "yyyy-MM-dd";
+	private static final String BEGIN_DATE = "Begin date";
+    private static final String END_DATE = "End date";
 
     private static Map<String, List<String>> CONTROL_VALUES = new HashMap<>();
     
@@ -248,23 +254,49 @@ public class ExcelSource implements RecordSource
 	                    List<String> validValue = CONTROL_VALUES.get(header);
 	                    if (validValue != null && validValue.size() > 0) 
 	                    {
-	                    	// validate cell with multiple values
-	                    	String[] vals2Valid = value.split("\\" + DELIMITER);
-	                    	for (String val : vals2Valid) 
-	                    	{
-	                    		String normVal = val.trim();
-								if (header.equalsIgnoreCase("Language"))
-									normVal = normalizeFieldValue(normVal, DELIMITER_LANG_ELEMENT);
-								else if (header.equalsIgnoreCase(SubjectTabularRecord.SUBJECT_TYPE))
-									// Subject Import: case insensitive subject header value
-									normVal = val.toLowerCase();
+	                        if (originalHeader.equalsIgnoreCase(BEGIN_DATE) || originalHeader.equalsIgnoreCase(END_DATE))
+	                        {
+	                            // validate date-time format
+	                            boolean validDate = false;
+	                            StringBuilder messageBuilder = new StringBuilder();
+	                            for (String dateFormatter : validValue)
+	                            {
+		                            try {
+		                                validateDateTime(dateFormatter, value);
+		                                validDate = true;
+		                                break;
+		                            } catch (IllegalArgumentException ex) {
+		                                String errorMessage = (messageBuilder.length() > 0 ? " | " : "")
+		                                    + buildErrorReportMessage(values.get(TabularRecord.OBJECT_ID), header, value, ex.getMessage());
+		                                messageBuilder.append(errorMessage);
+		                            }
+	                            }
 
-								if (!validValue.contains(normVal)) {
-			    	                String existing = invalids.get(originalHeader);
-			    	                if ( existing == null )
-			    	                	invalids.put(originalHeader, val);
-			    	                else
-			    	                	invalids.put(originalHeader, existing + " " + DELIMITER + " " + val);
+	                            if (!validDate)
+	                            {
+	                                invalids.put(originalHeader, messageBuilder.toString());
+	                            }
+	                        }
+	                        else
+	                        {
+		                    	// validate cell with multiple values
+		                    	String[] vals2Valid = value.split("\\" + DELIMITER);
+		                    	for (String val : vals2Valid) 
+		                    	{
+		                    		String normVal = val.trim();
+									if (header.equalsIgnoreCase("Language"))
+										normVal = normalizeFieldValue(normVal, DELIMITER_LANG_ELEMENT);
+									else if (header.equalsIgnoreCase(SubjectTabularRecord.SUBJECT_TYPE))
+										// Subject Import: case insensitive subject header value
+										normVal = val.toLowerCase();
+	
+									if (!validValue.contains(normVal)) {
+				    	                String existing = invalids.get(originalHeader);
+				    	                if ( existing == null )
+				    	                	invalids.put(originalHeader, val);
+				    	                else
+				    	                	invalids.put(originalHeader, existing + " " + DELIMITER + " " + val);
+			                    	}
 		                    	}
 	                    	}
 	                    }
@@ -485,6 +517,46 @@ public class ExcelSource implements RecordSource
 				}
 			}
 		}
+
+		// add default ISO date format for validation
+		List<String> validDateFormats = CONTROL_VALUES.get(BEGIN_DATE.toLowerCase());
+		if (validDateFormats.isEmpty()) {
+			validDateFormats.add(DATETIME_FORMAT);
+		}
+
+		validDateFormats = CONTROL_VALUES.get(END_DATE.toLowerCase());
+		if (validDateFormats.isEmpty()) {
+			validDateFormats.add(DATETIME_FORMAT);
+		}
+    }
+
+    /*
+     * Parse date-time value with the format provided.
+     * @param dateTimeFormat
+     * @param dateTimeValue
+     */
+    private void validateDateTime(String dateTimeFormat, String dateTimeValue) {
+        DateTimeFormatter fmt = DateTimeFormat.forPattern(dateTimeFormat);
+        fmt.parseDateTime(dateTimeValue);
+    }
+
+    /*
+     * Build report message. Error message from parsing date-time value is in the format like: 
+     * Invalid format: Invalid format: "2018/02/28" is malformed at "/02/28"
+     * Cannot parse "2018-02-31": Value 30 for dayOfMonth must be in the range [1,29]
+     * Cannot parse "2018-13-30": Value 13 for monthOfYear must be in the range [1,12]
+     * @return Invalid [header] [dateTimeValue] in record [recordId]: [message].
+     */
+    private String buildErrorReportMessage(String recordId, String header, String dateTimeValue, String errorMessage)
+    {
+        String errorReport = errorMessage;
+        String[] errorTokens = errorMessage.split(":");
+        if (errorTokens.length == 2) {
+            errorReport = errorTokens[1];
+        }
+
+        errorReport = "Invalid " + header +  " " + dateTimeValue +  " in record " + recordId + ": " + errorReport;
+        return errorReport;
     }
 
     private static String getCellValue(Cell cell) {
