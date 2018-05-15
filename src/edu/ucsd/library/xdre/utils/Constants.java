@@ -69,6 +69,8 @@ public class Constants {
 	public static String CURATOR_ROLE ="";
 	public static DataSource DAMS_DATA_SOURCE = null;
 	public static String STATS_WEBLOG_DIR = "";
+	public static String STATS_SE_PATTERNS = "";
+	public static String STATS_SE_DATA_LOCATION = "";
 	/* end stats declaration*/
 	
 	//Namespace prefix
@@ -189,6 +191,10 @@ public class Constants {
 
 			// Weblog location
 			STATS_WEBLOG_DIR = props.getProperty("dams.weblog.dir");
+			// Search engine, crawlers patterns to be excluded from dams statistics
+			STATS_SE_PATTERNS = props.getProperty("dams.stats.se.patterns");
+			// Search engine, crawlers data location
+			STATS_SE_DATA_LOCATION = props.getProperty("dams.stats.se.data");
 			// DAMS super user role
 			CURATOR_ROLE = props.getProperty("dams.curator.role");
 			// DAMS stats datasource
