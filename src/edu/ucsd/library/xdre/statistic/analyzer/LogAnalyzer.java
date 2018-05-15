@@ -8,20 +8,25 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Node;
 import org.dom4j.io.SAXReader;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 
 import edu.ucsd.library.xdre.utils.Constants;
 
@@ -38,6 +43,7 @@ public class LogAnalyzer{
 	private DAMStatistic pasStats = null;
 	//private DAMStatistic casStats = null;
 	private boolean update = false;
+	private Pattern searchEnginePatterns = null;
 	
 	public LogAnalyzer () throws Exception{
 		this(new HashMap<String, String>());
@@ -48,6 +54,10 @@ public class LogAnalyzer{
 		//casStats = new DAMStatistic("cas");
 		pasStats.setCollsMap(collsMap);
 		//casStats.setCollsMap(collsMap);
+
+		String seUserAgentPatterns = Constants.STATS_SE_PATTERNS + (Constants.STATS_SE_PATTERNS.endsWith("|") ? "" : "|");
+		seUserAgentPatterns += getSearchEnginePatterns();
+		searchEnginePatterns = Pattern.compile(seUserAgentPatterns.toLowerCase());
 	}
 	
 	public void analyze(File logFile) throws IOException{
@@ -87,7 +97,7 @@ public class LogAnalyzer{
 				spIdx = line.indexOf("GET /dc");
 				if(spIdx > 0 && line.indexOf(Constants.CLUSTER_HOST_NAME + " ") > 0 && !excludeFromStats(line)) {
 					// ignore spiders/search engines access
-					if (isBotAccess(line, spIdx) && line.indexOf(SPEC_COLL_URL) < 0)
+					if (isBotAccess(line, line.indexOf(" \"", spIdx)) && line.indexOf(SPEC_COLL_URL) < 0)
 						continue;
 
 					uri = getUri(line);
@@ -106,6 +116,9 @@ public class LogAnalyzer{
 							int sidx = line.indexOf("\" ") + 2;
 							if (sidx > 0)
 								httpStatus = line.substring(sidx, sidx + 3);
+
+							if (!(httpStatus.startsWith("2") || httpStatus.startsWith("3")))
+								continue;
 
 							if (uidIdx > 0 && uriParts.length >= 4 && uriParts[3].startsWith("_"))
 								// file access from curator
@@ -213,7 +226,7 @@ public class LogAnalyzer{
 	}
 	
 	private boolean excludeFromStats(String value) {
-		String[] excludePatterns = {"/ucsd.ico", "/fonts/", "/assets/", "/get_data/", "/users/", "/images/"};
+		String[] excludePatterns = {"/ucsd.ico", "/fonts/", "/assets/", "/get_data/", "/users/", "/images/", "/zoom"};
 		for (String excludePattern : excludePatterns) {
 			if (value.contains(excludePattern))
 				return true;
@@ -222,10 +235,9 @@ public class LogAnalyzer{
 	}
 
 	private boolean isBotAccess(String value, int fromIndex) {
-		String[] botPatterns = {"\"-\"", " SortSiteCmd/", "archive.org_bot"};
-		for (String botPattern : botPatterns) {
-			if (value.indexOf(botPattern, fromIndex) > 0)
-				return true;
+		Matcher matcher = searchEnginePatterns.matcher(value.substring(fromIndex).toLowerCase());
+		if (matcher.find()) {
+			return true;
 		}
 		return false;
 	}
@@ -257,5 +269,23 @@ public class LogAnalyzer{
 		URL url = new URL(solrBase + solrCore + "/select?" + params);
 		SAXReader reader = new SAXReader();
 		return reader.read(url);
+	}
+
+	/*
+	 * generate the search engine/crawler user agents pattern string from online json data source
+	 */
+	private static String getSearchEnginePatterns() throws URISyntaxException, IOException {
+		StringBuilder sePatternsBuilder = new StringBuilder();
+		URL url = new URL(Constants.STATS_SE_DATA_LOCATION);
+		try (Reader reader = new InputStreamReader(url.openConnection().getInputStream())) {
+			JSONArray botsArray = (JSONArray)JSONValue.parse(reader);
+			for (int i = 0; i < botsArray.size(); i++) {
+				JSONObject bot = (JSONObject)botsArray.get(i);
+				sePatternsBuilder.append(bot.get("pattern") + "|");
+			}
+		}
+
+		String sePatterns = sePatternsBuilder.toString();
+		return sePatterns.substring(0, sePatterns.length() - 1);
 	}
 }
