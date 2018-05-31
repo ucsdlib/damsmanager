@@ -479,6 +479,14 @@ input[type="button"], input[type="submit"], input[type="reset"]{
 	padding-right:10px;
 	color:#404040;
 }
+.stats-switch-views {
+	float:right;
+	display:cell;
+	vertical-align:top;
+	font-size:14px;
+	font-weight:bold;
+	color:#41627e;
+}
 .stats-tab-text{
 	color:#e8e8e8;
 	background-color:#999;
