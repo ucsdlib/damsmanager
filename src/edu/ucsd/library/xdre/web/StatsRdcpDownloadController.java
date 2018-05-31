@@ -49,6 +49,7 @@ public class StatsRdcpDownloadController implements Controller {
 		
 		String startDate = request.getParameter("start");
 		String export = request.getParameter("export");
+		boolean isUniqueViews = request.getParameter("unique") != null;
 		String message = "";
 		Connection con = null;
 		Calendar sCal = Calendar.getInstance();
@@ -74,9 +75,9 @@ public class StatsRdcpDownloadController implements Controller {
 			con = Constants.DAMS_DATA_SOURCE.getConnection();
 
 			damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
-			List<RdcpStatsDownloadSummary> statsDownloadSums = getRdcpStats(con, sCal.getTime(), eCal.getTime(), false, damsClient);
+			List<RdcpStatsDownloadSummary> statsDownloadSums = getRdcpStats(con, sCal.getTime(), eCal.getTime(), false, isUniqueViews, damsClient);
 	
-			List<RdcpStatsDownloadSummary> curatorStatsDownloadSums = getRdcpStats(con, sCal.getTime(), eCal.getTime(), true, damsClient);
+			List<RdcpStatsDownloadSummary> curatorStatsDownloadSums = getRdcpStats(con, sCal.getTime(), eCal.getTime(), true, isUniqueViews, damsClient);
 			// merge the non-curator ans curator stats 
 			mergeRdcpStats(statsDownloadSums, curatorStatsDownloadSums);
 
@@ -132,6 +133,7 @@ public class StatsRdcpDownloadController implements Controller {
 		if(export == null){
 			model.put("message", message);
 			model.put("start", dbFormat.format(sCal.getTime()));
+			model.put("unique", isUniqueViews ? "unique" : "");
 			return new ModelAndView("statsRdcpDownload", "model", model);
 		}else{
 			if(message != null && message.length() > 0)
@@ -146,7 +148,7 @@ public class StatsRdcpDownloadController implements Controller {
 		}
 	}
 
-	private static List<RdcpStatsDownloadSummary> getRdcpStats(Connection con, Date sDate, Date eDate, boolean isPrivate, DAMSClient damsClient) throws SQLException {
+	private static List<RdcpStatsDownloadSummary> getRdcpStats(Connection con, Date sDate, Date eDate, boolean isPrivate, boolean isUniqueViews, DAMSClient damsClient) throws SQLException {
 		//RDCP unique items usage
 		List<RdcpStatsDownloadSummary> statsDownloadSums = new ArrayList<>();
 
@@ -162,7 +164,11 @@ public class StatsRdcpDownloadController implements Controller {
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		try{
-			ps = con.prepareStatement(StatsUsage.RDCP_FILE_DOWNLOAD_POPULARITY_QUERY.replace("PERIOD_PARAM", StatsUsage.MONTHLY_FORMAT));
+			String statsQuery = StatsUsage.RDCP_FILE_DOWNLOAD_POPULARITY_QUERY;
+			if (isUniqueViews)
+				statsQuery = StatsUsage.RDCP_FILE_DOWNLOAD_POPULARITY_UNIQUE_QUERY;
+
+			ps = con.prepareStatement(statsQuery.replace("PERIOD_PARAM", StatsUsage.MONTHLY_FORMAT));
 			
 			ps.setBoolean(1, isPrivate);
 			ps.setString(2, DB_FORMAT.format(sDate));
@@ -265,7 +271,8 @@ public class StatsRdcpDownloadController implements Controller {
 				int numOfView = 0;
 				if (toBeMerged != null) {
 					int periodIndex = periodsToBeMerged.indexOf(periods.get(i));
-					if (periodIndex >= 0 && numOfViewsToBeMerged.size() > periodIndex)
+					if (periodIndex >= 0 && numOfViewsToBeMerged.size() > periodIndex
+							&& StringUtils.equals(s.getComponentId(), toBeMerged.getComponentId()))
 						numOfView = numOfViewsToBeMerged.get(periodIndex);
 				}
 				numOfViewsMerged.add(numOfViews.get(i));

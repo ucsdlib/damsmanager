@@ -47,6 +47,7 @@ public class StatsRdcpUsageController implements Controller {
 		
 		String startDate = request.getParameter("start");
 		String export = request.getParameter("export");
+		boolean isUniqueViews = request.getParameter("unique") != null;
 		String message = "";
 		Connection con = null;
 		Calendar sCal = Calendar.getInstance();
@@ -72,9 +73,9 @@ public class StatsRdcpUsageController implements Controller {
 			con = Constants.DAMS_DATA_SOURCE.getConnection();
 
 			damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
-			List<RdcpStatsItemSummary> statsItemSums = getRdcpStats(con, sCal.getTime(), eCal.getTime(), false, damsClient);
+			List<RdcpStatsItemSummary> statsItemSums = getRdcpStats(con, sCal.getTime(), eCal.getTime(), false, isUniqueViews, damsClient);
 	
-			List<RdcpStatsItemSummary> curatorStatsItemSums = getRdcpStats(con, sCal.getTime(), eCal.getTime(), true, damsClient);
+			List<RdcpStatsItemSummary> curatorStatsItemSums = getRdcpStats(con, sCal.getTime(), eCal.getTime(), true, isUniqueViews, damsClient);
 			// merge the non-curator ans curator stats 
 			mergeRdcpStats(statsItemSums, curatorStatsItemSums);
 
@@ -129,6 +130,7 @@ public class StatsRdcpUsageController implements Controller {
 		if(export == null){
 			model.put("message", message);
 			model.put("start", dbFormat.format(sCal.getTime()));
+			model.put("unique", isUniqueViews ? "unique" : "");
 			return new ModelAndView("statsRdcpUsage", "model", model);
 		}else{
 			if(message != null && message.length() > 0)
@@ -143,7 +145,7 @@ public class StatsRdcpUsageController implements Controller {
 		}
 	}
 
-	private static List<RdcpStatsItemSummary> getRdcpStats(Connection con, Date sDate, Date eDate, boolean isPrivate, DAMSClient damsClient) throws SQLException {
+	private static List<RdcpStatsItemSummary> getRdcpStats(Connection con, Date sDate, Date eDate, boolean isPrivate, boolean isUniqueViews, DAMSClient damsClient) throws SQLException {
 		//RDCP unique items usage
 		List<RdcpStatsItemSummary> statsItemSums = new ArrayList<>();
 
@@ -157,7 +159,11 @@ public class StatsRdcpUsageController implements Controller {
 		PreparedStatement ps = null;
 		ResultSet rs = null;
 		try{
-			ps = con.prepareStatement(StatsUsage.RDCP_OBJECT_POPULARITY_QUERY.replace("PERIOD_PARAM", StatsUsage.MONTHLY_FORMAT));
+			String statsQuery = StatsUsage.RDCP_OBJECT_POPULARITY_QUERY;
+			if (isUniqueViews)
+				statsQuery = StatsUsage.RDCP_OBJECT_POPULARITY_UNIQUE_QUERY;
+
+			ps = con.prepareStatement(statsQuery.replace("PERIOD_PARAM", StatsUsage.MONTHLY_FORMAT));
 			
 			ps.setBoolean(1, isPrivate);
 			ps.setString(2, DB_FORMAT.format(sDate));
