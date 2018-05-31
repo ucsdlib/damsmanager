@@ -11,7 +11,6 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +18,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -28,6 +28,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
+import edu.ucsd.library.xdre.statistic.beans.StatsRequest;
+import edu.ucsd.library.xdre.statistic.beans.WeblogParser;
 import edu.ucsd.library.xdre.utils.Constants;
 
 /**
@@ -44,6 +46,7 @@ public class LogAnalyzer{
 	//private DAMStatistic casStats = null;
 	private boolean update = false;
 	private Pattern searchEnginePatterns = null;
+	private WeblogParser weblogParser = null;
 	
 	public LogAnalyzer () throws Exception{
 		this(new HashMap<String, String>());
@@ -57,7 +60,10 @@ public class LogAnalyzer{
 
 		String seUserAgentPatterns = Constants.STATS_SE_PATTERNS + (Constants.STATS_SE_PATTERNS.endsWith("|") ? "" : "|");
 		seUserAgentPatterns += getSearchEnginePatterns();
+
+		log.info("Search engine filter patterns: " + seUserAgentPatterns);
 		searchEnginePatterns = Pattern.compile(seUserAgentPatterns.toLowerCase());
+		weblogParser = new WeblogParser();
 	}
 	
 	public void analyze(File logFile) throws IOException{
@@ -100,7 +106,14 @@ public class LogAnalyzer{
 					if (isBotAccess(line, line.indexOf(" \"", spIdx)) && line.indexOf(SPEC_COLL_URL) < 0)
 						continue;
 
-					uri = getUri(line);
+					StatsRequest statsRequest = weblogParser.parse(line);
+					if (statsRequest == null || !isValidUri(statsRequest.getRequestUri())) {
+						log.warn("Invalid client request: " + line);
+						continue;
+					}
+
+					uri = statsRequest.getRequestUri();
+					String clientIp = statsRequest.getClientIp();
 					if(uri != null){
 						//idx = uri.indexOf("&user=");
 						String[] uriParts = (uri.length()>1?uri.substring(1):uri).split("/");
@@ -110,29 +123,26 @@ public class LogAnalyzer{
 							continue;
 
 						if(uriParts.length>1 && uriParts[1].equals("object")){
-							String httpStatus = "";
+							String httpStatus = statsRequest.getStatus();
 							//Object access: /dc/object/oid/_cid_fid
 							int uidIdx = uri.indexOf("access=curator");
-							int sidx = line.indexOf("\" ") + 2;
-							if (sidx > 0)
-								httpStatus = line.substring(sidx, sidx + 3);
 
 							if (!(httpStatus.startsWith("2") || httpStatus.startsWith("3")))
 								continue;
 
 							if (uidIdx > 0 && uriParts.length >= 4 && uriParts[3].startsWith("_"))
 								// file access from curator
-								pasStats.addObject(uri, true);
+								pasStats.addObject(uri, true, clientIp);
 							else if (uidIdx > 0 && httpStatus.startsWith("3"))
 								// view from curator with redirect
-								pasStats.addObject(uri, true);
+								pasStats.addObject(uri, true, clientIp);
 							else if (!httpStatus.startsWith("3")) {
 								// access with no redirect
 								if (line.indexOf(SPEC_COLL_URL, spIdx) > 0) {
 									// access from MSCL exhibits: http://library.ucsd.edu/speccoll/
-									addMsclStats(uri);
+									addMsclStats(uri, clientIp);
 								} else {
-									pasStats.addObject(uri, false);
+									pasStats.addObject(uri, false, clientIp);
 								}
 							}
 						}else{
@@ -179,44 +189,22 @@ public class LogAnalyzer{
 		}
 	}
 	
-	private void addMsclStats(String uri) {
+	private void addMsclStats(String uri, String clientIp) {
 		if (uri.indexOf("/_2.jpg") > 0) {
 			// count as object view
 			uri = uri.replace("/_2.jpg", "");
 		}
-		pasStats.addObject(uri, false); 
+		pasStats.addObject(uri, false, clientIp); 
 	}
 	
-	public static String getUri(String line){
-		int idx = line.indexOf('"');
-		int nIdx = -1;
-		if(idx > 0){
-			String uri = null;
-			nIdx=line.indexOf('"', idx + 1);
-			while(nIdx>0 && line.charAt(nIdx-1)=='\\')
-				nIdx=line.indexOf('"', nIdx + 1);
-				
-			if(nIdx>0){
-				uri = line.substring(idx+1, nIdx);
-				idx = uri.indexOf(" ");
-				if(idx < (nIdx=uri.lastIndexOf(" ")))
-					uri = uri.substring(idx+1, nIdx);
-			}else
-				uri = line.substring(line.indexOf(" ", idx+1) + 1);
-
-			// exclude unexpected url
-			if (uri.indexOf("?") < 0 && uri.indexOf("&") > 0) {
-				log.info("Invalid request url: " + line);
-				return null;
-			}
-			return 	uri;
-		}else{ 
-			log.info("Invalid request: " + line);
-			return null;
+	private boolean isValidUri(String uri){
+		if (StringUtils.isBlank(uri) || uri.indexOf("?") < 0 && uri.indexOf("&") > 0) {
+			return false;
 		}
+		return true;
 	}
 	
-	public void export(Connection con) throws SQLException {
+	public void export(Connection con) throws Exception {
 		pasStats.setCalendar(calendar);
 		//casStats.setCalendar(calendar);
 		pasStats.setUpdate(update);
