@@ -38,242 +38,247 @@ import edu.ucsd.library.xdre.utils.Constants;
  * @author lsitu@ucsd.edu
  */
 public class LogAnalyzer{
-	public static String SPEC_COLL_URL = "//library.ucsd.edu/speccoll/";
+    public static String SPEC_COLL_URL = "//library.ucsd.edu/speccoll/";
 
-	private static Logger log = Logger.getLogger(LogAnalyzer.class);
-	private Calendar calendar = null;
-	private DAMStatistic pasStats = null;
-	//private DAMStatistic casStats = null;
-	private boolean update = false;
-	private Pattern searchEnginePatterns = null;
-	private WeblogParser weblogParser = null;
-	
-	public LogAnalyzer () throws Exception{
-		this(new HashMap<String, String>());
-	}
-	
-	public LogAnalyzer (Map<String, String> collsMap) throws Exception{
-		pasStats = new DAMStatistic("pas");
-		//casStats = new DAMStatistic("cas");
-		pasStats.setCollsMap(collsMap);
-		//casStats.setCollsMap(collsMap);
+    private static Logger log = Logger.getLogger(LogAnalyzer.class);
+    private Calendar calendar = null;
+    private DAMStatistic pasStats = null;
+    //private DAMStatistic casStats = null;
+    private boolean update = false;
+    private Pattern searchEnginePatterns = null;
+    private WeblogParser weblogParser = null;
+    
+    public LogAnalyzer () throws Exception{
+        this(new HashMap<String, String>());
+    }
+    
+    public LogAnalyzer (Map<String, String> collsMap) throws Exception{
+        pasStats = new DAMStatistic("pas");
+        //casStats = new DAMStatistic("cas");
+        pasStats.setCollsMap(collsMap);
+        //casStats.setCollsMap(collsMap);
 
-		String seUserAgentPatterns = Constants.STATS_SE_PATTERNS + (Constants.STATS_SE_PATTERNS.endsWith("|") ? "" : "|");
-		seUserAgentPatterns += getSearchEnginePatterns();
+        String seUserAgentPatterns = Constants.STATS_SE_PATTERNS + (Constants.STATS_SE_PATTERNS.endsWith("|") ? "" : "|");
+        seUserAgentPatterns += getSearchEnginePatterns();
 
-		log.info("Search engine filter patterns: " + seUserAgentPatterns);
-		searchEnginePatterns = Pattern.compile(seUserAgentPatterns.toLowerCase());
-		weblogParser = new WeblogParser();
-	}
-	
-	public void analyze(File logFile) throws IOException{
+        log.info("Search engine filter patterns: " + seUserAgentPatterns);
+        searchEnginePatterns = Pattern.compile(seUserAgentPatterns.toLowerCase());
+        weblogParser = new WeblogParser();
+    }
+    
+    public void analyze(File logFile) throws IOException{
 
-		String line = null;
-		String uri = null;
-		InputStream in = null;
-		InputStream gzipIn = null;
-		Reader reader = null;
-		
-		BufferedReader bReader = null;
-		//int idx = -1;
-		calendar = Calendar.getInstance();
-		calendar.set(Calendar.HOUR, 0);
-		calendar.set(Calendar.MINUTE, 0);
-		calendar.set(Calendar.SECOND, 0);
-		try {
-			String fileName = logFile.getName();
-			String[] dateArr = fileName.substring(fileName.indexOf('.')+1, fileName.lastIndexOf('.')).split("-");
-			calendar.set(Calendar.YEAR, Integer.parseInt(dateArr[0]));
-			calendar.set(Calendar.MONTH, Integer.parseInt(dateArr[1])-1);
-			calendar.set(Calendar.DATE, Integer.parseInt(dateArr[2]));
-			log.info("Processing log file " + fileName + " for record " + pasStats.formatDate(calendar.getTime()));
+        String line = null;
+        String uri = null;
+        InputStream in = null;
+        InputStream gzipIn = null;
+        Reader reader = null;
+        
+        BufferedReader bReader = null;
+        //int idx = -1;
+        calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        try {
+            String fileName = logFile.getName();
+            String[] dateArr = fileName.substring(fileName.indexOf('.')+1, fileName.lastIndexOf('.')).split("-");
+            calendar.set(Calendar.YEAR, Integer.parseInt(dateArr[0]));
+            calendar.set(Calendar.MONTH, Integer.parseInt(dateArr[1])-1);
+            calendar.set(Calendar.DATE, Integer.parseInt(dateArr[2]));
+            log.info("Processing log file " + fileName + " for record " + pasStats.formatDate(calendar.getTime()));
 
-			if (logFile.getName().endsWith(".gz")){
-				in = new FileInputStream(logFile);
-				gzipIn = new GZIPInputStream(in);
-				reader = new InputStreamReader(gzipIn);
-			}else{
-				in = new FileInputStream(logFile);
-				reader = new InputStreamReader(in);
-			}
-			
-			bReader = new BufferedReader(reader);
-			int spIdx = -1;
-			while((line=bReader.readLine()) != null){
-				spIdx = line.indexOf("GET /dc");
-				if(spIdx > 0 && line.indexOf(Constants.CLUSTER_HOST_NAME + " ") > 0 && !excludeFromStats(line)) {
-					// ignore spiders/search engines access
-					if (isBotAccess(line, line.indexOf(" \"", spIdx)) && line.indexOf(SPEC_COLL_URL) < 0)
-						continue;
+            if (logFile.getName().endsWith(".gz")){
+                in = new FileInputStream(logFile);
+                gzipIn = new GZIPInputStream(in);
+                reader = new InputStreamReader(gzipIn);
+            }else{
+                in = new FileInputStream(logFile);
+                reader = new InputStreamReader(in);
+            }
+            
+            bReader = new BufferedReader(reader);
+            int spIdx = -1;
+            while((line=bReader.readLine()) != null){
+                spIdx = line.indexOf("GET /dc");
+                if(spIdx > 0 && line.indexOf(Constants.CLUSTER_HOST_NAME + " ") > 0 && !excludeFromStats(line)) {
+                    int fromIdx = line.indexOf(" \"", spIdx);
+                    if (fromIdx < 0) {
+                        log.warn("Invalid client request: " + line);
+                        continue;
+                    }
+                    // ignore spiders/search engines access
+                    if (isBotAccess(line, fromIdx) && line.indexOf(SPEC_COLL_URL) < 0)
+                        continue;
 
-					StatsRequest statsRequest = weblogParser.parse(line);
-					if (statsRequest == null || !isValidUri(statsRequest.getRequestUri())) {
-						log.warn("Invalid client request: " + line);
-						continue;
-					}
+                    StatsRequest statsRequest = weblogParser.parse(line);
+                    if (statsRequest == null || !isValidUri(statsRequest.getRequestUri())) {
+                        log.warn("Invalid client request: " + line);
+                        continue;
+                    }
 
-					uri = statsRequest.getRequestUri();
-					String clientIp = statsRequest.getClientIp();
-					if(uri != null){
-						//idx = uri.indexOf("&user=");
-						String[] uriParts = (uri.length()>1?uri.substring(1):uri).split("/");
-						
-						// ignore varieties of formatted metadata views like /dc/object/bb55641580.rdf
-						if(uriParts.length == 3 && uriParts[2].length() > 10 && uriParts[2].charAt(10) == '.')
-							continue;
+                    uri = statsRequest.getRequestUri();
+                    String clientIp = statsRequest.getClientIp();
+                    if(uri != null){
+                        //idx = uri.indexOf("&user=");
+                        String[] uriParts = (uri.length()>1?uri.substring(1):uri).split("/");
+                        
+                        // ignore varieties of formatted metadata views like /dc/object/bb55641580.rdf
+                        if(uriParts.length == 3 && uriParts[2].length() > 10 && uriParts[2].charAt(10) == '.')
+                            continue;
 
-						if(uriParts.length>1 && uriParts[1].equals("object")){
-							String httpStatus = statsRequest.getStatus();
-							//Object access: /dc/object/oid/_cid_fid
-							int uidIdx = uri.indexOf("access=curator");
+                        if(uriParts.length>1 && uriParts[1].equals("object")){
+                            String httpStatus = statsRequest.getStatus();
+                            //Object access: /dc/object/oid/_cid_fid
+                            int uidIdx = uri.indexOf("access=curator");
 
-							if (!(httpStatus.startsWith("2") || httpStatus.startsWith("3")))
-								continue;
+                            if (!(httpStatus.startsWith("2") || httpStatus.startsWith("3")))
+                                continue;
 
-							if (uidIdx > 0 && uriParts.length >= 4 && uriParts[3].startsWith("_"))
-								// file access from curator
-								pasStats.addObject(uri, true, clientIp);
-							else if (uidIdx > 0 && httpStatus.startsWith("3"))
-								// view from curator with redirect
-								pasStats.addObject(uri, true, clientIp);
-							else if (!httpStatus.startsWith("3")) {
-								// access with no redirect
-								if (line.indexOf(SPEC_COLL_URL, spIdx) > 0) {
-									// access from MSCL exhibits: http://library.ucsd.edu/speccoll/
-									addMsclStats(uri, clientIp);
-								} else {
-									pasStats.addObject(uri, false, clientIp);
-								}
-							}
-						}else{
-							//Home Page: /dc
-							//Search: /dc/search?utf8=%E2%9C%93&q=wagner
-							//Facet Browse: /dc/search?utf8=%E2%9C%93&f%5Bcollection_sim%5D%5B%5D=Dr.+Seuss+Political+Cartoons&q=some+people
-							//Collections Browser: /dc/search?utf8=%E2%9C%93 ?????????????????
-							//Collections page: /dc/collections
-							//DLP Collections page: /dc/dlp/collections
-							//RCI collections page: /dc/rci/collections
-							//Collections access: /dc/dams_collections/bb2936476d?counter=1
-							pasStats.addAccess(uri);
-							
-						}
-							
-					}
-				}
-			}
-		}finally{
-			if(in != null){
-				try {
-					in.close();
-				} catch (IOException e) {}
-				in = null;
-			}
-			if(gzipIn != null){
-				try {
-					gzipIn.close();
-				} catch (IOException e) {}
-				gzipIn = null;
-			}
-			if(bReader != null){
-				try {
-					bReader.close();
-				} catch (IOException e) {}
-				bReader = null;
-			}
-			if(reader != null){
-				try {
-					reader.close();
-				} catch (IOException e) {}
-				reader = null;
-			}
-		}
-	}
-	
-	private void addMsclStats(String uri, String clientIp) {
-		if (uri.indexOf("/_2.jpg") > 0) {
-			// count as object view
-			uri = uri.replace("/_2.jpg", "");
-		}
-		pasStats.addObject(uri, false, clientIp); 
-	}
-	
-	private boolean isValidUri(String uri){
-		if (StringUtils.isBlank(uri) || uri.indexOf("?") < 0 && uri.indexOf("&") > 0) {
-			return false;
-		}
-		return true;
-	}
-	
-	public void export(Connection con) throws Exception {
-		pasStats.setCalendar(calendar);
-		//casStats.setCalendar(calendar);
-		pasStats.setUpdate(update);
-		//casStats.setUpdate(update);
-		pasStats.export(con);
-		//casStats.export(con);
-	}
-	
-	private boolean excludeFromStats(String value) {
-		String[] excludePatterns = {"/ucsd.ico", "/fonts/", "/assets/", "/get_data/", "/users/", "/images/", "/zoom"};
-		for (String excludePattern : excludePatterns) {
-			if (value.contains(excludePattern))
-				return true;
-		}
-		return false;
-	}
+                            if (uidIdx > 0 && uriParts.length >= 4 && uriParts[3].startsWith("_"))
+                                // file access from curator
+                                pasStats.addObject(uri, true, clientIp);
+                            else if (uidIdx > 0 && httpStatus.startsWith("3"))
+                                // view from curator with redirect
+                                pasStats.addObject(uri, true, clientIp);
+                            else if (!httpStatus.startsWith("3")) {
+                                // access with no redirect
+                                if (line.indexOf(SPEC_COLL_URL, spIdx) > 0) {
+                                    // access from MSCL exhibits: http://library.ucsd.edu/speccoll/
+                                    addMsclStats(uri, clientIp);
+                                } else {
+                                    pasStats.addObject(uri, false, clientIp);
+                                }
+                            }
+                        }else{
+                            //Home Page: /dc
+                            //Search: /dc/search?utf8=%E2%9C%93&q=wagner
+                            //Facet Browse: /dc/search?utf8=%E2%9C%93&f%5Bcollection_sim%5D%5B%5D=Dr.+Seuss+Political+Cartoons&q=some+people
+                            //Collections Browser: /dc/search?utf8=%E2%9C%93 ?????????????????
+                            //Collections page: /dc/collections
+                            //DLP Collections page: /dc/dlp/collections
+                            //RCI collections page: /dc/rci/collections
+                            //Collections access: /dc/dams_collections/bb2936476d?counter=1
+                            pasStats.addAccess(uri);
+                            
+                        }
+                            
+                    }
+                }
+            }
+        }finally{
+            if(in != null){
+                try {
+                    in.close();
+                } catch (IOException e) {}
+                in = null;
+            }
+            if(gzipIn != null){
+                try {
+                    gzipIn.close();
+                } catch (IOException e) {}
+                gzipIn = null;
+            }
+            if(bReader != null){
+                try {
+                    bReader.close();
+                } catch (IOException e) {}
+                bReader = null;
+            }
+            if(reader != null){
+                try {
+                    reader.close();
+                } catch (IOException e) {}
+                reader = null;
+            }
+        }
+    }
+    
+    private void addMsclStats(String uri, String clientIp) {
+        if (uri.indexOf("/_2.jpg") > 0) {
+            // count as object view
+            uri = uri.replace("/_2.jpg", "");
+        }
+        pasStats.addObject(uri, false, clientIp); 
+    }
+    
+    private boolean isValidUri(String uri){
+        if (StringUtils.isBlank(uri) || uri.indexOf("?") < 0 && uri.indexOf("&") > 0) {
+            return false;
+        }
+        return true;
+    }
+    
+    public void export(Connection con) throws Exception {
+        pasStats.setCalendar(calendar);
+        //casStats.setCalendar(calendar);
+        pasStats.setUpdate(update);
+        //casStats.setUpdate(update);
+        pasStats.export(con);
+        //casStats.export(con);
+    }
+    
+    private boolean excludeFromStats(String value) {
+        String[] excludePatterns = {"/ucsd.ico", "/fonts/", "/assets/", "/get_data/", "/users/", "/images/", "/zoom"};
+        for (String excludePattern : excludePatterns) {
+            if (value.contains(excludePattern))
+                return true;
+        }
+        return false;
+    }
 
-	private boolean isBotAccess(String value, int fromIndex) {
-		Matcher matcher = searchEnginePatterns.matcher(value.substring(fromIndex).toLowerCase());
-		if (matcher.find()) {
-			return true;
-		}
-		return false;
-	}
+    private boolean isBotAccess(String value, int fromIndex) {
+        Matcher matcher = searchEnginePatterns.matcher(value.substring(fromIndex).toLowerCase());
+        if (matcher.find()) {
+            return true;
+        }
+        return false;
+    }
 
-	public void print() {
-		pasStats.print();
-		//casStats.print();
-	} 
-	
-	public boolean isUpdate() {
-		return update;
-	}
+    public void print() {
+        pasStats.print();
+        //casStats.print();
+    } 
+    
+    public boolean isUpdate() {
+        return update;
+    }
 
-	public void setUpdate(boolean update) {
-		this.update = update;
-	}
+    public void setUpdate(boolean update) {
+        this.update = update;
+    }
 
-	public static String getAttributeValue(Node node){
-		if(node == null)
-			return null;
-		String val = node.getText();
-		if(val != null){
-			val = val.substring(val.indexOf("|||") + 3);
-		}
-		return val;
-	}
-	
-	public static Document getSOLRResult(String solrBase, String solrCore, String params) throws DocumentException, MalformedURLException{
-		URL url = new URL(solrBase + solrCore + "/select?" + params);
-		SAXReader reader = new SAXReader();
-		return reader.read(url);
-	}
+    public static String getAttributeValue(Node node){
+        if(node == null)
+            return null;
+        String val = node.getText();
+        if(val != null){
+            val = val.substring(val.indexOf("|||") + 3);
+        }
+        return val;
+    }
+    
+    public static Document getSOLRResult(String solrBase, String solrCore, String params) throws DocumentException, MalformedURLException{
+        URL url = new URL(solrBase + solrCore + "/select?" + params);
+        SAXReader reader = new SAXReader();
+        return reader.read(url);
+    }
 
-	/*
-	 * generate the search engine/crawler user agents pattern string from online json data source
-	 */
-	private static String getSearchEnginePatterns() throws URISyntaxException, IOException {
-		StringBuilder sePatternsBuilder = new StringBuilder();
-		URL url = new URL(Constants.STATS_SE_DATA_LOCATION);
-		try (Reader reader = new InputStreamReader(url.openConnection().getInputStream())) {
-			JSONArray botsArray = (JSONArray)JSONValue.parse(reader);
-			for (int i = 0; i < botsArray.size(); i++) {
-				JSONObject bot = (JSONObject)botsArray.get(i);
-				sePatternsBuilder.append(bot.get("pattern") + "|");
-			}
-		}
+    /*
+     * generate the search engine/crawler user agents pattern string from online json data source
+     */
+    private static String getSearchEnginePatterns() throws URISyntaxException, IOException {
+        StringBuilder sePatternsBuilder = new StringBuilder();
+        URL url = new URL(Constants.STATS_SE_DATA_LOCATION);
+        try (Reader reader = new InputStreamReader(url.openConnection().getInputStream())) {
+            JSONArray botsArray = (JSONArray)JSONValue.parse(reader);
+            for (int i = 0; i < botsArray.size(); i++) {
+                JSONObject bot = (JSONObject)botsArray.get(i);
+                sePatternsBuilder.append(bot.get("pattern") + "|");
+            }
+        }
 
-		String sePatterns = sePatternsBuilder.toString();
-		return sePatterns.substring(0, sePatterns.length() - 1);
-	}
+        String sePatterns = sePatternsBuilder.toString();
+        return sePatterns.substring(0, sePatterns.length() - 1);
+    }
 }
