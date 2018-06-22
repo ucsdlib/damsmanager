@@ -42,10 +42,11 @@ public class ExcelSource implements RecordSource
     public static final String[] IGNORED_FIELDS_FOR_OBJECTS = {"CLR image file name", "Brief description", "subject type"};
     public static final String[] IGNORED_FIELDS_FOR_COLLECTIONS = {"Level","Title","Subtitle","Part name","Part number","Translation","Variant","File name","File use","File name 2","File use 2", "subject type"};
 
-    private static final String DATETIME_FORMAT = "yyyy-MM-dd";
+    private static final String[] DATETIME_FORMATS = {"yyyy", "yyyy-MM", "yyyy-MM-dd"};
     private static final String BEGIN_DATE = "Begin date";
     private static final String END_DATE = "End date";
 
+    private static final String[] DATE_FIELDS = {BEGIN_DATE, END_DATE};
     private static Map<String, List<String>> CONTROL_VALUES = new HashMap<>();
     
     protected int lastRow;
@@ -259,16 +260,23 @@ public class ExcelSource implements RecordSource
                                 // validate date-time format
                                 boolean validDate = false;
                                 StringBuilder messageBuilder = new StringBuilder();
+
+                                // match the datetime format for validation
+                                String matchedFormat = matchDateTimeFormat(validValue, value);
+
+                                // validate against the matched format if one exists. Otherwise validate against all supported datetime formats.
                                 for (String dateFormatter : validValue)
                                 {
-                                    try {
-                                        validateDateTime(dateFormatter, value);
-                                        validDate = true;
-                                        break;
-                                    } catch (IllegalArgumentException ex) {
-                                        String errorMessage = (messageBuilder.length() > 0 ? " | " : "")
-                                            + buildErrorReportMessage(values.get(TabularRecord.OBJECT_ID), header, value, ex.getMessage());
-                                        messageBuilder.append(errorMessage);
+                                    if (StringUtils.isBlank(matchedFormat) || dateFormatter.equals(matchedFormat)) {
+                                        try {
+                                            validateDateTime(dateFormatter, value);
+                                            validDate = true;
+                                            break;
+                                        } catch (IllegalArgumentException ex) {
+                                            String errorMessage = (messageBuilder.length() > 0 ? " | " : "")
+                                                + buildErrorReportMessage(values.get(TabularRecord.OBJECT_ID), header, value, ex.getMessage());
+                                            messageBuilder.append(errorMessage);
+                                        }
                                     }
                                 }
 
@@ -323,6 +331,17 @@ public class ExcelSource implements RecordSource
             }
         }
         return values;
+    }
+
+    private String matchDateTimeFormat(List<String> datetimeFormats, String datetimeValue) {
+        String[] dateValueParts = datetimeValue.split("-");
+        for (String dateFormat : datetimeFormats)
+        {
+            if (dateValueParts.length == dateFormat.split("-").length) {
+                return dateFormat;
+            }
+        }
+        return null;
     }
 
     /**
@@ -518,15 +537,14 @@ public class ExcelSource implements RecordSource
             }
         }
 
-        // add default ISO date format for validation
-        List<String> validDateFormats = CONTROL_VALUES.get(BEGIN_DATE.toLowerCase());
-        if (validDateFormats.isEmpty()) {
-            validDateFormats.add(DATETIME_FORMAT);
-        }
-
-        validDateFormats = CONTROL_VALUES.get(END_DATE.toLowerCase());
-        if (validDateFormats.isEmpty()) {
-            validDateFormats.add(DATETIME_FORMAT);
+        // add supported ISO date formats for validation
+        for (String dateField : DATE_FIELDS) {
+            List<String> validDateFormats = CONTROL_VALUES.get(dateField.toLowerCase());
+            if (validDateFormats.isEmpty()) {
+                for (String dateFormat : DATETIME_FORMATS) {
+                    validDateFormats.add(dateFormat);
+                }
+            }
         }
     }
 
