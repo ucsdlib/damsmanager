@@ -2,6 +2,9 @@
 <%@ page errorPage="/jsp/errorPage.jsp"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<c:set var="viewTitle">${model.unique == "unique" ? " (Unique Views)" : " (Views)"}</c:set>
+<c:set var="switchView">${model.unique == "unique" ? "" : "unique"}</c:set>
+<c:set var="switchViewTitle">${model.unique == "unique" ? "Views" : "Unique Views"}</c:set>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
@@ -28,7 +31,10 @@
 	<div class="main-title">UCSD Library Digital Asset Management System Statistics</div>
 	<div id="container"></div>
 	<div class="tab-container">
-		<div class="tab-title">RDCP Objects Views by Month</div>
+		<span class="stats-switch-views">
+			<a href="/damsmanager/statsRdcpUsage.do?start=${model.start}&${switchView}">${switchViewTitle}</a>
+		</span>
+		<div class="tab-title">RDCP Objects Views by Month ${viewTitle}</div>
 		<table cellspacing=0 cellpadding=3 border=0 width=100%>
 			<tbody id="stats-tab">
 				<tr class="tab-banner">
@@ -58,7 +64,7 @@
 			</tbody>
 		</table>
 		<div class="export">
-			<a href="/damsmanager/statsRdcpUsage.do?start=${model.start}&export">
+			<a href="/damsmanager/statsRdcpUsage.do?start=${model.start}&${model.unique}&export">
 				<img src="images/excel-icon.png" border="0" width="16px" />
 				<span style="display:table-cell;vertical-align:top;font-size:11ps;font-weight:bold;">&nbsp;Export CSV</span></a>
 		</div>

@@ -246,7 +246,7 @@ public class StatsCollectionsReportController implements Controller {
 				}
 			}
 		}
-		rowVal = colTitle + "\t" + colType + "\t" + unit + "\t" + numFound + "\t" + itemsCount + "\t" + NUM_FORMATER.format(size/1000000.0) + "\t" + visibility;
+		rowVal = colTitle + "\t" + colType + "\t" + unit + "\t" + numFound + "\t" + itemsCount + "\t" + formatSize(size) + "\t" + visibility;
 		for(int j=0;j<views.length;j++){
 			if(isUnit){
 				solrQuery = solrBase + "q=" + URLEncoder.encode("unit_code_tesim:" + unit + " OR unit_json_tesim:\""+colTitle+ "\"", "UTF-8") + "&fq=" + URLEncoder.encode("has_model_ssim:\"info:fedora/afmodel:DamsObject\"", "UTF-8") + "&fq=" + URLEncoder.encode("-collections_tesim:[* TO *]", "UTF-8") + "&fq=" + URLEncoder.encode(views[j], "UTF-8");
@@ -304,6 +304,16 @@ public class StatsCollectionsReportController implements Controller {
 		return rowVal;
 	}
 		
+	/**
+	 * Format size in megabytes. Use 1 instead of 0 if the size is rounded to 0.
+	 * @param size
+	 * @return
+	 */
+	private static String formatSize(long size) {
+		String formatedSize = NUM_FORMATER.format(size/1000000.0);
+		return formatedSize.equals("0") && size > 0 ? "1" : formatedSize;
+	}
+
 	public static List<String> getRestrictedItems(DAMSClient damsClient, String collectionId) throws Exception{
 		String field = "id";
 		String solrQuery = "fl=" + field + "&q=" + URLEncoder.encode("\"Display currently prohibited\"", "UTF-8") + "&qf=license_tesim&fq=" + URLEncoder.encode("collections_tesim:" + collectionId, "UTF-8");

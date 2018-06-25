@@ -34,8 +34,8 @@ public abstract class Statistics {
 	public static final String MONTH_FORMAT = "yyyy-MM";
 	public static String WEB_STATS_INSERT = "INSERT INTO WEB_STATS(ID, STAT_DATE, NUM_ACCESS, APP_NAME) VALUES (?,?,?,?)";
 	public static String STATS_DLP_INSERT = "INSERT INTO STATS_DLP(STAT_ID, NUM_SEARCH, NUM_BROWSE, NUM_COLPAGE, NUM_HOMEPAGE) VALUES (?,?,?,?,?)";
-	public static String STATS_DLP_OBJECT_ACCESS_INSERT = "INSERT INTO STATS_DLP_OBJECT_ACCESS(STAT_ID, IS_PRIVATE, UNIT_ID, COL_ID, OBJECT_ID, NUM_ACCESS, NUM_VIEW) VALUES (?,?,?,?,?,?,?)";
-	public static String STATS_FILE_DOWNLOAD_INSERT = "INSERT INTO STATS_FILE_DOWNLOAD(STAT_ID, IS_PRIVATE, UNIT_ID, COL_ID, OBJECT_ID, COMP_ID, FILE_ID, NUM_VIEW) VALUES (?,?,?,?,?,?,?,?)";
+	public static String STATS_DLP_OBJECT_ACCESS_INSERT = "INSERT INTO STATS_DLP_OBJECT_ACCESS(STAT_ID, IS_PRIVATE, UNIT_ID, COL_ID, OBJECT_ID, NUM_ACCESS, NUM_VIEW, CLIENT_IP) VALUES (?,?,?,?,?,?,?,?)";
+	public static String STATS_FILE_DOWNLOAD_INSERT = "INSERT INTO STATS_FILE_DOWNLOAD(STAT_ID, IS_PRIVATE, UNIT_ID, COL_ID, OBJECT_ID, COMP_ID, FILE_ID, NUM_VIEW, CLIENT_IP) VALUES (?,?,?,?,?,?,?,?,?)";
 	public static String STATS_DLP_COLLECTION_ACCESS_INSERT = "INSERT INTO STATS_DLP_COL_ACCESS(STAT_ID, COLLECTION_ID, NUM_ACCESS) VALUES (?,?,?)";
 	public static String STATS_DLC_KEYWORDS_INSERT = "INSERT INTO STATS_DLC_KEYWORDS(STAT_ID, KEYWORD, NUM_ACCESS, TYPE) VALUES (?,?,?,?)";
 	public static String COLLECTION_STATS_INSERT = "INSERT INTO STATS_DLC_QUAN(ID, STAT_DATE, COLLECTION_ID, COLLECTION_TITLE, NUM_OBJECTS, SIZE_BYTES) VALUES (?,?,?,?,?,?)";
@@ -62,7 +62,7 @@ public abstract class Statistics {
 		dateFormat = new SimpleDateFormat(DATE_FORMAT);
 		monthFormat = new SimpleDateFormat(MONTH_FORMAT);
 	}
-	public abstract void export(Connection con) throws SQLException;
+	public abstract void export(Connection con) throws Exception;
 	public abstract void print();
 	
 	public String getAppName() {

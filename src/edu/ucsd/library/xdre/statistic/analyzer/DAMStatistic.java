@@ -1,15 +1,9 @@
 package edu.ucsd.library.xdre.statistic.analyzer;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -24,6 +18,9 @@ import org.apache.log4j.Logger;
 import org.dom4j.Document;
 import org.dom4j.Node;
 
+import edu.ucsd.library.xdre.statistic.beans.FileDownloadCounter;
+import edu.ucsd.library.xdre.statistic.beans.StatsObjectAccess;
+import edu.ucsd.library.xdre.statistic.beans.ObjectCounter;
 import edu.ucsd.library.xdre.utils.Constants;
 
 /**
@@ -41,8 +38,8 @@ public class DAMStatistic extends Statistics{
 	protected int numBrowse =0;
 	protected int numColPage =0;
 	protected int numHomePage =0;
-	protected Map<String, ObjectCounter> itemsMap = null;
-	protected Map<String, ObjectCounter> itemsMapPrivate = null;
+	protected Map<String, StatsObjectAccess> itemsMap = null;
+	protected Map<String, StatsObjectAccess> itemsMapPrivate = null;
 	protected Map<String, Integer> keywordsMap = null;
 	protected Map<String, Integer> phrasesMap = null;
 	protected Map<String, Integer> collsAccessMap = null;
@@ -51,8 +48,8 @@ public class DAMStatistic extends Statistics{
 	
 	public DAMStatistic(String appName){
 		super(appName);
-		itemsMap = new TreeMap<String, ObjectCounter>();
-		itemsMapPrivate = new TreeMap<String, ObjectCounter>();
+		itemsMap = new TreeMap<String, StatsObjectAccess>();
+		itemsMapPrivate = new TreeMap<String, StatsObjectAccess>();
 		keywordsMap = new HashMap<String, Integer>();
 		phrasesMap = new HashMap<String, Integer>();
 		collsAccessMap = new HashMap<String, Integer>();
@@ -70,6 +67,22 @@ public class DAMStatistic extends Statistics{
 
 	public Map<String, Integer> getKeywordsMap() {
 		return keywordsMap;
+	}
+
+	/**
+	 * Get the items counters for public access
+	 * @return
+	 */
+	public Map<String, StatsObjectAccess> getItemsMap() {
+		return itemsMap;
+	}
+
+	/**
+	 * Get the items counters for private access
+	 * @return
+	 */
+	public Map<String, StatsObjectAccess> getPrivateItemsMap() {
+		return itemsMapPrivate;
 	}
 
 	public void addAccess(String uri) throws UnsupportedEncodingException{
@@ -180,7 +193,7 @@ public class DAMStatistic extends Statistics{
 			log.info("DAMS stats invalid uri: " + uri);
 	}
 	
-	public void addObject(String uri, boolean isPrivateAccess){
+	public void addObject(String uri, boolean isPrivateAccess, String clientIp){
 		String subjectId = "";
 		String fileName = "";
 		//String[] parts = uri.replace("?", "&").split("&");
@@ -203,6 +216,11 @@ public class DAMStatistic extends Statistics{
 			return;
 		}
 		
+		if(StringUtils.isBlank(clientIp)) {
+			log.warn("Invalid client IP " + clientIp + " in request " + uri + ".");
+			return;
+		}		
+
 		if(parts.length >= 4 && parts[3] != null && parts[3].startsWith("_"))
 			fileName = parts[3];
 		
@@ -211,14 +229,14 @@ public class DAMStatistic extends Statistics{
 			return;
 		}
 
-		Map<String, ObjectCounter> iMap = itemsMap;
+		Map<String, StatsObjectAccess> iMap = itemsMap;
 		if (isPrivateAccess)
 			iMap = itemsMapPrivate;
 
-		ObjectCounter objCounter = iMap.get(subjectId);
-		if(objCounter == null){
-			objCounter = new ObjectCounter(subjectId);
-			iMap.put(subjectId, objCounter);
+		StatsObjectAccess objAccess = iMap.get(subjectId);
+		if(objAccess == null){
+			objAccess = new StatsObjectAccess(subjectId);
+			iMap.put(subjectId, objAccess);
 		}
 
 		// differentiate the counts for file download and object access/hits
@@ -226,12 +244,12 @@ public class DAMStatistic extends Statistics{
 		String fileSubfix = file_name_idx >= 0 ? fileName.substring(file_name_idx) : "";
 
 		if (uri.indexOf("/download") > 0) {
-			fileDownload(objCounter, fileName);
+			objAccess.increaseFileDownloads(fileName, clientIp);
 		} else if (StringUtils.isNotBlank(fileName) && derivativeList.indexOf(fileSubfix) < 0) {
 			// count all source files as download
-			fileDownload(objCounter, fileName);
+			objAccess.increaseFileDownloads(fileName, clientIp);
 		} else {
-			objCounter.increaseCounter(fileName);
+			objAccess.increaseObjectAccess(fileName, clientIp);
 		}
 	}
 	
@@ -247,28 +265,6 @@ public class DAMStatistic extends Statistics{
 		return derSufixes;
 	}
 
-	private void fileDownload(ObjectCounter objCounter, String file) {
-		String sid = objCounter.getSubjectId();
-		String cid = "";
-		String fid = "";
-		String[] tokens = file.split("_");
-		if (tokens.length == 2)
-			fid = tokens[1];
-		else if (tokens.length == 3) {
-			cid = tokens[1];
-			fid = tokens[2];
-		} else
-			log.warn("Invalid file url: /" + sid + "/" + file );
-		
-		Map<String, FileDownloadCounter> fileDownloads = objCounter.getFileDownloads();
-		FileDownloadCounter counter = fileDownloads.get(file);
-		if (counter == null) {
-			counter = new FileDownloadCounter(sid, cid, fid);
-			fileDownloads.put(file, counter);
-		}
-		counter.increaseCounter();
-	}
-	
 	public String getParamValue(String param){
 		String[] pair = param.split("=");
 		if(pair.length > 1 && pair[1] != null)
@@ -277,7 +273,7 @@ public class DAMStatistic extends Statistics{
 			return "";
 	}
 	
-	public void export(Connection con) throws SQLException{
+	public void export(Connection con) throws Exception{
 		int nextId = getNextId(con);
 		int returnValue = -1;
 		PreparedStatement ps = null;
@@ -349,11 +345,22 @@ public class DAMStatistic extends Statistics{
 		
 		//STATS_DLP_OBJECT_ACCESS_INSERT insert
 		try{
-			// eliminate the counts from curator access with redirected
+			// eliminate the counts from curator access with redirects from public access
 			for (String key : itemsMapPrivate.keySet()) {
 				if (itemsMap.containsKey(key)) {
-					int pubAccess = itemsMap.get(key).getView() - itemsMapPrivate.get(key).getView();
-					itemsMap.get(key).setView(pubAccess);
+					StatsObjectAccess pubObjAccess = itemsMap.get(key);
+					StatsObjectAccess privObjAccess = itemsMapPrivate.get(key);
+					for (String ip : privObjAccess.getObjectCounters().keySet()) {
+						ObjectCounter pubCounter = pubObjAccess.getCounter(ip);
+						ObjectCounter privCounter = privObjAccess.getCounter(ip);
+						if (pubCounter != null) {
+							int pubAccess = pubCounter.getAccess() - privCounter.getAccess();
+							pubCounter.setAccess(pubAccess > 0 ? pubAccess : 0);
+
+							int pubViews = pubCounter.getView() - privCounter.getView();
+							pubCounter.setView(pubViews > 0 ? pubViews : 0);
+						}
+					}
 				}
 			}
 			ps = con.prepareStatement(STATS_DLP_OBJECT_ACCESS_INSERT);
@@ -408,13 +415,13 @@ public class DAMStatistic extends Statistics{
 		log.info("Inserted " + appName + " statistics record for " + dateFormat.format(calendar.getTime()));
 	}
 
-	private int persistObjectAccessStats (int statsId, PreparedStatement ps, Map<String, ObjectCounter> itemsMap, boolean isPrivate) {
+	private int persistObjectAccessStats (int statsId, PreparedStatement ps, Map<String, StatsObjectAccess> itemsMap, boolean isPrivate) {
 		int returnValue = 0;
 		String key;
 		Iterator<String> it = itemsMap.keySet().iterator();
 		while(it.hasNext()){
 			key = (String) it.next();
-			ObjectCounter objCounter = itemsMap.get(key);
+			StatsObjectAccess objCounter = itemsMap.get(key);
 			try {
 				String sid = objCounter.getSubjectId();
 				Document doc = Statistics.cacheGet(sid);
@@ -429,6 +436,7 @@ public class DAMStatistic extends Statistics{
 				ps.setBoolean(2, isPrivate);
 				ps.setString(3, unitId);
 				ps.setString(4, colId);
+				ps.setString(5, sid);
 				returnValue = objCounter.export(ps);
 				ps.clearParameters();
 			}catch(Exception ex) {
@@ -439,28 +447,32 @@ public class DAMStatistic extends Statistics{
 		return returnValue;
 	}
 
-	private int persistFileDownloadStats (int statsId, PreparedStatement ps, Map<String, ObjectCounter> itemsMap, boolean isPrivate) {
+	private int persistFileDownloadStats (int statsId, PreparedStatement ps, Map<String, StatsObjectAccess> itemsMap, boolean isPrivate)
+			throws Exception {
 		int returnValue = 0;
 		String key;
 		Map<String, FileDownloadCounter> fileDownloads;
 		Iterator<String> it = itemsMap.keySet().iterator();
 		while(it.hasNext()){
 			key = (String) it.next();
+			StatsObjectAccess objectAccess = itemsMap.get(key);
+			String sid = objectAccess.getSubjectId();
+			Document doc = Statistics.cacheGet(sid);
+			if (doc == null) {
+				doc = Statistics.getRecordForStats(sid);
+				Statistics.cacheAdd(sid, doc);
+			}
+
 			fileDownloads = itemsMap.get(key).getFileDownloads();
 			for (FileDownloadCounter fCounter : fileDownloads.values()) {
 				try {
-					String sid = fCounter.sid;
-					Document doc = Statistics.cacheGet(sid);
-					if (doc == null) {
-						doc = Statistics.getRecordForStats(sid);
-						Statistics.cacheAdd(sid, doc);
-					}
 					String unitId = getUnitCode(doc);;
 					String colId = getCollection(doc);
 					ps.setInt(1, statsId);
 					ps.setBoolean(2, isPrivate);
 					ps.setString(3, unitId);
 					ps.setString(4, colId);
+					ps.setString(5, sid);
 					returnValue = fCounter.export(ps);
 					ps.clearParameters();
 				}catch(Exception ex) {
@@ -627,125 +639,5 @@ public class DAMStatistic extends Statistics{
 					collsAccessMap.put(colid, ++count);
 			}
 		}
-	}
-	
-
-	class ObjectCounter {
-		private String subjectId = null;
-		private int access = 0;
-		private int view = 0;
-		private Map<String, FileDownloadCounter> fileDownloads = new TreeMap<>();
-		public ObjectCounter(String subjectId){
-			this.subjectId = subjectId;
-		}
-		public void increaseCounter(String file){
-			access++;
-			if(StringUtils.isBlank(file)){
-				view++;
-			}
-		}
-		
-		public int getAccess() {
-			return access;
-		}
-
-		public int getView() {
-			return view;
-		}
-
-		public void setView(int numOfViews) {
-			view = numOfViews;
-		}
-
-		public String getSubjectId() {
-			return subjectId;
-		}
-
-		public Map<String, FileDownloadCounter> getFileDownloads(){
-			return fileDownloads;
-		}
-
-		public boolean isThumbnail(String file){
-			if(file.indexOf("_4.") >=0 || file.indexOf("_5.") >= 0)
-				return true;
-			else
-				return false;
-		}
-		
-		public boolean isIcon(String file){
-			if(file.indexOf("icon") >0 || file.indexOf("icon") > 0)
-				return true;
-			else
-				return false;
-		}
-		
-		public int export(PreparedStatement ps) throws SQLException{
-			ps.setString(5, subjectId);
-			ps.setInt(6, access);
-			ps.setInt(7, view);
-			return ps.executeUpdate();
-		}
-		
-		public String toString(){
-			return "	" + subjectId + " " + view + " " + access;
-		}
-	}
-	
-	class FileDownloadCounter {
-		private String sid = null;
-		private String cid = null;
-		private String fid = null;
-		private int view = 0;
-		public FileDownloadCounter(String sid, String cid, String fid){
-			this.sid = sid;
-			this.cid = cid;
-			this.fid = fid;
-		}
-		public void increaseCounter(){
-			view++;
-		}
-		
-		public int getView() {
-			return view;
-		}
-
-		public int export(PreparedStatement ps) throws SQLException{
-			ps.setString(5, sid);
-			ps.setString(6, cid);
-			ps.setString(7, fid);
-			ps.setInt(8, view);
-			return ps.executeUpdate();
-		}
-		
-		public String toString(){
-			return "	" + sid + (StringUtils.isBlank(cid) ? "" : "/" + cid) +  "/" + fid + ": " + view;
-		}
-	}
-
-	public static void main(String[] args) throws Exception{
-		//String uri = "/apps/public/images/bullet.gif?time=1349809347851&id=&hash=search&q=&fq=Facet_Collection:%22mscl_HermanBacaPhotos%22+OR+Facet_Collection:%22mscl_HermanBacaPosters%22+OR+Facet_CollectionTitle:%22Herman+Baca+Papers%22+OR+Facet_Collection:%22Herman+Baca+Posters%22&sort=titlesort%20asc&fq=NOT+category:(bb36527497+OR+bb1093000r+OR+bb23558110+OR+component)+AND+NOT+attrib:(%22xdre%20updateFlag%20delete%22+OR+%22xdre%20suppress%20true%22)&qt=dismax&rows=20&facet.limit=250&facet.sort=true HTTP/1.1";
-		String line = null;
-		String statsFile = "C:\\tmp\\httpd.2012-10-09";
-		Reader fr = null;
-		BufferedReader bf = null;
-		DAMStatistic damsStats = null;
-		Map<String, String> collsMap = new HashMap<String, String>();
-		try {
-			fr = new FileReader(statsFile);
-			bf = new BufferedReader(fr);
-			damsStats =  new DAMStatistic("pas");
-			damsStats.setCollsMap(collsMap);
-			while((line=bf.readLine()) != null){
-				if(line.indexOf(" libraries ") > 0 && line.indexOf("bullet.gif?") > 0 && line.indexOf("/apps/public")>=0){
-					//System.out.println(line);
-					damsStats.addAccess(LogAnalyzer.getUri(line));
-				}
-			}
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		damsStats.print();
 	}
 }

@@ -101,8 +101,8 @@
 			<li><div class="item"><a href="statsKeywords.do">DAMS Keywords/Phrases</a></div></li>
 			<c:if test="${model.isCas}"><li><div class="item"><a href="collectionsReport.do">DAMS Collections</a></div></li></c:if>
 			<c:if test="${model.isCurator}">
-				<li><div class="item"><a href="statsRdcpUsage.do">RDCP Objects Views by Month</a></div></li>
-				<li><div class="item"><a href="statsRdcpDownload.do">RDCP File Download By Month</a></div></li>
+				<li><div class="item"><a href="statsRdcpUsage.do?unique">RDCP Objects Views by Month</a></div></li>
+				<li><div class="item"><a href="statsRdcpDownload.do?unique">RDCP File Download By Month</a></div></li>
 				<li><div class="item"><a href="statsCollectionObjects.do">DAMS Object Hits by Month</a></div></li>
 				<li><div class="item"><a href="statsCollectionObjects.do?type=downloads">DAMS Object Downloads by Month</a></div></li>
 			</c:if>
