@@ -563,6 +563,14 @@
               <dams:type>custodial history</dams:type>
               <rdf:value><xsl:value-of select="."/></rdf:value>
             </xsl:when>
+            <xsl:when test="@type = 'local added entry'">
+              <dams:type>local added entry</dams:type>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
+            <xsl:when test="@type = 'statement of responsibility'">
+              <dams:type>statement of responsibility</dams:type>
+              <rdf:value><xsl:value-of select="."/></rdf:value>
+            </xsl:when>
             <xsl:when test="@type = 'version identification'">
               <!-- see physical-description-note -->
             </xsl:when>

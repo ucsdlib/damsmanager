@@ -75,7 +75,13 @@
         <xsl:for-each select="*[local-name()='note' and dams:Note/dams:type='identifier']/*">
             <xsl:call-template name="damsNoteIdentifier"/>
         </xsl:for-each>
-        <xsl:for-each select="*[local-name()='note' and not(contains(dams:Note/dams:type,'identifier')) and not(contains(dams:Note/dams:type,'local attribution'))]">
+        <xsl:for-each select="*[local-name()='note' and dams:Note/dams:type='statement of responsibility']/*">
+            <xsl:call-template name="damsNoteStatementOfResponsibility"/>
+        </xsl:for-each>
+        <xsl:for-each select="*[local-name()='note' and dams:Note/dams:type='local added entry']/*">
+            <xsl:call-template name="damsNoteLocalAddedEntry"/>
+        </xsl:for-each>
+        <xsl:for-each select="*[local-name()='note' and not(contains(dams:Note/dams:type,'identifier')) and not(contains(dams:Note/dams:type,'local attribution')) and not(contains(dams:Note/dams:type,'local added entry')) and not(contains(dams:Note/dams:type,'statement of responsibility'))]">
             <xsl:apply-templates />
         </xsl:for-each>
         <xsl:for-each select="*[local-name() = 'anatomy' or local-name() = 'commonName' or local-name() = 'cruise' or local-name() = 'culturalContext' or local-name() = 'lithology' or local-name() = 'scientificName' or local-name() = 'series']/*">
@@ -242,6 +248,20 @@
         </xsl:variable>
         <xsl:call-template name="appendJsonObject">
            <xsl:with-param name="key">Identifier:<xsl:value-of select="$label"/></xsl:with-param>
+           <xsl:with-param name="val"><xsl:value-of select="rdf:value"/></xsl:with-param>
+        </xsl:call-template>
+    </xsl:template>
+
+    <xsl:template name="damsNoteLocalAddedEntry" match="dams:Note[dams:type='local added entry']" priority="1">
+        <xsl:call-template name="appendJsonObject">
+           <xsl:with-param name="key">79X Local Added Entry</xsl:with-param>
+           <xsl:with-param name="val"><xsl:value-of select="rdf:value"/></xsl:with-param>
+        </xsl:call-template>
+    </xsl:template>
+
+    <xsl:template name="damsNoteStatementOfResponsibility" match="dams:Note[dams:type='statement of responsibility']" priority="1">
+        <xsl:call-template name="appendJsonObject">
+           <xsl:with-param name="key">Statement of Responsibility</xsl:with-param>
            <xsl:with-param name="val"><xsl:value-of select="rdf:value"/></xsl:with-param>
         </xsl:call-template>
     </xsl:template>
