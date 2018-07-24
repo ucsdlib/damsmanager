@@ -1077,6 +1077,7 @@ public class CollectionOperationController implements Controller {
 								  handler = new RDFDAMS4ImportTsHandler(damsClient, dataFiles.toArray(new File[dataFiles.size()]), importOption);
 								  ((RDFDAMS4ImportTsHandler)handler).setFilesPaths(ingestFiles.toArray(new String[ingestFiles.size()]));
 								  ((RDFDAMS4ImportTsHandler)handler).setReplace(true);
+								  handler.setCollectionId(collectionId);
 							 }
 						  }
 					  } else {
