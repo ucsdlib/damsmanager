@@ -593,6 +593,11 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 			}
 		}
 
+		// Re-index the collection CLR when object ingested.
+		if (objRecords.size() > 0 && arkReport.length() > 0 && StringUtils.isNotBlank(collectionId)) {
+			updateSOLR(collectionId);
+		}
+
 		// write the ark report to file
 		if (arkReport.length() > 0 || authorityReport.length() > 0) {
 			FileOutputStream out = null;
