@@ -171,7 +171,7 @@
         <xsl:variable name="hasExactExternalAuthority" select="mads:hasExactExternalAuthority/@rdf:resource" />
         <xsl:variable name="fastHeadings">
           <xsl:choose>
-            <xsl:when test="starts-with($hasExactExternalAuthority, 'http://id.worldcat.org/fast/')"> FAST</xsl:when>
+            <xsl:when test="contains($hasExactExternalAuthority, 'id.worldcat.org/fast/')"> FAST</xsl:when>
             <xsl:otherwise></xsl:otherwise>
           </xsl:choose>
         </xsl:variable>
