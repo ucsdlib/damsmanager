@@ -911,7 +911,6 @@
     </xsl:element>
   </xsl:template>
   <xsl:template match="mods:mods/mods:subject">
-    <xsl:if test="//mods:subject[translate(@authority, $lowercase, $uppercase)='FAST'] and translate(@authority, $lowercase, $uppercase)='FAST'">
     <xsl:choose>
       <xsl:when test="count(*) &gt; 1">
         <xsl:variable name="predicateName">
@@ -1030,7 +1029,6 @@
         <xsl:apply-templates/>
       </xsl:otherwise>
     </xsl:choose>
-    </xsl:if>
   </xsl:template>
   <xsl:template match="mods:mods/mods:genre">
     <xsl:if test="//mods:mods/mods:genre[translate(@authority, $lowercase, $uppercase)='FAST'] and translate(@authority, $lowercase, $uppercase)='FAST'">
