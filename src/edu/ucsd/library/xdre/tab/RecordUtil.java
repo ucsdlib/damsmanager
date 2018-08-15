@@ -62,6 +62,9 @@ public class RecordUtil
         + "names or seeing images of deceased persons may cause sadness or distress, particularly "
         + "to the relatives of these people.";
 
+    private static String culturalSensitivityRestrictedNote = "Image not available due to cultural "
+            + "sensitivities of the community depicted.";
+
     private static String copyrightPurposeNote = "Use: This work is available from the UC San "
         + "Diego Library. This digital copy of the work is intended to support research, teaching, "
         + "and private study.";
@@ -264,7 +267,7 @@ public class RecordUtil
             else if ( access.equals(accessRestrictedSensitivity) )
             {
                 addOtherRights( o, "cultural sensitivity", "metadataDisplay", "display");
-                addCulturalSensitivityNote(o);
+                addCulturalSensitivityRestrictedNote(o);
             }
             else if ( access.equals(accessRestrictedLicense) )
             {
@@ -316,6 +319,12 @@ public class RecordUtil
     {
         Element note = o.addElement("dams:note",damsURI).addElement("dams:Note",damsURI);
         note.addElement("rdf:value",rdfURI).setText(culturalSensitivityNote);
+    }
+    private static void addCulturalSensitivityRestrictedNote( Element o )
+    {
+        Element note = o.addElement("dams:note",damsURI).addElement("dams:Note",damsURI);
+        note.addElement("rdf:value",rdfURI).setText(culturalSensitivityRestrictedNote);
+        note.addElement("dams:internalOnly",damsURI).setText("true");
     }
     private static void addOtherRights( Element o, String basis, String permission,
         String restriction )
