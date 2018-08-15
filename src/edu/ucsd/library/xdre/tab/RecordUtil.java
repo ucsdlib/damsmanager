@@ -266,6 +266,8 @@ public class RecordUtil
             }
             else if ( access.equals(accessRestrictedSensitivity) )
             {
+                // License
+                addLicense( o, "Display currently prohibited.", null, "display", beginDate, endDate, null );
                 addOtherRights( o, "cultural sensitivity", "metadataDisplay", "display");
                 addCulturalSensitivityRestrictedNote(o);
             }
