@@ -168,14 +168,28 @@
 
     <xsl:template name="subject">
         <xsl:param name="columnName"/>
+        <xsl:variable name="hasExactExternalAuthority" select="mads:hasExactExternalAuthority/@rdf:resource" />
+        <xsl:variable name="fastHeadings">
+          <xsl:choose>
+            <xsl:when test="contains($hasExactExternalAuthority, 'id.worldcat.org/fast/')"> FAST</xsl:when>
+            <xsl:otherwise></xsl:otherwise>
+          </xsl:choose>
+        </xsl:variable>
         <xsl:call-template name="appendJsonObject">
-           <xsl:with-param name="key"><xsl:value-of select="$columnName"/></xsl:with-param>
+           <xsl:with-param name="key"><xsl:value-of select="$columnName"/><xsl:value-of select="$fastHeadings"/></xsl:with-param>
            <xsl:with-param name="val"><xsl:value-of select="mads:authoritativeLabel"/></xsl:with-param>
         </xsl:call-template>
     </xsl:template>
 
     <xsl:template name="complexSubject" match="mads:ComplexSubject">
         <xsl:variable name="subjectName" select="local-name(mads:componentList/*[1])"/>
+        <xsl:variable name="hasExactExternalAuthority" select="mads:componentList/*[1]/mads:hasExactExternalAuthority/@rdf:resource" />
+        <xsl:variable name="fastHeadings">
+          <xsl:choose>
+            <xsl:when test="starts-with($hasExactExternalAuthority, 'http://id.worldcat.org/fast/')"> FAST</xsl:when>
+            <xsl:otherwise></xsl:otherwise>
+          </xsl:choose>
+        </xsl:variable>
         <xsl:variable name="columnName">
             <xsl:choose>
                 <xsl:when test="$subjectName = 'ConferenceName'">conference name</xsl:when>
