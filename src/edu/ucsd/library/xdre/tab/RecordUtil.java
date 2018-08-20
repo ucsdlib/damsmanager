@@ -241,6 +241,7 @@ public class RecordUtil
             }
             else if ( access.equals(accessPublicMetadata) )
             {
+                addLicense( o, "Display currently prohibited.", null, "display", beginDate, endDate, null );
                 addOtherRights( o, "fair use (public)", "metadataDisplay", null );
             }
             else if ( access.equals(accessUCSDLicense) )
