@@ -606,42 +606,46 @@ public class TabularRecord implements Record
     {
         return ( s != null && !s.trim().equals("") );
     }
-    private static List<String> split( String s )
+    public static List<String> split( String s )
     {
         ArrayList<String> list = new ArrayList<>();
         if ( pop(s) )
         {
-            if ( s.indexOf(DELIMITER) != -1 )
+            StringBuilder sb = new StringBuilder();
+            boolean escaped = false;
+            for( char ch : s.toCharArray() )
             {
-                StringBuilder sb = new StringBuilder();
-                boolean escaped = false;
-                for( char ch : s.toCharArray() )
+                if( escaped )
                 {
-                    if( escaped )
-                    { 
-                        sb.append( ch );
-                        escaped = false;
-                    }
-                    else if ( ch == ESCAPE_CHAR )
-                    {
-                        escaped = true;
-                    }
-                    else if ( ch == DELIMITER )
-                    {
-                        list.add( sb.toString().trim() );
-                        sb.setLength( 0 );
-                    }
-                    else
+                    if ( ch == DELIMITER )
                     {
                         sb.append( ch );
                     }
-                }
+                    else if ( !(Character.isISOControl(ESCAPE_CHAR + ch) || Character.isISOControl(ch)) )
+                    {
+                        sb.append( ESCAPE_CHAR + ch );
+                    }
 
-                list.add( sb.toString().trim() );
+                    escaped = false;
+                }
+                else if ( ch == ESCAPE_CHAR )
+                {
+                    escaped = true;
+                }
+                else if ( ch == DELIMITER )
+                {
+                    list.add( sb.toString().trim() );
+                    sb.setLength( 0 );
+                }
+                else if ( !Character.isISOControl(ch) )
+                {
+                    sb.append( ch );
+                }
             }
-            else
+
+            if ( sb.length() > 0 )
             {
-                list.add( s.trim() );
+                list.add( sb.toString().trim() );
             }
         }
         return list;
