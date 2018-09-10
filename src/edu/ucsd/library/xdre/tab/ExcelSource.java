@@ -12,7 +12,6 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -20,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -58,6 +58,7 @@ public class ExcelSource implements RecordSource
     private Map<String, String> originalHeaders = new HashMap<>();
     private List<String> invalidHeaders = new ArrayList<>();
     private List<Map<String, String>> invalidValues = new ArrayList<>();
+    private List<Map<String, String>> controlCharValues = new ArrayList<>();
     private List<String> controlFields = new ArrayList<>(); // control fields that need to validate or ignore during validation
     private boolean validateControlFieldsOnly = false;      // flag to control either validate the control fields or ignore them.
     Map<String,String> cache;
@@ -225,6 +226,7 @@ public class ExcelSource implements RecordSource
         Row row = sheet.getRow(n);
         Map<String,String> values = new HashMap<>();
         Map<String,String> invalids = new TreeMap<>();
+        Map<String,String> replacedCharValues = new TreeMap<>();
         if (row != null) 
         {
             for ( int i = 0; i < headers.size(); i++ )
@@ -308,6 +310,13 @@ public class ExcelSource implements RecordSource
                                 }
                             }
                         }
+
+                        // Replace control characters
+                        String convertedValue = replaceControlChars( value );
+                        if (StringUtils.isNotBlank(convertedValue))
+                        {
+                            replacedCharValues.put(originalHeader, convertedValue);
+                        }
                     } catch (UnsupportedEncodingException e) {
                         e.printStackTrace();
                     }
@@ -329,8 +338,60 @@ public class ExcelSource implements RecordSource
                 invalids.put(TabularRecord.OBJECT_ID, values.get(TabularRecord.OBJECT_ID));
                 invalidValues.add(invalids);
             }
+
+            if (replacedCharValues.size() > 0)
+            {
+                replacedCharValues.put("row", "" + (n + 1));
+                replacedCharValues.put(TabularRecord.OBJECT_ID, values.get(TabularRecord.OBJECT_ID));
+                controlCharValues.add(replacedCharValues);
+            }
         }
         return values;
+    }
+
+    /**
+     * Replace the control characters with the character name in blanket like [END OF TEXT]
+     * @param value
+     * @return String the value with control characters replaced or null
+     */
+    public static String replaceControlChars(String value) {
+        boolean controlCharsFound = false;
+        boolean escaped = false;
+
+        StringBuilder sb = new StringBuilder();
+
+        for( char ch : value.toCharArray() )
+        {
+            if( escaped )
+            {
+                boolean replaced = TabularRecord.handleEscapedCharacter(sb, ch, true);
+                if ( replaced )
+                    controlCharsFound = true;
+
+                escaped = false;
+            }
+            else if ( ch == TabularRecord.ESCAPE_CHAR )
+            {
+                escaped = true;
+            }
+            else if ( Character.isISOControl(ch) )
+            {
+                // report control character and replace it with [character name]
+                controlCharsFound = true;
+                sb.append( "[" + Character.getName( ch ) + "]" );
+            }
+            else
+            {
+                sb.append( ch );
+            }
+        }
+
+        if ( controlCharsFound )
+        {
+            return sb.toString();
+        }
+
+        return null;
     }
 
     private String matchDateTimeFormat(List<String> datetimeFormats, String datetimeValue) {
@@ -360,6 +421,15 @@ public class ExcelSource implements RecordSource
     public List<Map<String, String>> getInvalidValues()
     {
         return invalidValues;
+    }
+
+    /**
+     * Get the list of values that contains control characters
+     * @return
+     */
+    public List<Map<String, String>> getControlCharValues()
+    {
+        return controlCharValues;
     }
 
     /**

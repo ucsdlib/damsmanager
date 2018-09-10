@@ -766,6 +766,7 @@ public class CollectionOperationController implements Controller {
 								  String objTitle = "";
 								  id = rec.recordID();  
 								  StringBuilder errorMessage = new StringBuilder(); 
+								  StringBuilder warningMessage = new StringBuilder(); 
 								  try {
 									  if (collectionImport) {
 										  String collType = getParameter(paramsMap, "collType");
@@ -839,32 +840,11 @@ public class CollectionOperationController implements Controller {
 									  } else if (source.equalsIgnoreCase("excel")) {
 										  // Report for invalid Excel control values validation
 										  List<Map<String, String>> invalidValues = ((ExcelSource)recordSource).getInvalidValues();
-										  if (invalidValues != null && invalidValues.size() > 0) {
-											  
-											  // process to retrieve control values errors for the record since it will parse the row for the next record
-											  StringBuilder cvErrors = new StringBuilder();
-											  for (int k=0; k< invalidValues.size(); k++) {
-												  Map<String, String> m = invalidValues.get(k);
-												  if (m.containsKey(TabularRecord.OBJECT_ID) && m.get(TabularRecord.OBJECT_ID).equals(String.valueOf(id))) {
-													  cvErrors.append( "* Row index " + m.get("row") + " [");
-													  
-													  // don't count for the row number and the record id
-													  m.remove("row");
-													  m.remove(TabularRecord.OBJECT_ID);
-													  int l = 0;
-													  for (String key : m.keySet()) {
-														  if (l++ > 0)
-															  cvErrors.append(" | ");
-														  cvErrors.append(key + " => " + m.get(key));	  
-													  }
-													  cvErrors.append("]\n");
-												  }
-											  }
-											  
-											  if (cvErrors.length() > 0) {
-												  errorMessage.append( "Invalid control value(s)" + " - \n" + cvErrors.toString() );
-											  }
-										  }
+										  appendErrorMessage(id, "Invalid control value(s)", invalidValues, errorMessage);
+
+										  // Report for values with control characters
+										  List<Map<String, String>> controlCharValues = ((ExcelSource)recordSource).getControlCharValues();
+										  appendErrorMessage(id, "Value with control character(s) ignored", controlCharValues, warningMessage);
 									  }
 								  } catch (Exception e) {
 									  e.printStackTrace();
@@ -875,9 +855,10 @@ public class CollectionOperationController implements Controller {
 								  }
 							  
 								  objTitle = StringUtils.isEmpty(objTitle) ? "[Object]" : objTitle;
-								  if (errorMessage.length() == 0) {
-									  
-									  info = objTitle + " - " + id + " - " + " successful - " + CollectionHandler.damsDateFormat.format(new Date());
+								  if (errorMessage.length() == 0 && warningMessage.length() == 0 || !preprocessing && warningMessage.length() > 0) {
+									  String status = warningMessage.length() > 0 ? "warning" : "successful";
+
+									  info = objTitle + " - " + id + " - " + " " + status + " - " + CollectionHandler.damsDateFormat.format(new Date());
 									  proMessage.append("\n\n" + info);
 									  log.info(info);
 
@@ -888,6 +869,10 @@ public class CollectionOperationController implements Controller {
 										  } else
 											  rdfPreview.add(record.toRDFXML().selectSingleNode("//dams:Object").detach()); 
 									  } else {
+										  // Control character warnings to be reported for ingest
+										  if (warningMessage.length() > 0)
+											  handler.addWarning(info + " - " + warningMessage.toString());
+
 										  // Write the converted rdf/xml to file system
 										  File tmpDir = new File (Constants.TMP_FILE_DIR + File.separatorChar + "converted");
 										  if(!tmpDir.exists())
@@ -913,7 +898,7 @@ public class CollectionOperationController implements Controller {
 									  preSuccessful = false;
 	
 									  info = objTitle + " - " + id + " - " + " failed - " 
-											  + CollectionHandler.damsDateFormat.format(new Date()) + " - " + errorMessage.toString();
+											  + CollectionHandler.damsDateFormat.format(new Date()) + " - " + errorMessage.toString() + warningMessage.toString();
 									  proMessage.append("\n\n" + info);
 									  log.error(info);
 								  }
@@ -1068,6 +1053,7 @@ public class CollectionOperationController implements Controller {
 
 							 if (preSuccessful) {
 								  // handler clean up for pre-processing
+								  String warnings = handler.getWarnings();
 								  handler.release();
 								  handler = null;
 	
@@ -1078,6 +1064,8 @@ public class CollectionOperationController implements Controller {
 								  ((RDFDAMS4ImportTsHandler)handler).setFilesPaths(ingestFiles.toArray(new String[ingestFiles.size()]));
 								  ((RDFDAMS4ImportTsHandler)handler).setReplace(true);
 								  handler.setCollectionId(collectionId);
+								  if (StringUtils.isNotBlank(warnings))
+									  handler.addWarning(warnings);
 							 }
 						  }
 					  } else {
@@ -1839,5 +1827,34 @@ public class CollectionOperationController implements Controller {
 			}
 		}
 		return cvErrors.toString();
+	}
+
+	private static void appendErrorMessage(String id, String messageTitle, List<Map<String, String>> errors, StringBuilder errorBuilder) {
+		if (errors != null && errors.size() > 0) {
+
+			// process to retrieve control values errors for the record since it will parse the row for the next record
+			StringBuilder cvErrors = new StringBuilder();
+			for (int k=0; k< errors.size(); k++) {
+				Map<String, String> m = errors.get(k);
+				if (m.containsKey(TabularRecord.OBJECT_ID) && m.get(TabularRecord.OBJECT_ID).equals(String.valueOf(id))) {
+					cvErrors.append( "* Row index " + m.get("row") + " [");
+
+					// don't count for the row number and the record id
+					m.remove("row");
+					m.remove(TabularRecord.OBJECT_ID);
+					int l = 0;
+					for (String key : m.keySet()) {
+						if (l++ > 0)
+							cvErrors.append(" | ");
+						cvErrors.append(key + " => " + m.get(key));     
+					}
+					cvErrors.append("]\n");
+				}
+			}
+
+			if (cvErrors.length() > 0) {
+				errorBuilder.append( messageTitle + " - \n" + cvErrors.toString() );
+			}
+		}
 	}
 }
