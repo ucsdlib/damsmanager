@@ -95,6 +95,8 @@ public abstract class CollectionHandler implements ProcessHandler {
 	protected int itemsCount = 0; //Total number of items in the collection/batch
 	protected List<String> solrFailed = new ArrayList<String>();
 	
+	protected StringBuilder warnings = new StringBuilder();
+
 	/**
 	 * Empty constructor
 	 */
@@ -157,6 +159,14 @@ public abstract class CollectionHandler implements ProcessHandler {
 			itemsCount = items.size();
 			collectionTitle = collectionsMap.get(collectionId);
 		}
+	}
+
+	public void addWarning(String warning) {
+		warnings.append(warning);
+ 	}
+
+	public String getWarnings() {
+		return warnings.toString();
 	}
 
 	/**

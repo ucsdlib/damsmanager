@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.dom4j.Branch;
 import org.dom4j.Document;
 import org.dom4j.DocumentFactory;
@@ -617,14 +618,7 @@ public class TabularRecord implements Record
             {
                 if( escaped )
                 {
-                    if ( ch == DELIMITER )
-                    {
-                        sb.append( ch );
-                    }
-                    else if ( !(Character.isISOControl(ESCAPE_CHAR + ch) || Character.isISOControl(ch)) )
-                    {
-                        sb.append( ESCAPE_CHAR + ch );
-                    }
+                    handleEscapedCharacter( sb, ch, false );
 
                     escaped = false;
                 }
@@ -650,7 +644,37 @@ public class TabularRecord implements Record
         }
         return list;
     }
-    
+
+    /**
+     * Handle escaped character. Control character could be ignored or replaced
+     * @param sb StringBuilder the character to be attached
+     * @param ch char the escaped Character
+     * @param replaceChar flag to replace the Character
+     * @return boolean flag indicating that the char is replaced or not
+     */
+    public static boolean handleEscapedCharacter(StringBuilder sb, char ch, boolean replaceChar)
+    {
+        boolean replaced = false;
+        if ( ch == DELIMITER )
+        {
+            sb.append( ch );
+        }
+        else if ( !(Character.isISOControl(ESCAPE_CHAR + ch) || Character.isISOControl(ch)) )
+        {
+            sb.append( ESCAPE_CHAR + "" + ch );
+        }
+        else if ( replaceChar )
+        {
+            // replace control character with symbol [character name]
+            replaced = true;
+            if ( Character.isISOControl(ch) )
+                sb.append( TabularRecord.ESCAPE_CHAR + "" + Character.getName(ch) );
+            else
+                sb.append( "[" + Character.getName( StringEscapeUtils.unescapeJava( TabularRecord.ESCAPE_CHAR + "" + ch ).charAt(0) ) + "]" );
+        }
+        return replaced;
+    }
+
     private static void testDateValue ( String objectID, String dateValue, String dateType ) throws ParseException 
     {
     	if(pop( dateValue )) {
