@@ -1420,7 +1420,12 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		if(filesIngested.length() > 0){
 			log.info("\nThe following files are ingested successfully: \n" + filesIngested.toString());
 		}
-		
+
+		if(warnings.length() > 0) {
+		    exeReport.append("\nWarning(s):\n");
+		    exeReport.append(warnings.toString());
+		}
+
 		log("log", "\n______________________________________________________________________________________________");
 		String exeInfo = exeReport.toString();
 		logMessage(exeInfo);

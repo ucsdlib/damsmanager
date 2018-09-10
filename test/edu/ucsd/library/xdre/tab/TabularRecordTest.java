@@ -23,6 +23,14 @@ public class TabularRecordTest {
     }
 
     @Test
+    public void testSplitValueWithWithSpecialCharacters() {
+        String val = "Test Çatalhöyük \u00c7 \\t \\r \\n \".";
+
+        List<String> result = TabularRecord.split(val);
+        assertEquals("Value with special characters doesn't match!", "Test Çatalhöyük \u00c7 \\t \\r \\n \".", result.get(0));
+    }
+
+    @Test
     public void testSplitValueWithPipeEscaped() {
         String val = "Test value 1 \\| Test value 2.";
 
