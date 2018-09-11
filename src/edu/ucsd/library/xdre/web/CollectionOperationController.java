@@ -650,6 +650,7 @@ public class CollectionOperationController implements Controller {
 				  
 				  int recordsCount = 0;
 				  boolean preSuccessful = true;
+				  boolean hasWarnings = false;
 				  StringBuilder proMessage = new StringBuilder();
 				  List<String> srcFileNames = new ArrayList<String>();
 
@@ -838,11 +839,11 @@ public class CollectionOperationController implements Controller {
 											  record.addFiles(0, filesToIngest, fileUseMap);
 										  }
 									  } else if (source.equalsIgnoreCase("excel")) {
-										  // Report for invalid Excel control values validation
+										  // Invalid control values
 										  List<Map<String, String>> invalidValues = ((ExcelSource)recordSource).getInvalidValues();
 										  appendErrorMessage(id, "Invalid control value(s)", invalidValues, errorMessage);
 
-										  // Report for values with control characters
+										  // Values with control characters
 										  List<Map<String, String>> controlCharValues = ((ExcelSource)recordSource).getControlCharValues();
 										  appendErrorMessage(id, "Value with control character(s) ignored", controlCharValues, warningMessage);
 									  }
@@ -855,23 +856,31 @@ public class CollectionOperationController implements Controller {
 								  }
 							  
 								  objTitle = StringUtils.isEmpty(objTitle) ? "[Object]" : objTitle;
-								  if (errorMessage.length() == 0 && warningMessage.length() == 0 || !preprocessing && warningMessage.length() > 0) {
+								  if (errorMessage.length() == 0) {
 									  String status = warningMessage.length() > 0 ? "warning" : "successful";
 
 									  info = objTitle + " - " + id + " - " + " " + status + " - " + CollectionHandler.damsDateFormat.format(new Date());
-									  proMessage.append("\n\n" + info);
+									  if (warningMessage.length() > 0) {
+										  info +=  " - " + warningMessage.toString();
+										  hasWarnings = true;
+									  } else
+										  info += "\n";
+
 									  log.info(info);
 
 									  if (preprocessing) {
-										 // Pre-processing with rdf preview
+
+										  proMessage.append("\n" + info);
+
+										  // Pre-processing with rdf preview
 										  if(collectionImport) {
 											  rdfPreview = record.toRDFXML().getRootElement(); 
 										  } else
 											  rdfPreview.add(record.toRDFXML().selectSingleNode("//dams:Object").detach()); 
 									  } else {
-										  // Control character warnings to be reported for ingest
+										  // Pre-processing succeeded with warnings for ingest request. Add control character warnings to report.
 										  if (warningMessage.length() > 0)
-											  handler.addWarning(info + " - " + warningMessage.toString());
+											  handler.addWarning(info);
 
 										  // Write the converted rdf/xml to file system
 										  File tmpDir = new File (Constants.TMP_FILE_DIR + File.separatorChar + "converted");
@@ -895,10 +904,13 @@ public class CollectionOperationController implements Controller {
 										  }
 									  }
 								  } else {
+									  // Pre-processing failed
 									  preSuccessful = false;
-	
 									  info = objTitle + " - " + id + " - " + " failed - " 
-											  + CollectionHandler.damsDateFormat.format(new Date()) + " - " + errorMessage.toString() + warningMessage.toString();
+											  + CollectionHandler.damsDateFormat.format(new Date()) + " - " + errorMessage.toString();
+									  if (warningMessage.length() > 0)
+										  info += warningMessage.toString();
+
 									  proMessage.append("\n\n" + info);
 									  log.error(info);
 								  }
@@ -1019,7 +1031,7 @@ public class CollectionOperationController implements Controller {
 								  dataLink += "&file=" + destFile.getName() + "\">download</a>.\n";
 
 								  // Logging the result for pre-processing
-								  message = "\nPre-processing " + (preSuccessful?"successful":"failed") + ": \n"
+								  message = "\nPre-processing " + (preSuccessful && hasWarnings ? "succeeded with warning(s)" : preSuccessful ? "successful" : "failed") + ": \n"
 										  + (proMessage.length() == 0 ? "" : "\n " + proMessage.toString());
 								  handler.logMessage(message);
 							  }
@@ -1052,7 +1064,7 @@ public class CollectionOperationController implements Controller {
 							  }
 
 							 if (preSuccessful) {
-								  // handler clean up for pre-processing
+								  // handler clean up for pre-processing. Keep warning message for ingest report.
 								  String warnings = handler.getWarnings();
 								  handler.release();
 								  handler = null;
@@ -1829,10 +1841,15 @@ public class CollectionOperationController implements Controller {
 		return cvErrors.toString();
 	}
 
+	/*
+	 * Create report message for validation errors
+	 * @param id String the id of the record
+	 * @param messageTitle String the title of the record
+	 * @param errors List of errors 
+	 * @param errorBuilder StringBuilder the error report builder
+	 */
 	private static void appendErrorMessage(String id, String messageTitle, List<Map<String, String>> errors, StringBuilder errorBuilder) {
 		if (errors != null && errors.size() > 0) {
-
-			// process to retrieve control values errors for the record since it will parse the row for the next record
 			StringBuilder cvErrors = new StringBuilder();
 			for (int k=0; k< errors.size(); k++) {
 				Map<String, String> m = errors.get(k);
