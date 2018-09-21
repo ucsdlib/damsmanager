@@ -688,3 +688,7 @@ input[type="button"], input[type="submit"], input[type="reset"]{
 {
     background: #fff;
 }
+
+.github-fork-ribbon.left-top:before {
+    background-color: #f80;
+}

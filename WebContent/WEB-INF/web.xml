@@ -45,15 +45,15 @@
   </servlet-mapping>
   
 	<welcome-file-list>
-		<welcome-file>/jsp/about.jsp</welcome-file>
+		<welcome-file>/about.do</welcome-file>
 	</welcome-file-list>
 	
      <login-config>
     	<auth-method>FORM</auth-method>
       	<realm-name>Authentication Required</realm-name>
         <form-login-config>
-            <form-login-page>/auth/login.jsp</form-login-page>
-            <form-error-page>/auth/login.jsp?error=1</form-error-page>
+            <form-login-page>/loginPage.do</form-login-page>
+            <form-error-page>/loginPage.do?error=1</form-error-page>
         </form-login-config>
     </login-config>		
 	  

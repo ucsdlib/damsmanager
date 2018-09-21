@@ -76,6 +76,7 @@ public class StatsController implements Controller {
 		model.put("isCurator", isCurator);
 		model.put("message", message);
 		model.put("clusterHost", "//" + Constants.CLUSTER_HOST_NAME + ".ucsd.edu");
+		model.put("clusterHostName", Constants.CLUSTER_HOST_NAME);
 		
 		return new ModelAndView(templete, "model", model);
     }
