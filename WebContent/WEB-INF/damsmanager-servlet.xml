@@ -59,6 +59,8 @@
 	<bean name="/metadataExport.do" class="edu.ucsd.library.xdre.web.RDFExportController"></bean>
 	-->
 	<bean name="/downloadLog.do" class="edu.ucsd.library.xdre.web.DownloadLogController"></bean>
+	<bean name="/about.do" class="edu.ucsd.library.xdre.web.AboutController"></bean>
+	<bean name="/loginPage.do" class="edu.ucsd.library.xdre.web.LoginPageController"></bean>
 
 	<!--
 	<bean id="force-init" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
