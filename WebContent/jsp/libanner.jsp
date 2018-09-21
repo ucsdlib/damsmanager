@@ -1,4 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"%>
+
+	<a class="github-fork-ribbon left-top" style="display:${ribbonDisplay == null ? "none" : ribbonDisplay}" href="/damsmanager/" data-ribbon="${ribbonText}" title="${ribbonText}">${ribbonText}</a>
 	<div id="tdr_title">
 		<div id="tdr_title_content">
 			<div id="tdr_title_ucsd_title"><a href="http://www.ucsd.edu/">UC San Diego</a></div>

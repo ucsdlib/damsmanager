@@ -2,6 +2,9 @@
 <%@ page errorPage="/jsp/errorPage.jsp"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
+<c:set var="ribbonDisplay" scope="session">${model.clusterHostName != null && model.clusterHostName.contains("test") ? "block" : "none"}</c:set>
+<c:set var="ribbonText" scope="session">${model.clusterHostName != null && model.clusterHostName.contains("test") ? "Staging" : ""}</c:set>
+
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
 <html>
 <jsp:include flush="true" page="/jsp/libhtmlheader.jsp" />
