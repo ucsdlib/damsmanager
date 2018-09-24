@@ -29,6 +29,19 @@ public class TabularRecordTest {
     }
 
     @Test
+    public void testSplitValueWithRetainedCRLF() {
+        char lf = (char)10;
+        char cr = (char)13;
+        String val = "Test CR/LF control character." + cr + lf + "Another paragraph.";
+
+        List<String> result = TabularRecord.split(val);
+        assertEquals("line feed (lf)", Character.getName(lf).toLowerCase());
+        assertEquals("carriage return (cr)", Character.getName(cr).toLowerCase());
+        assertEquals("Value with chars CR/LF doesn't match!", "Test CR/LF control character." + cr + lf +
+                "Another paragraph.", result.get(0));
+    }
+
+    @Test
     public void testSplitValueWithWithSpecialCharacters() {
         String val = "Test Çatalhöyük \u00c7 \\t \\r \\n \".";
 
@@ -78,5 +91,29 @@ public class TabularRecordTest {
             String id = node.selectSingleNode("rdf:value").getText();
             assertTrue("Identifier value doesn't match!", ids.contains(id));
         }
+    }
+
+    public void testSplitMultipleValuesWithNoControlCharacters() {
+        String val = "Test value 1." + DELIMITER  + "Test value 2." + DELIMITER  + "Test value 3.";
+
+        List<String> result = TabularRecord.split(val);
+        assertEquals("Values size doesn't match!", 3, result.size());
+        assertEquals("Value 1 doesn't match!", "Test value 1.", result.get(0));
+        assertEquals("Value 2 doesn't match!", "Test value 2.", result.get(1));
+        assertEquals("Value 3 doesn't match!", "Test value 3.", result.get(2));
+    }
+
+    @Test
+    public void testSplitMultipleValuesWithLineFeedAndAnchors() {
+        char lf = (char)10;
+        String val = "Test value 1 "+ lf + " <a href=\"http:\\example.com\"></a>" + DELIMITER  
+                + "Test value 2 \\"+ lf + " <a href=\"http:\\example.com\"></a>" + DELIMITER
+                + "Test value 3 "+ lf + " <a href=\"http:\\example.com\"></a>";
+
+        List<String> result = TabularRecord.split(val);
+        assertEquals("Values size doesn't match!", 3, result.size());
+        assertEquals("Value 1 doesn't match!", "Test value 1 "+ lf + " <a href=\"http:\\example.com\"></a>", result.get(0));
+        assertEquals("Value 2 doesn't match!", "Test value 2 \\"+ lf + " <a href=\"http:\\example.com\"></a>", result.get(1));
+        assertEquals("Value 3 doesn't match!", "Test value 3 "+ lf + " <a href=\"http:\\example.com\"></a>", result.get(2));
     }
 }
