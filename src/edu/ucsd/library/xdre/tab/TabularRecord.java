@@ -4,6 +4,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -27,6 +28,9 @@ import org.dom4j.QName;
 **/
 public class TabularRecord implements Record
 {
+    public static final Character[] RETAIN_CONTROL_CHARS = {10, 13};
+    public static List<Character> RETAIN_CONTROL_CHAR_LIST = Arrays.asList(RETAIN_CONTROL_CHARS);
+
     public static final String OBJECT_ID = "object unique id";
     public static final String OBJECT_COMPONENT_TYPE = "level";
     public static final String COMPONENT = "component";
@@ -37,7 +41,7 @@ public class TabularRecord implements Record
     public static final String DELIMITER_LANG_ELEMENT = "-";
     public static final String[] ACCEPTED_DATE_FORMATS = {"yyyy-MM-dd", "yyyy-MM", "yyyy"};
     private static DateFormat[] dateFormats = {new SimpleDateFormat(ACCEPTED_DATE_FORMATS[0]), 
-    	new SimpleDateFormat(ACCEPTED_DATE_FORMATS[1]), new SimpleDateFormat(ACCEPTED_DATE_FORMATS[2])};
+        new SimpleDateFormat(ACCEPTED_DATE_FORMATS[1]), new SimpleDateFormat(ACCEPTED_DATE_FORMATS[2])};
 
     // namespaces
     private static final Namespace rdfNS  = new Namespace(
@@ -631,7 +635,7 @@ public class TabularRecord implements Record
                     list.add( sb.toString().trim() );
                     sb.setLength( 0 );
                 }
-                else if ( !Character.isISOControl(ch) )
+                else if ( !Character.isISOControl(ch) || RETAIN_CONTROL_CHAR_LIST.contains(ch) )
                 {
                     sb.append( ch );
                 }
@@ -655,11 +659,12 @@ public class TabularRecord implements Record
     public static boolean handleEscapedCharacter(StringBuilder sb, char ch, boolean replaceChar)
     {
         boolean replaced = false;
+        boolean isControlChar = Character.isISOControl(ESCAPE_CHAR + ch) || Character.isISOControl(ch);
         if ( ch == DELIMITER )
         {
             sb.append( ch );
         }
-        else if ( !(Character.isISOControl(ESCAPE_CHAR + ch) || Character.isISOControl(ch)) )
+        else if ( !isControlChar || RETAIN_CONTROL_CHAR_LIST.contains(ch) )
         {
             sb.append( ESCAPE_CHAR + "" + ch );
         }
