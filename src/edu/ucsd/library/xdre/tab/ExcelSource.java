@@ -374,7 +374,7 @@ public class ExcelSource implements RecordSource
             {
                 escaped = true;
             }
-            else if ( Character.isISOControl(ch) )
+            else if ( Character.isISOControl(ch) && !TabularRecord.RETAIN_CONTROL_CHAR_LIST.contains(ch) )
             {
                 // report control character and replace it with [character name]
                 controlCharsFound = true;
