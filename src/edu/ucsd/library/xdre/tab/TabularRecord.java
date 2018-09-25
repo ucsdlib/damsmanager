@@ -259,8 +259,8 @@ public class TabularRecord implements Record
             String key = it.next();
             if ( key.startsWith("identifier:") )
             {
-                String value = data.get( key );
-                if ( pop(value) )
+                String values = data.get( key );
+                for ( String value : split(values) )
                 {
                     Element e2 = addElement( e, "note", damsNS, "Note", damsNS );
                     addTextElement( e2, "type", damsNS, "identifier" );

@@ -2,9 +2,15 @@ package edu.ucsd.library.xdre.tab;
 
 import static edu.ucsd.library.xdre.tab.TabularRecord.DELIMITER;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.dom4j.Document;
+import org.dom4j.Node;
 import org.junit.Test;
 
 /**
@@ -47,5 +53,30 @@ public class TabularRecordTest {
         assertEquals("Values size doesn't match!", 2, result.size());
         assertEquals("Value 1 doesn't match!", "Test value 1.", result.get(0));
         assertEquals("Value 2 doesn't match!", "Test value 2.", result.get(1));
+    }
+
+    @Test
+    public void testMutipleValuesforIdentifierNote() throws Exception {
+        String idValues = "id 1" + DELIMITER + "id2" + DELIMITER + "id3";
+
+        // Initiate tabular data with multiple Identifier:identifier values delimited by | character
+        Map<String, String> data = new HashMap<>();
+        data.put("object unique id", "object1");
+        data.put("level", "object");
+        data.put("title", "Test object");
+        data.put("identifier:identifier", idValues);
+
+        // Build the dams4 RDF/XML
+        TabularRecord testObject = new TabularRecord(data);
+        Document doc = testObject.toRDFXML();
+
+        List<String> ids = Arrays.asList(idValues.split("\\|"));
+
+        List<Node> nodes = doc.selectNodes("//dams:Note[dams:type='identifier']");
+        assertEquals("The size of the identifier note doesn't match!", 3, nodes.size());
+        for (Node node : nodes) {
+            String id = node.selectSingleNode("rdf:value").getText();
+            assertTrue("Identifier value doesn't match!", ids.contains(id));
+        }
     }
 }
