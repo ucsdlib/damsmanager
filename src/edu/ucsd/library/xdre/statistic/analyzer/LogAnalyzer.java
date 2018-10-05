@@ -47,7 +47,11 @@ public class LogAnalyzer{
     private boolean update = false;
     private Pattern searchEnginePatterns = null;
     private WeblogParser weblogParser = null;
-    
+
+    private Pattern ipFilterPatterns = null;
+    private Map<String, Boolean> ipCache = new HashMap<>();
+    private Map<String, Boolean> userAgentCache = new HashMap<>();
+
     public LogAnalyzer () throws Exception{
         this(new HashMap<String, String>());
     }
@@ -63,9 +67,21 @@ public class LogAnalyzer{
 
         log.info("Search engine filter patterns: " + seUserAgentPatterns);
         searchEnginePatterns = Pattern.compile(seUserAgentPatterns.toLowerCase());
+
+        log.info("IP filter patterns: " + Constants.STATS_IP_FILTER);
+        ipFilterPatterns = Pattern.compile(Constants.STATS_IP_FILTER);
+
         weblogParser = new WeblogParser();
     }
-    
+
+    public void setIpFilter(String ipFilter) {
+        ipFilterPatterns = Pattern.compile(ipFilter);
+    }
+
+    public DAMStatistic getPasStats() {
+        return pasStats;
+    }
+
     public void analyze(File logFile) throws IOException{
 
         String line = null;
@@ -112,10 +128,15 @@ public class LogAnalyzer{
                         continue;
 
                     StatsRequest statsRequest = weblogParser.parse(line);
-                    if (statsRequest == null || !isValidUri(statsRequest.getRequestUri())) {
+                    if (statsRequest == null || !isValidUri(statsRequest.getRequestUri())
+                            || StringUtils.isBlank(statsRequest.getClientIp())) {
                         log.warn("Invalid client request: " + line);
                         continue;
                     }
+
+                    // exclude accesses by IP
+                    if (filterIp(statsRequest.getClientIp()))
+                        continue;
 
                     uri = statsRequest.getRequestUri();
                     String clientIp = statsRequest.getClientIp();
@@ -228,9 +249,37 @@ public class LogAnalyzer{
     }
 
     private boolean isBotAccess(String value, int fromIndex) {
-        Matcher matcher = searchEnginePatterns.matcher(value.substring(fromIndex).toLowerCase());
-        if (matcher.find()) {
-            return true;
+        String valueToMatch = value.substring(fromIndex).toLowerCase();
+        if (userAgentCache.containsKey(valueToMatch)) {
+            return userAgentCache.get(valueToMatch);
+        } else {
+            Matcher matcher = searchEnginePatterns.matcher(value.substring(fromIndex).toLowerCase());
+            boolean matched = matcher.find();
+            userAgentCache.put(valueToMatch, matched);
+
+            if (matched) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Determine whether the IP is included in IP filter.
+     * @param ip
+     * @return
+     */
+    public boolean filterIp(String ip) {
+        if (ipCache.containsKey(ip)) {
+            return ipCache.get(ip);
+        } else {
+            Matcher matcher = ipFilterPatterns.matcher(ip);
+            boolean matched = matcher.find();
+            ipCache.put(ip, matched);
+
+            if (matched) {
+                return true;
+            }
         }
         return false;
     }
