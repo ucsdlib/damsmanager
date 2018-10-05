@@ -71,7 +71,10 @@ public class StatsController implements Controller {
 			Statistics.close(con);
 			con = null;
 		}
-		
+
+        String environment = Constants.CLUSTER_HOST_NAME.equals("library") ? "Production" : Constants.CLUSTER_HOST_NAME.contains("test")
+                ? "Staging" : Constants.CLUSTER_HOST_NAME.contains("qa") ? "QA" : Constants.CLUSTER_HOST_NAME;
+        model.put("environment", environment);
 		model.put("isCas", isCas);
 		model.put("isCurator", isCurator);
 		model.put("message", message);

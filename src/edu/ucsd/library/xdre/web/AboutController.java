@@ -22,6 +22,9 @@ public class AboutController implements Controller {
     public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
         Map<String, Object> dataMap = new HashMap<>();
 
+        String environment = Constants.CLUSTER_HOST_NAME.equals("library") ? "Production" : Constants.CLUSTER_HOST_NAME.contains("test")
+                ? "Staging" : Constants.CLUSTER_HOST_NAME.contains("qa") ? "QA" : Constants.CLUSTER_HOST_NAME;
+        dataMap.put("environment", environment);
         dataMap.put("clusterHostName", Constants.CLUSTER_HOST_NAME);
         
         return new ModelAndView("about", "model", dataMap);

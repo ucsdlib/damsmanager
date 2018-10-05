@@ -5,8 +5,8 @@
     <%request.getSession().invalidate(); %>
 </c:if>
 
-<c:set var="ribbonDisplay" scope="session">${model.clusterHostName != null && model.clusterHostName.contains("test") ? "block" : "none"}</c:set>
-<c:set var="ribbonText" scope="session">${model.clusterHostName != null && model.clusterHostName.contains("test") ? "Staging" : ""}</c:set>
+<c:set var="ribbonDisplay" scope="session">${model.environment == "Production" ? "none" : "block"}</c:set>
+<c:set var="ribbonText" scope="session">${model.environment}</c:set>
 
 <html>
 <jsp:include flush="true" page="/jsp/libhtmlheader.jsp" />
