@@ -72,6 +72,7 @@ public class Constants {
 	public static String STATS_SE_PATTERNS = "";
 	public static String STATS_SE_DATA_LOCATION = "";
 	public static String STATS_IP_FILTER = "";
+	public static String STATS_QUERY_IP_FILTER = "";
 	/* end stats declaration*/
 	
 	//Namespace prefix
@@ -198,6 +199,8 @@ public class Constants {
 			STATS_SE_DATA_LOCATION = props.getProperty("dams.stats.se.data");
 			// IP filter to exclude hits from collecting
 			STATS_IP_FILTER = props.getProperty("dams.stats.ip.filter");
+			// IP query filter to exclude hits from search result
+			STATS_QUERY_IP_FILTER = props.getProperty("dams.stats.query.ip.filter");
 			// DAMS super user role
 			CURATOR_ROLE = props.getProperty("dams.curator.role");
 			// DAMS stats datasource
