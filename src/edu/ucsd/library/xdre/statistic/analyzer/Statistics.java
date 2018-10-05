@@ -77,8 +77,12 @@ public abstract class Statistics {
 	public void setCalendar(Calendar calendar) {
 		this.calendar = calendar;
 	}
-	
-	public String formatDate(Date date){
+
+	public int getNumAccess() {
+        return numAccess;
+    }
+
+    public String formatDate(Date date){
 		return dateFormat.format(date);
 	}
 	public boolean isUpdate() {
