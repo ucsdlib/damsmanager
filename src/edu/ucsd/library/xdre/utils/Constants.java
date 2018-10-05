@@ -71,6 +71,7 @@ public class Constants {
 	public static String STATS_WEBLOG_DIR = "";
 	public static String STATS_SE_PATTERNS = "";
 	public static String STATS_SE_DATA_LOCATION = "";
+	public static String STATS_IP_FILTER = "";
 	/* end stats declaration*/
 	
 	//Namespace prefix
@@ -195,6 +196,8 @@ public class Constants {
 			STATS_SE_PATTERNS = props.getProperty("dams.stats.se.patterns");
 			// Search engine, crawlers data location
 			STATS_SE_DATA_LOCATION = props.getProperty("dams.stats.se.data");
+			// IP filter to exclude hits from collecting
+			STATS_IP_FILTER = props.getProperty("dams.stats.ip.filter");
 			// DAMS super user role
 			CURATOR_ROLE = props.getProperty("dams.curator.role");
 			// DAMS stats datasource
