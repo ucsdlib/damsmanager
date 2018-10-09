@@ -59,7 +59,7 @@ public class LogAnalyzer{
     public LogAnalyzer (Map<String, String> collsMap) throws Exception{
         pasStats = new DAMStatistic("pas");
         //casStats = new DAMStatistic("cas");
-        pasStats.setCollsMap(collsMap);
+        pasStats.setColsMap(collsMap);
         //casStats.setCollsMap(collsMap);
 
         String seUserAgentPatterns = Constants.STATS_SE_PATTERNS + (Constants.STATS_SE_PATTERNS.endsWith("|") ? "" : "|");
@@ -134,6 +134,11 @@ public class LogAnalyzer{
                         continue;
                     }
 
+                    // exclude requests that were failed
+                    String httpStatus = statsRequest.getStatus();
+                    if ((httpStatus.startsWith("4") || httpStatus.startsWith("5")))
+                        continue;
+
                     // exclude accesses by IP
                     if (filterIp(statsRequest.getClientIp()))
                         continue;
@@ -149,7 +154,6 @@ public class LogAnalyzer{
                             continue;
 
                         if(uriParts.length>1 && uriParts[1].equals("object")){
-                            String httpStatus = statsRequest.getStatus();
                             //Object access: /dc/object/oid/_cid_fid
                             int uidIdx = uri.indexOf("access=curator");
 
@@ -180,7 +184,7 @@ public class LogAnalyzer{
                             //DLP Collections page: /dc/dlp/collections
                             //RCI collections page: /dc/rci/collections
                             //Collections access: /dc/dams_collections/bb2936476d?counter=1
-                            pasStats.addAccess(uri);
+                            pasStats.addAccess(uri, clientIp);
                             
                         }
                             
