@@ -244,7 +244,7 @@ public class DAMSQuantityStats {
 			for(Iterator<DAMSCollectionStats> it= collectionStatsList.iterator(); it.hasNext();){
 				stats = it.next();
 				if(!recordExists(con, stats.getCollectionId()))
-					stats.export(ps, WebStatistic.getNextId(con));
+					stats.export(ps, Statistics.getNextId(con));
 				else
 					log.debug("Quantity statistics exists for " + stats.getCollectionTitle() + " (" + stats.getCollectionId() + "). Period " + stats.getPeriod());
 			}

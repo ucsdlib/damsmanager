@@ -10,12 +10,14 @@ import org.apache.commons.lang3.StringUtils;
  * @author lsitu
  */
 public class FileDownloadCounter {
+    private String oid = null;
     private String cid = null;
     private String fid = null;
     private String clientIp = null;
     private int view = 0;
 
-    public FileDownloadCounter(String cid, String fid, String clientIp){
+    public FileDownloadCounter(String oid, String cid, String fid, String clientIp) {
+        this.oid = oid;
         this.cid = cid;
         this.fid = fid;
         this.clientIp = clientIp;
@@ -31,6 +33,14 @@ public class FileDownloadCounter {
 
     public String getClientIp() {
         return clientIp;
+    }
+
+    public String getOid() {
+        return oid;
+    }
+
+    public void setOid(String oid) {
+        this.oid = oid;
     }
 
     public String getCid() {
@@ -72,6 +82,6 @@ public class FileDownloadCounter {
     }
     
     public String toString(){
-        return clientIp + " " + (StringUtils.isBlank(cid) ? "" : "/" + cid) +  "/" + fid + " " + view;
+        return clientIp + " /" + oid + (StringUtils.isBlank(cid) ? "" : "/" + cid) +  "/" + fid + " " + view;
     }
 }
