@@ -50,7 +50,6 @@ public abstract class Statistics {
 	private static LinkedList<String> cacheAccess = new LinkedList<String>();
 	private static int cacheSize = 1000; // max objects cached, 0 = disabled
 
-	protected int numAccess =0;
 	protected String appName = null;
 	protected Calendar calendar = null;
 	protected SimpleDateFormat dateFormat = null;
@@ -77,10 +76,6 @@ public abstract class Statistics {
 	public void setCalendar(Calendar calendar) {
 		this.calendar = calendar;
 	}
-
-	public int getNumAccess() {
-        return numAccess;
-    }
 
     public String formatDate(Date date){
 		return dateFormat.format(date);
