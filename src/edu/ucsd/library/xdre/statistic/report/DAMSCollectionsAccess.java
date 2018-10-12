@@ -46,9 +46,9 @@ public class DAMSCollectionsAccess extends StatsUsage{
 		List<String> monthsList = new ArrayList<String>();
 		Map<String, DAMSCollectionAccess> colStats = null;
 		Map<String, Map<String, DAMSCollectionAccess>> colAccessTmpMap = new HashMap<String, Map<String, DAMSCollectionAccess>>();
-		String statsQuery = DLP_COLLECTIONS_ACCESS_QUERY;
+		String statsQuery = applyQueryIpFilter(DLP_COLLECTIONS_ACCESS_QUERY);
 		if(appName.equalsIgnoreCase("pas"))
-			statsQuery = PAS_COLLECTIONS_ACCESS_QUERY;
+			statsQuery = applyQueryIpFilter(PAS_COLLECTIONS_ACCESS_QUERY);
 		
 		if(statsFormat.equals(StatsUsage.MONTHLY_FORMAT)){
 			SimpleDateFormat outFormat = new SimpleDateFormat(statsFormat);

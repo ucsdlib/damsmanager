@@ -76,15 +76,15 @@ public class DAMSKeywordsUsage extends StatsUsage {
 		String query = null;
 		if(keyword != null && keyword.length() > 0){
 			if(appName != null && appName.equalsIgnoreCase("pas"))
-				query = PAS_KEYWORDS_LIKE_QUERY.replace("LIKE_KEYWORDS", StringEscapeUtils.escapeJava(keyword).replace("\\\"", "\"").toLowerCase());
+				query = applyQueryIpFilter(PAS_KEYWORDS_LIKE_QUERY).replace("LIKE_KEYWORDS", StringEscapeUtils.escapeJava(keyword).replace("\\\"", "\"").toLowerCase());
 			else
-				query = DLC_KEYWORDS_LIKE_QUERY.replace("LIKE_KEYWORDS", StringEscapeUtils.escapeJava(keyword).replace("\\\"", "\"").toLowerCase());
+				query = applyQueryIpFilter(DLC_KEYWORDS_LIKE_QUERY).replace("LIKE_KEYWORDS", StringEscapeUtils.escapeJava(keyword).replace("\\\"", "\"").toLowerCase());
 
 		}else{
 			if(appName != null && appName.equalsIgnoreCase("pas"))
-				query = PAS_KEYWORDS_QUERY;
+				query = applyQueryIpFilter(PAS_KEYWORDS_QUERY);
 			else
-				query = DLC_KEYWORDS_QUERY;
+				query = applyQueryIpFilter(DLC_KEYWORDS_QUERY);
 		}
 		
 		try{
@@ -126,14 +126,14 @@ public class DAMSKeywordsUsage extends StatsUsage {
 		String query = null;
 		if(keyword != null && keyword.length() > 0){
 			if(appName != null && appName.equalsIgnoreCase("pas"))
-				query = PAS_KEYWORDS_LIKE_COUNT_QUERY.replace("LIKE_KEYWORDS", StringEscapeUtils.escapeJava(keyword).replace("\\\"", "\"").toLowerCase());
+				query = applyQueryIpFilter(PAS_KEYWORDS_LIKE_COUNT_QUERY).replace("LIKE_KEYWORDS", StringEscapeUtils.escapeJava(keyword).replace("\\\"", "\"").toLowerCase());
 			else
-				query = DLC_KEYWORDS_LIKE_COUNT_QUERY.replace("LIKE_KEYWORDS", StringEscapeUtils.escapeJava(keyword).replace("\\\"", "\"").toLowerCase());
+				query = applyQueryIpFilter(DLC_KEYWORDS_LIKE_COUNT_QUERY).replace("LIKE_KEYWORDS", StringEscapeUtils.escapeJava(keyword).replace("\\\"", "\"").toLowerCase());
 		}else{
 			if(appName != null && appName.equalsIgnoreCase("pas"))
-				query = PAS_KEYWORDS_COUNT_QUERY;
+				query = applyQueryIpFilter(PAS_KEYWORDS_COUNT_QUERY);
 			else
-				query = DLC_KEYWORDS_COUNT_QUERY;
+				query = applyQueryIpFilter(DLC_KEYWORDS_COUNT_QUERY);
 		}
 		try{
 			ps = con.prepareStatement(query);
