@@ -101,23 +101,20 @@ public class StatsWeblogAnalyzerController implements Controller {
 		String weblogDone = "";
 		String weblogMissing = "";
 		try {
-			synchronized(logger){
 				con = Constants.DAMS_DATA_SOURCE.getConnection();
-				con.setAutoCommit(false);
+
 				do{
 					String dateString = dFormat.format(sCal.getTime());
 					File logFile = getLogFile(dateString);
 					if(!logFile.exists()){
 						weblogMissing += (weblogMissing.length()>0?", ":"") + logFile.getAbsolutePath();
 						logger.error("Weblog doesn't exist: " + logFile.getAbsolutePath());
-						//throw new Exception(message);
 					}else{
 						LogAnalyzer analyzer = new LogAnalyzer();
 						if(update || !Statistics.isRecordExist(con, sCal.getTime())){
 							analyzer.setUpdate(update);
 							analyzer.analyze(logFile);
 							analyzer.export(con);
-							con.commit();
 						}else
 							weblogDone += (weblogDone.length()>0?", ":"") + logFile.getName();
 					}
@@ -131,9 +128,7 @@ public class StatsWeblogAnalyzerController implements Controller {
 					message += (message.length()>0?"; ":"") + "Missing weblog(s): " + weblogMissing;
 				if(message.length() > 0)
 					throw new Exception(message);
-			}
 		}finally{
-			con.setAutoCommit(true);
 			Statistics.close(con);
 			con = null;
 		}
