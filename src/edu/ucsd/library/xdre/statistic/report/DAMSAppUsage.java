@@ -49,7 +49,7 @@ public class DAMSAppUsage extends StatsUsage{
 		String tmpVal = null;
 		boolean isMarked = false;
 		try{
-			ps = con.prepareStatement(APP_USAGE_QUERY.replace("PERIOD_PARAM", statsFormat));
+			ps = con.prepareStatement(applyQueryIpFilter(APP_USAGE_QUERY).replace("PERIOD_PARAM", statsFormat));
 			ps.setString(1, appName);
 			ps.setString(2, dbFormat.format(start));
 			ps.setString(3, dbFormat.format(end));

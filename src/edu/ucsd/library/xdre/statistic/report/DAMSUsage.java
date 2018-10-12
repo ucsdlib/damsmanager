@@ -53,10 +53,10 @@ public class DAMSUsage extends StatsUsage {
 		//PAS/CAS usage.
 		String period = null;
 		DAMSummary statSum = null;
-		String usageQuery = DLP_USAGE_QUERY;
+		String usageQuery = applyQueryIpFilter(DLP_USAGE_QUERY);
 		try{
 			if(appName != null && appName.equalsIgnoreCase("pas"))
-				usageQuery = PAS_USAGE_QUERY;
+				usageQuery = applyQueryIpFilter(PAS_USAGE_QUERY);
 			ps = con.prepareStatement(usageQuery.replace("PERIOD_PARAM", statsFormat));
 			ps.setString(1, dbFormat.format(start));
 			ps.setString(2, dbFormat.format(end));
@@ -76,9 +76,9 @@ public class DAMSUsage extends StatsUsage {
 		
 		//DAMS unique items usage
 		DAMSItemSummary itemSum = null;
-		String statsQuery = DLP_OBJECT_USAGE_QUERY;
+		String statsQuery = applyQueryIpFilter(DLP_OBJECT_USAGE_QUERY);
 		if(appName.equalsIgnoreCase("pas"))
-			statsQuery = PAS_OBJECT_USAGE_QUERY;
+			statsQuery = applyQueryIpFilter(PAS_OBJECT_USAGE_QUERY);
 
 		try{
 			ps = con.prepareStatement(statsQuery.replace("PERIOD_PARAM", statsFormat));
@@ -111,9 +111,9 @@ public class DAMSUsage extends StatsUsage {
 		
 		//Number of unique items viewed
 		try{
-			statsQuery = DISTINCT_OBJECT_USAGE_QUERY;
+			statsQuery = applyQueryIpFilter(DISTINCT_OBJECT_USAGE_QUERY);
 			if(appName.equalsIgnoreCase("pas"))
-				statsQuery = DISTINCT_PAS_OBJECT_USAGE_QUERY;
+				statsQuery = applyQueryIpFilter(DISTINCT_PAS_OBJECT_USAGE_QUERY);
 			ps = con.prepareStatement(statsQuery.replace("PERIOD_PARAM", statsFormat));
 			ps.setString(1, dbFormat.format(start));
 			ps.setString(2, dbFormat.format(end));
@@ -147,7 +147,7 @@ public class DAMSUsage extends StatsUsage {
 		
 		//Collection quantity number of collections and disk size
 		try{
-			statsQuery = DLP_COLLECTION_QUANTITY_QUERY.replace("PERIOD_PARAM", statsFormat);
+			statsQuery = applyQueryIpFilter(DLP_COLLECTION_QUANTITY_QUERY).replace("PERIOD_PARAM", statsFormat);
 			if(collectionFilter != null && collectionFilter.length() > 0)
 				statsQuery = statsQuery.replace("COLLECTION_FILTER", collectionFilter);
 			else
