@@ -45,7 +45,7 @@ public class DAMSItemUsage extends StatsUsage{
 		accessList = new ArrayList<String>();
 		viewList = new ArrayList<String>();
 		objectViewList = new ArrayList<String>();
-		//ps = con.prepareStatement(OBJECT_USAGE_QUERY);
+
 		String tmpVal = null;
 		String statsQuery = applyQueryIpFilter(DLP_OBJECT_USAGE_QUERY);
 		if(appName.equalsIgnoreCase("pas"))

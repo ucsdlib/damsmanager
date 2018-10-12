@@ -129,7 +129,7 @@ public class DAMStatistic extends Statistics{
     public void addObject(String uri, boolean isPrivateAccess, String clientIp){
         String subjectId = "";
         String fileName = "";
-        //String[] parts = uri.replace("?", "&").split("&");
+
         String uriPart = null;
         String paramsPart = null;
         int idx = uri.indexOf("?");
@@ -275,6 +275,8 @@ public class DAMStatistic extends Statistics{
         int returnValue = -1;
         PreparedStatement ps = null;
 
+        con.setAutoCommit(false);
+
         //Update record for the calendar date
         if (update) {
             try {
@@ -339,7 +341,7 @@ public class DAMStatistic extends Statistics{
                     psStatsDlpKeyWord.clearParameters();
                 }
 
-                // eliminate counts from curator access with redirects from public access
+                // Eliminate counts from curator access with redirects from public access
                 for (String ip : ipItemsMapPrivate.keySet()) {
                     if (ipItemsMap.containsKey(ip)) {
                         StatsObjectAccess pubObjAccess = ipItemsMap.get(ip);
@@ -383,7 +385,11 @@ public class DAMStatistic extends Statistics{
                     psStatsFileDownload.clearParameters();
                 }
             }
+
+            con.commit();
         } finally {
+            con.setAutoCommit(true);
+
             close(psWebStats);
             close(psStatsDlp);
             close(psStatsDlpColAccess);
