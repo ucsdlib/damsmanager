@@ -47,9 +47,9 @@ public class DAMSItemUsage extends StatsUsage{
 		objectViewList = new ArrayList<String>();
 		//ps = con.prepareStatement(OBJECT_USAGE_QUERY);
 		String tmpVal = null;
-		String statsQuery = DLP_OBJECT_USAGE_QUERY;
+		String statsQuery = applyQueryIpFilter(DLP_OBJECT_USAGE_QUERY);
 		if(appName.equalsIgnoreCase("pas"))
-			statsQuery = PAS_OBJECT_USAGE_QUERY;
+			statsQuery = applyQueryIpFilter(PAS_OBJECT_USAGE_QUERY);
 		try{
 			ps = con.prepareStatement(statsQuery.replace("PERIOD_PARAM", statsFormat));
 			ps.setString(1, dbFormat.format(start));
@@ -83,9 +83,9 @@ public class DAMSItemUsage extends StatsUsage{
 		}
 		
 		try{
-			statsQuery = DISTINCT_OBJECT_USAGE_QUERY;
+			statsQuery = applyQueryIpFilter(DISTINCT_OBJECT_USAGE_QUERY);
 			if(appName.equalsIgnoreCase("pas"))
-				statsQuery = DISTINCT_PAS_OBJECT_USAGE_QUERY;
+				statsQuery = applyQueryIpFilter(DISTINCT_PAS_OBJECT_USAGE_QUERY);
 			ps = con.prepareStatement(statsQuery.replace("PERIOD_PARAM", statsFormat));
 			ps.setString(1, dbFormat.format(start));
 			ps.setString(2, dbFormat.format(end));
