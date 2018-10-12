@@ -50,10 +50,10 @@ public class StatsDlpCounter {
             // Collection home page: /dc/collections, /dc/dlp/collections, /dc/rci/collections
             numColPage++;
             pageCounted = true;
-        } else if (paths[1].toLowerCase().contains("search")) {
+        } else if (paths[1].equals("search") || paths[1].equals("advanced")) {
             if (paths.length == 2) {
                 try {
-                    // search & browse
+                    // search & browse: /dc/search?q=abc, /dc/advanced/q=abc etc.
                     String id = null;
                     int page = -1;
                     List<String[]> searchParams = new ArrayList<String[]>();
@@ -67,11 +67,11 @@ public class StatsDlpCounter {
                                 params[i] = URLDecoder.decode(params[i].trim(), "UTF-8");
                                 tokens = params[i].split("=");
                                 tokens[0] = tokens[0].trim();
-                                //System.out.println(tokens[0] + " => " + tokens[1]);
+
                                 if (tokens[0].equals("q")) {
                                     searchParams.add(tokens);
                                 } else if (tokens[0].startsWith("f[") || tokens[0].startsWith("f%5B")) {
-                                    //browseParams.add(tokens);
+
                                     if(tokens[0].indexOf("collection_sim") > 0)
                                         isColAccess = true;
                                 } else if (tokens[0].equals("id")) {
