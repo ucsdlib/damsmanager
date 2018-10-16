@@ -66,7 +66,7 @@
                 <c:set var="colNameLen"> ${fn:length(entry.key)}</c:set>
                 <c:set var="splitText" value="${fn:split(entry.key,'[')}" />
                 <c:set var="typeIndex">${fn:indexOf(entry.key, splitText[fn:length(splitText)-1])}</c:set>
-                <option value="${entry.value}" <c:if test="${model.category == entry.value}">selected</c:if>>
+                <option value="${entry.value}" title="${entry.key}" <c:if test="${model.category == entry.value}">selected</c:if>>
                    <c:choose>
                         <c:when test="${colNameLen > 75}"><c:out value="${fn:substring(entry.key, 0, 72-(colNameLen-typeIndex))}" />...[<c:out value="${splitText[fn:length(splitText)-1]}" /></c:when>
                         <c:otherwise><c:out value="${entry.key}" /></c:otherwise>

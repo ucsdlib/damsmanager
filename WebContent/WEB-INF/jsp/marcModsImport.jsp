@@ -356,7 +356,7 @@
 				<option value=""> -- collections -- </option>
 				<c:forEach var="entry" items="${model.categories}">
 					<c:set var="colNameLen"> ${fn:length(entry.key)}</c:set>
-					<option value="${entry.value}" <c:if test="${model.category == entry.value}">selected</c:if>>
+					<option value="${entry.value}" title="${entry.key}" <c:if test="${model.category == entry.value}">selected</c:if>>
                      			<c:choose>
 							<c:when test="${colNameLen > 75}"><c:out value="${fn:substring(entry.key, 0, 71)}" /> ...</c:when>
 							<c:otherwise><c:out value="${entry.key}" /></c:otherwise>
