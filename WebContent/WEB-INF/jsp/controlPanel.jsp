@@ -59,7 +59,7 @@
 			<span id="dsSelectSpan" ondblclick="resetTriplestore();" style="display:none" >
 				<select name="ts" id="ts" onChange="reloadPage();"><option value=""> -- Triplestores -- </option>
 						<c:forEach var="entry" items="${model.triplestores}">
-							<option value="${entry}" title="${entry.key}" <c:if test="${model.triplestore == entry}">selected</c:if>>
+							<option value="${entry}" <c:if test="${model.triplestore == entry}">selected</c:if>>
                        			<c:out value="${entry}" />
                         	</option>
 						</c:forEach>
@@ -71,7 +71,7 @@
 						<option value=""> -- collections -- </option>
 						<c:forEach var="entry" items="${model.collections}">
 							<c:set var="colNameLen"> ${fn:length(entry.key)}</c:set>
-							<option value="${entry.value}" <c:if test="${model.category == entry.value}">selected</c:if>>
+							<option value="${entry.value}" title="${entry.key}" <c:if test="${model.category == entry.value}">selected</c:if>>
 								<c:choose>
 									<c:when test="${colNameLen > 75}"><c:out value="${fn:substring(entry.key, 0, 71)}" /> ...</c:when>
 									<c:otherwise><c:out value="${entry.key}" /></c:otherwise>
