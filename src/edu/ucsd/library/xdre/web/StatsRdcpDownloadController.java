@@ -139,8 +139,9 @@ public class StatsRdcpDownloadController implements Controller {
 			if(message != null && message.length() > 0)
 				strBuf.append(message);
 
+			String fileName = "rdcp" + (isUniqueViews ? "_unique" : "") + "_downloads.csv";
 			OutputStream out = response.getOutputStream();
-			response.setHeader("Content-Disposition", "inline; filename=rdcp_downloads.csv");
+			response.setHeader("Content-Disposition", "inline; filename=" + fileName);
 			response.setContentType("text/csv");
 			out.write(strBuf.toString().getBytes());
 			out.close();
