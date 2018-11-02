@@ -114,6 +114,7 @@ public class DAMSClient {
 	public static final int MAX_SIZE = 1000000;
 	public static enum DataFormat {rdf, xml, json, mets, html};
 	private static final Logger log = Logger.getLogger(DAMSClient.class);
+	public static final int PRIORITY_HIGH = 9;
 	public static final int PRIORITY_DEFAULT = 4;
 	public static final int PRIORITY_LOW = 2;
 	
