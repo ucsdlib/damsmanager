@@ -87,6 +87,11 @@
 				</div>
 			</td>
 		</tr>
+		<tr align="left">
+			<td>
+				<input class="pcheckbox" type="checkbox" id="urgentIndex" name="urgentIndex">Urgent index</input>
+			</td>
+		</tr>
 	</table>
 </div>
 <div class="buttonDiv">

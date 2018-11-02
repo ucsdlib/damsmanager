@@ -1143,9 +1143,9 @@ public class CollectionOperationController implements Controller {
 						 }
 					 }
 					 
-					 // for single items submitting from text input, set it to higher priority .
+					 // for single items submitting from text input, set it to high priority .
 					 if (StringUtils.isNotBlank(txtInput))
-						 damsClient.setPriority(DAMSClient.PRIORITY_DEFAULT);
+						 damsClient.setPriority(DAMSClient.PRIORITY_HIGH);
 
 					 // Initiate SOLRIndexHandler to index the records
 					 handler = new SOLRIndexHandler( damsClient, null, update );

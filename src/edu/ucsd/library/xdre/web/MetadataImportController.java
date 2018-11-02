@@ -63,6 +63,7 @@ public class MetadataImportController implements Controller{
 		String dataFormat = request.getParameter("dataFormat");
 		String data = request.getParameter("data").trim();
 		String importMode = request.getParameter("importMode");
+		String urgentIndex = request.getParameter("urgentIndex");
 		MetadataImportHandler handler = null;	
 
 		boolean result = false;
@@ -86,6 +87,10 @@ public class MetadataImportController implements Controller{
 					data = doc.asXML();
 				}
 
+				if (urgentIndex != null) {
+					// Requested urgent SOLR index
+					damsClient.setPriority(DAMSClient.PRIORITY_HIGH);
+				}
 				handler = new MetadataImportHandler(damsClient, null, data.trim(), dataFormat, importMode);
 				result = handler.execute();
 				if(result) {
@@ -119,6 +124,10 @@ public class MetadataImportController implements Controller{
 									}
 								}
 
+								// Set lower index priority for all linked objects
+								if (urgentIndex != null) {
+									damsClient.setPriority(DAMSClient.PRIORITY_DEFAULT);
+								}
 								List<String> solrFailures = new ArrayList<>();
 								for (String solution : solutions) {
 									boolean successful = false;
