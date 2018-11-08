@@ -593,9 +593,9 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 			}
 		}
 
-		// Re-index the collection CLR when object ingested.
+		// Re-index the collection CLR when object ingested and add records added event.
 		if (objRecords.size() > 0 && arkReport.length() > 0 && StringUtils.isNotBlank(collectionId)) {
-			updateSOLR(collectionId);
+			updateSOLR(collectionId, DAMSClient.RECORD_ADDED);
 		}
 
 		// write the ark report to file

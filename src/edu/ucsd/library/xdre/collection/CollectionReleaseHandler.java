@@ -126,8 +126,8 @@ public class CollectionReleaseHandler extends CollectionHandler{
 					return false;
 				}
 				
-				// Update SOLR for the collection record
-				if(!updateSOLR(collectionId)) {
+				// Update SOLR for the collection record: this will trigger the collection release event
+				if(!updateSOLR(collectionId, DAMSClient.RECORD_RELEASED)) {
 					exeResult = false;
 					failedCount++;
 					solrUpdateFailed.append(collectionId);
@@ -193,7 +193,8 @@ public class CollectionReleaseHandler extends CollectionHandler{
 				// Update SOLR for the extent note in the collection with merging, and remove the stub collection for merge/one-offs release
 				if (releaseOption.equalsIgnoreCase(RELEASE_MERGE) || releaseOption.equalsIgnoreCase(RELEASE_ONE_OFFS)) {
 					if (releaseOption.equalsIgnoreCase(RELEASE_MERGE)) {
-						if(!updateSOLR(collectionToMerge)) {
+						// trigger the record added event to the collection that is merging to
+						if(!updateSOLR(collectionToMerge, DAMSClient.RECORD_ADDED)) {
 							failedCount++;
 							solrUpdateFailed.append("\t" + collectionToMerge);
 						}

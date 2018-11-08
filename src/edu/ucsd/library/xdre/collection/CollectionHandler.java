@@ -745,7 +745,18 @@ public abstract class CollectionHandler implements ProcessHandler {
 	public boolean solrIndex(String oid) throws Exception{
 		return damsClient.solrUpdate(oid);
 	}
-	
+
+	/**
+	 * Update a record in SOLR 
+ 	 * @param oid the object id
+	 * @param action the action/event
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean solrIndex(String oid, String action) throws Exception{
+		return damsClient.solrUpdate(oid, action);
+	}
+
 	/**
 	 * Remove a record from SOLR
 	 * @param oid
@@ -755,17 +766,25 @@ public abstract class CollectionHandler implements ProcessHandler {
 	public boolean solrDelete(String oid) throws Exception{
 		return damsClient.solrDelete(oid);
 	}
-	
+
 	/**
 	 * Update SOLR with logging.
 	 * @param oid
 	 */
 	protected boolean updateSOLR(String oid){
+		return updateSOLR(oid, null);
+	}
+
+	/**
+	 * Update SOLR with logging.
+	 * @param oid
+	 */
+	protected boolean updateSOLR(String oid, String action){
 		String message = "";
 		setStatus("SOLR update for record " + oid  + " ... " );
 		boolean succeeded = false;
 		try{
-			succeeded = solrIndex(oid);
+			succeeded = solrIndex(oid, action);
 			if(!succeeded){
 				solrFailed.add(oid);
 				message = "SOLR update failed for object " + oid  + ".";
