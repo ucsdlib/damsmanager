@@ -312,6 +312,14 @@ input[type="button"], input[type="submit"], input[type="reset"]{
 	font-size: 13px;
 	color: #555555;
 }
+.result {
+	font-weight: normal;
+	font-size: 14px;
+	color: #336699;
+	margin-left:20px;
+	text-decoration: none;
+}
+
 .submenuInputText {
 	font-weight: normal;
 	font-size: 11px;

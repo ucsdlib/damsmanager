@@ -117,7 +117,12 @@ public class DAMSClient {
 	public static final int PRIORITY_HIGH = 9;
 	public static final int PRIORITY_DEFAULT = 4;
 	public static final int PRIORITY_LOW = 2;
-	
+
+	public static final String RECORD_RELEASED = "record released";
+	public static final String RECORD_ADDED = "record added";
+	public static final String RECORD_REMOVED = "record removed";
+	public static final String RECORD_EDITED  = "record edited";
+
 	private static SimpleDateFormat damsDateFormat = new SimpleDateFormat(DAMS_DATE_FORMAT);
 	private static SimpleDateFormat damsDateFormatAlt = new SimpleDateFormat(DAMS_DATE_FORMAT_ALT);
 
@@ -762,11 +767,27 @@ public class DAMSClient {
 
 		return success;
 	}
-	
+
+	   /**
+     * Push or Update a record in SOLR.
+     * 
+     * @param object
+     * @return
+     * @throws IOException 
+     * @throws LoginException 
+     * @throws ClientProtocolException 
+     * @throws DocumentException 
+     * @throws IllegalStateException 
+     */
+    public boolean solrUpdate(String object) throws Exception {
+        return solrUpdate(object, null);
+    }
+
 	/**
 	 * Push or Update a record in SOLR.
 	 * 
-	 * @param object
+	 * @param object the object id
+	 * @param action the action/event
 	 * @return
 	 * @throws IOException 
 	 * @throws LoginException 
@@ -774,10 +795,11 @@ public class DAMSClient {
 	 * @throws DocumentException 
 	 * @throws IllegalStateException 
 	 */
-	public boolean solrUpdate(String object) throws Exception {
+	public boolean solrUpdate(String object, String action) throws Exception {
 		//POST /objects/bb1234567x/index
 		String format = "json";
 		String url = getObjectsURL(object, null, "index", format);
+		url += StringUtils.isNotBlank(action) ? "&action=" + URLEncoder.encode(action, "UTF-8") : "";
 		HttpPost post = new HttpPost(url);
 		int status = -1;
 		boolean success = false;

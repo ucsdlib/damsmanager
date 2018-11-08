@@ -95,7 +95,7 @@ public class CollectionReleaseController implements Controller {
 		return collMap;
 	}
 	
-	private <K,V> Map<V, K> revertMap(Map<K, V> toRevert) {
+	public static <K,V> Map<V, K> revertMap(Map<K, V> toRevert) {
 	    Map<V, K> reverted = new HashMap<V, K>();
 	    for(K k: toRevert.keySet()){
 	        reverted.put(toRevert.get(k), k);

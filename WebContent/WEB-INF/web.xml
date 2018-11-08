@@ -2,7 +2,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee 
     http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd" version="2.4">
-	<description>DAMS Manager Application</description>
+    <description>DAMS Manager Application</description>
     
   <!-- Automatic version numbering -->
   <context-param>
@@ -19,8 +19,8 @@
   </context-param>
     
   <context-param>
-	  <param-name>webAppRootKey</param-name> 
-	  <param-value>damsmanager.root</param-value> 
+      <param-name>webAppRootKey</param-name> 
+      <param-value>damsmanager.root</param-value> 
   </context-param>
   
   <servlet>
@@ -36,7 +36,7 @@
 
   <servlet>
     <servlet-name>version</servlet-name>
-	<jsp-file>/jsp/version.jsp</jsp-file>
+    <jsp-file>/jsp/version.jsp</jsp-file>
   </servlet>
   
   <servlet-mapping>
@@ -44,53 +44,54 @@
     <url-pattern>/version</url-pattern>
   </servlet-mapping>
   
-	<welcome-file-list>
-		<welcome-file>/about.do</welcome-file>
-	</welcome-file-list>
-	
+    <welcome-file-list>
+        <welcome-file>/about.do</welcome-file>
+    </welcome-file-list>
+    
      <login-config>
-    	<auth-method>FORM</auth-method>
-      	<realm-name>Authentication Required</realm-name>
+        <auth-method>FORM</auth-method>
+          <realm-name>Authentication Required</realm-name>
         <form-login-config>
             <form-login-page>/loginPage.do</form-login-page>
             <form-error-page>/loginPage.do?error=1</form-error-page>
         </form-login-config>
-    </login-config>		
-	  
-	  <error-page>
-	     <exception-type>
-	      java.lang.Exception
-	     </exception-type>
-	     <location>/jsp/errorPage.jsp</location>
-	  </error-page>
+    </login-config>        
+      
+      <error-page>
+         <exception-type>
+          java.lang.Exception
+         </exception-type>
+         <location>/jsp/errorPage.jsp</location>
+      </error-page>
     
     <!-- Role for accessing the DAMS Manager applicatiion. -->
     <security-constraint>
-    	<web-resource-collection>
-	        <web-resource-name>Protected Area</web-resource-name>
-	        <url-pattern>/ingest.do</url-pattern>
-	        <url-pattern>/derivative.do</url-pattern>
-	        <url-pattern>/collectionUpdate.do</url-pattern>
-	        <url-pattern>/controlPanel.do</url-pattern>
-	        <url-pattern>/metaDataImport.do</url-pattern>
-	        <url-pattern>/operationHandler.do</url-pattern>
-	        <url-pattern>/fileUpload.do</url-pattern>
-	        <url-pattern>/fileReport.do</url-pattern>
-	        <url-pattern>/customSip.do</url-pattern>
-	        <url-pattern>/login.do</url-pattern>
-	        <url-pattern>/devUpload.do</url-pattern>
-	        <url-pattern>/statusUpload.do</url-pattern>
-	        <url-pattern>/rdfExport.do</url-pattern>
-	        <url-pattern>/solrDump.do</url-pattern>
-	        <url-pattern>/serialize.do</url-pattern>
-	        <url-pattern>/statsWeblogAnalyzer.do</url-pattern>
-	        <url-pattern>/statsQuantityAnalyzer.do</url-pattern>
-	        <url-pattern>/collectionsReport.do</url-pattern>
-    	</web-resource-collection>
-    	<auth-constraint>
-        	<role-name>4708</role-name>
-        	<role-name>dams-manager-admin</role-name>
-      	</auth-constraint>
+        <web-resource-collection>
+            <web-resource-name>Protected Area</web-resource-name>
+            <url-pattern>/ingest.do</url-pattern>
+            <url-pattern>/derivative.do</url-pattern>
+            <url-pattern>/collectionUpdate.do</url-pattern>
+            <url-pattern>/controlPanel.do</url-pattern>
+            <url-pattern>/metaDataImport.do</url-pattern>
+            <url-pattern>/operationHandler.do</url-pattern>
+            <url-pattern>/fileUpload.do</url-pattern>
+            <url-pattern>/fileReport.do</url-pattern>
+            <url-pattern>/customSip.do</url-pattern>
+            <url-pattern>/login.do</url-pattern>
+            <url-pattern>/devUpload.do</url-pattern>
+            <url-pattern>/statusUpload.do</url-pattern>
+            <url-pattern>/rdfExport.do</url-pattern>
+            <url-pattern>/solrDump.do</url-pattern>
+            <url-pattern>/serialize.do</url-pattern>
+            <url-pattern>/statsWeblogAnalyzer.do</url-pattern>
+            <url-pattern>/statsQuantityAnalyzer.do</url-pattern>
+            <url-pattern>/collectionsReport.do</url-pattern>
+            <url-pattern>/collectionStatusReport.do</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>4708</role-name>
+            <role-name>dams-manager-admin</role-name>
+          </auth-constraint>
         <user-data-constraint>
             <transport-guarantee>CONFIDENTIAL</transport-guarantee>
         </user-data-constraint>
@@ -98,30 +99,30 @@
     
     <!-- Role for accessing the tagging tool. -->
     <security-constraint>
-    	<web-resource-collection>
-	        <web-resource-name>Protected Area</web-resource-name>
-	        <url-pattern>/tsAnalyzer.do</url-pattern>
-	        <url-pattern>/dataConverter.do</url-pattern>
-	        <url-pattern>/progressHandler.do</url-pattern>
-	        <url-pattern>/marcModsImport.do</url-pattern>
-	        <url-pattern>/excelImport.do</url-pattern>
-	        <url-pattern>/subjectImport.do</url-pattern>
-	        <url-pattern>/collectionImport.do</url-pattern>
-	        <url-pattern>/collectionRelease.do</url-pattern>
-	        <url-pattern>/collection.do</url-pattern>
-	        <url-pattern>/operationHandler.do</url-pattern>
-	        <url-pattern>/rdfImport.do</url-pattern>
-	        <url-pattern>/rdfEdit.do</url-pattern>
-	        <url-pattern>/metadataImport.do</url-pattern>
-	        <url-pattern>/fileReport.do</url-pattern>
-	        <url-pattern>/fileReplace.do</url-pattern>
-    	</web-resource-collection>
-    	<auth-constraint>
-        	<role-name>32</role-name>
-        	<role-name>4708</role-name>
-        	<role-name>dams-editor</role-name>
-        	<role-name>dams-manager-admin</role-name>
-      	</auth-constraint>
+        <web-resource-collection>
+            <web-resource-name>Protected Area</web-resource-name>
+            <url-pattern>/tsAnalyzer.do</url-pattern>
+            <url-pattern>/dataConverter.do</url-pattern>
+            <url-pattern>/progressHandler.do</url-pattern>
+            <url-pattern>/marcModsImport.do</url-pattern>
+            <url-pattern>/excelImport.do</url-pattern>
+            <url-pattern>/subjectImport.do</url-pattern>
+            <url-pattern>/collectionImport.do</url-pattern>
+            <url-pattern>/collectionRelease.do</url-pattern>
+            <url-pattern>/collection.do</url-pattern>
+            <url-pattern>/operationHandler.do</url-pattern>
+            <url-pattern>/rdfImport.do</url-pattern>
+            <url-pattern>/rdfEdit.do</url-pattern>
+            <url-pattern>/metadataImport.do</url-pattern>
+            <url-pattern>/fileReport.do</url-pattern>
+            <url-pattern>/fileReplace.do</url-pattern>
+        </web-resource-collection>
+        <auth-constraint>
+            <role-name>32</role-name>
+            <role-name>4708</role-name>
+            <role-name>dams-editor</role-name>
+            <role-name>dams-manager-admin</role-name>
+          </auth-constraint>
         <user-data-constraint>
             <transport-guarantee>CONFIDENTIAL</transport-guarantee>
         </user-data-constraint>
@@ -147,21 +148,21 @@
         </user-data-constraint>
     </security-constraint>
 
-	<security-role>
-		<role-name>32</role-name>
-	</security-role>
-	   
-	<security-role>
-		<role-name>4708</role-name>
-	</security-role>	
+    <security-role>
+        <role-name>32</role-name>
+    </security-role>
+       
+    <security-role>
+        <role-name>4708</role-name>
+    </security-role>    
 
-	<security-role>
-		<role-name>dams-manager-admin</role-name>
-	</security-role>
-	<security-role>
-		<role-name>dams-curator</role-name>
-	</security-role>
-	<security-role>
-		<role-name>dams-editor</role-name>
-	</security-role>
+    <security-role>
+        <role-name>dams-manager-admin</role-name>
+    </security-role>
+    <security-role>
+        <role-name>dams-curator</role-name>
+    </security-role>
+    <security-role>
+        <role-name>dams-editor</role-name>
+    </security-role>
 </web-app>

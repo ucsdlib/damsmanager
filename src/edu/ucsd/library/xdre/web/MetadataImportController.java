@@ -3,6 +3,7 @@ package edu.ucsd.library.xdre.web;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.HashSet;
@@ -12,12 +13,15 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.custommonkey.xmlunit.DetailedDiff;
 import org.custommonkey.xmlunit.XMLUnit;
 import org.dom4j.Document;
 import org.dom4j.Node;
 import org.dom4j.io.SAXReader;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 import org.xml.sax.SAXException;
@@ -48,6 +52,12 @@ public class MetadataImportController implements Controller{
 	private static String[] clrHierarchyPaths = {
 		"//*[contains(local-name(), 'Collection')]/*[local-name()='hasPart' or contains(local-name(), 'Collection')]/@rdf:resource",
 	};
+
+	private static String clrVisibilityPath = "//*[contains(local-name(), 'Collection')]/dams:visibility";
+
+	private static String clrExtentNotePath = "//*[contains(name(), 'Collection')]/dams:note/dams:Note[dams:type='extent' and contains(rdf:value, 'digital object.')]";
+
+	public static String objectClrPath = "//dams:Object/*[contains(local-name(), 'Collection')]/@rdf:resource";
 
 	private static String[] clrParentChildHierarchyPaths = {
 		"//*[contains(local-name(), 'Collection')]/*[contains(local-name(), 'Collection') and contains(local-name(), 'has') or local-name()='hasPart']/@rdf:resource",
@@ -81,7 +91,7 @@ public class MetadataImportController implements Controller{
 				Document doc = saxReader.read(new ByteArrayInputStream(data.getBytes("UTF-8")));
 				
 				// remove the collection extent note
-				List<Node> extentNotes = doc.selectNodes("//*[contains(name(), 'Collection')]/dams:note/dams:Note[dams:type='extent' and contains(rdf:value, 'digital object.')]");
+				List<Node> extentNotes = doc.selectNodes(clrExtentNotePath);
 				for (Node extentNote : extentNotes) {
 					extentNote.getParent().detach();
 					data = doc.asXML();
@@ -113,6 +123,12 @@ public class MetadataImportController implements Controller{
 								queryObjects ( solutions, subId, 1, damsClient, doc, clrAssociatedLookup );
 
 								if (className.indexOf("Collection") >= 0) {
+									// visibility change: collection release
+									objLink += handleCollectionReleaseEvent(damsClient, node, originDoc);
+
+									// query object counts in the collection to determine records added/removed events
+									objLink += handleCollectionEvents(damsClient, subId, originDoc);
+
 									// collection hierarchy is changed, need to re-index all related CLRs
 									Set<String> colls = getClrHierarchyChanges(node, originDoc, clrHierarchyPaths);
 									solutions.addAll(colls);
@@ -151,6 +167,9 @@ public class MetadataImportController implements Controller{
 									objLink += " But failed to add the following " + solrFailures.size() + " records to the queue for SOLR update: \n" + builder.toString();
 								}
 							} else {
+								// handle collection events: records added/removed
+								objLink += handleCollectionEvents(damsClient, node, originDoc);
+
 								String damsUrl = "http://" + Constants.CLUSTER_HOST_NAME + (Constants.CLUSTER_HOST_NAME.startsWith("localhost")?"":".ucsd.edu/dc") + "/object/"
 										+ ark.substring(ark.lastIndexOf("/") + 1, ark.length());
 								objLink += "View item <a href=\"" + damsUrl +  "\" target=\"dc\">" + ark + "</a>. ";
@@ -420,5 +439,165 @@ public class MetadataImportController implements Controller{
 			return node.getStringValue();
 		else
 			return node.getText();
+	}
+
+	/*
+	 * Add events to linked collections
+	 * @param damsClient
+	 * @param node
+	 * @param originDoc
+	 * @return
+	 */
+	private String handleCollectionEvents(DAMSClient damsClient, Node node, Node originDoc) {
+		String message = "";
+		// linked collection changed: trigger record added /removed events
+		List<String> clrs = getValues(node.selectNodes(objectClrPath));
+		List<String> clrsOrig = getValues(originDoc.selectNodes(objectClrPath));
+
+		List<String> clrsAdded = new ArrayList<>();
+		for (String clr : clrs) {
+			if (clrsOrig.contains(clr)) {
+				clrsOrig.remove(clr);
+			} else {
+				clrsAdded.add(clr);
+			}
+		}
+
+		message += collectionEvent(damsClient, clrs, DAMSClient.RECORD_ADDED);
+		message += collectionEvent(damsClient, clrsOrig, DAMSClient.RECORD_REMOVED);
+		return message;
+	}
+
+	/*
+	 * compare objects counts in extent note from SOLR and RDF.
+	 * @param damsClient
+	 * @param colId
+	 * @param node
+	 * @return
+	 */
+	private String handleCollectionEvents(DAMSClient damsClient, String colId, Node node) {
+		String message = "";
+		int currentCounts = objectCounts(node);
+		int countsOrig = lookupObjectCounts(damsClient, colId);
+
+		String eventType = null;
+		if (currentCounts > countsOrig) {
+			eventType = DAMSClient.RECORD_ADDED;
+		} else if (currentCounts < countsOrig) {
+			eventType = DAMSClient.RECORD_REMOVED;
+		}
+
+		if (StringUtils.isNotBlank(eventType)) {
+			message += collectionEvent(damsClient, Collections.singletonList(colId), eventType);
+		}
+
+		return message;
+	}
+
+	/*
+	 * Add event to the collection
+	 * @param damsClient
+	 * @param clrs
+	 * @param event
+	 * @return
+	 */
+	private String collectionEvent(DAMSClient damsClient, List<String> clrs, String event) {
+		String message = "";
+		String failures = "";
+		for (String clr : clrs) {
+			// object remove from the collection
+			boolean successful = false;
+			try {
+				successful = damsClient.solrUpdate(clr, event);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			if (!successful) {
+				failures += clr + ", ";
+			}
+		}
+
+		if (failures.length() > 0) {
+			message += " But failed to add " + event + " event to collection(s) "
+				+ failures.substring(0, failures.length() - 2) + ". ";
+		}
+
+		return message;
+	}
+
+	/**
+	 * 
+	 * @param damsClient
+	 * @param node
+	 * @param originDoc
+	 * @return
+	 */
+	private String handleCollectionReleaseEvent(DAMSClient damsClient, Node node, Node originDoc) {
+		// collection visibility changed: trigger collection release to public
+		String message = "";
+		String visibility = node.valueOf(clrVisibilityPath);
+		String visibilityOrig = originDoc.valueOf(clrVisibilityPath);
+		if (StringUtils.isNotBlank(visibility) && visibility.toLowerCase().equals("public") && visibility != visibilityOrig) {
+			boolean successful = false;
+			try {
+				successful = damsClient.solrUpdate(node.getStringValue(), DAMSClient.RECORD_RELEASED);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			if (!successful) {
+				message += " But failed to add collection release event to collection " + node.getStringValue() + ". ";
+			}
+		}
+		return message;
+	}
+
+	/*
+	 * Extract object counts from the extent note.
+	 * @param node
+	 * @return
+	 */
+	private int objectCounts(Node node) {
+		int objCounts = 0;
+		String extentNote = node.valueOf(clrExtentNotePath);
+		if (StringUtils.isNotBlank(extentNote)) {
+			try {
+				objCounts = Integer.parseInt(extentNote.split(" ")[0]);
+			} catch (NumberFormatException e) {
+				objCounts = 0;
+			}
+		}
+		return objCounts;
+	}
+
+	/*
+	 * Lookup object counts in the collection from SOLR with the extent note
+	 * @param damsClient
+	 * @param colId
+	 * @return
+	 */
+	private int lookupObjectCounts(DAMSClient damsClient, String colId) {
+		String solrQuery = "q=id:" + colId + "&fl=otherNote_json_tesim";
+		int objCounts = 0;
+		try {
+			Document doc = damsClient.solrLookup(solrQuery);
+			List<Node> noteNodes = doc.selectNodes("//doc/arr[@name='otherNote_json_tesim']/str");
+			for (Node noteJson : noteNodes) {
+				JSONObject jsonObj = (JSONObject)JSONValue.parse(noteJson.getText());
+				String noteType = (String)jsonObj.get("type");
+				if (StringUtils.isNotBlank(noteType) && noteType.equals("extent")) {
+					String extentNote = (String)jsonObj.get("value");
+					objCounts = Integer.parseInt(extentNote.split(" ")[0]);
+					break;
+				}
+			}
+		} catch (NumberFormatException e) {
+			objCounts = 0;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return objCounts;
 	}
 }

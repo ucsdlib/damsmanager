@@ -45,6 +45,7 @@ public class MetadataImportHandler extends CollectionHandler{
 	protected RDFStore rdfStore = null;
 	protected Map<String, List<DamsURI>> objects = null;
 	protected List<String> errors = new ArrayList<String>();
+	protected List<String> linkedCollections = new ArrayList<>();
 
 	/**
 	 * Constructor for MetadataImportHandler
@@ -191,6 +192,8 @@ public class MetadataImportHandler extends CollectionHandler{
 		List<DamsURI> objURIs = null;
 		Model rdf = null;
 		Statement stmt = null;
+		Document doc = null;
+
 		for(int i=0; i<itemsCount; i++){
 			count++;
 			subjectId = items.get(i);
@@ -205,7 +208,11 @@ public class MetadataImportHandler extends CollectionHandler{
 				if(importMode.equals(Constants.IMPORT_MODE_SAMEPREDICATES) || importMode.equals(Constants.IMPORT_MODE_DESCRIPTIVE)){
 					rdfStoreOrgin = new RDFStore();
 					rdfStoreOrgin.loadRDFXML(damsClient.getMetadata(subjectId, "xml"));
+				} else if (importMode.equals(Constants.IMPORT_MODE_DELETE)) {
+					// cache the RDF for post processing.
+					doc = damsClient.getRecord(subjectId);
 				}
+
 				
 				RDFStore graph = new RDFStore();
 				for(int j=0; j<objURIs.size(); j++){
@@ -297,9 +304,12 @@ public class MetadataImportHandler extends CollectionHandler{
 					else if(importMode.equals(Constants.IMPORT_MODE_DESCRIPTIVE))
 						succeeded = damsClient.updateObject(subjectId, graph.export(RDFStore.RDFXML_ABBREV_FORMAT), Constants.IMPORT_MODE_ALL);
 					else if(importMode.equals(Constants.IMPORT_MODE_DELETE)){
-						if(delete)
+						if(delete) {
+							// collections that the deleted object is linking to
+							addLinkedCollections(doc);
+
 							succeeded = damsClient.delete(subjectId, null, null);
-						else
+						} else
 							succeeded = true;
 					}else {
 						String rdfXml = graph.export(RDFStore.RDFXML_ABBREV_FORMAT);
@@ -369,6 +379,20 @@ public class MetadataImportHandler extends CollectionHandler{
 				break;
 			}
 		}
+
+		// Update linked collections in SOLR and add record removed event
+		if(importMode.equals(Constants.IMPORT_MODE_DELETE)) {
+			for (String colId : linkedCollections) {
+				boolean succeeded = updateSOLR(colId, DAMSClient.RECORD_REMOVED);
+		 		if (!succeeded) {
+					eMessage = "SOLR update failed for linked collection " + subjectId + ".";
+					setStatus( eMessage); 
+					logError(eMessage);
+					errors.add(eMessage);
+				}
+			}
+		}
+
 		return exeResult;
 	}
 
@@ -395,4 +419,20 @@ public class MetadataImportHandler extends CollectionHandler{
 	public List<String> getErrors() {
 		return errors;
 	}
+
+	/*
+	 * Add the collections that the object/document linking to.
+	 * @param doc
+	 * @throws Exception
+	 */
+	private void addLinkedCollections (Document doc) throws Exception {
+		List<Node> linkedColNodes = doc.selectNodes("/rdf:RDF/dams:Object/*[contains(local-name(), 'Collection')]/@rdf:resource");
+		for (Node colNode : linkedColNodes) {
+			String colId = colNode.getStringValue();
+			if (!linkedCollections.contains(colId)) {
+				linkedCollections.add(colId);
+			}
+		}
+	}
+
 }
