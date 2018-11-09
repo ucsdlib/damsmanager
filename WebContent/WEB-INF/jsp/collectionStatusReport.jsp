@@ -18,7 +18,7 @@
 <body style="background-color:#fff;">
 <script type="text/javascript">
     function confirmSubmit() {
-       // begin date validation
+       // begin / end date validation
        var beginDate = document.mainForm.beginDate.value.trim();
 
        if (beginDate.length == 0) {
@@ -33,6 +33,23 @@
            document.mainForm.beginDate.focus();
            return false;
        }
+
+        if (endDate.length > 0) {
+            endDate = parseDate(endDate);
+            if (endDate == null) {
+                alert ("Please enter a valid end date in format yyyy-mm-dd.");
+                document.mainForm.endDate.focus();
+                return false;
+            }
+        }
+
+        if (beginDate != null && endDate != null) {
+            if (beginDate > endDate) {
+                alert ("Invalid date range: end date must NOT before the begin date!");
+                document.mainForm.endDate.focus();
+                return false;
+            }
+        }
 
         var message = "Generate collection reports will take some time. Are you sure to you want to continue? \n";;
 
@@ -55,10 +72,23 @@
 
     $(function() {
         var beginCal = $( "#beginDate" );
+        var endCal = $( "#endDate" );
         $(beginCal).datepicker({
-            dateFormat: "yy-mm-dd",
-            buttonImage: "/damsmanager/images/calendar.jpg"
+            dateFormat: "yy-mm-dd", 
+            appendText: "(yyyy-mm-dd)", 
+            buttonImage: "/damsmanager/images/calendar.jpg",
+            onSelect: function() {
+                $(this).datepicker( "option", "maxDate", $(endCal).datepicker('getDate'));
+            }
         });
+        $(endCal).datepicker({
+            dateFormat: "yy-mm-dd", 
+            appendText: "(yyyy-mm-dd)", 
+            buttonImage: "/damsmanager/images/calendar.jpg",
+            onSelect: function() {
+                $(this).datepicker( "option", "minDate", $(beginCal).datepicker('getDate'));
+            }
+         });
     });
 
     var crumbs = [{"Home":"http://library.ucsd.edu"}, {"Digital Library Collections":"/dc"},{"DAMS Manager":"/damsmanager/"}, {"Excel Import":""}];
@@ -84,11 +114,15 @@
 <div class="main-title">DAMS Collection Status Report</div>
 <form id="mainForm" name="mainForm" method="post" action="/damsmanager/collectionStatusReport.do" >
   <div style="margin-top:10px;padding-left:20px;" align="left">
-    <div style="margin:30 0;text-alignment:left">
-        <label class="menuText"><b>Begin Date: </b></label>
-        <span class="menuText">
+    <div style="margin:30 20 5 0;text-alignment:left">
+        <span class="menuText"><b>Begin Date: </b>
             <input type="text" id="beginDate" name="beginDate" size="25" style="cursor:pointer;margin-right:2px;" value="${model.beginDate}">
-            <input type="button" style="margin-left:5px;" name="collectionReport" id="collectionReport" value=" Search " onClick="confirmSubmit();"/>
+            <input type="button" style="margin-left:10px;" name="collectionReport" id="collectionReport" value=" Search " onClick="confirmSubmit();"/>
+        </span>
+    </div>
+    <div style="margin:0 0 30 12;text-alignment:left">
+        <span class="menuText"><b>End Date: </b>
+            <input type="text" id="endDate" name="endDate" size="25" style="cursor:pointer;margin-right:2px;" value="${model.endDate}">
         </span>
     </div>
     <hr />
