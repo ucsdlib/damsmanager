@@ -1,7 +1,10 @@
 package edu.ucsd.library.xdre.web;
 
 import java.io.OutputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -29,9 +32,11 @@ import edu.ucsd.library.xdre.utils.DAMSClient;
  */
 public class CollectionStatusReportController implements Controller {
     private static Logger log = Logger.getLogger(CollectionStatusReportController.class);
+    private static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 
     public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception {
         String beginDate = request.getParameter("beginDate");
+        String endDate = request.getParameter("endDate");
         boolean exportOnly = request.getParameter("export") != null;
 
         DAMSClient damsClient = null;
@@ -47,7 +52,7 @@ public class CollectionStatusReportController implements Controller {
                 damsClientEvent.setTripleStore("events"); // set event triplestore
     
                 // released collections
-                String sparql = buildEventSparql(DAMSClient.RECORD_RELEASED, beginDate);
+                String sparql = buildEventSparql(DAMSClient.RECORD_RELEASED, beginDate, endDate);
 
                 List<Map<String, String>> events = damsClientEvent.sparqlLookup(sparql);
                 List<String> records = lookupRecordsByEventIds(damsClient, events);
@@ -55,20 +60,20 @@ public class CollectionStatusReportController implements Controller {
                 Map<String, String> collectionsReleased = buildCollections(colArkMap, records);
 
                 // collections with objects added
-                sparql = buildEventSparql(DAMSClient.RECORD_ADDED, beginDate);
+                sparql = buildEventSparql(DAMSClient.RECORD_ADDED, beginDate, endDate);
                 events = damsClientEvent.sparqlLookup(sparql);
                 records = lookupRecordsByEventIds(damsClient, events);
                 Map<String, String> collectionsAdded = buildCollections(colArkMap, records);
 
                 // collections with objects removed
-                sparql = buildEventSparql(DAMSClient.RECORD_REMOVED, beginDate);
+                sparql = buildEventSparql(DAMSClient.RECORD_REMOVED, beginDate, endDate);
                 events = damsClientEvent.sparqlLookup(sparql);
                 records = lookupRecordsByEventIds(damsClient, events);
                 Map<String, String> collectionsRemoved = buildCollections(colArkMap, records);
 
                 // collections with objects edited
                 Map<String, String> collectionsEdited = lookupCollectionsByEventType(damsClient,
-                        damsClientEvent, colArkMap, DAMSClient.RECORD_EDITED, beginDate);
+                        damsClientEvent, colArkMap, DAMSClient.RECORD_EDITED, beginDate, endDate);
 
                 if (exportOnly) {
                     // Export collection status report result in CSV format
@@ -94,6 +99,7 @@ public class CollectionStatusReportController implements Controller {
                     dataMap.put("recordRemoved", collectionsRemoved);
                     dataMap.put("recordEdited", collectionsEdited);
                     dataMap.put("beginDate", beginDate);
+                    dataMap.put("endDate", endDate);
                 }
             } catch (Exception e){
                 e.printStackTrace();
@@ -110,6 +116,7 @@ public class CollectionStatusReportController implements Controller {
             dataMap.put("recordRemoved", new HashMap<String, String>());
             dataMap.put("recordEdited", new HashMap<String, String>());
             dataMap.put("beginDate", "");
+            dataMap.put("endDate", "");
         }
         return new ModelAndView("collectionStatusReport", "model", dataMap);
     }
@@ -130,9 +137,24 @@ public class CollectionStatusReportController implements Controller {
      * @param beginDate
      * @return
      */
-    private static String buildEventSparql(String eventType, String beginDate) {
-        return "SELECT ?e WHERE {?e <http://library.ucsd.edu/ark:/20775/bd3106617w> '\""
-                + eventType  + "\"' . ?e <http://library.ucsd.edu/ark:/20775/bd5120287c> ?date . FILTER (?date > '\"" + beginDate + "\"')}";
+    private static String buildEventSparql(String eventType, String beginDate, String endDate) throws ParseException {
+        String searchEndDate = endDate;
+        if (StringUtils.isNotBlank(endDate)) {
+            // set date range to include the whole end date
+            Calendar eCal = Calendar.getInstance();
+            eCal.setTime(dateFormat.parse(endDate));
+            eCal.add(Calendar.DATE, 1);
+            searchEndDate = dateFormat.format(eCal.getTime());
+        }
+
+        String sparql = "SELECT ?e WHERE {?e <http://library.ucsd.edu/ark:/20775/bd3106617w> '\""
+                + eventType  + "\"' . ?e <http://library.ucsd.edu/ark:/20775/bd5120287c> ?date . FILTER (?date > '\"" + beginDate + "\"'";
+        if (StringUtils.isNotBlank(endDate)) {
+            sparql += " && ?date < '\"" + searchEndDate + "\"'";
+        }
+        sparql += ")}";
+
+        return sparql;
     }
 
     /* 
@@ -161,8 +183,9 @@ public class CollectionStatusReportController implements Controller {
             DAMSClient damsClientEvent,
             Map<String, String> colArkMap,
             String eventType,
-            String beginDate) throws Exception {
-        String sparql = buildEventSparql(eventType, beginDate);
+            String beginDate,
+            String endDate) throws Exception {
+        String sparql = buildEventSparql(eventType, beginDate, endDate);
         List<Map<String, String>> events = damsClientEvent.sparqlLookup(sparql);
         List<String> records = lookupRecordsByEventIds(damsClient, events);
         Map<String, String> collections = new TreeMap<String, String>();
