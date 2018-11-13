@@ -147,8 +147,8 @@ public class CollectionStatusReportController implements Controller {
             searchEndDate = dateFormat.format(eCal.getTime());
         }
 
-        String sparql = "SELECT ?e WHERE {?e <http://library.ucsd.edu/ark:/20775/bd3106617w> '\""
-                + eventType  + "\"' . ?e <http://library.ucsd.edu/ark:/20775/bd5120287c> ?date . FILTER (?date > '\"" + beginDate + "\"'";
+        String sparql = "SELECT ?e WHERE {?e <" + DAMSClient.PREDICATE_EVENT_TYPE + "> '\""
+                + eventType  + "\"' . ?e <" + DAMSClient.PREDICATE_EVENT_DATE + "> ?date . FILTER (?date > '\"" + beginDate + "\"'";
         if (StringUtils.isNotBlank(endDate)) {
             sparql += " && ?date < '\"" + searchEndDate + "\"'";
         }
