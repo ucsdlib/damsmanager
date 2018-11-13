@@ -123,6 +123,9 @@ public class DAMSClient {
 	public static final String RECORD_REMOVED = "record removed";
 	public static final String RECORD_EDITED  = "record edited";
 
+	public static final String PREDICATE_EVENT_TYPE  = "http://library.ucsd.edu/ark:/20775/bd3106617w";
+	public static final String PREDICATE_EVENT_DATE  = "http://library.ucsd.edu/ark:/20775/bd5120287c";
+
 	private static SimpleDateFormat damsDateFormat = new SimpleDateFormat(DAMS_DATE_FORMAT);
 	private static SimpleDateFormat damsDateFormatAlt = new SimpleDateFormat(DAMS_DATE_FORMAT_ALT);
 

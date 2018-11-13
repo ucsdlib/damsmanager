@@ -45,13 +45,13 @@
 
         if (beginDate != null && endDate != null) {
             if (beginDate > endDate) {
-                alert ("Invalid date range: end date must NOT before the begin date!");
+                alert ("Invalid date range: end date must NOT be before the begin date!");
                 document.mainForm.endDate.focus();
                 return false;
             }
         }
 
-        var message = "Generate collection reports will take some time. Are you sure to you want to continue? \n";;
+        var message = "Generating this collection report will take some time. Thank you for your patience.";
 
         var exeConfirm = confirm(message);
         if(!exeConfirm)
