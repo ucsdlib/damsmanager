@@ -43,8 +43,8 @@ public class ExcelSource implements RecordSource
     public static final String[] IGNORED_FIELDS_FOR_COLLECTIONS = {"Level","Title","Subtitle","Part name","Part number","Translation","Variant","File name","File use","File name 2","File use 2", "subject type"};
 
     private static final String[] DATETIME_FORMATS = {"yyyy", "yyyy-MM", "yyyy-MM-dd"};
-    private static final String BEGIN_DATE = "Begin date";
-    private static final String END_DATE = "End date";
+    public static final String BEGIN_DATE = "Begin date";
+    public static final String END_DATE = "End date";
 
     private static final String[] DATE_FIELDS = {BEGIN_DATE, END_DATE};
     private static Map<String, List<String>> CONTROL_VALUES = new HashMap<>();

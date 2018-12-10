@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.dom4j.Branch;
 import org.dom4j.Document;
 import org.dom4j.DocumentFactory;
@@ -145,6 +146,10 @@ public class TabularRecord implements Record
 
         // get previously-assigned ark
         String ark = data.get("ark");
+
+        if (StringUtils.isBlank(ark)) {
+            ark = recordID();
+        }
 
         // object metadata
         addFields( root, data, 0, ark );
