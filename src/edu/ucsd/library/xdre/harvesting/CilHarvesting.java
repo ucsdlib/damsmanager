@@ -586,7 +586,9 @@ public class CilHarvesting implements RecordSource {
             rec = nextRecord();
         }
 
-        File rdfFile = writeRdfContent(recordId, rdfDoc.asXML());
+        String rdfFileName = "cil_metadata_processed-" + new SimpleDateFormat("yyyyMMddHHmm")
+                .format(Calendar.getInstance().getTime());
+        File rdfFile = writeRdfContent(rdfFileName, rdfDoc.asXML());
         RDFExcelConvertor converter = new RDFExcelConvertor(rdfFile.getAbsolutePath(), jsonConvertSxlFile);
         return converter.convert2CSV();
     }
