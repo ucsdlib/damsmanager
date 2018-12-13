@@ -574,6 +574,19 @@ public class CilHarvesting implements RecordSource {
      * @throws Exception
      */
     public String toCSV(String jsonConvertSxlFile) throws Exception {
+        try (InputStream jsonConvertXslInput = new FileInputStream(jsonConvertSxlFile);) {
+            return toCSV(jsonConvertXslInput);
+        }
+    }
+
+
+    /**
+     * Convert to CSV format for Excel InputStream
+     * @param jsonConvertSxlFile
+     * @return
+     * @throws Exception
+     */
+    public String toCSV(InputStream jsonConvertXslInput) throws Exception {
         Record rec = nextRecord();
         String recordId = rec.recordID();
         Document rdfDoc = rec.toRDFXML();
@@ -589,7 +602,7 @@ public class CilHarvesting implements RecordSource {
         String rdfFileName = "cil_metadata_processed-" + new SimpleDateFormat("yyyyMMddHHmm")
                 .format(Calendar.getInstance().getTime());
         File rdfFile = writeRdfContent(rdfFileName, rdfDoc.asXML());
-        RDFExcelConvertor converter = new RDFExcelConvertor(rdfFile.getAbsolutePath(), jsonConvertSxlFile);
+        RDFExcelConvertor converter = new RDFExcelConvertor(rdfFile.getAbsolutePath(), jsonConvertXslInput);
         return converter.convert2CSV();
     }
 

@@ -15,6 +15,7 @@
 	  <property name="props"     value="${conf}"/>
 	  <property name="deploy" value="${basedir}/deploy"/>
 	  <property name="test"   value="${basedir}/test"/>
+    <property name="resources" value="${basedir}/src/resources"/>
 	
 	  <tstamp>
 	    <format property="build.timestamp" pattern="yyyy-MM-dd'T'HH:mm:ssZ"/>
@@ -85,6 +86,7 @@
 	    <mkdir dir="${tmp}"/>
         <mkdir dir="${tmp}/converted"/>
 	  	<mkdir dir="${webapp}/WEB-INF/classes"/>
+	    <mkdir dir="${webapp}/WEB-INF/classes/resources"/>
 	  </target>
 	  <!-- compile -->
 	  <target name="compile" description="Compile Java classes."
@@ -104,6 +106,9 @@
 	    <copy todir="${webapp}/WEB-INF/classes">
 	      <fileset dir="${conf}" includes="**/*"/>
 	    </copy>
+      <copy todir="${webapp}/WEB-INF/classes/resources">
+        <fileset dir="${resources}" includes="**/*"/>
+      </copy>
 	    <copy file="${web}/WEB-INF/web.xml" tofile="${webapp}/WEB-INF/web.xml">
 	      <filterset refid="version-filters"/>
 	    </copy>

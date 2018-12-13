@@ -82,6 +82,14 @@ public class Constants {
 	// ffmpeg parameters for embedded metadata
 	public static Map<String, String> FFMPEG_EMBED_PARAMS = new HashMap<>();
 
+	// CIL harvesting base directory
+	public static String CIL_HARVEST_DIR = "";
+	// CIL metadata mapping instructions (Excel file)
+	public static String CIL_HARVEST_MAPPING_FILE = "";
+
+	// dams42json conversion xsl file
+	public static String DAMS42JSON_XSL_FILE = "";
+
 	static {
 		InputStream in = null;
 		try {
@@ -213,6 +221,15 @@ public class Constants {
 				String[] token = format.split("\\|");
 				FFMPEG_EMBED_PARAMS.put(token[0].trim(), token[1].trim());
 			}
+
+			// CIL harvest base dir
+			CIL_HARVEST_DIR = props.getProperty("cil.harvest.dir");
+			// Location of the CIL mapping file
+			CIL_HARVEST_MAPPING_FILE = props.getProperty("cil.harvest.metadata.mapping.xslt");
+
+			// Location of dams42json xsl
+			DAMS42JSON_XSL_FILE = props.getProperty("dams.dams42json.xsl");
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally{

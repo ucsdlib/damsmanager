@@ -10,6 +10,7 @@ import java.util.TimerTask;
 import org.apache.log4j.Logger;
 
 import edu.ucsd.library.xdre.statistic.analyzer.Statistics;
+import edu.ucsd.library.xdre.web.CILHarvestingTaskController;
 import edu.ucsd.library.xdre.web.StatsCollectionsReportController;
 import edu.ucsd.library.xdre.web.StatsQuantityAnalyzerController;
 import edu.ucsd.library.xdre.web.StatsWeblogAnalyzerController;
@@ -18,7 +19,10 @@ public class DAMSRoutineManager{
 	private static Logger logger = Logger.getLogger(DAMSRoutineManager.class);
 	private static DAMSRoutineManager worker = null;
 	private static int SCHEDULED_HOUR = 1;
-	
+
+	private boolean cilHarvestingTaskStarted = false;
+	private Date cilHarvestingStartedTime = null;
+
 	private DAMSRoutineManager(){}
 	
 	public void start(){
@@ -36,7 +40,11 @@ public class DAMSRoutineManager{
 		calendar.add(Calendar.MINUTE, 2);
 		timer = new Timer();
 		timer.schedule(new StatisticsTask(), calendar.getTime());
-		
+
+		// CIL harvesting process
+		calendar.add(Calendar.HOUR_OF_DAY, 3);
+		Date cilHarvestingTime = calendar.getTime();
+		timer.scheduleAtFixedRate(new CILHarvestingTask(), cilHarvestingTime, 1000*60*60*24);
 	}
 	
 	class StatisticsTask extends TimerTask{
@@ -54,7 +62,37 @@ public class DAMSRoutineManager{
 		}
 		
 	}
-	
+
+	class CILHarvestingTask extends TimerTask{
+
+		public void run() {
+			synchronized(CILHarvestingTask.class) {
+				if (cilHarvestingTaskStarted == true) {
+					logger.warn("CIL Harvesting process was still running, which was started at "
+							+ Statistics.getDatabaseDateFormater().format(cilHarvestingStartedTime) + ".");
+					return;
+				} else {
+					cilHarvestingStartedTime = Calendar.getInstance().getTime();
+					cilHarvestingTaskStarted = true;
+				}
+
+				// perform CIL harvesting
+				try{
+					logger.info("DAMS Mananger start CIL Harvesting task ... ");
+
+					CILHarvestingTaskController.performHarvestingTask();
+
+					logger.info("DAMS Mananger exits CIL Harvesting task at " + Statistics.getDatabaseDateFormater().format(Calendar.getInstance().getTime()) + ".");
+				}catch(Exception e){
+					e.printStackTrace();
+					logger.error("CIL Harvesting process failed: " + Statistics.getDatabaseDateFormater().format(Calendar.getInstance().getTime()) + ".");
+				} finally {
+					cilHarvestingTaskStarted = false;
+				}
+			}
+		}
+	}
+
 	class DamsRoutine extends TimerTask{
 		
 		public DamsRoutine(){}

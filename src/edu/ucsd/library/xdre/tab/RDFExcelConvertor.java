@@ -6,12 +6,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +28,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -38,9 +37,16 @@ public class RDFExcelConvertor {
 	private static final String[] requiredFields = {"Object Unique ID","Level","File name","File use","Type of Resource","Language","Title","Subtitle","Translation","Variant"};
 	private String rdfSource = null;
 	private String xsl = null;
-	public RDFExcelConvertor(String rdfSource, String xsl){
+	private InputStream xslInput = null;
+	public RDFExcelConvertor(String rdfSource, String xsl) throws FileNotFoundException{
 		this.rdfSource = rdfSource;
 		this.xsl = xsl;
+		this.xslInput = new FileInputStream(xsl);
+	}
+
+	public RDFExcelConvertor(String rdfSource, InputStream xslInput) throws FileNotFoundException{
+		this.rdfSource = rdfSource;
+		this.xslInput = xslInput;
 	}
 
 	/**
@@ -54,7 +60,7 @@ public class RDFExcelConvertor {
 	public String convert2CSV () throws FileNotFoundException, TransformerException, UnsupportedEncodingException {
 		Map<String, Integer> fieldCounts = new TreeMap<>();
 		Map<String, List<Map<String,String>>> objectRecords = new HashMap<>();
-		String jsonString = xslConvert(xsl, rdfSource);
+		String jsonString = xslConvert(xslInput, rdfSource);
 
 		ByteArrayInputStream input = null;
 		try {
@@ -70,6 +76,9 @@ public class RDFExcelConvertor {
 				}
 			}
 		}finally{
+			if (StringUtils.isNotBlank(xsl)) {
+				close (xslInput);
+			}
 			close (input);
 		}
 
@@ -205,17 +214,30 @@ public class RDFExcelConvertor {
 	 * @param xsl
 	 * @param source
 	 * @return
+	 * @throws TransformerException
+	 * @throws IOException 
+	 */
+	public static String xslConvert(String xsl, String source) throws TransformerException, IOException {
+		try (InputStream xslIn = new FileInputStream(xsl);) {
+			return xslConvert(xslIn, source);
+		}
+	}
+
+
+	/**Convert source to other formats with xsl transform
+	 * 
+	 * @param xslIn
+	 * @param source
+	 * @return
 	 * @throws FileNotFoundException
 	 * @throws TransformerException
 	 */
-	public static String xslConvert(String xsl, String source) throws FileNotFoundException, TransformerException {
-		Reader xslReader = null;
+	public static String xslConvert(InputStream xslIn, String source) throws FileNotFoundException, TransformerException {
 		InputStream srcInput = null;
 		OutputStream out = null;
 		try{
 			out = new ByteArrayOutputStream();
-			xslReader = new FileReader(xsl);
-			Source xslSrc = new StreamSource(xslReader);
+			Source xslSrc = new StreamSource(xslIn);
 			TransformerFactory transFact = TransformerFactory.newInstance( );
 			Templates xslTemp = transFact.newTemplates(xslSrc);
 			Transformer trans = xslTemp.newTransformer();
@@ -226,7 +248,6 @@ public class RDFExcelConvertor {
 			trans.setOutputProperty(OutputKeys.INDENT, "yes");
 			trans.transform(xmlSource, result);
 		}finally{
-			close(xslReader);
 			close(srcInput);
 			close(out);
 		}
