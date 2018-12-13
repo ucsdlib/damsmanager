@@ -1018,12 +1018,13 @@ public class CollectionOperationController implements Controller {
 								  writeXml(destFile, rdfPreview.getDocument().asXML());
 								  if (preingestOption.equalsIgnoreCase("pre-processing-csv")) {
 									  // convert to Excel/csv format
-									  String xsl2json = session.getServletContext().getRealPath("files/dams42json.xsl");
-									  RDFExcelConvertor convertor = new RDFExcelConvertor(destFile.getAbsolutePath(), xsl2json);
-									  String jsonString = convertor.convert2CSV();
-									  destFile = new File(Constants.TMP_FILE_DIR, "preview-" + submissionId + ".csv");
-									  write2File (destFile, jsonString);
-									  dataLink = "\nThe converted source in Excel/CSV format is ready for <a href=\"" + logLink;
+									  try(InputStream xsl2jsonInput = CILHarvestingTaskController.getDams42JsonXsl();) {
+										  RDFExcelConvertor convertor = new RDFExcelConvertor(destFile.getAbsolutePath(), xsl2jsonInput);
+										  String jsonString = convertor.convert2CSV();
+										  destFile = new File(Constants.TMP_FILE_DIR, "preview-" + submissionId + ".csv");
+										  write2File (destFile, jsonString);
+										  dataLink = "\nThe converted source in Excel/CSV format is ready for <a href=\"" + logLink;
+									  }
 								  } else {
 									  dataLink = "\nThe converted RDF/XML is ready for <a href=\"" + logLink;
 								  }

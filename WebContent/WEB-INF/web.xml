@@ -87,6 +87,7 @@
             <url-pattern>/statsQuantityAnalyzer.do</url-pattern>
             <url-pattern>/collectionsReport.do</url-pattern>
             <url-pattern>/collectionStatusReport.do</url-pattern>
+            <url-pattern>/cilHarvest.do</url-pattern>
         </web-resource-collection>
         <auth-constraint>
             <role-name>4708</role-name>
