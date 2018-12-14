@@ -24,13 +24,13 @@ public abstract class TabularRecordBasic implements Record
     protected static int counter = 0;
 
     // namespaces
-    protected static final Namespace rdfNS  = new Namespace(
+    public static final Namespace rdfNS  = new Namespace(
             "rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
     protected static final Namespace rdfsNS  = new Namespace(
             "rdfs", "http://www.w3.org/2000/01/rdf-schema#");
     protected static final Namespace madsNS = new Namespace(
             "mads", "http://www.loc.gov/mads/rdf/v1#");
-    protected static final Namespace damsNS = new Namespace(
+    public static final Namespace damsNS = new Namespace(
             "dams", "http://library.ucsd.edu/ontology/dams#");
 
     protected Map<String,String> data;

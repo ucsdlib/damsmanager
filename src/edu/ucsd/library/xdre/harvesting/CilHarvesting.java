@@ -89,6 +89,7 @@ public class CilHarvesting implements RecordSource {
         String objId = fileName.substring(0, fileName.indexOf("."));
         data.put(TabularRecord.OBJECT_ID, objId);
         data.put(TabularRecord.OBJECT_COMPONENT_TYPE, "object");
+        data.put(FieldMappings.IDENTIFIER_SAMPLENUMBER.toLowerCase(), objId);
 
         TabularRecord record = null;
         try (InputStreamReader srcIn = new InputStreamReader(new FileInputStream(srcFile))){
