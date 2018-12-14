@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -21,7 +22,9 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import edu.ucsd.library.xdre.harvesting.CilHarvesting;
 import edu.ucsd.library.xdre.harvesting.FieldMappings;
+import edu.ucsd.library.xdre.tab.TabularRecordBasic;
 import edu.ucsd.library.xdre.utils.Constants;
+import edu.ucsd.library.xdre.utils.DAMSClient;
 
 /**
  * Class CILHarvestingController perform task for CIL harvesting
@@ -68,73 +71,84 @@ public class CILHarvestingTaskController implements Controller {
      * @throws Exception
      */
     public synchronized static List<String> performHarvestingTask() throws Exception{
+        DAMSClient damsClient = null;
         List<String> sourceJsonsAdded = new  ArrayList<>();
-        File[] cilDirs = new File(Constants.CIL_HARVEST_DIR).listFiles();
-        for (File cilDir : cilDirs) {
-            if (cilDir.isDirectory() && cilDir.getName().startsWith(CIL_HARVEST_PATH_PREFIX)) {
 
-                List<String> sourceJsons = new  ArrayList<>();
-                File[] dirs = cilDir.listFiles();
-                for (File dir : dirs) {
-                    if (dir.getName().equalsIgnoreCase(CIL_HARVEST_METADATA_SOURCE)) {
-                        File metadataProcessedDir = new File(dir.getParentFile(), CIL_HARVEST_METADATA_PROCESSED);
-                        if (!metadataProcessedDir.exists()) {
-                            // source json files haven't been processed
-                            addSourceFiles(sourceJsons, dir);
-                        } else {
-                            // source json files processed, check for completion
-                            File excelHeadingsFile = new File(metadataProcessedDir.getAbsolutePath(), EXCEL_HEADINGS_CSV_FILE);
-                            if (!excelHeadingsFile.exists() || excelHeadingsFile.length() <= 0) {
-                                // metadata processed not finished
-                                addSourceFiles(sourceJsons, dir);
+        try {
+            damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
+            File[] cilDirs = new File(Constants.CIL_HARVEST_DIR).listFiles();
+            for (File cilDir : cilDirs) {
+                if (cilDir.isDirectory() && cilDir.getName().startsWith(CIL_HARVEST_PATH_PREFIX)) {
+
+                    List<String> sourceJsons = new  ArrayList<>();
+                    File[] dirs = cilDir.listFiles();
+                    for (File dir : dirs) {
+                        if (dir.getName().equalsIgnoreCase(CIL_HARVEST_METADATA_SOURCE)) {
+                            File metadataProcessedDir = new File(dir.getParentFile(), CIL_HARVEST_METADATA_PROCESSED);
+                            if (!metadataProcessedDir.exists()) {
+                                // source json files haven't been processed
+                                addSourceFiles(damsClient, sourceJsons, dir);
+                            } else {
+                                // source json files processed, check for completion
+                                File excelHeadingsFile = new File(metadataProcessedDir.getAbsolutePath(), EXCEL_HEADINGS_CSV_FILE);
+                                if (!excelHeadingsFile.exists() || excelHeadingsFile.length() <= 0) {
+                                    // metadata processed not finished
+                                    addSourceFiles(damsClient, sourceJsons, dir);
+                                }
                             }
                         }
                     }
-                }
 
-                if (sourceJsons.size() > 0) {
-                    log.info("Detected " + sourceJsons.size() + " CIL JSON source files  in directory " + cilDir.getAbsolutePath() + ".");
+                    if (sourceJsons.size() > 0) {
+                        log.info("Detected " + sourceJsons.size() + " CIL JSON source files  in directory " + cilDir.getAbsolutePath() + ".");
 
-                    sourceJsonsAdded.addAll(sourceJsons);
+                        sourceJsonsAdded.addAll(sourceJsons);
 
-                    // process the source JSON
-                    InputStream mappingsInput = null;
-                    InputStream dams42jsonInput = getDams42JsonXsl();
+                        // process the source JSON
+                        InputStream mappingsInput = null;
+                        InputStream dams42jsonInput = getDams42JsonXsl();
 
-                    // retrieve the CIL Processing and Mapping Instructions file content
-                    String cilMappingFile = StringUtils.isNotBlank(Constants.CIL_HARVEST_MAPPING_FILE)
-                            ? Constants.CIL_HARVEST_MAPPING_FILE : CIL_HARVEST_MAPPING_FILE;
-                    if (new File(cilMappingFile).exists()) {
-                        mappingsInput = new FileInputStream(cilMappingFile);
+                        // retrieve the CIL Processing and Mapping Instructions file content
+                        String cilMappingFile = StringUtils.isNotBlank(Constants.CIL_HARVEST_MAPPING_FILE)
+                                ? Constants.CIL_HARVEST_MAPPING_FILE : CIL_HARVEST_MAPPING_FILE;
+                        if (new File(cilMappingFile).exists()) {
+                            mappingsInput = new FileInputStream(cilMappingFile);
+                        } else {
+                            // use the default CIL Processing and Mapping Instructions.xlsx file provided in the code
+                            mappingsInput = CILHarvestingTaskController.class.getResourceAsStream(cilMappingFile);
+                        }
+
+                        try(InputStream mappingsIn = mappingsInput; InputStream dams42jsonIn = dams42jsonInput;) {
+                            FieldMappings fieldMapping = new FieldMappings(mappingsIn);
+                            CilHarvesting cilHarvesting = new CilHarvesting(
+                                    fieldMapping.getFieldMappings(),
+                                    fieldMapping.getConstantFields(),
+                                    sourceJsonsAdded);
+
+                            String csvString = cilHarvesting.toCSV(dams42jsonIn);
+                            File metadataProcessedDir = new File(cilDir.getPath(), CIL_HARVEST_METADATA_PROCESSED);
+                            if (!metadataProcessedDir.exists())
+                                metadataProcessedDir.mkdirs();
+
+                            File destMetadataFile = new File (metadataProcessedDir, EXCEL_HEADINGS_CSV_FILE);
+                            writeContent(destMetadataFile.getAbsolutePath(), csvString);
+                        }
+
+                        log.info("Finished converting " + sourceJsonsAdded.size() + " CIL JSON source files.");
                     } else {
-                        // use the default CIL Processing and Mapping Instructions.xlsx file provided in the code
-                        mappingsInput = CILHarvestingTaskController.class.getResourceAsStream(cilMappingFile);
+                        log.info("No CIL JSON source files were detected to be added.");
                     }
-
-                    try(InputStream mappingsIn = mappingsInput; InputStream dams42jsonIn = dams42jsonInput;) {
-                        FieldMappings fieldMapping = new FieldMappings(mappingsIn);
-                        CilHarvesting cilHarvesting = new CilHarvesting(
-                                fieldMapping.getFieldMappings(),
-                                fieldMapping.getConstantFields(),
-                                sourceJsonsAdded);
-
-                        String csvString = cilHarvesting.toCSV(dams42jsonIn);
-                        File metadataProcessedDir = new File(cilDir.getPath(), CIL_HARVEST_METADATA_PROCESSED);
-                        if (!metadataProcessedDir.exists())
-                            metadataProcessedDir.mkdirs();
-
-                        File destMetadataFile = new File (metadataProcessedDir, EXCEL_HEADINGS_CSV_FILE);
-                        writeContent(destMetadataFile.getAbsolutePath(), csvString);
-                    }
-
-                    log.info("Finished converting " + sourceJsonsAdded.size() + " CIL JSON source files.");
-                } else {
-                    log.info("No CIL JSON source files were detected to be added.");
                 }
             }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            log.error("CIL harvesting failed: " + ex.getMessage());
+        } finally {
+            if(damsClient != null)
+                damsClient.close();
         }
 
-        return sourceJsonsAdded;
+    return sourceJsonsAdded;
     }
 
     /**
@@ -184,12 +198,32 @@ public class CILHarvestingTaskController implements Controller {
      * Add json source files to list
      * @param sourceFiles
      * @param parentDir
+     * @throws Exception 
      */
-    private static void addSourceFiles(List<String> sourceFiles, File parentDir) {
+    private static void addSourceFiles(DAMSClient damsClient, List<String> sourceFiles, File parentDir) throws Exception {
         for (File file : parentDir.listFiles()) {
             if (file.isFile() && file.getName().toLowerCase().endsWith(".json")) {
-                sourceFiles.add(file.getAbsolutePath());
+                if (!isIngested(damsClient, file.getName())) {
+                    sourceFiles.add(file.getAbsolutePath());
+                }
             }
         }
+    }
+
+    /*
+     * Check whether the JSON file is ingest or not
+     * @param damsClient
+     * @param fileName
+     * @return
+     * @throws Exception
+     */
+    private static boolean isIngested(DAMSClient damsClient, String fileName) throws Exception {
+        String sampleNumber = fileName.substring(0, fileName.indexOf("."));
+        String sparql = "PREFIX rdf: <" + TabularRecordBasic.rdfNS.getURI() + ">\n"
+                + " PREFIX dams: <" + TabularRecordBasic.damsNS.getURI() + ">\n"
+                + " SELECT ?sub WHERE {?sub dams:note ?o . ?o rdf:type ?_clazz . ?_clazz rdf:label '\"dams:Note\"'"
+                + " . ?o dams:type '\"identifier\"' . ?o rdf:value '\"" + sampleNumber + "\"'  }";
+        List<Map<String, String>> results = damsClient.sparqlLookup(sparql);
+        return results.size() > 0;
     }
 }
