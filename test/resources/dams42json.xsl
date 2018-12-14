@@ -216,7 +216,7 @@
     <xsl:template name="madsLanguage" match="mads:Language">
         <xsl:call-template name="appendJsonObject">
            <xsl:with-param name="key">Language</xsl:with-param>
-           <xsl:with-param name="val"><xsl:value-of select="mads:code"/> - <xsl:value-of select="mads:elementList/mads:LanguageElement/mads:elementValue"/></xsl:with-param>
+           <xsl:with-param name="val"><xsl:value-of select="mads:code"/> - <xsl:value-of select="mads:authoritativeLabel"/></xsl:with-param>
         </xsl:call-template>
     </xsl:template>
 
