@@ -12,7 +12,7 @@
     <xsl:template match="rdf:RDF">
         <xsl:call-template name="startJsonObject"/>
 
-        <xsl:for-each select="*">
+        <xsl:for-each select="*[local-name() != 'DAMSEvent']">
             <xsl:variable name="id"><xsl:value-of select="@rdf:about"/></xsl:variable>
             <xsl:variable name="count"><xsl:number level="any" count="dams:Object"/></xsl:variable>
             <xsl:variable name="objectId">
@@ -377,6 +377,7 @@
             <xsl:for-each select="dams:hasComponent/dams:Component">
                 <xsl:sort select="dams:order" data-type="number" order="ascending" />
                 <xsl:call-template name="damsComponent">
+                   <xsl:with-param name="objectId"><xsl:value-of select="$objectId" /></xsl:with-param>
                    <xsl:with-param name="depth"><xsl:value-of select="$depth + 1"/></xsl:with-param>
                </xsl:call-template>
             </xsl:for-each>

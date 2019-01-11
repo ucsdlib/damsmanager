@@ -25,7 +25,7 @@ public class MetadataExportHandler extends CollectionHandler{
 
 	//private Map subjectNSMap = null;
 	private List<String> predicates = null;
-	private boolean components = true;
+	protected boolean components = true;
 	private int count = 0;
 	private int failedCount = 0;
 	private RDFStore rdfStore = null;
@@ -149,7 +149,7 @@ public class MetadataExportHandler extends CollectionHandler{
 	public void trimStatements(RDFStore iStore) throws Exception{
 		if(!components)
 			iStore.excludeComponentsAndFiles();
-		if(predicates.size() > 0)
+		if(predicates !=null && predicates.size() > 0)
 			iStore.trimStatements(predicates);
 	}
 
