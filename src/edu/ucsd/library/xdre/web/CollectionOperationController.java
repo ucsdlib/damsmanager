@@ -47,6 +47,7 @@ import org.json.simple.JSONArray;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
+import edu.ucsd.library.xdre.collection.BatchExportHandler;
 import edu.ucsd.library.xdre.collection.ChecksumsHandler;
 import edu.ucsd.library.xdre.collection.CollectionHandler;
 import edu.ucsd.library.xdre.collection.CollectionReleaseHandler;
@@ -167,6 +168,7 @@ public class CollectionOperationController implements Controller {
 		boolean isCollectionRelease = getParameter(paramsMap, "collectionRelease") != null;
 		boolean isFileUpload = getParameter(paramsMap, "fileUpload") != null;
 		boolean isFileReport = getParameter(paramsMap, "fileReport") != null;
+		boolean isBatchExport = getParameter(paramsMap, "batchExport") != null;
 		if(activeButton == null || activeButton.length() == 0)
 			activeButton = "validateButton";
 		HttpSession session = request.getSession();
@@ -203,8 +205,10 @@ public class CollectionOperationController implements Controller {
 			forwardTo = "/fileUpload.do?";
 		else if(isFileReport)
 			forwardTo = "/fileReport.do?";
+		else if (isBatchExport)
+			forwardTo = "/batchExport.do?";
 
-		if(( !(getParameter(paramsMap, "solrRecordsDump") != null || isBSJhoveReport || isDevUpload || isFileUpload || isFileReport || isSubjectImport)
+		if(( !(isBatchExport || getParameter(paramsMap, "solrRecordsDump") != null || isBSJhoveReport || isDevUpload || isFileUpload || isFileReport || isSubjectImport)
 				&& getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "externalImport") == null 
 				&& getParameter(paramsMap, "dataConvert") == null ) && getParameter(paramsMap, "marcModsImport") == null
 				&& getParameter(paramsMap, "excelImport") == null && getParameter(paramsMap, "collectionImport") == null 
@@ -301,7 +305,7 @@ public class CollectionOperationController implements Controller {
 		DAMSClient damsClient = null;
 		String collectionId = getParameter(paramsMap, "category");
 		
-		boolean[] operations = new boolean[22];
+		boolean[] operations = new boolean[23];
 		operations[0] = getParameter(paramsMap, "validateFileCount") != null;
 		operations[1] = getParameter(paramsMap, "validateChecksums") != null;
 		operations[2] = getParameter(paramsMap, "rdfImport") != null;
@@ -328,6 +332,7 @@ public class CollectionOperationController implements Controller {
 		operations[19] = getParameter(paramsMap, "jhoveReport") != null;
 		operations[20] = getParameter(paramsMap, "fileReport") != null;
 		operations[21] = getParameter(paramsMap, "subjectImport") != null;
+		operations[22] = getParameter(paramsMap, "batchExport") != null;
 
 		int submissionId = (int)System.currentTimeMillis();
 		session.setAttribute("submissionId", submissionId);
@@ -1575,10 +1580,38 @@ public class CollectionOperationController implements Controller {
 					handler = null;
 					Thread.sleep(100);
 				}
-			 }else 	
-		          throw new ServletException("Unhandle operation index: " + i);
-			 
-		   	if(handler != null){
+			 } else if (i == 22) {
+				session.setAttribute("status", opMessage + "Batch Export ...");
+				List<String> items = new ArrayList<>();
+				String exportFormat = getParameter(paramsMap, "exportFormat");
+				String txtInput = getParameter(paramsMap, "textInput");
+				String fileInputValue = getParameter(paramsMap, "data");
+				boolean components = getParameter(paramsMap, "excludeComponents") == null;
+				if (txtInput != null && (txtInput = txtInput.trim()).length() > 0) {
+					appendArks(items, txtInput);
+				}
+
+				// Handle records submitted in file with csv format, in lines or mixed together
+				if (fileInputValue != null && (fileInputValue = fileInputValue.trim()).length() > 0) {
+					appendArksFromFileInput(items, fileInputValue);
+				}
+
+				File rdfFile = BatchExportHandler.getRdfFile("" + submissionId);
+				fileOut = new FileOutputStream(rdfFile);
+				handler = new BatchExportHandler(damsClient, collectionId, exportFormat, components, fileOut);
+				((BatchExportHandler)handler).addItems(items);
+
+				File destFile = rdfFile;
+				if (exportFormat.equalsIgnoreCase("csv")) {
+					destFile = BatchExportHandler.getCsvFile("" + submissionId);
+				}
+
+				dataLink = "\nThe exported content is ready for <a href=\"" + logLink;
+				dataLink += "&file=" + destFile.getName() + "\">download</a>.\n";
+			} else
+				throw new ServletException("Unhandle operation index: " + i);
+
+			if (handler != null) {
 	 			try {
 	 				damsClient.setClientInfo(clientTool + (StringUtils.isNotBlank(clientVersion) ? " " + clientVersion : ""));
 	 				handler.setSubmissionId(submissionId);
@@ -1872,6 +1905,40 @@ public class CollectionOperationController implements Controller {
 
 			if (cvErrors.length() > 0) {
 				errorBuilder.append( messageTitle + " - \n" + cvErrors.toString() );
+			}
+		}
+	}
+
+	/*
+	 * Append arks in delimited values
+	 * @param items
+	 * @param inputValue
+	 */
+	private static void appendArks(List<String> items, String inputValue) {
+		String[] tokens = inputValue.split("\\,");
+		for (String token : tokens) {
+			String[] records = token.split(" ");
+			for (String record : records) {
+				record = record.trim();
+				if (record.length() > 0) {
+					items.add(record);
+				}
+			}
+		}
+	}
+
+	/*
+	 * Append arks from file input
+	 * @param items
+	 * @param fileInputValue
+	 */
+	private static void appendArksFromFileInput(List<String> items, String fileInputValue) {
+		// Handle record with line input
+		String[] lines = fileInputValue.split("\n");
+		for (String line : lines) {
+			// Handle CSV encoding records and records delimited by comma, whitespace etc.
+			if (line != null && (line = line.trim().replace("\"", "")).length() > 0) {
+				appendArks(items, line);
 			}
 		}
 	}
