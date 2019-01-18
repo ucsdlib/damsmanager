@@ -169,6 +169,11 @@ public class StatsCollectionsReportController implements Controller {
 			for(Iterator<String> uit=unitsRecordsMap.keySet().iterator(); uit.hasNext();){
 				colId = uit.next();
 				colTitle = unitsMap.get(colId);
+				if (colTitle.contains("Research Data")) {
+					colTitle = "Research Data Collections";
+				}
+				colTitle += " Orphans";
+
 				Set<String> uRecords = unitsRecordsMap.get(colId);
 				List<String> items = new ArrayList<String>();
 				items.addAll(uRecords);
