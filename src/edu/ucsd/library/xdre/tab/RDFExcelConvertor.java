@@ -174,9 +174,10 @@ public class RDFExcelConvertor {
 	}
 
 	private void appendValues(StringBuilder line, int fieldCount, String fieldValues) {
-		if (fieldValues != null) {
+		if (StringUtils.isNotBlank(fieldValues)) {
 			String[] values = fieldValues.split("\\|");
 
+			Arrays.sort(values);
 			for (String value : values) {
 				if (line.length() > 1 || (line.length() == 1 && line.charAt(0) != ','))
 					line.append(",");
