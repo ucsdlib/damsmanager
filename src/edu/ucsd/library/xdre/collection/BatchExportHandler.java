@@ -1,6 +1,7 @@
 package edu.ucsd.library.xdre.collection;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -26,6 +27,8 @@ import edu.ucsd.library.xdre.web.CILHarvestingTaskController;
  */
 public class BatchExportHandler extends MetadataExportHandler {
     private static Logger log = Logger.getLogger(BatchExportHandler.class);
+
+    public static String DAMS42JSON_EXPORT_XSL_FILE = "/resources/dams42json-export.xsl";
 
     private int count = 0;
     private int failedCount = 0;
@@ -97,7 +100,7 @@ public class BatchExportHandler extends MetadataExportHandler {
                 setStatus("Processing export for subject " + subjectId  + " (" + (i+1) + " of " + itemsCount + ") ... " ); 
                 iStore =  new RDFStore();
                 if (format.equalsIgnoreCase("csv")) {
-                    iStore.loadRDFXML(damsClient.getFullRecord(subjectId).asXML());
+                    iStore.loadRDFXML(damsClient.getFullRecord(subjectId, true).asXML());
                 } else {
                     iStore.loadRDFXML(damsClient.getMetadata(subjectId, "xml"));
                 }
@@ -138,9 +141,9 @@ public class BatchExportHandler extends MetadataExportHandler {
             rdfStore.write(out, "RDF/XML-ABBREV");
             File rdfFile = getRdfFile("" + submissionId);
             File destFile = new File(Constants.TMP_FILE_DIR, "batchExport-" + submissionId + ".csv");
-            try (InputStream jsonConvertXslInput = CILHarvestingTaskController.getDams42JsonXsl();
+            try (InputStream jsonConvertExportXslInput = getDams42JsonExportXsl();
                     OutputStream outDest = new FileOutputStream(destFile)) {
-                RDFExcelConvertor converter = new RDFExcelConvertor(rdfFile.getAbsolutePath(), jsonConvertXslInput);
+                RDFExcelConvertor converter = new RDFExcelConvertor(rdfFile.getAbsolutePath(), jsonConvertExportXslInput);
                 String csvValue = converter.convert2CSV();
                 outDest.write(csvValue.getBytes("UTF-8"));
             }
@@ -163,6 +166,15 @@ public class BatchExportHandler extends MetadataExportHandler {
         String exeInfo = exeReport.toString();
         logMessage(exeInfo);
         return exeInfo;
+    }
+
+    /**
+     * Retrieve the dams42Json-export XSL as InputStream from provided in source code
+     * @return
+     * @throws FileNotFoundException
+     */
+    public InputStream getDams42JsonExportXsl() throws FileNotFoundException {
+        return getClass().getResourceAsStream(DAMS42JSON_EXPORT_XSL_FILE);
     }
 
     public static File getRdfFile(String submissionId) {
