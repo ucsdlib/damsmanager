@@ -118,6 +118,8 @@ public class CILHarvestingTaskController implements Controller {
                             mappingsInput = CILHarvestingTaskController.class.getResourceAsStream(cilMappingFile);
                         }
 
+                        String message = "";
+                        File destMetadataFile = null;
                         try(InputStream mappingsIn = mappingsInput; InputStream dams42jsonIn = dams42jsonInput;) {
                             FieldMappings fieldMapping = new FieldMappings(mappingsIn);
                             CilHarvesting cilHarvesting = new CilHarvesting(
@@ -130,11 +132,30 @@ public class CILHarvestingTaskController implements Controller {
                             if (!metadataProcessedDir.exists())
                                 metadataProcessedDir.mkdirs();
 
-                            File destMetadataFile = new File (metadataProcessedDir, EXCEL_HEADINGS_CSV_FILE);
+                            destMetadataFile = new File (metadataProcessedDir, EXCEL_HEADINGS_CSV_FILE);
                             writeContent(destMetadataFile.getAbsolutePath(), csvString);
+
+                            message = "Successfully converted " + sourceJsonsAdded.size() + " CIL JSON source files: "
+                                    + destMetadataFile.getAbsolutePath();
+
+                            log.info(message);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            message = "Failed to convert " + sourceJsonsAdded.size() + " CIL JSON source files: "
+                                    + destMetadataFile.getAbsolutePath();
+                            log.error(message, e);
                         }
 
-                        log.info("Finished converting " + sourceJsonsAdded.size() + " CIL JSON source files.");
+                        // notify DDOM users by email for the status of CIL harvesting
+                        try {
+                            String[] emails = Constants.CIL_HARVEST_NOTIFY_EMAILS.split("\\,");
+                            String sender = Constants.MAILSENDER_DAMSSUPPORT;
+
+                            DAMSClient.sendMail(sender, emails, "CIL Harvesting Status Report", message, "text/html", "smtp.ucsd.edu");
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            log.error("Failed to send mail for CIL harvesting: " + e.getMessage());
+                        }
                     } else {
                         log.info("No CIL JSON source files were detected to be added.");
                     }
@@ -148,7 +169,7 @@ public class CILHarvestingTaskController implements Controller {
                 damsClient.close();
         }
 
-    return sourceJsonsAdded;
+        return sourceJsonsAdded;
     }
 
     /**

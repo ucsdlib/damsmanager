@@ -86,6 +86,8 @@ public class Constants {
 	public static String CIL_HARVEST_DIR = "";
 	// CIL metadata mapping instructions (Excel file)
 	public static String CIL_HARVEST_MAPPING_FILE = "";
+	// CIL harvesting emails for notification
+	public static String CIL_HARVEST_NOTIFY_EMAILS = "";
 
 	// dams42json conversion xsl file
 	public static String DAMS42JSON_XSL_FILE = "";
@@ -226,6 +228,8 @@ public class Constants {
 			CIL_HARVEST_DIR = props.getProperty("cil.harvest.dir");
 			// Location of the CIL mapping file
 			CIL_HARVEST_MAPPING_FILE = props.getProperty("cil.harvest.metadata.mapping.xslt");
+			// CIL harvesting emails for notification
+			CIL_HARVEST_NOTIFY_EMAILS = props.getProperty("cil.harvest.emails");
 
 			// Location of dams42json xsl
 			DAMS42JSON_XSL_FILE = props.getProperty("dams.dams42json.xsl");
