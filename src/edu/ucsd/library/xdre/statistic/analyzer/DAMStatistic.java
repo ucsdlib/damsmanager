@@ -162,6 +162,9 @@ public class DAMStatistic extends Statistics{
             return;
         }
 
+        // initiate the WebStatsAccess object if not being initiated for the request IP
+        initWebStatsAccess(clientIp);
+
         Map<String, StatsObjectAccess> iMap = ipItemsMap;
         if (isPrivateAccess)
             iMap = ipItemsMapPrivate;
@@ -207,15 +210,25 @@ public class DAMStatistic extends Statistics{
     }
 
     /*
-     * Add dams access
+     * Initiate the WebStatsCounter object for the client request if not initiated
      * @param clientIp
+     * @return WebStatsCounter
      */
-    private void addWebStatsAccess(String clientIp) {
+    private WebStatsCounter initWebStatsAccess(String clientIp) {
         WebStatsCounter webStatsCounter = ipWebStatsMap.get(clientIp);
         if (webStatsCounter == null) {
             webStatsCounter = new WebStatsCounter(clientIp);
             ipWebStatsMap.put(clientIp, webStatsCounter);
         }
+        return webStatsCounter;
+    }
+
+    /*
+     * Add dams access
+     * @param clientIp
+     */
+    private void addWebStatsAccess(String clientIp) {
+        WebStatsCounter webStatsCounter = initWebStatsAccess(clientIp);
         webStatsCounter.addAccess();
     }
 
