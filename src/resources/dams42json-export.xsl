@@ -120,7 +120,7 @@
                     <xsl:variable name="ark"><xsl:value-of select="substring-after($resArk, '/20775/')" /></xsl:variable>
                     <xsl:call-template name="appendJsonObject">
                         <xsl:with-param name="key"><xsl:value-of select="local-name()"/></xsl:with-param>
-                        <xsl:with-param name="val"><xsl:value-of select="concat(//*[@rdf:about=$resArk]/mads:authoritativeLabel, '@', $ark)"/></xsl:with-param>
+                        <xsl:with-param name="val"><xsl:value-of select="concat(//*[@rdf:about=$resArk]/mads:authoritativeLabel, ' @ ', $ark)"/></xsl:with-param>
                     </xsl:call-template>
                 </xsl:when>
                 <xsl:otherwise>
@@ -165,11 +165,11 @@
                     <xsl:sort select="*/@rdf:about | @rdf:resource"/>
                     <xsl:variable name='resArk'><xsl:value-of select="*/@rdf:about | @rdf:resource"/></xsl:variable>
                     <xsl:variable name="ark"><xsl:value-of select="substring-after($resArk, '/20775/')" /></xsl:variable>
-                    <xsl:value-of select="concat('|', //*[@rdf:about=$resArk]/dams:title//mads:authoritativeLabel, '@', $ark)"/>
+                    <xsl:value-of select="concat('|', //*[@rdf:about=$resArk]/dams:title//mads:authoritativeLabel, ' @ ', $ark)"/>
                 </xsl:for-each>
             </xsl:variable>
             <xsl:call-template name="appendJsonObject">
-               <xsl:with-param name="key">Collection(s)</xsl:with-param>
+               <xsl:with-param name="key">collection(s)</xsl:with-param>
                <xsl:with-param name="val"><xsl:value-of select="substring-after($collections, '|')"/></xsl:with-param>
             </xsl:call-template>
         </xsl:if>
@@ -356,7 +356,7 @@
         </xsl:variable>
         <xsl:call-template name="appendJsonObject">
            <xsl:with-param name="key"><xsl:value-of select="$columnName"/><xsl:value-of select="$fastHeadings"/></xsl:with-param>
-           <xsl:with-param name="val"><xsl:value-of select="concat($node/mads:authoritativeLabel, '@', $ark)"/></xsl:with-param>
+           <xsl:with-param name="val"><xsl:value-of select="concat($node/mads:authoritativeLabel, ' @ ', $ark)"/></xsl:with-param>
         </xsl:call-template>
     </xsl:template>
 
@@ -382,7 +382,7 @@
         </xsl:variable>
         <xsl:call-template name="appendJsonObject">
            <xsl:with-param name="key">Subject:<xsl:value-of select="$columnName"/></xsl:with-param>
-           <xsl:with-param name="val"><xsl:value-of select="concat(mads:authoritativeLabel, '@', $ark)"/></xsl:with-param>
+           <xsl:with-param name="val"><xsl:value-of select="concat(mads:authoritativeLabel, ' @ ', $ark)"/></xsl:with-param>
         </xsl:call-template>
     </xsl:template>
 
@@ -390,7 +390,7 @@
         <xsl:variable name="ark"><xsl:value-of select="substring-after(@rdf:about, '/20775/')" /></xsl:variable>
         <xsl:call-template name="appendJsonObject">
            <xsl:with-param name="key">Language</xsl:with-param>
-           <xsl:with-param name="val"><xsl:value-of select="mads:code"/> - <xsl:value-of select="concat(mads:authoritativeLabel, '@', $ark)"/></xsl:with-param>
+           <xsl:with-param name="val"><xsl:value-of select="mads:code"/> - <xsl:value-of select="concat(mads:authoritativeLabel, ' @ ', $ark)"/></xsl:with-param>
         </xsl:call-template>
     </xsl:template>
 
@@ -411,7 +411,7 @@
         <xsl:call-template name="appendJsonObject">
            <xsl:with-param name="key"><xsl:value-of select="$name"/>:<xsl:value-of select="$role"/></xsl:with-param>
            <xsl:with-param name="val">
-             <xsl:value-of select="concat(//*[@rdf:about=$nameArk]/mads:authoritativeLabel, '@', $ark)"/>
+             <xsl:value-of select="concat(//*[@rdf:about=$nameArk]/mads:authoritativeLabel, ' @ ', $ark)"/>
            </xsl:with-param>
         </xsl:call-template>
     </xsl:template>
@@ -588,9 +588,15 @@
     </xsl:template>
 
     <xsl:template name="damsRelatedResource" match="dams:RelatedResource">
+        <xsl:variable name="uri">
+            <xsl:choose>
+                <xsl:when test="string-length(dams:uri/@rdf:resource) > 0"><xsl:value-of select="dams:uri/@rdf:resource"/></xsl:when>
+                <xsl:otherwise><xsl:value-of select="dams:uri"/></xsl:otherwise>
+            </xsl:choose>
+        </xsl:variable>
         <xsl:call-template name="appendJsonObject">
-           <xsl:with-param name="key">Related resource:<xsl:value-of select="dams:type"/></xsl:with-param>
-           <xsl:with-param name="val"><xsl:value-of select="dams:uri/@rdf:resource"/> @ <xsl:value-of select="dams:description"/></xsl:with-param>
+            <xsl:with-param name="key">Related resource:<xsl:value-of select="dams:type"/></xsl:with-param>
+            <xsl:with-param name="val"><xsl:value-of select="dams:description"/> @ <xsl:value-of select="$uri"/></xsl:with-param>
         </xsl:call-template>
     </xsl:template>
 

@@ -35,6 +35,8 @@ import org.json.simple.JSONValue;
 
 public class RDFExcelConvertor {
 	private static final String[] requiredFields = {"Object Unique ID","Level","File name","File use","Type of Resource","Language","Title","Subtitle","Translation","Variant"};
+	private static final String[] groupFields = {"Date:collected","Date:creation","Date:issued","Begin date","End date"};
+
 	private String rdfSource = null;
 	private String xsl = null;
 	private InputStream xslInput = null;
@@ -91,9 +93,17 @@ public class RDFExcelConvertor {
 			appendFlatColumnNames(line, (count==null?1:count), fieldName);
 		}
 
+		// group headers
+		for (String fieldName : groupFields) {
+			Integer count = fieldCounts.get(fieldName);
+			appendFlatColumnNames(line, (count==null?0:count), fieldName);
+		}
+
 		List<String> requiredFieldsList = Arrays.asList(requiredFields);
+		List<String> groupFieldsList = Arrays.asList(groupFields);
+		// other headers
 		for (String fieldName : fieldCounts.keySet()) {
-			if (requiredFieldsList.indexOf(fieldName) < 0) {
+			if (requiredFieldsList.indexOf(fieldName) < 0 && groupFieldsList.indexOf(fieldName) < 0) {
 				Integer count = fieldCounts.get(fieldName);
 				appendFlatColumnNames(line, (count==null?1:count), fieldName);
 			}
@@ -110,10 +120,17 @@ public class RDFExcelConvertor {
 
 					appendValues(line, (fieldCount==null?1:fieldCount), fieldValues);
 				}
-				
+
+				for (String fieldName : groupFields) {
+					Integer fieldCount = fieldCounts.get(fieldName);
+					String fieldValues = row.get(fieldName);
+
+					appendValues(line, (fieldCount==null?0:fieldCount), fieldValues);
+				}
+
 				// append all other fields
 				for (String fieldName : fieldCounts.keySet()) {
-					if (requiredFieldsList.indexOf(fieldName) < 0) {
+					if (requiredFieldsList.indexOf(fieldName) < 0 && groupFieldsList.indexOf(fieldName) < 0) {
 						Integer fieldCount = fieldCounts.get(fieldName);
 						String fieldValues = row.get(fieldName);
 
@@ -182,11 +199,7 @@ public class RDFExcelConvertor {
 				if (line.length() > 1 || (line.length() == 1 && line.charAt(0) != ','))
 					line.append(",");
 
-				if (value.indexOf(",") >= 0 || value.indexOf("\"") >= 0 
-						|| value.indexOf(System.getProperty("line.separator")) >= 0)
-					line.append("\"" + value.replace("\"", "\"\"") + "\"");
-				else
-					line.append(value);
+				line.append(escapeCsv(value));
 			}
 
 			// append commas for extra fields
@@ -206,8 +219,20 @@ public class RDFExcelConvertor {
 			if (line.length() > 1)
 				line.append(",");
 	
-			line.append(columnName);
+			line.append(escapeCsv(columnName));
 		}
+	}
+
+	/*
+	 * Encode value in CSV format
+	 * @param value
+	 */
+	private String escapeCsv(String value) {
+		if (value.indexOf(",") >= 0 || value.indexOf("\"") >= 0 
+			|| value.indexOf(System.getProperty("line.separator")) >= 0)
+			return "\"" + value.replace("\"", "\"\"") + "\"";
+		else
+			return value;
 	}
 
 	/**Convert source to other formats with xsl transform
