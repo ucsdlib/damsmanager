@@ -214,7 +214,8 @@
             <td height="30px" align="left" colspan="2">
                 <div class="formatOptions">
                     <label>Export Format</label>
-                    <div class="specialmenuText"><input type="radio" name="exportFormat" value="csv" checked><span class="text-special">CSV</span></div>
+                    <div class="specialmenuText"><input type="radio" name="exportFormat" value="excel" checked><span class="text-special">Excel</span></div>
+                    <div class="specialmenuText"><input type="radio" name="exportFormat" value="csv"><span class="text-special">CSV</span></div>
                     <div class="specialmenuText"><input type="radio" name="exportFormat" value="RDF/XML-ABBREV"><span class="text-special">RDF XML</span></div>
                 </div>
                 <div class="formatOptions">
@@ -284,7 +285,8 @@
     <div style="text-align: left;">
         <div class="formatOptions">
             <label>Export Format</label>
-            <div class="specialmenuText"><input type="radio" name="exportFormat" value="csv" checked><span class="text-special">CSV</span></div>
+            <div class="specialmenuText"><input type="radio" name="exportFormat" value="excel" checked><span class="text-special">Excel</span></div>
+            <div class="specialmenuText"><input type="radio" name="exportFormat" value="csv"><span class="text-special">CSV</span></div>
             <div class="specialmenuText"><input type="radio" name="exportFormat" value="RDF/XML-ABBREV"><span class="text-special">RDF XML</span></div>
         </div>
         <div class="formatOptions">

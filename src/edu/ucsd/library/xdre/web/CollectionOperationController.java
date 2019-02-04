@@ -1604,6 +1604,8 @@ public class CollectionOperationController implements Controller {
 				File destFile = rdfFile;
 				if (exportFormat.equalsIgnoreCase("csv")) {
 					destFile = BatchExportHandler.getCsvFile("" + submissionId);
+				} else if (exportFormat.equalsIgnoreCase("excel")) {
+					destFile = BatchExportHandler.getExcelFile("" + submissionId);
 				}
 
 				dataLink = "\nThe exported content is ready for <a href=\"" + logLink;
