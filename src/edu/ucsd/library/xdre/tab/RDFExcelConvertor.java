@@ -29,6 +29,11 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -62,27 +67,9 @@ public class RDFExcelConvertor {
 	public String convert2CSV () throws FileNotFoundException, TransformerException, UnsupportedEncodingException {
 		Map<String, Integer> fieldCounts = new TreeMap<>();
 		Map<String, List<Map<String,String>>> objectRecords = new HashMap<>();
-		String jsonString = xslConvert(xslInput, rdfSource);
 
-		ByteArrayInputStream input = null;
-		try {
-			input = new ByteArrayInputStream(jsonString.getBytes("UTF-8"));
-			JSONObject jsonObj = (JSONObject) JSONValue.parse(new BufferedReader(new InputStreamReader(input)));
-			for (Iterator<String> it = jsonObj.keySet().iterator(); it.hasNext();){
-				String objID = it.next();
-				Object data = jsonObj.get(objID);
-				if (data instanceof JSONArray){
-					List<Map<String,String>> objectRecord = new ArrayList<>();
-					objectRecords.put(objID, objectRecord);
-					parseRecord (objectRecord, fieldCounts, (JSONArray)data);
-				}
-			}
-		}finally{
-			if (StringUtils.isNotBlank(xsl)) {
-				close (xslInput);
-			}
-			close (input);
-		}
+		// convert object data to Excel header format
+		convertRecords(objectRecords, fieldCounts);
 
 		// output string builder
 		StringBuilder csvBuilder = new StringBuilder();
@@ -142,6 +129,153 @@ public class RDFExcelConvertor {
 			}
 		}
 		return csvBuilder.toString();
+	}
+
+	/**
+	 * Convert RDF to Excel format
+	 * @param xsl
+	 * @return
+	 * @throws FileNotFoundException
+	 * @throws TransformerException
+	 * @throws UnsupportedEncodingException
+	 */
+	public Workbook convert2Excel() throws FileNotFoundException, TransformerException, UnsupportedEncodingException {
+		Map<String, Integer> fieldCounts = new TreeMap<>();
+		Map<String, List<Map<String,String>>> objectRecords = new HashMap<>();
+
+		// convert object data to Excel header.
+		convertRecords(objectRecords, fieldCounts);
+
+		int rowIndex = 0;
+		int cellIndex = 0;
+		XSSFWorkbook wb = new XSSFWorkbook();
+		XSSFSheet sheet = wb.createSheet();
+		XSSFRow xssfRow = sheet.createRow(rowIndex++);
+
+		// header output
+		for (String fieldName : requiredFields) {
+			Integer count = fieldCounts.get(fieldName) == null ? 1 : fieldCounts.get(fieldName);
+ 			for (int i = 0; i < count; i++) {
+				addCell(xssfRow, cellIndex++, fieldName);
+			}
+		}
+
+		// date group headers
+		for (String fieldName : groupFields) {
+			Integer count = fieldCounts.get(fieldName) == null ? 0 : fieldCounts.get(fieldName);
+			for (int i = 0; i < count; i++) {
+				addCell(xssfRow, cellIndex++, fieldName);
+			}
+		}
+
+		List<String> requiredFieldsList = Arrays.asList(requiredFields);
+		List<String> groupFieldsList = Arrays.asList(groupFields);
+		// other headers
+		for (String fieldName : fieldCounts.keySet()) {
+			if (requiredFieldsList.indexOf(fieldName) < 0 && groupFieldsList.indexOf(fieldName) < 0) {
+				Integer count = fieldCounts.get(fieldName) == null ? 1 : fieldCounts.get(fieldName);
+				for (int i = 0; i < count; i++) {
+					addCell(xssfRow, cellIndex++, fieldName);
+				}
+			}
+		}
+
+		for (String key : objectRecords.keySet()) {
+			List<Map<String, String>> rows = objectRecords.get(key);
+			for(Map<String, String> row : rows ) {
+				cellIndex = 0;
+				xssfRow = sheet.createRow(rowIndex++);
+
+				for (String fieldName : requiredFields) {
+					Integer fieldCount = fieldCounts.get(fieldName) == null ? 1 : fieldCounts.get(fieldName);
+					addCells(xssfRow, cellIndex, fieldCount, row.get(fieldName));
+					cellIndex += fieldCount;
+				}
+
+				for (String fieldName : groupFields) {
+					Integer fieldCount = fieldCounts.get(fieldName) == null ? 0 : fieldCounts.get(fieldName);
+					addCells(xssfRow, cellIndex, fieldCount, row.get(fieldName));
+					cellIndex += fieldCount;
+				}
+
+				// append all other fields
+				for (String fieldName : fieldCounts.keySet()) {
+					if (requiredFieldsList.indexOf(fieldName) < 0 && groupFieldsList.indexOf(fieldName) < 0) {
+						Integer fieldCount = fieldCounts.get(fieldName) == null ? 1 : fieldCounts.get(fieldName);
+						addCells(xssfRow, cellIndex, fieldCount, row.get(fieldName));
+						cellIndex += fieldCount;
+					}
+				}
+			}
+		}
+		return wb;
+	}
+
+	private void addCell(XSSFRow row, int cellIndex, String cellValue) {
+		XSSFCell cell = row.createCell(cellIndex);
+		cell.setCellValue(row.getSheet().getWorkbook().getCreationHelper().createRichTextString(cellValue));
+	}
+
+	/*
+	 * Add cells for multiple values, blank when values are less than the max field count.
+	 * @param row
+	 * @param cellIndex
+	 * @param fieldCount
+	 * @param fieldValues
+	 */
+	private void addCells(XSSFRow row, int cellIndex, int fieldCount, String fieldValues) {
+		if (StringUtils.isNotBlank(fieldValues)) {
+			String[] values = fieldValues.split("\\|");
+
+			Arrays.sort(values);
+			for (String value : values) {
+				addCell(row, cellIndex++, value);
+			}
+
+			// append extra fields
+			if (fieldCount > values.length) {
+				for (int i = values.length; i < fieldCount; i++) {
+					addCell(row, cellIndex++, "");
+				}
+			}
+		} else {
+			for(int i = 0; i < fieldCount; i++) {
+				addCell(row, cellIndex++, "");
+			}
+		}
+	}
+
+	/*
+	 * Convert rdf data to Excel header format
+	 * @param objectRecords
+	 * @param fieldCounts
+	 * @throws FileNotFoundException
+	 * @throws TransformerException
+	 * @throws UnsupportedEncodingException
+	 */
+	private void convertRecords(Map<String, List<Map<String,String>>> objectRecords, Map<String, Integer> fieldCounts)
+			throws FileNotFoundException, TransformerException, UnsupportedEncodingException {
+		String jsonString = xslConvert(xslInput, rdfSource);
+
+		ByteArrayInputStream input = null;
+		try {
+			input = new ByteArrayInputStream(jsonString.getBytes("UTF-8"));
+			JSONObject jsonObj = (JSONObject) JSONValue.parse(new BufferedReader(new InputStreamReader(input)));
+			for (Iterator<String> it = jsonObj.keySet().iterator(); it.hasNext();){
+				String objID = it.next();
+				Object data = jsonObj.get(objID);
+				if (data instanceof JSONArray){
+					List<Map<String,String>> objectRecord = new ArrayList<>();
+					objectRecords.put(objID, objectRecord);
+					parseRecord (objectRecord, fieldCounts, (JSONArray)data);
+				}
+			}
+		}finally{
+			if (StringUtils.isNotBlank(xsl)) {
+				close (xslInput);
+			}
+			close (input);
+		}
 	}
 
 	private void parseRecord (List<Map<String, String>> objectRecord, Map<String, Integer> fieldCounts, JSONArray data) {

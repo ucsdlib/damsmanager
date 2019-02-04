@@ -11,6 +11,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.poi.ss.usermodel.Workbook;
 
 import com.hp.hpl.jena.rdf.model.Resource;
 
@@ -18,7 +19,6 @@ import edu.ucsd.library.xdre.tab.RDFExcelConvertor;
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
 import edu.ucsd.library.xdre.utils.RDFStore;
-import edu.ucsd.library.xdre.web.CILHarvestingTaskController;
 
 /**
  * 
@@ -99,7 +99,7 @@ public class BatchExportHandler extends MetadataExportHandler {
             try {
                 setStatus("Processing export for subject " + subjectId  + " (" + (i+1) + " of " + itemsCount + ") ... " ); 
                 iStore =  new RDFStore();
-                if (format.equalsIgnoreCase("csv")) {
+                if (format.equalsIgnoreCase("csv") || format.equalsIgnoreCase("excel")) {
                     iStore.loadRDFXML(damsClient.getFullRecord(subjectId, true).asXML());
                 } else {
                     iStore.loadRDFXML(damsClient.getMetadata(subjectId, "xml"));
@@ -137,15 +137,29 @@ public class BatchExportHandler extends MetadataExportHandler {
             }
         }
 
-        if (format.equalsIgnoreCase("csv")) {
+        if (format.equalsIgnoreCase("csv") || format.equalsIgnoreCase("excel")) {
             rdfStore.write(out, "RDF/XML-ABBREV");
             File rdfFile = getRdfFile("" + submissionId);
-            File destFile = new File(Constants.TMP_FILE_DIR, "batchExport-" + submissionId + ".csv");
-            try (InputStream jsonConvertExportXslInput = getDams42JsonExportXsl();
-                    OutputStream outDest = new FileOutputStream(destFile)) {
-                RDFExcelConvertor converter = new RDFExcelConvertor(rdfFile.getAbsolutePath(), jsonConvertExportXslInput);
-                String csvValue = converter.convert2CSV();
-                outDest.write(csvValue.getBytes("UTF-8"));
+
+            if (format.equalsIgnoreCase("excel")) {
+                // Batch export in excel format
+                File destFile = new File(Constants.TMP_FILE_DIR, "batchExport-" + submissionId + ".xlsx");
+                try (InputStream jsonConvertExportXslInput = getDams42JsonExportXsl();) {
+                    RDFExcelConvertor converter = new RDFExcelConvertor(rdfFile.getAbsolutePath(), jsonConvertExportXslInput);
+                    Workbook workbook = converter.convert2Excel();
+                    FileOutputStream out = new FileOutputStream(destFile);
+                    workbook.write(out);
+                    out.close();
+                }
+            } else {
+                // Batch export in CSV format
+                File destFile = new File(Constants.TMP_FILE_DIR, "batchExport-" + submissionId + ".csv");
+                try (InputStream jsonConvertExportXslInput = getDams42JsonExportXsl();
+                        OutputStream outDest = new FileOutputStream(destFile)) {
+                    RDFExcelConvertor converter = new RDFExcelConvertor(rdfFile.getAbsolutePath(), jsonConvertExportXslInput);
+                    String csvValue = converter.convert2CSV();
+                    outDest.write(csvValue.getBytes("UTF-8"));
+                }
             }
         } else {
             rdfStore.write(out, format);
@@ -181,7 +195,19 @@ public class BatchExportHandler extends MetadataExportHandler {
         return new File(Constants.TMP_FILE_DIR, "batchExport-" + submissionId + "-rdf.xml");
     }
 
-   public static File getCsvFile(String submissionId) {
+    /**
+     * CSVl export filename
+     * @param submissionId
+     */
+    public static File getCsvFile(String submissionId) {
         return new File(Constants.TMP_FILE_DIR, "batchExport-" + submissionId + ".csv");
+    }
+
+    /**
+     * Excel export filename
+     * @param submissionId
+     */
+    public static File getExcelFile(String submissionId) {
+        return new File(Constants.TMP_FILE_DIR, "batchExport-" + submissionId + ".xlsx");
     }
 }
