@@ -195,7 +195,7 @@
         </xsl:for-each>
 
         <!-- Other Notes -->
-        <xsl:for-each select="*[local-name()='note' and not(contains(dams:Note/dams:type,'identifier')) and not(contains(dams:Note/dams:type,'local attribution')) and not(contains(dams:Note/dams:type,'local added entry')) and not(contains(dams:Note/dams:type,'statement of responsibility'))]">
+        <xsl:for-each select="*[local-name()='note' and not(contains(dams:Note/dams:type,'identifier')) and not(contains(dams:Note/dams:type,'local added entry')) and not(contains(dams:Note/dams:type,'statement of responsibility'))]">
             <xsl:sort select="*/dams:type"/>
             <xsl:variable name='resArk'><xsl:value-of select="*/@rdf:about | @rdf:resource"/></xsl:variable>
             <xsl:choose>
@@ -575,7 +575,7 @@
 
     <xsl:template name="damsNoteStatementOfResponsibility" match="dams:Note[dams:type='statement of responsibility']" priority="1">
         <xsl:call-template name="appendJsonObject">
-           <xsl:with-param name="key">Statement of Responsibility</xsl:with-param>
+           <xsl:with-param name="key">Note:statement of responsibility</xsl:with-param>
            <xsl:with-param name="val"><xsl:value-of select="rdf:value"/></xsl:with-param>
         </xsl:call-template>
     </xsl:template>
