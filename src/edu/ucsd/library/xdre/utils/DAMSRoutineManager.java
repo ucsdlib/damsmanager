@@ -42,9 +42,9 @@ public class DAMSRoutineManager{
 		timer.schedule(new StatisticsTask(), calendar.getTime());
 
 		// CIL harvesting process
-		calendar.add(Calendar.HOUR_OF_DAY, 3);
-		Date cilHarvestingTime = calendar.getTime();
-		timer.scheduleAtFixedRate(new CILHarvestingTask(), cilHarvestingTime, 1000*60*60*24);
+		// calendar.add(Calendar.HOUR_OF_DAY, 3);
+		// Date cilHarvestingTime = calendar.getTime();
+		// timer.scheduleAtFixedRate(new CILHarvestingTask(), cilHarvestingTime, 1000*60*60*24);
 	}
 	
 	class StatisticsTask extends TimerTask{
