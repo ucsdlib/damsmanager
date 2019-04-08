@@ -665,8 +665,8 @@
                 <xsl:with-param name="key">Level</xsl:with-param>
                 <xsl:with-param name="val">
                     <xsl:choose>
-                        <xsl:when test="$depth = '1'">  \Component</xsl:when>
-                        <xsl:otherwise>    \Sub-component</xsl:otherwise>
+                        <xsl:when test="$depth = '1'">Component</xsl:when>
+                        <xsl:otherwise>Sub-component</xsl:otherwise>
                     </xsl:choose>
                 </xsl:with-param>
             </xsl:call-template>
