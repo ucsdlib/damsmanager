@@ -39,7 +39,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
 public class RDFExcelConvertor {
-	private static final String[] requiredFields = {"Object Unique ID","Level","File name","File use","Type of Resource","Language","Title","Subtitle","Translation","Variant"};
+	private static final String[] requiredFields = {"Object Unique ID","Level","File name","File use","Type of Resource","Language","Title"};
 	private static final String[] groupFields = {"Date:collected","Date:creation","Date:issued","Begin date","End date"};
 
 	private String rdfSource = null;
