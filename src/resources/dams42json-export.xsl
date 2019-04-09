@@ -481,18 +481,6 @@
                        <xsl:with-param name="val"><xsl:value-of select="."/></xsl:with-param>
                     </xsl:call-template>
                 </xsl:when>
-                <xsl:when test="local-name() = 'permission'">
-                    <xsl:call-template name="appendJsonObject">
-                       <xsl:with-param name="key">otherRights:permission/type</xsl:with-param>
-                       <xsl:with-param name="val"><xsl:value-of select="dams:Permission/dams:type"/></xsl:with-param>
-                    </xsl:call-template>
-                </xsl:when>
-                <xsl:when test="local-name() = 'restriction'">
-                    <xsl:call-template name="appendJsonObject">
-                       <xsl:with-param name="key">otherRights:restriction/type</xsl:with-param>
-                       <xsl:with-param name="val"><xsl:value-of select="dams:Restriction/dams:type"/></xsl:with-param>
-                    </xsl:call-template>
-                </xsl:when>
                 <xsl:when test="local-name() = 'otherRightsNote'">
                     <xsl:call-template name="appendJsonObject">
                        <xsl:with-param name="key">otherRights:otherRightsNote</xsl:with-param>
@@ -501,23 +489,23 @@
                 </xsl:when>
             </xsl:choose>
         </xsl:for-each>
+        <xsl:for-each select="dams:permission[1]/dams:Permission/dams:type">
+            <xsl:call-template name="appendJsonObject">
+               <xsl:with-param name="key">otherRights:permission/type</xsl:with-param>
+               <xsl:with-param name="val"><xsl:value-of select="."/></xsl:with-param>
+            </xsl:call-template>
+        </xsl:for-each>
+        <xsl:for-each select="dams:restriction[1]/dams:Restriction/dams:type">
+            <xsl:call-template name="appendJsonObject">
+               <xsl:with-param name="key">otherRights:restriction/type</xsl:with-param>
+               <xsl:with-param name="val"><xsl:value-of select="."/></xsl:with-param>
+            </xsl:call-template>
+        </xsl:for-each>
     </xsl:template>
 
     <xsl:template name="damsLicense" match="dams:License">
         <xsl:for-each select="*">
             <xsl:choose>
-                <xsl:when test="local-name() = 'permission'">
-                    <xsl:call-template name="appendJsonObject">
-                       <xsl:with-param name="key">license:permission/type</xsl:with-param>
-                       <xsl:with-param name="val"><xsl:value-of select="dams:Permission/dams:type"/></xsl:with-param>
-                    </xsl:call-template>
-                </xsl:when>
-                <xsl:when test="local-name() = 'restriction'">
-                    <xsl:call-template name="appendJsonObject">
-                       <xsl:with-param name="key">license:restriction/type</xsl:with-param>
-                       <xsl:with-param name="val"><xsl:value-of select="dams:Restriction/dams:type"/></xsl:with-param>
-                    </xsl:call-template>
-                </xsl:when>
                 <xsl:when test="local-name() = 'beginDate'">
                     <xsl:call-template name="appendJsonObject">
                        <xsl:with-param name="key">license:beginDate</xsl:with-param>
@@ -543,6 +531,18 @@
                     </xsl:call-template>
                 </xsl:when>
             </xsl:choose>
+        </xsl:for-each>
+        <xsl:for-each select="dams:permission[1]/dams:Permission/dams:type">
+            <xsl:call-template name="appendJsonObject">
+               <xsl:with-param name="key">license:permission/type</xsl:with-param>
+               <xsl:with-param name="val"><xsl:value-of select="."/></xsl:with-param>
+            </xsl:call-template>
+        </xsl:for-each>
+        <xsl:for-each select="dams:restriction[1]/dams:Restriction/dams:type">
+            <xsl:call-template name="appendJsonObject">
+               <xsl:with-param name="key">license:restriction/type</xsl:with-param>
+               <xsl:with-param name="val"><xsl:value-of select="."/></xsl:with-param>
+            </xsl:call-template>
         </xsl:for-each>
     </xsl:template>
 
