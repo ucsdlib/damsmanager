@@ -233,6 +233,7 @@ public class CILHarvestingTaskController implements Controller {
 
     /*
      * Check whether the JSON file is ingest or not
+     * query dams:Note with matching for type: identifier, displayLabel: samplenumber, and fileName.
      * @param damsClient
      * @param fileName
      * @return
@@ -243,7 +244,8 @@ public class CILHarvestingTaskController implements Controller {
         String sparql = "PREFIX rdf: <" + TabularRecordBasic.rdfNS.getURI() + ">\n"
                 + " PREFIX dams: <" + TabularRecordBasic.damsNS.getURI() + ">\n"
                 + " SELECT ?sub WHERE {?sub dams:note ?o . ?o rdf:type ?_clazz . ?_clazz rdf:label '\"dams:Note\"'"
-                + " . ?o dams:type '\"identifier\"' . ?o rdf:value '\"" + sampleNumber + "\"'  }";
+                + " . ?o dams:type '\"identifier\"' . ?o dams:displayLabel '\"samplenumber\"'"
+                + " . ?o rdf:value '\"" + sampleNumber + "\"' }";
         List<Map<String, String>> results = damsClient.sparqlLookup(sparql);
         return results.size() > 0;
     }
