@@ -361,7 +361,7 @@ public class RDFExcelConvertor {
 	 * Encode value in CSV format
 	 * @param value
 	 */
-	private String escapeCsv(String value) {
+	public static String escapeCsv(String value) {
 		if (value.indexOf(",") >= 0 || value.indexOf("\"") >= 0 
 			|| value.indexOf(System.getProperty("line.separator")) >= 0)
 			return "\"" + value.replace("\"", "\"\"") + "\"";

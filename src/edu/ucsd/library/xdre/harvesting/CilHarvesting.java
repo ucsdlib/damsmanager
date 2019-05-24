@@ -12,6 +12,7 @@ import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -53,11 +54,14 @@ public class CilHarvesting implements RecordSource {
     private StringBuilder errors = new StringBuilder();
     private Iterator<String> sourceFileIterator = null;
 
+    private Map<String, String> subjectHeadings = null;
+
     public CilHarvesting(String srcMappingFile, Map<String, String> constantFields,
             List<String> srcFiles) throws Exception {
         this.constantFields = constantFields;
         this.sourceFileIterator = srcFiles.listIterator();
         initiateFieldMappings(srcMappingFile);
+        subjectHeadings = new HashMap<>();
     }
 
     public CilHarvesting(Map<String, List<String>> fieldMappings, Map<String, String> constantFields,
@@ -65,6 +69,7 @@ public class CilHarvesting implements RecordSource {
         this.constantFields = constantFields;
         this.sourceFileIterator = srcFiles.listIterator();
         this.fieldMappings = fieldMappings;
+        subjectHeadings = new HashMap<>();
     }
 
     public Record nextRecord() throws Exception {
@@ -109,9 +114,69 @@ public class CilHarvesting implements RecordSource {
             ex.printStackTrace();
             objectsFailed.add(srcFile);
             errors.append(srcFile + ": " + ex.getMessage());
+        } finally {
+            // collect subject headings for export
+            collectSubjectHeadings(data);
         }
 
         return record;
+    }
+
+    /**
+     * Collect subject headings in the json record
+     * @param data
+     */
+    private void collectSubjectHeadings(Map<String, String> data) {
+        for (String key : data.keySet()) {
+            if (key.toLowerCase().startsWith("subject")) {
+                if (subjectHeadings.containsKey(key)) {
+                    String newValues = data.get(key);
+                    String existingValues = subjectHeadings.get(key);
+                    List<String> existingSubjects = Arrays.asList(existingValues.split("\\" + TabularRecord.DELIMITER));
+                    for (String subject : newValues.split("\\" + TabularRecord.DELIMITER)) {
+                        if (!existingSubjects.contains(subject)) {
+                            existingValues += "|" + subject;
+                        }
+                    }
+                    subjectHeadings.put(key, existingValues);
+                } else {
+                    subjectHeadings.put(key, data.get(key));
+                }
+            }
+        }
+    }
+
+    /**
+     * Get the subject headings in CSV format
+     * @return
+     */
+    public String getSubjectHeadingsCsv() {
+        StringBuilder csvBuilder = new StringBuilder();
+        csvBuilder.append("subject type,exactMatch,closeMatch,subject term\n");
+        for (String key : subjectHeadings.keySet()) {
+            String[] values = subjectHeadings.get(key).split("\\" + TabularRecord.DELIMITER);
+            String header = capitalized(key);
+            for (String value : values) {
+                csvBuilder.append(RDFExcelConvertor.escapeCsv(header));
+                csvBuilder.append(",,,");
+                csvBuilder.append(RDFExcelConvertor.escapeCsv(value));
+                csvBuilder.append("\n");
+            }
+        }
+        return csvBuilder.toString();
+    }
+
+    /**
+     * Capitalized the value
+     * @param value
+     * @return
+     */
+    public static String capitalized(String value) {
+        if (StringUtils.isBlank(value))
+            return value;
+
+        return value.substring(0, 1).toUpperCase()
+                + (value.length() > 1 ? value.substring(1) : "");
     }
 
     /*
