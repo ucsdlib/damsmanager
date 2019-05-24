@@ -138,13 +138,9 @@ public class CilHarvesting implements RecordSource {
                     // dams:dateCreated, Begin date, End date
                     List<String> dateParts = fieldsMap.get(currPath);
 
-                    for (int i= 0; i < vals.size(); i++) {
-                        addDataField(data, currPath, dateParts.get(i), vals.get(i));
-                    }
-
-                    if (vals.size() == 1) {
-                        // add Begin date when there is only one ATTRIBUTION Date value
-                        addDataField(data, currPath, dateParts.get(1), vals.get(0));
+                    for (String datePart : dateParts) {
+                        // add date:creation, Begin date and End date
+                        addDataField(data, currPath, datePart, vals.get(0));
                     }
                 } else if (currPath.equalsIgnoreCase(FieldMappings.SOURCE_IMAGE_FILE_TYPE)) {
                     // image file type: map to File use and component Title
@@ -196,6 +192,17 @@ public class CilHarvesting implements RecordSource {
                 Object val = jsonData.get(key);
                 if (val instanceof JSONObject) {
                     convertJsonData(record, fieldMappings, currPath, jsonData, (JSONObject)val, data);
+                } else if (val instanceof JSONArray) {
+                    // JSONObject in JSONArray
+                    Iterator<JSONArray> it = ((JSONArray)val).iterator();
+                    while (it.hasNext()) {
+                        Object obj = it.next();
+                        if (obj instanceof JSONObject) {
+                            convertJsonData(record, fieldMappings, currPath, jsonData, (JSONObject)obj, data);
+                        } else {
+                            log.warn("No mapping for key " + key + " in source record " + record.getData().get(TabularRecord.OBJECT_ID) + ".");
+                        }
+                    }
                 } else {
                     log.warn("No mapping for key " + key + " in source record " + record.getData().get(TabularRecord.OBJECT_ID) + ".");
                 }
@@ -270,7 +277,8 @@ public class CilHarvesting implements RecordSource {
                 && !srcPath.equalsIgnoreCase(FieldMappings.SOURCE_IMAGE_FILE_TYPE)) {
             // Extract title from citation title
             val = extractTitle(value);
-        } else if (ingestField.equalsIgnoreCase(ExcelSource.BEGIN_DATE)
+        } else if (ingestField.equalsIgnoreCase("date:creation")
+                || ingestField.equalsIgnoreCase(ExcelSource.BEGIN_DATE)
                 || ingestField.equalsIgnoreCase(ExcelSource.END_DATE)) {
             // Format Begin date and End date from date value: yyyy-MM-dd
             val = formatDate(val);
@@ -439,7 +447,7 @@ public class CilHarvesting implements RecordSource {
                     if (labels.size() > 0 && i < labels.size()) {
                         results.add(labels.get(i) + " @ " + href.get(i));
                     } else {
-                        results.add("Related resource" + " @ " + href.get(i));
+                        results.add("@ " + href.get(i));
                     }
                 }
             }
