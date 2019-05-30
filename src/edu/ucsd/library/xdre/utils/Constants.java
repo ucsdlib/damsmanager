@@ -88,6 +88,14 @@ public class Constants {
 	public static String CIL_HARVEST_MAPPING_FILE = "";
 	// CIL harvesting emails for notification
 	public static String CIL_HARVEST_NOTIFY_EMAILS = "";
+	// CIL REST API URL base
+	public static String CIL_HARVEST_API = "";
+	// CIL REST API user
+	public static String CIL_HARVEST_API_USER = "";
+	// CIL REST API password
+	public static String CIL_HARVEST_API_PWD = "";
+	// CIL content URL base
+	public static String CIL_CONTENT_URL_BASE = "";
 
 	// dams42json conversion xsl file
 	public static String DAMS42JSON_XSL_FILE = "";
@@ -230,6 +238,14 @@ public class Constants {
 			CIL_HARVEST_MAPPING_FILE = props.getProperty("cil.harvest.metadata.mapping.xslt");
 			// CIL harvesting emails for notification
 			CIL_HARVEST_NOTIFY_EMAILS = props.getProperty("cil.harvest.emails");
+			// CIL REST API URL base
+			CIL_HARVEST_API = props.getProperty("cil.harvest.api");
+			// CIL REST API user
+			CIL_HARVEST_API_USER = props.getProperty("cil.harvest.api.user");
+			// CIL REST API password
+			CIL_HARVEST_API_PWD = props.getProperty("cil.harvest.api.pwd");
+			// CIL content URL base
+			CIL_CONTENT_URL_BASE = props.getProperty("cil.content.urlBase");
 
 			// Location of dams42json xsl
 			DAMS42JSON_XSL_FILE = props.getProperty("dams.dams42json.xsl");
