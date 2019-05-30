@@ -105,7 +105,7 @@ import com.hp.hpl.jena.rdf.model.Statement;
  * @author lsitu
  * 
  */
-public class DAMSClient {
+public class DAMSClient extends HttpClientBase {
 	public static final String DOCUMENT_RESPONSE_ROOT_PATH = "/response";
 	public static final String DAMS_ARK_URL_BASE = "http://libraries.ucsd.edu/ark:/";
 	public static final String DAMS_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
@@ -129,23 +129,12 @@ public class DAMSClient {
 	private static SimpleDateFormat damsDateFormat = new SimpleDateFormat(DAMS_DATE_FORMAT);
 	private static SimpleDateFormat damsDateFormatAlt = new SimpleDateFormat(DAMS_DATE_FORMAT_ALT);
 
-	private String storageURL = null; // DAMS REST URL
-	private HttpClient client = null; // Httpclient object
-	private HttpRequestBase request = null; // HTTP request
-	private HttpResponse response = null; // HTTP response
-	private HttpContext httpContext = null;
-
 	private String tripleStore = null;
 	private String solrURLBase = null; // SOLR URL
 	private String user = null;
 	private String clientInfo = null;
 	private int priority = PRIORITY_DEFAULT;
 
-	/**
-	 * Construct a DAMSClient object.
-	 */
-	public DAMSClient() {}
-	
 	/**
 	 * Construct a DAMSClient object using storage URL.
 	 * 
@@ -154,21 +143,7 @@ public class DAMSClient {
 	 * @throws LoginException
 	 */
 	public DAMSClient(String storageURL) throws IOException, LoginException {
-		this(storageURL, Constants.DAMS_STORAGE_USER, Constants.DAMS_STORAGE_PWD);
-	}
-	
-	/**
-	 * Construct a DAMSClient object using storage URL, username and password.
-	 * 
-	 * @param storageURL
-	 * @throws IOException
-	 * @throws LoginException
-	 */
-	public DAMSClient(String storageURL, String user, String password) throws IOException, LoginException {
-		if(storageURL.endsWith("/"))
-			storageURL = storageURL.substring(0, storageURL.length() -1);
-		this.storageURL = storageURL;
-		client = createHttpClient(user, password);
+		super(storageURL, Constants.DAMS_STORAGE_USER, Constants.DAMS_STORAGE_PWD);
 	}
 
 	/**
@@ -181,7 +156,7 @@ public class DAMSClient {
 	 * @throws LoginException
 	 */
 	public DAMSClient(Properties props) throws IOException, LoginException {
-		this((String)props.get("xdre.damsRepo"), (String)props.get("xdre.damsRepo.user"), (String)props.get("xdre.damsRepo.pwd"));
+		super((String)props.get("xdre.damsRepo"), (String)props.get("xdre.damsRepo.user"), (String)props.get("xdre.damsRepo.pwd"));
 	}
     
 	/**
@@ -194,72 +169,6 @@ public class DAMSClient {
 		return new DAMSClient(Constants.DAMS_STORAGE_URL);
 	}
 	
-    /**
-     * Create HttpClient with PreemptiveAuth when user and password provide 
-     * @param userName
-     * @param password
-     * @return
-     */
-    private HttpClient createHttpClient(String userName, String password) {
-		// disable timeouts
-		BasicHttpParams params = new BasicHttpParams();
-		params.setParameter( "http.socket.timeout",     new Integer(0) );
-		params.setParameter( "http.connection.timeout", new Integer(0) );
-      
-		DefaultHttpClient client = new DefaultHttpClient( getConnectionManager(), params );
-
-		// disable retries
-		DefaultHttpRequestRetryHandler x = new DefaultHttpRequestRetryHandler(0, false);
-		client.setHttpRequestRetryHandler( x );
-        
-        if (userName != null && userName.length() > 0) {
-            client.getCredentialsProvider().setCredentials(
-                    new AuthScope(AuthScope.ANY_HOST, AuthScope.ANY_PORT),
-                    new UsernamePasswordCredentials(userName, password)
-            );
-            
-            httpContext = new BasicHttpContext();
-
-            // Generate BASIC scheme object and stick it to the local execution context
-            BasicScheme basicAuth = new BasicScheme();
-            httpContext.setAttribute("preemptive-auth", basicAuth);
-
-            // Add as the first request interceptor
-            client.addRequestInterceptor(new PreemptiveAuthInterceptor(), 0);
-        }
-
-        return client;
-    }
-    
-    /**
-     * Initiate ClientConnectionManager for http and https connections
-     * @return
-     */
-    private ClientConnectionManager getConnectionManager(){
-
-        ClientConnectionManager ccm = new PoolingClientConnectionManager();
-		try {
-			// Accept all SSL certificates
-        	X509TrustManager tm = new X509TrustManager() {
-            	public void checkClientTrusted(X509Certificate[] xcs, String string) throws CertificateException { }
-            	public void checkServerTrusted(X509Certificate[] xcs, String string) throws CertificateException { }
-            	public X509Certificate[] getAcceptedIssuers() { return null; }
-        	};
-
-			SSLContext ctx = SSLContext.getInstance("TLS");
-        	ctx.init(null, new TrustManager[]{tm}, null);
-        	SSLContext.setDefault(ctx);
-        	
-        	SSLSocketFactory ssf = new SSLSocketFactory(ctx,SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-        	SchemeRegistry sr = ccm.getSchemeRegistry();
-        	sr.register(new Scheme("https", 443, ssf));
-        	sr.register(new Scheme("http", 80, new PlainSocketFactory()));
-			
-		} catch ( Exception ex ){
-			ex.printStackTrace();
-		}
-		return ccm;
-    }
 
 	/**
 	 * Mint an ark ID
@@ -1777,32 +1686,6 @@ public class DAMSClient {
 	}
 
 	/**
-	 * Retrieve the HTTP content from a URL provided.
-	 * 
-	 * @param url
-	 * @return
-	 * @throws Exception 
-	 */
-	public String getContentBodyAsString(String url) throws Exception {
-		String result = "";
-		HttpGet get = new HttpGet(url);
-		int status = -1;
-		try {
-			status = execute(get);
-			if(status == 200){				
-				HttpEntity en = response.getEntity();
-				Header encoding = en.getContentEncoding();
-				result = EntityUtils.toString(en, (encoding==null?"UTF-8":encoding.getValue()));
-			} else
-				handleError(null);
-		
-		} finally {
-			get.releaseConnection();
-		}
-		return result;
-	}
-
-	/**
 	 * Log response header and body information.
 	 * @throws IOException 
 	 * @throws IllegalStateException 
@@ -1918,21 +1801,6 @@ public class DAMSClient {
 			len += bytesRead;
 		}
 		return len;
-	}
-
-	/**
-	 * Close up IO resources
-	 * @param closeable
-	 */
-	public static void close(Closeable closeable){
-		if(closeable != null){
-			try{
-				closeable.close();
-			}catch (IOException ioe){
-				ioe.printStackTrace();
-			}
-			closeable = null;
-		}
 	}
 
 	/**
@@ -2224,10 +2092,6 @@ public class DAMSClient {
 		else
 			return solrURLBase;
 	}
-	
-	public void close(){
-		client.getConnectionManager().shutdown();
-	}
 
 	/**
 	 * Prepare/convert the parameters for file ingest
@@ -2471,30 +2335,4 @@ public class DAMSClient {
 			return in.read();
 		}
 	}
-
-	/**
-	 * PreemptiveAuthInterceptor class for PreemptiveAuth
-	 * @author lsitu
-	 *
-	 */
-    class PreemptiveAuthInterceptor implements HttpRequestInterceptor {
-        public void process(final HttpRequest request, final HttpContext context) throws HttpException, IOException {
-
-            AuthState authState = (AuthState) context.getAttribute(ClientContext.TARGET_AUTH_STATE);
-
-            // If no auth scheme available yet, try to initialize it preemptively
-            if (authState.getAuthScheme() == null) {
-                AuthScheme authScheme = (AuthScheme) context.getAttribute("preemptive-auth");
-                CredentialsProvider credsProvider = (CredentialsProvider) context.getAttribute(ClientContext.CREDS_PROVIDER);
-                HttpHost targetHost = (HttpHost) context.getAttribute(ExecutionContext.HTTP_TARGET_HOST);
-                if (authScheme != null) {
-                    Credentials creds = credsProvider.getCredentials(new AuthScope(targetHost.getHostName(), targetHost.getPort()));
-                    if (creds == null) {
-                        throw new HttpException("No credentials for preemptive authentication");
-                    }
-                    authState.update(authScheme, creds);
-                }
-            }
-        }
-    }
 }
