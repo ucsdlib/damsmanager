@@ -38,13 +38,14 @@ public class ContentFile {
      * @param contentFile the filename
      **/
     public String save(String basicDir, String fileName) throws Exception {
-        File destFile = new File(basicDir, fileName);
-        if (destFile.exists())
-            return destFile.getAbsolutePath();
-
         File contentDir = new File(basicDir, CONTENT_FILE_FOLDER);
         if (!contentDir.exists()) {
             contentDir.mkdirs();
+        }
+
+        File destFile = new File(contentDir.getAbsolutePath(), fileName);
+        if (destFile.exists()) {
+            return destFile.getAbsolutePath();
         }
 
         return  writeFile(contentDir.getAbsolutePath(), fileName);
