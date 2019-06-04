@@ -1,12 +1,17 @@
 package edu.ucsd.library.xdre.harvesting;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import org.apache.log4j.Logger;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import org.json.simple.parser.JSONParser;
 
 import edu.ucsd.library.xdre.utils.Constants;
@@ -57,8 +62,7 @@ public class MetadataSource extends ContentFile {
         try (FileReader reader = new FileReader(jsonFile)) {
 
             //Read JSON source from 'metadata_source' folder
-            JSONObject data = (JSONObject)jsonParser.parse(reader);
-            JSONObject source = (JSONObject)data.get(CIL_SOURCE);
+            JSONObject source = (JSONObject)jsonParser.parse(reader);
             JSONObject ccdb = (JSONObject)source.get(CIL_CCDB_KEY);
             JSONObject dataType = (JSONObject)ccdb.get(DATA_TYPE_KEY);
 
@@ -139,5 +143,29 @@ public class MetadataSource extends ContentFile {
             metadataSourceDir.mkdirs();
         }
         return  writeFile(metadataSourceDir.getAbsolutePath(), fileName);
+    }
+
+    /**
+     * Retrieve source JSON, extract source and write to destination.
+     * @throws Exception
+     * @param destFile the destination to write the content
+     **/
+    protected String writeFile(String basicDir, String fileName) throws Exception {
+        String destFile = new File(basicDir, fileName).getAbsolutePath();
+
+        String jsonValue = cilApiClient.getContentBodyAsString(uri);
+        JSONObject json = (JSONObject)JSONValue.parse(jsonValue);
+        JSONObject source = (JSONObject)json.get(CIL_SOURCE);
+
+        int bytesRead = 0;
+        try(InputStream in = new ByteArrayInputStream(source.toJSONString().getBytes("UTF-8"));
+            OutputStream out = new FileOutputStream(destFile);) {
+            byte[] buf = new byte[BUFFER_SIZE];
+            while ((bytesRead = in.read(buf)) > 0) {
+                out.write(buf, 0, bytesRead);
+            }
+        }
+
+        return destFile;
     }
 }
