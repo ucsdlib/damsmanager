@@ -112,6 +112,7 @@ public class CilApiDownloader {
         List<String> ids = searchCilIds(now.getTime());
         List<String> processedIds = searchCilIds(lastModified);
 
+        // Exclude those that were processed before lastModified date
         for(String id : processedIds) {
             if (ids.contains(id)) {
                 ids.remove(id);
@@ -120,6 +121,12 @@ public class CilApiDownloader {
         return ids;
     }
 
+    /**
+     * Loop through to search CIL IDs by lastModified date
+     * @param lastModified
+     * @return
+     * @throws Exception
+     */
     private List<String> searchCilIds(Date lastModified) throws Exception {
         List<String> ids = new ArrayList<>();
         int start = 0;
