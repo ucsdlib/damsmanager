@@ -25,6 +25,7 @@ import edu.ucsd.library.xdre.utils.Constants;
  */
 public class CILHarvestingTaskControllerTest extends CilHavestingTestBase {
 
+    private String harvestDirectory = null;
     private File metadataProcessedDir = null;
     private List<File> jsonFiles = new ArrayList<>(); 
 
@@ -34,7 +35,8 @@ public class CILHarvestingTaskControllerTest extends CilHavestingTestBase {
         Constants.CIL_HARVEST_DIR = new File("").getAbsolutePath() + File.separatorChar + "rdcp_staging";
         String cilDataFolder = CILHarvestingTaskController.CIL_HARVEST_PATH_PREFIX
                 + new SimpleDateFormat("yyyy-MM-dd").format(Calendar.getInstance().getTime());
-        File jsonSourceDir = new File(Constants.CIL_HARVEST_DIR + File.separatorChar + cilDataFolder,
+        harvestDirectory = new File(Constants.CIL_HARVEST_DIR, cilDataFolder).getAbsolutePath();
+        File jsonSourceDir = new File(harvestDirectory,
                 CILHarvestingTaskController.CIL_HARVEST_METADATA_SOURCE);
         if (!jsonSourceDir.exists())
             jsonSourceDir.mkdirs();
@@ -57,7 +59,7 @@ public class CILHarvestingTaskControllerTest extends CilHavestingTestBase {
 
     @Test
     public void testPerformHarvestingTask() throws Exception {
-        List<String> files = CILHarvestingTaskController.performHarvestingTask();
+        List<String> files = CILHarvestingTaskController.performHarvestingTask(harvestDirectory);
         assertEquals(2, files.size());
         assertTrue(files.contains(jsonFiles.get(0).getAbsolutePath()));
         assertTrue(files.contains(jsonFiles.get(1).getAbsolutePath()));
@@ -69,9 +71,9 @@ public class CILHarvestingTaskControllerTest extends CilHavestingTestBase {
         assertTrue(csvValue.contains("Unique ID,Level,"));
         assertTrue(csvValue.contains("test123a,Object,"));
         assertTrue(csvValue.contains(",Gustafsdottir et al. (doi:10.1371/journal.pone.0080999),"));
-        assertTrue(csvValue.contains("test123a,  \\Component,test123a.json,data-service"));
+        assertTrue(csvValue.contains("test123a,Component,test123a.json,data-service"));
 
         assertTrue(csvValue.contains("test123b,Object,,"));
-        assertTrue(csvValue.contains("test123b,  \\Component,test123b.json,data-service"));
+        assertTrue(csvValue.contains("test123b,Component,test123b.json,data-service"));
     }
 }

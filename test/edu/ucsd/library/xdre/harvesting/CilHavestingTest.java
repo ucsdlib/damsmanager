@@ -52,7 +52,7 @@ public class CilHavestingTest extends CilHavestingTestBase {
         assertEquals("zxx  - No linguistic content; Not applicable", rec.getData().get(FieldMappings.LANGUAGE.toLowerCase()));
 
         // date created
-        assertEquals("02/02/1958", rec.getData().get(FieldMappings.DATE_CREATION.toLowerCase()));
+        assertEquals("1958-02-02", rec.getData().get(FieldMappings.DATE_CREATION.toLowerCase()));
         assertEquals("1958-02-02", rec.getData().get(FieldMappings.BEGIN_DATE.toLowerCase()));
 
         // technical details
@@ -128,7 +128,7 @@ public class CilHavestingTest extends CilHavestingTestBase {
 
         Document doc = rec.toRDFXML();
         assertEquals("" + Calendar.getInstance().get(Calendar.YEAR), doc.valueOf("//dams:Object/dams:date/dams:Date[dams:type='issued']//rdf:value"));
-        assertEquals("02/02/1958", doc.valueOf("//dams:Object/dams:date/dams:Date[dams:type='creation']//rdf:value"));
+        assertEquals("1958-02-02", doc.valueOf("//dams:Object/dams:date/dams:Date[dams:type='creation']//rdf:value"));
         assertEquals("CIL:37147.", doc.valueOf("//dams:Object/dams:title//mads:authoritativeLabel"));
     }
 
@@ -174,7 +174,7 @@ public class CilHavestingTest extends CilHavestingTestBase {
         assertTrue(csvValue.contains("Unique ID,Level,"));
         assertTrue(csvValue.contains("test123,Object,"));
         assertTrue(csvValue.contains(",Gustafsdottir et al. (doi:10.1371/journal.pone.0080999),"));
-        assertTrue(csvValue.contains("test123,  \\Component,test123.json,data-service"));
+        assertTrue(csvValue.contains("test123,Component,test123.json,data-service"));
     }
 
     @Test
@@ -185,12 +185,12 @@ public class CilHavestingTest extends CilHavestingTestBase {
         String csvValue = cilHarvesting.toCSV(getResourceFile("dams42json.xsl").getAbsolutePath());
         assertTrue(csvValue.contains("Unique ID,Level,File name,File use"));
         assertTrue(csvValue.contains("test123,Object,,"));
-        assertTrue(csvValue.contains("test123,  \\Component,BBBC022_v1_images_20585w1.zip,data-service"));
-        assertTrue(csvValue.contains("test123,  \\Component,BBBC022_v1_images_20585w2.zip,data-service"));
-        assertTrue(csvValue.contains("test123,  \\Component,37147.tif,image-source"));
-        assertTrue(csvValue.contains("test123,  \\Component,37147.jpg,image-source"));
-        assertTrue(csvValue.contains("test123,  \\Component,37147.zip,data-service"));
-        assertTrue(csvValue.contains("test123,  \\Component,test123.json,data-service"));
+        assertTrue(csvValue.contains("test123,Component,BBBC022_v1_images_20585w1.zip,data-service"));
+        assertTrue(csvValue.contains("test123,Component,BBBC022_v1_images_20585w2.zip,data-service"));
+        assertTrue(csvValue.contains("test123,Component,37147.tif,image-source"));
+        assertTrue(csvValue.contains("test123,Component,37147.jpg,image-source"));
+        assertTrue(csvValue.contains("test123,Component,37147.zip,data-service"));
+        assertTrue(csvValue.contains("test123,Component,test123.json,data-service"));
     }
 
     @Test
@@ -204,16 +204,16 @@ public class CilHavestingTest extends CilHavestingTestBase {
         String csvValue = cilHarvesting.toCSV(getResourceFile("dams42json.xsl").getAbsolutePath());
         assertTrue(csvValue.contains("Unique ID,Level,File name,File use"));
         assertTrue(csvValue.contains("test123a,Object,,"));
-        assertTrue(csvValue.contains("test123a,  \\Component,test123a.json,data-service"));
+        assertTrue(csvValue.contains("test123a,Component,test123a.json,data-service"));
         assertTrue(csvValue.contains("test123b,Object,,"));
-        assertTrue(csvValue.contains("test123b,  \\Component,test123b.json,data-service"));
+        assertTrue(csvValue.contains("test123b,Component,test123b.json,data-service"));
         assertTrue(csvValue.contains("test123c,Object,,"));
-        assertTrue(csvValue.contains("test123c,  \\Component,BBBC022_v1_images_20585w1.zip,data-service"));
-        assertTrue(csvValue.contains("test123c,  \\Component,BBBC022_v1_images_20585w2.zip,data-service"));
-        assertTrue(csvValue.contains("test123c,  \\Component,37147.tif,image-source"));
-        assertTrue(csvValue.contains("test123c,  \\Component,37147.jpg,image-source"));
-        assertTrue(csvValue.contains("test123c,  \\Component,37147.zip,data-service"));
-        assertTrue(csvValue.contains("test123c,  \\Component,test123c.json,data-service"));
+        assertTrue(csvValue.contains("test123c,Component,BBBC022_v1_images_20585w1.zip,data-service"));
+        assertTrue(csvValue.contains("test123c,Component,BBBC022_v1_images_20585w2.zip,data-service"));
+        assertTrue(csvValue.contains("test123c,Component,37147.tif,image-source"));
+        assertTrue(csvValue.contains("test123c,Component,37147.jpg,image-source"));
+        assertTrue(csvValue.contains("test123c,Component,37147.zip,data-service"));
+        assertTrue(csvValue.contains("test123c,Component,test123c.json,data-service"));
     }
 
 
@@ -231,7 +231,7 @@ public class CilHavestingTest extends CilHavestingTestBase {
         assertEquals("zxx  - No linguistic content; Not applicable", rec.getData().get(FieldMappings.LANGUAGE.toLowerCase()));
 
         // date created
-        assertEquals("02/02/1958", rec.getData().get(FieldMappings.DATE_CREATION.toLowerCase()));
+        assertEquals("1958-02-02", rec.getData().get(FieldMappings.DATE_CREATION.toLowerCase()));
         assertEquals("1958-02-02", rec.getData().get(FieldMappings.BEGIN_DATE.toLowerCase()));
 
         // technical details
