@@ -43,8 +43,10 @@ public class ContentFile {
             contentDir.mkdirs();
         }
 
+        // Skip download the content file if its exists.
+        // This could be downloaded in last time during initiation.
         File destFile = new File(contentDir.getAbsolutePath(), fileName);
-        if (destFile.exists()) {
+        if (destFile.exists() && destFile.length() > 0) {
             return destFile.getAbsolutePath();
         }
 
