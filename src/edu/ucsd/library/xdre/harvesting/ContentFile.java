@@ -27,6 +27,10 @@ public class ContentFile {
         this.cilApiClient = cilApiClient;
     }
 
+    /**
+     * Get the original source uri of the content file.
+     * @return
+     */
     public String getUri() {
         return uri;
     }
