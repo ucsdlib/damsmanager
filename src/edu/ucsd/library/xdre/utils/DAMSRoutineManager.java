@@ -40,11 +40,6 @@ public class DAMSRoutineManager{
 		calendar.add(Calendar.MINUTE, 2);
 		timer = new Timer();
 		timer.schedule(new StatisticsTask(), calendar.getTime());
-
-		// CIL harvesting process
-		// calendar.add(Calendar.HOUR_OF_DAY, 3);
-		// Date cilHarvestingTime = calendar.getTime();
-		// timer.scheduleAtFixedRate(new CILHarvestingTask(), cilHarvestingTime, 1000*60*60*24);
 	}
 	
 	class StatisticsTask extends TimerTask{
@@ -61,36 +56,6 @@ public class DAMSRoutineManager{
 			}
 		}
 		
-	}
-
-	class CILHarvestingTask extends TimerTask{
-
-		public void run() {
-			synchronized(CILHarvestingTask.class) {
-				if (cilHarvestingTaskStarted == true) {
-					logger.warn("CIL Harvesting process was still running, which was started at "
-							+ Statistics.getDatabaseDateFormater().format(cilHarvestingStartedTime) + ".");
-					return;
-				} else {
-					cilHarvestingStartedTime = Calendar.getInstance().getTime();
-					cilHarvestingTaskStarted = true;
-				}
-
-				// perform CIL harvesting
-				try{
-					logger.info("DAMS Mananger start CIL Harvesting task ... ");
-
-					CILHarvestingTaskController.performHarvestingTask();
-
-					logger.info("DAMS Mananger exits CIL Harvesting task at " + Statistics.getDatabaseDateFormater().format(Calendar.getInstance().getTime()) + ".");
-				}catch(Exception e){
-					e.printStackTrace();
-					logger.error("CIL Harvesting process failed: " + Statistics.getDatabaseDateFormater().format(Calendar.getInstance().getTime()) + ".");
-				} finally {
-					cilHarvestingTaskStarted = false;
-				}
-			}
-		}
 	}
 
 	class DamsRoutine extends TimerTask{
@@ -160,8 +125,21 @@ public class DAMSRoutineManager{
 					e.printStackTrace();
 					logger.error("Failed to generate DAMS quantity statistics on " +  Statistics.getDatabaseDateFormater().format(cal.getTime()) + ".");
 				}
+
+			// Perform CIL harvest monthly
+			try {
+				logger.info("DAMS Mananger start CIL Harvesting task ... ");
+
+				CILHarvestingTaskController.performHarvestingTask(cilHarvestingStartedTime, null);
+
+				logger.info("DAMS Mananger exits CIL Harvesting task at " + Statistics.getDatabaseDateFormater().format(Calendar.getInstance().getTime()) + ".");
+			} catch(Exception e) {
+				e.printStackTrace();
+				logger.error("CIL Harvesting process failed: " + Statistics.getDatabaseDateFormater().format(Calendar.getInstance().getTime()) + ".");
 			}
-			
+
+			}
+
 			// clear authority records cache for nightly refreshing
 			try {
 				DAMSRepository.getRepository().clearCache();
