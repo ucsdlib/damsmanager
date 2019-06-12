@@ -20,9 +20,9 @@ public class RecordUtil
     // private type values
     public static String copyrightPublic  = "Public domain";
     public static String copyrightRegents = "Copyright UC Regents";
-    private static String copyrightPerson = "Copyrighted (Person)";
-    private static String copyrightCorporate = "Copyrighted (Corporate)";
-    private static String copyrightOther = "Copyrighted (Other)";
+    public static String copyrightPerson = "Copyrighted (Person)";
+    public static String copyrightCorporate = "Copyrighted (Corporate)";
+    public static String copyrightOther = "Copyrighted (Other)";
     private static String copyrightUnknown = "Unknown";
     private static String underCopyright = "Under copyright";
 
@@ -329,19 +329,27 @@ public class RecordUtil
         note.addElement("rdf:value",rdfURI).setText(culturalSensitivityRestrictedNote);
         note.addElement("dams:internalOnly",damsURI).setText("true");
     }
-    private static void addOtherRights( Element o, String basis, String permission,
+    public static void addOtherRights( Element o, String basis, String permission,
+            String restriction )
+    {
+        addOtherRights( o, basis, null, permission, restriction );
+    }
+    public static void addOtherRights( Element o, String basis, String note, String permission,
         String restriction )
     {
         Element other = o.addElement("dams:otherRights",damsURI)
             .addElement("dams:OtherRights",damsURI);
         if (!isBlank(basis)) 
         {
-        	other.addElement("dams:otherRightsBasis",damsURI).setText(basis);
+            other.addElement("dams:otherRightsBasis",damsURI).setText(basis);
+        }
+        if (!isBlank(note)) {
+            other.addElement("dams:otherRightsNote",damsURI).setText(note);
         }
         addRightsAction( other, permission, restriction, null, null );
     }
-    private static void addLicense( Element o, String note, String permission, String restriction,
-    		String beginDate, String endDate, String licenseURI )
+    public static void addLicense( Element o, String note, String permission, String restriction,
+            String beginDate, String endDate, String licenseURI )
     {
         Element license = o.addElement("dams:license",damsURI).addElement("dams:License",damsURI);
         if (!isBlank(note)) {
@@ -387,8 +395,24 @@ public class RecordUtil
             }
         }
     }
-    private static void addRightsHolder( Element o, String copyrightStatus, String[] rightsHolders )
+    public static void addRightsHolder( Element o, String copyrightStatus, String[] rightsHolders )
     {
+        for (String rightsHolder : rightsHolders)
+        {
+            if (!isBlank (rightsHolder))
+            {
+                addRightsHolder( o, copyrightStatus, rightsHolder);
+            }
+        }
+    }
+
+    /*
+     * add rights holder
+     * @param o
+     * @param header
+     * @param rightsHolder
+     */
+    public static void addRightsHolder( Element o, String copyrightStatus, String rightsHolder) {
         String predicate = null;
         String nameClass = null;
         if ( copyrightStatus.equals(copyrightPerson) )
@@ -396,7 +420,8 @@ public class RecordUtil
             predicate = "dams:rightsHolderPersonal";
             nameClass = "mads:PersonalName";
         }
-        else if ( copyrightStatus.equals(copyrightCorporate) || copyrightStatus.equals(copyrightRegents) )
+        else if ( copyrightStatus.equals(copyrightCorporate)
+                || copyrightStatus.equals(copyrightRegents) )
         {
             predicate = "dams:rightsHolderCorporate";
             nameClass = "mads:CorporateName";
@@ -407,18 +432,13 @@ public class RecordUtil
             nameClass = "mads:Name";
         }
 
-        for (String rightsHolder : rightsHolders)
-        {
-            if (!isBlank (rightsHolder))
-            {
-                Element name = o.addElement(predicate,damsURI).addElement(nameClass,madsURI);
-                name.addElement("mads:authoritativeLabel",madsURI).setText(rightsHolder);
-                Element el = name.addElement("mads:elementList");
-                el.addAttribute( new QName("parseType",rdfNS), "Collection" );
-                el.addElement("mads:FullNameElement", madsURI).addElement("mads:elementValue", madsURI)
-                    .setText(rightsHolder.trim());
-            }
-        }
+        Element name = o.addElement(predicate,damsURI).addElement(nameClass,madsURI);
+
+        name.addElement("mads:authoritativeLabel",madsURI).setText(rightsHolder);
+        Element el = name.addElement("mads:elementList");
+        el.addAttribute( new QName("parseType",rdfNS), "Collection" );
+        el.addElement("mads:FullNameElement", madsURI).addElement("mads:elementValue", madsURI)
+            .setText(rightsHolder.trim());
     }
 
     private static String getCreativeCommonsNote( String attribution )

@@ -34,7 +34,10 @@ import edu.ucsd.library.xdre.utils.ImageMagick;
 public class InputStreamRecord implements Record {
     protected String id;
     protected Document rdf;
-	
+
+    protected DAMSClient damsClient = null;
+    public InputStreamRecord() {}
+
 	public InputStreamRecord(Record record, Map<String, String> collections, String unit, 
 			String copyrightStatus, String copyrightJurisdiction, String[] copyrightOwner,
 			String program, String access, String beginDate, String endDate) throws Exception {
@@ -45,6 +48,11 @@ public class InputStreamRecord implements Record {
 		assignIDs();
 		RecordUtil.addRights(rdf, unit, collections, copyrightStatus, copyrightJurisdiction, 
 				copyrightOwner, program, access, beginDate, endDate);
+	}
+
+	public InputStreamRecord(Record record, DAMSClient damsClient) {
+		this.id = record.recordID();
+		this.damsClient = damsClient;
 	}
 
 	/**
