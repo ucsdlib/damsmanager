@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -41,12 +40,17 @@ public class ExcelSource implements RecordSource
 {
     public static final String[] IGNORED_FIELDS_FOR_OBJECTS = {"CLR image file name", "Brief description", "subject type"};
     public static final String[] IGNORED_FIELDS_FOR_COLLECTIONS = {"Level","Title","Subtitle","Part name","Part number","Translation","Variant","File name","File use","File name 2","File use 2", "subject type"};
+    public static final String[] RIGHTS_AND_COLLECTION_FIELDS = {"Note:local attribution", "copyrightJurisdiction", "copyrightStatus", "copyrightPurposeNote", "copyrightNote", "rightsHolderCorporate",
+        "rightsHolderPersonal", "rightsHolderName", "otherRights:otherRightsBasis", "otherRights:permission/type", "otherRights:restriction/type", "otherRights:otherRightsNote",
+        "license:permission/type", "license:restriction/type", "license:beginDate", "license:endDate", "license:licenseNote", "license:licenseURI", "Collection(s)"};
 
     private static final String[] DATETIME_FORMATS = {"yyyy", "yyyy-MM", "yyyy-MM-dd"};
     public static final String BEGIN_DATE = "Begin date";
     public static final String END_DATE = "End date";
+    public static final String LICENSE_BEGIN_DATE = "license:beginDate";
+    public static final String LICENSE_END_DATE = "license:endDate";
 
-    private static final String[] DATE_FIELDS = {BEGIN_DATE, END_DATE};
+    private static final String[] DATE_FIELDS = {BEGIN_DATE, END_DATE, LICENSE_BEGIN_DATE, LICENSE_END_DATE};
     private static Map<String, List<String>> CONTROL_VALUES = new HashMap<>();
     
     protected int lastRow;
@@ -145,10 +149,10 @@ public class ExcelSource implements RecordSource
                 if ( validateControlFieldsOnly )
                 {
                     // report invalid subject import headers
-                    if ( StringUtils.isNotBlank(header) && !controlFields.contains(header) )
+                    if ( StringUtils.isNotBlank(header) && !controlFields.contains(headerToValidate(header)) )
                         invalidHeaders.add(header); 
                 } else if ( CONTROL_VALUES != null && CONTROL_VALUES.size() > 0 
-                        && StringUtils.isNotBlank(header) && !CONTROL_VALUES.containsKey(lcHeader) )
+                        && StringUtils.isNotBlank(header) && !CONTROL_VALUES.containsKey(headerToValidate(lcHeader)) )
                 {
                     invalidHeaders.add(header);
                 }
@@ -258,7 +262,7 @@ public class ExcelSource implements RecordSource
                 String header = headers.get(i);
 
                 // skip parsing the values in the ignored fields 
-                if (!validateControlFieldsOnly && controlFields != null && controlFields.indexOf(header) >= 0)
+                if (!validateControlFieldsOnly && controlFields != null && controlFields.indexOf(headerToValidate(header)) >= 0)
                     continue;
 
                 String value = null;
@@ -278,10 +282,13 @@ public class ExcelSource implements RecordSource
 
                         // check for invalid control values
                         String originalHeader = originalHeaders.get(header);
-                        List<String> validValue = CONTROL_VALUES.get(header);
+                        List<String> validValue = CONTROL_VALUES.get(headerToValidate(header));
                         if (validValue != null && validValue.size() > 0) 
                         {
-                            if (originalHeader.equalsIgnoreCase(BEGIN_DATE) || originalHeader.equalsIgnoreCase(END_DATE))
+                            if (originalHeader.equalsIgnoreCase(headerToValidate(BEGIN_DATE))
+                                    || originalHeader.equalsIgnoreCase(headerToValidate(END_DATE))
+                                    || originalHeader.equalsIgnoreCase(headerToValidate(LICENSE_BEGIN_DATE))
+                                    || originalHeader.equalsIgnoreCase(headerToValidate(LICENSE_END_DATE)))
                             {
                                 // validate date-time format
                                 boolean validDate = false;
@@ -318,9 +325,9 @@ public class ExcelSource implements RecordSource
                                 for (String val : vals2Valid) 
                                 {
                                     String normVal = val.trim();
-                                    if (header.equalsIgnoreCase("Language"))
+                                    if (headerToValidate(header).equalsIgnoreCase("Language"))
                                         normVal = normalizeFieldValue(normVal, DELIMITER_LANG_ELEMENT);
-                                    else if (header.equalsIgnoreCase(SubjectTabularRecord.SUBJECT_TYPE))
+                                    else if (headerToValidate(header).equalsIgnoreCase(SubjectTabularRecord.SUBJECT_TYPE))
                                         // Subject Import: case insensitive subject header value
                                         normVal = val.toLowerCase();
 
@@ -471,7 +478,7 @@ public class ExcelSource implements RecordSource
      * @param template
      * @throws Exception 
      */
-    public synchronized static void initControlValues(File template) throws Exception 
+    public synchronized static void initControlValues(File template, boolean edit) throws Exception 
     {
         if ( CONTROL_VALUES == null || CONTROL_VALUES.size() == 0 )
         {
@@ -487,7 +494,7 @@ public class ExcelSource implements RecordSource
             Sheet selectHeaderSheet = book.getSheet("Select-a-header values");
 
             // initiate the control values for column names
-            initControlValues(columnsSheet, selectHeaderSheet, cvsSheet);
+            initControlValues(columnsSheet, selectHeaderSheet, cvsSheet, edit);
         }
     }
 
@@ -497,7 +504,7 @@ public class ExcelSource implements RecordSource
      * @param cvs
      * @throws Exception 
      */
-    private static void initControlValues(Sheet columns, Sheet selectHeaderSheet, Sheet cvs) throws Exception 
+    private static void initControlValues(Sheet columns, Sheet selectHeaderSheet, Sheet cvs, boolean edit) throws Exception 
     {
         CONTROL_VALUES = new HashMap<>();
         List<String> cvHeaders = new ArrayList<>();
@@ -546,7 +553,16 @@ public class ExcelSource implements RecordSource
         // ARK column
         if (!CONTROL_VALUES.containsKey("ark"))
             CONTROL_VALUES.put("ark", new ArrayList<String>());
-        
+
+        // add rights and collection columns for validation
+        if (edit) {
+            for (int i = 0; i < RIGHTS_AND_COLLECTION_FIELDS.length; i++) {
+                String header = RIGHTS_AND_COLLECTION_FIELDS[i].toLowerCase();
+                if (!CONTROL_VALUES.containsKey(header))
+                    CONTROL_VALUES.put(header, new ArrayList<String>());
+            }
+        }
+
         // select-a-header columns names
         for ( Iterator<Row> it = selectHeaderSheet.rowIterator(); it.hasNext(); )
         {
@@ -634,12 +650,21 @@ public class ExcelSource implements RecordSource
         // add supported ISO date formats for validation
         for (String dateField : DATE_FIELDS) {
             List<String> validDateFormats = CONTROL_VALUES.get(dateField.toLowerCase());
-            if (validDateFormats.isEmpty()) {
+            if (validDateFormats != null && validDateFormats.isEmpty()) {
                 for (String dateFormat : DATETIME_FORMATS) {
                     validDateFormats.add(dateFormat);
                 }
             }
         }
+    }
+
+    /*
+     * The header to validate: original header for excel import
+     * @param header
+     * @return
+     */
+    protected String headerToValidate(String header) {
+        return header;
     }
 
     /*

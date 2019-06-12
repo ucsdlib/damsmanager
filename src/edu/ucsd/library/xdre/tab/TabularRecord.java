@@ -2,22 +2,17 @@ package edu.ucsd.library.xdre.tab;
 
 import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.dom4j.Branch;
 import org.dom4j.Document;
 import org.dom4j.DocumentFactory;
 import org.dom4j.Element;
 import org.dom4j.Namespace;
-import org.dom4j.QName;
 
 import edu.ucsd.library.xdre.collection.CollectionHandler;
 
@@ -28,37 +23,18 @@ import edu.ucsd.library.xdre.collection.CollectionHandler;
  * @author escowles
  * @since 2014-06-05
 **/
-public class TabularRecord implements Record
+public class TabularRecord extends TabularRecordBasic
 {
-    public static final Character[] RETAIN_CONTROL_CHARS = {10, 13};
-    public static List<Character> RETAIN_CONTROL_CHAR_LIST = Arrays.asList(RETAIN_CONTROL_CHARS);
+    public static final String COPYRIGHT_JURISDICTION = "copyrightJurisdiction";
+    public static final String COPYRIGHT_STATUS = "copyrightStatus";
+    public static final String COPYRIGHT_PURPOSE_NOTE = "copyrightPurposeNote";
+    public static final String COPYRIGHT_NOTE = "copyrightNote";
 
-    public static final String OBJECT_ID = "object unique id";
-    public static final String OBJECT_COMPONENT_TYPE = "level";
-    public static final String COMPONENT = "component";
-    public static final String SUBCOMPONENT = "sub-component";
-    public static final char DELIMITER = '|';
-    public static final char ESCAPE_CHAR = '\\';
-    public static final String DELIMITER_CELL = "@";
-    public static final String DELIMITER_LANG_ELEMENT = "-";
-    public static final String[] ACCEPTED_DATE_FORMATS = {"yyyy-MM-dd", "yyyy-MM", "yyyy"};
-    private static DateFormat[] dateFormats = {new SimpleDateFormat(ACCEPTED_DATE_FORMATS[0]), 
-        new SimpleDateFormat(ACCEPTED_DATE_FORMATS[1]), new SimpleDateFormat(ACCEPTED_DATE_FORMATS[2])};
+    protected List<TabularRecord> cmp;
+    protected int cmpCounter = 0;
 
-    // namespaces
-    private static final Namespace rdfNS  = new Namespace(
-            "rdf", "http://www.w3.org/1999/02/22-rdf-syntax-ns#");
-    private static final Namespace rdfsNS  = new Namespace(
-            "rdfs", "http://www.w3.org/2000/01/rdf-schema#");
-    private static final Namespace madsNS = new Namespace(
-            "mads", "http://www.loc.gov/mads/rdf/v1#");
-    private static final Namespace damsNS = new Namespace(
-            "dams", "http://library.ucsd.edu/ontology/dams#");
-
-    private Map<String,String> data;
-    private List<TabularRecord> cmp;
-    private int counter = 0;
-    private int cmpCounter = 0;
+    protected boolean titleProcessed = false;
+    protected boolean cartographicsProcessed = false;
 
     // flag for watermarking
     private boolean watermarking = false;
@@ -84,11 +60,12 @@ public class TabularRecord implements Record
     **/
     public TabularRecord( Map<String,String> data, ArrayList<TabularRecord> cmp )
     {
-        this.data = (data != null) ? data : new HashMap<String,String>();
+        super(data);
         this.cmp = (cmp != null) ? cmp : new ArrayList<TabularRecord>();
     }
 
     /**
+<<<<<<< HEAD
      * Get the watermarking flag
      */
     public boolean isWatermarking() {
@@ -120,6 +97,8 @@ public class TabularRecord implements Record
     }
 
     /**
+=======
+>>>>>>> Fixes #321 - Extend Excel InputStream to support Batch Overlay.
      * Add component-level data.
     **/
     public void addComponent( TabularRecord component )
@@ -141,14 +120,6 @@ public class TabularRecord implements Record
     public List<TabularRecord> getComponents()
     {
         return cmp;
-    }
-
-    /**
-     * Get the record's identifier.
-    **/
-    public String recordID()
-    {
-        return getData().get(OBJECT_ID);
     }
 
     /**
@@ -199,192 +170,329 @@ public class TabularRecord implements Record
     **/
     private void addFields( Element e, Map<String,String> data, int cmp, String ark ) throws Exception
     {
+        String objectID = data.get("object unique id");
         if ( ark == null ) { ark = "ARK"; }
         String id = (cmp > 0) ? ark + "/" + cmp : ark;
         String fileID = id + "/1";
         addAttribute(e, "about", rdfNS, id);
 
+        for (String key : data.keySet()) {
+            // Handle common descriptive metadata
+            addCommonDescriptiveData(e, objectID, key);
+
+            if (key.startsWith("subject:")) {
+                // predicate for the subject
+                String predicateName = getPredicateName(key.substring(key.lastIndexOf(":") + 1));
+                String elemName = predicateName.substring(0, 1).toUpperCase() + predicateName.substring(1);
+                for (String value : split(data.get(key))) {
+                    handleSubject(e, predicateName, elemName, value);
+                }
+            }
+
+            // CLR Brief Description (ScopeAndContentNote) /////////////////////////////////////
+            String briefDescription = data.get("brief description");
+            if ( pop(briefDescription) )
+            {
+                addScopeContentNote(e,briefDescription);
+            }
+    
+            // Collection image related resource //////////////////////////////////////////////////////////////////////////
+            String clrImage = data.get("clr image file name");
+            if ( pop(clrImage) )
+            {
+                addRelatedResource(e, "thumbnail", "@ " + clrImage);
+            }
+
+            // files ////////////////////////////////////////////////////////////////////////
+            String fn = data.get("file name");
+            String use = data.get("file use");
+            if ( pop(fn) )
+            {
+                String file1Id = fileID;
+                if (watermarking && CollectionHandler.isDocument(fn, use)
+                        && use.toLowerCase().contains("source")) {
+                    // PDF source file that need watermarking will be stored as the second file
+                    file1Id = getSecondFileID (fileID);
+                }
+
+                addFile (e, file1Id, fn, use);
+            }
+            
+            fn = data.get("file name 2");
+            use = data.get("file use 2");
+            if ( pop(fn) )
+            {
+            	String fileID2 = getSecondFileID (fileID);
+            	addFile (e, fileID2, fn, use);
+            }
+        }
+    }
+
+    protected void addCommonDescriptiveData(Element e, String objectID, String key)
+            throws ParseException {
         // typeOfResource ///////////////////////////////////////////////////////////////
-        for ( String type : split(data.get("type of resource")) )
-        {
-            addTextElement( e, "typeOfResource", damsNS, type );
+        if (key.equalsIgnoreCase("type of resource")) {
+            for ( String value : split(data.get(key)) ) {
+                if (pop(value)) {
+                    addTextElement(e, "typeOfResource", damsNS, value);
+                }
+            }
         }
 
         // title ////////////////////////////////////////////////////////////////////////
-        String main  = data.get("title");
-        String sub   = data.get("subtitle");
-        String ptNam = data.get("part name");
-        String ptNum = data.get("part number");
-        String trans = data.get("translation");
-        String var   = data.get("variant");
-        // ignore title when no title value provided 
-        if ( pop(main) )
-        {
+        if ((key.equalsIgnoreCase("title")
+                || key.startsWith("subtitle")
+                || key.startsWith("part name")
+                || key.startsWith("part number")
+                || key.startsWith("translation")
+                || key.startsWith("variant")) && !titleProcessed) {
+            titleProcessed = true;
+
+            String main  = data.get("title");
+            String sub   = data.get("subtitle");
+            String ptNam = data.get("part name");
+            String ptNum = data.get("part number");
+            String trans = data.get("translation");
+            String var   = data.get("variant");
             addTitle( e, main, sub, ptNam, ptNum, trans, var );
         }
 
         // date /////////////////////////////////////////////////////////////////////////
-        // first create a date element to hold begin/end date if provided
-        String objectID = data.get("object unique id");
-        String date = data.get("date");
-        String begin = data.get("begin date");
-        String end   = data.get("end date");
-        Element d = null;
-        if ( pop(date) || pop(begin) || pop(end) )
-        {
-        	testDateValue ( objectID, begin, "begin date" );
-        	testDateValue ( objectID, end, "end date" );
-        	
-            d = addElement( e, "date", damsNS, "Date", damsNS );
-            addTextElement( d, "encoding", damsNS, "w3cdtf" );
-            addTextElement( d, "value", rdfNS, date );
-            addTextElement( d, "beginDate", damsNS, begin );
-            addTextElement( d, "endDate", damsNS, end );
-        }
+        if (key.startsWith("date:")) {
+            String type = key.substring(key.indexOf(":") + 1);
+            String date = data.get(key);
 
-        // next, find all qualified date types
-        Map<String,String> dates = new HashMap<>();
-        for ( Iterator<String> it = data.keySet().iterator(); it.hasNext(); )
-        {
-            String key = it.next();
-            if ( key.startsWith("date:") )
-            {
-                String value = data.get( key );
-                if ( pop(value) )
-                {
-                    String type = key.substring( key.indexOf(":") + 1 );
-                    dates.put( type, value );
-                }
-            }
-        }
+            if (key.equalsIgnoreCase("date:creation")) {
+                // date:creation with begin/end date if provided
+                String begin = data.get("begin date");
+                String end   = data.get("end date");
+                testDateValue ( objectID, begin, "begin date" );
+                testDateValue ( objectID, end, "end date" );
 
-        // if there's only one qualified date, add to the structured date above,
-        // otherwise, create a date element for each qualified date
-        if ( d != null && dates.size() == 1 )
-        {
-            // only one date
-            String type = dates.keySet().iterator().next();
-            String value = dates.get(type);
-            addTextElement( d, "type", damsNS, type );
-            addTextElement( d, "value", rdfNS, value );
-        }
-        else
-        {
-            // multiple qualified dates
-            for ( Iterator<String> it = dates.keySet().iterator(); it.hasNext(); )
-            {
-                String type = it.next();
-                String value = dates.get( type );
-                Element e2 = addElement( e, "date", damsNS, "Date", damsNS );
-                addTextElement( e2, "type", damsNS, type );
-                addTextElement( e2, "value", rdfNS, value );
+                addDate(e, type, "w3cdtf", date, begin, end);
+            } else if (!key.equalsIgnoreCase("date:creation")) {
+                // add: other qualified date types
+                addDate(e, type, null, date, null, null);
             }
         }
 
         // identifier ///////////////////////////////////////////////////////////////////
-        for ( Iterator<String> it = data.keySet().iterator(); it.hasNext(); )
-        {
-            String key = it.next();
-            if ( key.startsWith("identifier:") )
+        if ( key.startsWith("identifier:") ) {
+            String label = key.substring(key.indexOf(":") + 1);
+            for ( String value : split(data.get( key )) )
             {
-                String values = data.get( key );
-                for ( String value : split(values) )
-                {
-                    Element e2 = addElement( e, "note", damsNS, "Note", damsNS );
-                    addTextElement( e2, "type", damsNS, "identifier" );
-                    addTextElement( e2, "value", rdfNS, value );
-
-                    String label = key.substring( key.indexOf(":") + 1 );
-                    addElement(e2, "displayLabel", damsNS).setText(label);
-                }
+                addNote(e, "identifier", label, value);
             }
         }
 
         // note /////////////////////////////////////////////////////////////////////////
-        for ( Iterator<String> it = data.keySet().iterator(); it.hasNext(); )
-        {
-            String key = it.next();
-            if ( key.startsWith("note:") )
+        if ( key.startsWith("note:") ) {
+            String type = key.substring( key.indexOf(":") + 1 );
+            for ( String value : split(data.get( key )) )
             {
-                String values = data.get( key );
-                for ( String value : split(values) )
-                {
-                    Element e2 = addElement( e, "note", damsNS, "Note", damsNS );
-                    addTextElement( e2, "value", rdfNS, value );
-
-                    String type = key.substring( key.indexOf(":") + 1 );
-                    addElement(e2, "type", damsNS).setText(type);
-                }
+                addNote(e, type, null, value);
             }
         }
 
-        // CLR Brief Description (ScopeAndContentNote) /////////////////////////////////////
-        String briefDescription = data.get("brief description");
-        if ( pop(briefDescription) )
-        {
-            Element e2 = addElement( e, "scopeContentNote", damsNS, "ScopeContentNote", damsNS );
-            addTextElement( e2, "value", rdfNS, briefDescription );
-            addElement(e2, "type", damsNS).setText("scopeAndContent");
-            addElement(e2, "displayLabel", damsNS).setText("Scope and Contents");
-        }
-
-        // Collection image related resource //////////////////////////////////////////////////////////////////////////
-        String clrImage = data.get("clr image file name");
-        if ( pop(clrImage) )
-        {
-        	Element rel = addElement( e,"relatedResource", damsNS, "RelatedResource", damsNS );
-        	Element uri = addElement( rel, "uri", damsNS );
-    		addAttribute( uri, "resource", rdfNS, clrImage );
-
-    		addElement( rel, "type", damsNS ).setText("thumbnail");
-
-        }
-
         // relationships ////////////////////////////////////////////////////////////////
-        // data, elem, header, class/ns, pred/ns, element
-        addRelationship( data, e, "person", "PersonalName", "personalName", "FullName" );
-        addRelationship( data, e, "corporate", "CorporateName", "corporateName", "Name" );
+        // data, elem, header, class/ns, pred/ns, name element
+        // personal name
+        if (key.startsWith("person:")) {
+            String role = key.substring(key.lastIndexOf(":") + 1);
 
-        // subjects /////////////////////////////////////////////////////////////////////
-        // data, elem, header, class/ns, predicate/ns, element
-        addMadsSubject( data, e, "subject:conference name", "ConferenceName", madsNS,
-                "conferenceName", damsNS, "Name" );
-        addMadsSubject( data, e, "subject:corporate name", "CorporateName", madsNS,
-                "corporateName", damsNS, "Name" );
-        addMadsSubject( data, e, "subject:family name", "FamilyName", madsNS,
-                "familyName", damsNS, "Name" );
-        addMadsSubject( data, e, "subject:personal name", "PersonalName", madsNS,
-                "personalName", damsNS, "FullName" );
-        addMadsSubject( data, e, "subject:genre", "GenreForm", madsNS,
-                "genreForm", damsNS, null );
-        addMadsSubject( data, e, "subject:geographic", "Geographic", madsNS,
-                "geographic", damsNS, null );
-        addMadsSubject( data, e, "subject:occupation", "Occupation", madsNS,
-                "occupation", damsNS, null );
-        addMadsSubject( data, e, "subject:temporal", "Temporal", madsNS,
-                "temporal", damsNS, null );
-        addMadsSubject( data, e, "subject:topic", "Topic", madsNS, "topic", damsNS, null );
+            // add: Relationship by name and role
+            for ( String value : split(data.get(key)) ) {
+                String predicateName = "personalName";
+                addRelationship(e, "PersonalName", role, predicateName, "FullName", value);
+            }
+        }
 
-        // special dams element for scientific name, common name, culturalContext, lithology, series, cruise etc.
-        addDamsSubject( data, e, "subject:common name", "CommonName", damsNS, "commonName", damsNS, null );
-        addDamsSubject( data, e, "subject:scientific name", "ScientificName", damsNS, "scientificName", damsNS, null );
-        addDamsSubject( data, e, "subject:culturalcontext", "CulturalContext", damsNS, "culturalContext", damsNS, null );
-        addDamsSubject( data, e, "subject:lithology", "Lithology", damsNS, "lithology", damsNS, null );
-        addDamsSubject( data, e, "subject:series", "Series", damsNS, "series", damsNS, null );
-        addDamsSubject( data, e, "subject:cruise", "Cruise", damsNS, "cruise", damsNS, null );
-        addDamsSubject( data, e, "subject:anatomy", "Anatomy", damsNS, "anatomy", damsNS, null );
+        // corporate name
+        if (key.startsWith("corporate:")) {
+            String role = key.substring(key.lastIndexOf(":") + 1);
+
+            for ( String value : split(data.get(key)) ) {
+                String predicateName = "corporateName";
+                addRelationship(e, "CorporateName", role, predicateName, "Name", value);
+            }
+        }
 
         // language /////////////////////////////////////////////////////////////////////
-        for ( String lang : split(data.get("language")) )
-        {
-        	String[] elemValues = lang.split("\\" + DELIMITER_LANG_ELEMENT);
-            Element elem = addVocabElement(e,"language",damsNS,"Language",madsNS);
-            addTextElement(elem,"code",madsNS,elemValues[0].trim());
-            if (elemValues.length == 2)
-            	addTextElement(elem,"authoritativeLabel",madsNS,elemValues[1].trim());
+        if (key.startsWith("language")) {
+            for(String value : split(data.get("language"))) {
+                addLanguage(e, value);
+            }
         }
 
         // cartographics ////////////////////////////////////////////////////////////////
+        if (key.startsWith("geographic:") && !cartographicsProcessed) {
+            cartographicsProcessed = true;
+
+            addCartographics(e);
+        }
+
+        // related resource /////////////////////////////////////////////////////////////
+        if (key.startsWith("related resource:")) {
+            String type = key.substring(key.lastIndexOf(":") + 1);
+            for (String value : split(data.get( key ))) {
+                addRelatedResource(e, type, value);
+            }
+        }
+    }
+
+    protected void addFile (Element parent, String fileID, String fileName, String use)
+    {
+        Element f = addElement(parent,"hasFile",damsNS,"File",damsNS);
+        String ext = (fileName.indexOf(".") != -1) ? fileName.substring(fileName.lastIndexOf(".")) : "";
+        addAttribute( f, "about", rdfNS, fileID + ext );
+        addElement(f,"sourceFileName",damsNS).setText(fileName);
+        if ( pop(use) )
+        {
+            addElement(f,"use",damsNS).setText(use);
+        }
+    }
+
+    protected String getSecondFileID (String fileID) {
+    	int f2Index = 2;
+    	
+    	String fileID2 = fileID;
+    	if (fileID.lastIndexOf("/") > 0)
+    		fileID2 = fileID.substring(0, fileID.lastIndexOf("/"));
+        try {
+        	f2Index = Integer.parseInt(fileID.substring(fileID.lastIndexOf("/") + 1)) + 1;
+        } catch (NumberFormatException ne) {}
+        return fileID2 + "/" + f2Index;
+    }
+
+    /*
+     * Convert subject header to predicate name
+     * @return
+     */
+    protected String getPredicateName(String label) {
+        String localName = label;
+        switch(label) {
+            case "genre":
+                localName = "genreForm";
+                break;
+            case "scientific name":
+                localName = "scientificName";
+                break;
+            default:
+                String elemName = toCamelCase(label);
+                localName = elemName.substring(0, 1).toLowerCase() + elemName.substring(1);
+                break;
+        }
+
+        return localName;
+    }
+
+    /*
+     * Add dams:Date element
+     * @param e
+     * @param type
+     * @param encoding
+     * @param value
+     * @param begin
+     * @param end
+     */
+    protected void addDate(Element e, String type, String encoding, String value,
+            String begin, String end) {
+        Element d = addElement( e, "date", damsNS, "Date", damsNS );
+        addTextElement( d, "type", damsNS, type );
+
+        if (StringUtils.isNotBlank(encoding))
+            addTextElement( d, "encoding", damsNS, encoding );
+
+        addTextElement( d, "value", rdfNS, value );
+
+        if (StringUtils.isNotBlank(begin))
+            addTextElement( d, "beginDate", damsNS, begin );
+
+        if (StringUtils.isNotBlank(end))
+            addTextElement( d, "endDate", damsNS, end );
+    }
+
+    /*
+     * Add dams:Note elements
+     * @param e
+     * @param type
+     * @param label
+     * @param values
+     */
+    protected void addNote(Element e, String type, String label, String value) {
+        if ( !pop(value) )
+            return;
+
+        Element e2 = addElement( e, "note", damsNS, "Note", damsNS );
+        addTextElement( e2, "type", damsNS, type );
+        addTextElement( e2, "value", rdfNS, value );
+
+        if (StringUtils.isNotBlank(label)) {
+            addElement(e2, "displayLabel", damsNS).setText(label);
+        }
+    }
+
+    /*
+     * Add dams:ScopeContentNote element
+     * @param e
+     * @param value
+     */
+    protected void addScopeContentNote(Element e, String value) {
+        Element e2 = addElement( e, "scopeContentNote", damsNS, "ScopeContentNote", damsNS );
+        addTextElement( e2, "value", rdfNS, value );
+        addElement(e2, "type", damsNS).setText("scopeAndContent");
+        addElement(e2, "displayLabel", damsNS).setText("Scope and Contents");
+    }
+
+    /*
+     * Add dams:RelatedResource element
+     * @param e
+     * @param type
+     * @param values
+     */
+    protected void addRelatedResource(Element e, String type, String value) {
+        if ( !pop(value) )
+            return;
+
+        String[] parts = value.split("@");
+        String description = parts[0];
+        String uri = parts.length == 2 ? parts[1] : "";
+
+        Element rel = addElement( e,"relatedResource", damsNS, "RelatedResource", damsNS );
+        addElement( rel, "type", damsNS ).setText(type);
+
+        if ( pop(description) ) { 
+            addElement(rel, "description", damsNS).setText(description.trim());
+        }
+
+        if (StringUtils.isNotBlank(uri) && uri.trim().length() > 0) {
+            Element uriElem = addElement( rel, "uri", damsNS );
+            addAttribute( uriElem, "resource", rdfNS, uri.trim() );
+        }
+    }
+
+    /*
+     * Add dams:Language element
+     * @param e
+     * @param values
+     */
+    protected void addLanguage(Element e, String value) {
+        if (!pop(value))
+            return;
+
+        String[] elemValues = value.split("\\" + DELIMITER_LANG_ELEMENT);
+        Element elem = addVocabElement(e,"language",damsNS,"Language",madsNS);
+        addTextElement(elem,"code",madsNS,elemValues[0].trim());
+        if (elemValues.length == 2) {
+            addTextElement(elem,"authoritativeLabel",madsNS,elemValues[1].trim());
+        }
+    }
+
+    /*
+     * Add Cartographics element
+     * @param e
+     */
+    protected void addCartographics(Element e) {
         String line  = data.get("geographic:line");
         String point = data.get("geographic:point");
         String poly  = data.get("geographic:polygon");
@@ -401,96 +509,61 @@ public class TabularRecord implements Record
             if ( pop(ref) )   { addElement(cart,"referenceSystem",damsNS).setText(ref); }
             if ( pop(scale) ) { addElement(cart,"scale",damsNS).setText(scale);         }
         }
+    }
 
-        // related resource /////////////////////////////////////////////////////////////
-        for ( Iterator<String> it = data.keySet().iterator(); it.hasNext(); )
-        {
-            String key = it.next();
-            if ( key.startsWith("related resource") )
-            {
-            	String type = "";
-            	String[] tokens = key.split("\\:");
-            	if (tokens.length == 2) 
-            	{
-            		type = tokens[1].trim();
-            	}
+    /**
+     * Add dams:Copyright
+     * @param data
+     * @param e
+     */
+    protected void addCopyright(Element e) {
+        Element elem = addElement(e, "copyright", damsNS, "Copyright", damsNS);
 
-            	String values = data.get( key );
-                for ( String value : split(values) )
-                {
-	                String[] elemValues = value.split("\\" + DELIMITER_CELL);
-	            	if (elemValues.length == 1 && !(values.startsWith(DELIMITER_CELL) || values.endsWith(DELIMITER_CELL))) {
-	            		elemValues = value.split(" " + DELIMITER_CELL + " ");
-	            		throw new Exception("Invalid Related Resource value in record " + recordID() + ": \"" + values + "\"");
-	            	}
-	            	
-	            	Element rel = addElement(e,"relatedResource", damsNS, "RelatedResource", damsNS);
-
-	            	if ( pop(type) ) { 
-	            		addElement(rel, "type", damsNS).setText(type);
-	            	}
-
-	            	if ( pop(elemValues[0]) ) { 
-	            		addElement(rel, "description", damsNS).setText(elemValues[0].trim());
-	            	}
-	
-	            	if ( elemValues.length >= 2 && pop(elemValues[1]) ) { 
-	            		Element uri = addElement(rel, "uri", damsNS);
-	            		addAttribute( uri, "resource", rdfNS, elemValues[1].trim() );
-	            	}
-                }
-            }
+        // add copyright elements: copyrightJurisdiction, copyrightStatus, copyrightPurposeNote, copyrightNote
+        String copyrightJurisdiction = data.get(COPYRIGHT_JURISDICTION.toLowerCase());
+        if (pop(copyrightJurisdiction)) {
+            addTextElement(elem, COPYRIGHT_JURISDICTION, damsNS, copyrightJurisdiction);
         }
 
-        // files ////////////////////////////////////////////////////////////////////////
-        String fn = data.get("file name");
-        String use = data.get("file use");
-        if ( pop(fn) )
-        {
-            String file1Id = fileID;
-            if (watermarking && CollectionHandler.isDocument(fn, use)
-                    && use.toLowerCase().contains("source")) {
-                // PDF source file that need watermarking will be stored as the second file
-                file1Id = getSecondFileID (fileID);
-            }
-
-            addFile (e, file1Id, fn, use);
+        String copyrightStatus = data.get(COPYRIGHT_STATUS.toLowerCase());
+        if (pop(copyrightStatus)) {
+            addTextElement(elem, COPYRIGHT_STATUS, damsNS, copyrightStatus);
         }
-        
-        fn = data.get("file name 2");
-        use = data.get("file use 2");
-        if ( pop(fn) )
-        {
-        	String fileID2 = getSecondFileID (fileID);
-        	addFile (e, fileID2, fn, use);
+
+        String copyrightPurposeNote = data.get(COPYRIGHT_PURPOSE_NOTE.toLowerCase());
+        if (pop(copyrightPurposeNote)) {
+            addTextElement(elem, COPYRIGHT_PURPOSE_NOTE, damsNS, copyrightPurposeNote);
+        }
+
+        String copyrightNote = data.get(COPYRIGHT_NOTE.toLowerCase());
+        if (pop(copyrightNote)) {
+        addTextElement(elem, COPYRIGHT_NOTE, damsNS, copyrightNote);
         }
     }
 
-    private void addFile (Element parent, String fileID, String fileName, String use)
-    {
-        Element f = addElement(parent,"hasFile",damsNS,"File",damsNS);
-        String ext = (fileName.indexOf(".") != -1) ? fileName.substring(fileName.lastIndexOf(".")) : "";
-        addAttribute( f, "about", rdfNS, fileID + ext );
-        addElement(f,"sourceFileName",damsNS).setText(fileName);
-        if ( pop(use) )
-        {
-            addElement(f,"use",damsNS).setText(use);
-        }
+    /*
+     * Add collection linking element
+     * @param e
+     * @param predicate
+     * @param collectionType
+     * @param collectionName
+     */
+    protected void addCollectionElement(Element e, String predicate, String collectionType, String collectionName) {
+        Element elem = addElement(e, predicate, damsNS, collectionType,damsNS);
+        Element el = addElement(elem, "title", damsNS, "Title", madsNS);
+        addElement(el,"authoritativeLabel", madsNS).setText(collectionName);
     }
 
-    private String getSecondFileID (String fileID) {
-    	int f2Index = 2;
-    	
-    	String fileID2 = fileID;
-    	if (fileID.lastIndexOf("/") > 0)
-    		fileID2 = fileID.substring(0, fileID.lastIndexOf("/"));
-        try {
-        	f2Index = Integer.parseInt(fileID.substring(fileID.lastIndexOf("/") + 1)) + 1;
-        } catch (NumberFormatException ne) {}
-        return fileID2 + "/" + f2Index;
-    }
-
-    private void addRelationship( Map<String,String> data, Element e, String header,
+    /*
+     * Add Relationships
+     * @param data
+     * @param e
+     * @param header
+     * @param type
+     * @param pred
+     * @param element
+     */
+    protected void addRelationship( Map<String,String> data, Element e, String header,
         String type, String pred, String element )
     {
         for ( Iterator<String> it = data.keySet().iterator(); it.hasNext(); )
@@ -500,50 +573,115 @@ public class TabularRecord implements Record
             {
                 for ( String value : split(data.get(key)) )
                 {
-                    // name
-                    Element rel = addElement( e, "relationship", damsNS,
-                        "Relationship", damsNS );
-                    Element name = addVocabElement( rel, pred, damsNS, type, madsNS );
-                    addTextElement( name, "authoritativeLabel", madsNS, value );
-                    Element el = addElement( name, "elementList", madsNS );
-                    addAttribute( el, "parseType", rdfNS, "Collection" );
-                    addMadsElement( el, element, value );
-
                     // role
                     String role = key.substring( key.indexOf(":") + 1 );
-                    Element r = addVocabElement(rel, "role", damsNS, "Authority", madsNS);
-                    addTextElement( r, "authoritativeLabel", madsNS, role );
-                    Element scheme = addVocabElement(r, "isMemberOfMADSScheme", madsNS,
-                        "MADSScheme", madsNS );
-                    addTextElement( scheme, "label", rdfsNS, "MARC Relator Codes" );
+                    addRelationship(e, type, role, pred, element, value);
                 }
             }
         }
     }
 
-    private void addMadsSubject( Map<String,String> data, Element e, String header,
-        String type, Namespace typeNS, String pred, Namespace predNS, String element )
-    {
-        for ( String value : split(data.get(header)) )
-        {
-            if ( element == null ) { element = type; }
-            Element el = createSubject(e, type, typeNS, pred, predNS, value);
-            addMadsElement( el, element, value );
+    /*
+     * Add dams:Relationship element
+     * @param e
+     * @param type
+     * @param role
+     * @param pred
+     * @param nameElem
+     * @param value
+     */
+    protected void addRelationship(Element e, String type, String role, String pred, String nameElem, String value) {
+        // name
+        Element rel = addElement( e, "relationship", damsNS,
+            "Relationship", damsNS );
+        Element name = addVocabElement( rel, pred, damsNS, type, madsNS );
+        addTextElement( name, "authoritativeLabel", madsNS, value );
+        Element el = addElement( name, "elementList", madsNS );
+        addAttribute( el, "parseType", rdfNS, "Collection" );
+        addMadsElement( el, nameElem, value );
+
+        // role
+        addRole(rel, role);
+    }
+
+    /*
+     * Add Role (dams:Authority) element
+     * @param rel
+     * @param role
+     */
+    protected void addRole(Element rel, String role) {
+        Element r = addVocabElement(rel, "role", damsNS, "Authority", madsNS);
+        addTextElement( r, "authoritativeLabel", madsNS, role );
+        Element scheme = addVocabElement(r, "isMemberOfMADSScheme", madsNS,
+            "MADSScheme", madsNS );
+        addTextElement( scheme, "label", rdfsNS, "MARC Relator Codes" );
+    }
+
+    /*
+     * Add Subject (mads or dams)
+     * @param e
+     * @param predicateName
+     * @param elemName
+     * @param value
+     */
+    protected void handleSubject(Element e, String predicateName, String elemName, String value) {
+        if (Arrays.asList(MADS_SUBJECTS).indexOf(elemName) >= 0) {
+            String nameElement = elemName.endsWith("PersonalName") ? "FullName" : elemName.endsWith("Name") ? "Name" : null;
+            addMadsSubject( e, elemName, madsNS, predicateName, damsNS, nameElement, value );
+        } else {
+            addDamsSubject( e, elemName, damsNS, predicateName, damsNS, null, value );
         }
     }
 
-    private void addDamsSubject( Map<String,String> data, Element e, String header,
-            String type, Namespace typeNS, String pred, Namespace predNS, String element )
+    /*
+     * Add MADS subject
+     * @param e
+     * @param type
+     * @param typeNS
+     * @param pred
+     * @param predNS
+     * @param element
+     * @param value
+     */
+    protected void addMadsSubject( Element e, String type, Namespace typeNS, String pred,
+            Namespace predNS, String element, String value )
     {
-        for ( String value : split(data.get(header)) )
-        {
-            if ( element == null ) { element = type; }
-            Element el = createSubject(e, type, typeNS, pred, predNS, value);
-            addDamsElement( el, element, value );
-        }
+        addMadsSubjectElement( e, type, typeNS, pred, predNS, element, value );
     }
 
-    private Element createSubject( Element e, String type, Namespace typeNS, String pred, Namespace predNS, String value ) {
+    protected void addMadsSubjectElement( Element e, String type, Namespace typeNS, String pred,
+            Namespace predNS, String element, String value )
+    {
+        if ( element == null ) { element = type; }
+        Element el = createSubject(e, type, typeNS, pred, predNS, value);
+        addMadsElement( el, element, value );
+    }
+
+    /*
+     * Add DAMS subject
+     * @param e
+     * @param type
+     * @param typeNS
+     * @param pred
+     * @param predNS
+     * @param element
+     * @param value
+     */
+    protected void addDamsSubject( Element e, String type, Namespace typeNS, String pred,
+            Namespace predNS, String element, String value )
+    {
+        addDamsSubjectElement( e, type, typeNS, pred, predNS, element, value );
+    }
+
+    protected void addDamsSubjectElement( Element e, String type, Namespace typeNS, String pred,
+            Namespace predNS, String element, String value )
+    {
+        if ( element == null ) { element = type; }
+        Element el = createSubject(e, type, typeNS, pred, predNS, value);
+        addDamsElement( el, element, value );
+    }
+
+    protected Element createSubject( Element e, String type, Namespace typeNS, String pred, Namespace predNS, String value ) {
         Element sub = addVocabElement( e, pred, predNS, type, typeNS );
         addTextElement( sub, "authoritativeLabel", madsNS, value );
         Element el = addElement( sub, "elementList", madsNS );
@@ -551,7 +689,7 @@ public class TabularRecord implements Record
         return el;
     }
 
-    private static void addTitle( Element e, String mainTitle, String subTitle,
+    public static void addTitle( Element e, String mainTitle, String subTitle,
         String partName, String partNumber, String translation, String variant )
     {
         String label = mainTitle;
@@ -585,133 +723,8 @@ public class TabularRecord implements Record
             addTextElement( varElem, "variantLabel", madsNS, trans );
         }
     }
-    private static void addMadsElement( Element list, String name, String value )
-    {
-        addTextElement(list,name + "Element", madsNS,"elementValue",madsNS, value);
-    }
 
-    private static void addDamsElement( Element list, String name, String value )
-    {
-        addTextElement(list, name + "Element", damsNS, "elementValue", madsNS, value);
-    }
-    /////////////////////////////////////////////////////////////////////////////////////
-    // xml utilities ////////////////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////
-    private static void addTextElement( Element e, String name, Namespace ns,
-        String value )
-    {
-        if ( pop(value) )
-        {
-            addElement( e, name, ns ).setText( value );
-        }
-    }
-    private static void addTextElement( Element e, String name1, Namespace ns1,
-        String name2, Namespace ns2, String value )
-    {
-        if ( pop(value) )
-        {
-            addElement( e, name1, ns1, name2, ns2 ).setText( value );
-        }
-    }
-    private static void addAttribute( Element e, String name, Namespace ns, String value )
-    {
-        e.addAttribute( new QName(name,ns), value );
-    }
-
-    private static Element addElement( Branch b, String name, Namespace ns )
-    {
-        return b.addElement( new QName(name,ns) );
-    }
-    private static Element addElement( Branch b, String name1, Namespace ns1,
-        String name2, Namespace ns2 )
-    {
-        return b.addElement( new QName(name1,ns1) ).addElement( new QName(name2,ns2) );
-    }
-    private Element addVocabElement( Branch b, String name1, Namespace ns1,
-        String name2, Namespace ns2 )
-    {
-        Element e = addElement( b, name1, ns1, name2, ns2 );
-        addAttribute( e, "about", rdfNS, "id_" + counter++ );
-        return e;
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////
-    // text processing //////////////////////////////////////////////////////////////////
-    /////////////////////////////////////////////////////////////////////////////////////
-    private static boolean pop( String s )
-    {
-        return ( s != null && !s.trim().equals("") );
-    }
-    public static List<String> split( String s )
-    {
-        ArrayList<String> list = new ArrayList<>();
-        if ( pop(s) )
-        {
-            StringBuilder sb = new StringBuilder();
-            boolean escaped = false;
-            for( char ch : s.toCharArray() )
-            {
-                if( escaped )
-                {
-                    handleEscapedCharacter( sb, ch, false );
-
-                    escaped = false;
-                }
-                else if ( ch == ESCAPE_CHAR )
-                {
-                    escaped = true;
-                }
-                else if ( ch == DELIMITER )
-                {
-                    list.add( sb.toString().trim() );
-                    sb.setLength( 0 );
-                }
-                else if ( !Character.isISOControl(ch) || RETAIN_CONTROL_CHAR_LIST.contains(ch) )
-                {
-                    sb.append( ch );
-                }
-            }
-
-            if ( sb.length() > 0 )
-            {
-                list.add( sb.toString().trim() );
-            }
-        }
-        return list;
-    }
-
-    /**
-     * Handle escaped character. Control character could be ignored or replaced
-     * @param sb StringBuilder the character to be attached
-     * @param ch char the escaped Character
-     * @param replaceChar flag to replace the Character
-     * @return boolean flag indicating that the char is replaced or not
-     */
-    public static boolean handleEscapedCharacter(StringBuilder sb, char ch, boolean replaceChar)
-    {
-        boolean replaced = false;
-        boolean isControlChar = Character.isISOControl(ESCAPE_CHAR + ch) || Character.isISOControl(ch);
-        if ( ch == DELIMITER )
-        {
-            sb.append( ch );
-        }
-        else if ( !isControlChar || RETAIN_CONTROL_CHAR_LIST.contains(ch) )
-        {
-            sb.append( ESCAPE_CHAR + "" + ch );
-        }
-        else if ( replaceChar )
-        {
-            // replace control character with symbol [character name]
-            replaced = true;
-            if ( Character.isISOControl(ch) )
-                sb.append( TabularRecord.ESCAPE_CHAR + "" + Character.getName(ch) );
-            else
-                sb.append( "[" + Character.getName( StringEscapeUtils.unescapeJava( TabularRecord.ESCAPE_CHAR + "" + ch ).charAt(0) ) + "]" );
-        }
-        return replaced;
-    }
-
-    private static void testDateValue ( String objectID, String dateValue, String dateType ) throws ParseException 
+    protected static void testDateValue ( String objectID, String dateValue, String dateType ) throws ParseException 
     {
     	if(pop( dateValue )) {
     		int len = dateValue.length();
@@ -731,22 +744,5 @@ public class TabularRecord implements Record
     		throw new ParseException( "Invalid " + dateType + " " + dateValue + " in record " + objectID
     				+ ". Formats accepted: " + dateFormatString, 0);
     	}
-    }
-
-
-    /**
-     * Create the RDF root element
-     * @param doc
-     * @return
-     */
-    public static Element createRdfRoot (Document doc)
-    {
-        Element rdf = addElement(doc,"RDF",rdfNS);
-        doc.setRootElement(rdf);
-        rdf.add( damsNS );
-        rdf.add( madsNS );
-        rdf.add( rdfNS );
-        rdf.add( rdfsNS );
-        return rdf;
     }
 }
