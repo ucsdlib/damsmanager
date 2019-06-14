@@ -200,7 +200,10 @@ public class CILHarvestingTaskController implements Controller {
             damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
             File sourceFiles = new File(harvestDirectory, MetadataSource.METADATA_SOURCE_FOLDER);
             List<String> sourceJsons = new  ArrayList<>();
-            addSourceFiles(damsClient, sourceJsons, sourceFiles);
+            if (sourceFiles.exists()) {
+                addSourceFiles(damsClient, sourceJsons, sourceFiles);
+            }
+
             if (sourceJsons.size() > 0) {
                 log.info("Detected " + sourceJsons.size() + " CIL JSON source files  in directory " + sourceFiles.getAbsolutePath() + ".");
 
