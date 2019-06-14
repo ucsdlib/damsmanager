@@ -32,7 +32,6 @@ public class CilApiDownloader {
     private List<String> cilIds = null;
     private String  harvestDirectory = null;
     private CilApiClient cilApiClient = null;
-    private Date lastModified = null;
 
     public CilApiDownloader(CilApiClient cilApiClient, Date dateHarvest, Date lastModified)
             throws Exception {
@@ -40,14 +39,6 @@ public class CilApiDownloader {
 
         if (dateHarvest == null)
             dateHarvest = Calendar.getInstance().getTime();
-
-        if (lastModified == null) {
-            Calendar cal = Calendar.getInstance();
-            cal.set(Calendar.YEAR, 1970); // set the earliest last modified date to return no results.
-            lastModified = cal.getTime();
-        }
-
-        this.lastModified = lastModified;
 
         SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
         String harvestDate = dateFormat.format(dateHarvest);
@@ -61,7 +52,7 @@ public class CilApiDownloader {
         harvestDirectory = harvestDir.getAbsolutePath() + File.separatorChar;
 
         logMessage("CIL harvest " + harvestDirectory
-                + " with lastModifiedDate: " + dateFormat.format(lastModified));
+                + (lastModified == null ? " initiation." : " with lastModifiedDate: " + dateFormat.format(lastModified)));
 
         cilIds = searchCilIds(lastModified);
 

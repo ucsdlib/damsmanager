@@ -20,7 +20,6 @@ public class DAMSRoutineManager{
 	private static DAMSRoutineManager worker = null;
 	private static int SCHEDULED_HOUR = 1;
 
-	private boolean cilHarvestingTaskStarted = false;
 	private Date cilHarvestingStartedTime = null;
 
 	private DAMSRoutineManager(){}
@@ -128,7 +127,8 @@ public class DAMSRoutineManager{
 
 			// Perform CIL harvest monthly
 			try {
-				logger.info("DAMS Mananger start CIL Harvesting task ... ");
+				cilHarvestingStartedTime = Calendar.getInstance().getTime();
+				logger.info("DAMS Mananger start CIL Harvesting task on " +  Statistics.getDatabaseDateFormater().format(cilHarvestingStartedTime) + "...");
 
 				CILHarvestingTaskController.performHarvestingTask(cilHarvestingStartedTime, null);
 
