@@ -63,7 +63,7 @@ public class CilApiDownloader {
         logMessage("CIL harvest " + harvestDirectory
                 + " with lastModifiedDate: " + dateFormat.format(lastModified));
 
-        cilIds = getCilIdsModified();
+        cilIds = searchCilIds(lastModified);
 
         Collections.sort(cilIds);
     }
@@ -100,25 +100,6 @@ public class CilApiDownloader {
      */
     public String getHarvestDirectory() {
         return this.harvestDirectory;
-    }
-
-    /**
-     * Retrieve CIL IDs modified since last download
-     * @return
-     * @throws Exception
-     */
-    private List<String> getCilIdsModified() throws Exception {
-        Calendar now = Calendar.getInstance();
-        List<String> ids = searchCilIds(now.getTime());
-        List<String> processedIds = searchCilIds(lastModified);
-
-        // Exclude those that were processed before lastModified date
-        for(String id : processedIds) {
-            if (ids.contains(id)) {
-                ids.remove(id);
-            }
-        }
-        return ids;
     }
 
     /**
