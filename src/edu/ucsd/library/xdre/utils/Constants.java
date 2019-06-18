@@ -64,7 +64,10 @@ public class Constants {
 	public static String COLLECTION_IMAGE_SIZE = "1024x1024";
 
 	public static String ZOOMIFY_COMMAND = "";
-	
+
+	public static String WATERMARK_COMMAND = "";
+	public static String WATERMARK_IMAGE = "";
+
 	/* begin stats declaration*/
 	public static String CURATOR_ROLE ="";
 	public static DataSource DAMS_DATA_SOURCE = null;
@@ -193,6 +196,11 @@ public class Constants {
 
 			//Zoomify command
 			ZOOMIFY_COMMAND = props.getProperty("zoomfy.command");
+
+			//Watermark command
+			WATERMARK_COMMAND = props.getProperty("watermark.command");
+			//Watermark image file
+			WATERMARK_IMAGE = props.getProperty("watermark.image");
 
 			// Namespace prefix
 			NS_PREFIX = props.getProperty("ns.prefix");
