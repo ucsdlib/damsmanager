@@ -3,9 +3,6 @@ package edu.ucsd.library.xdre.utils;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -16,7 +13,7 @@ import org.junit.Test;
  * @author lsitu
  *
  */
-public class WatermarkingTest {
+public class WatermarkingTest extends UnitTestBasic {
 
     @Before
     public void init() {
@@ -35,21 +32,5 @@ public class WatermarkingTest {
         boolean created = command.createWatermarkedDerivative(src.getAbsolutePath(), dst.getAbsolutePath());
         assertTrue(created);
         assertTrue("Watermarked PDF doesn't exist!", dst.exists() && dst.length() > 0);
-    }
-
-    private File getResourceFile(String fileName) throws IOException {
-        File resourceFile = new File(fileName);
-        resourceFile.deleteOnExit();
-
-        byte[] buf = new byte[4096];
-        try(InputStream in = getClass().getResourceAsStream("/resources/" + fileName);
-                FileOutputStream out = new FileOutputStream(resourceFile)) {
-
-            int bytesRead = 0;
-            while ((bytesRead = in.read(buf)) > 0) {
-                out.write(buf, 0, bytesRead);
-            }
-        }
-        return resourceFile;
     }
 }
