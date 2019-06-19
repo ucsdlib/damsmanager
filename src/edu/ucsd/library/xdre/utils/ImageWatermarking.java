@@ -9,8 +9,6 @@ import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
-import org.apache.commons.lang3.StringUtils;
-
 /**
  * Interface to create watermarked image with convert command through ImageMagick.
  * @author lsitu@ucsd.edu
@@ -40,7 +38,9 @@ public class ImageWatermarking extends Watermarking
      */
     public boolean createWatermarkedDerivative( String src, String dst ) throws Exception
     {
-        return createWatermarkedDerivative(src, dst, null);
+        // retrieve the default image watermark from source code
+        String watermark = defaultImageWatermark();
+        return createWatermarkedDerivative(src, dst, watermark);
     }
 
     /**
@@ -55,11 +55,6 @@ public class ImageWatermarking extends Watermarking
     public boolean createWatermarkedDerivative( String src, String dst, String watermark )
             throws Exception
     {
-        // retrieve the default image watermark
-        if (StringUtils.isBlank(watermark)) {
-            watermark = defaultImageWatermark();
-        }
-
         // build the command
         ArrayList<String> cmd = new ArrayList<String>();
         cmd.add( command );
