@@ -66,7 +66,10 @@ public class Constants {
 	public static String ZOOMIFY_COMMAND = "";
 
 	public static String WATERMARK_COMMAND = "";
+	//path to the image watermark file used for watermarking
 	public static String WATERMARK_IMAGE = "";
+	//derivative name/use pairs for watermarking
+	public static Map<String, String> WATERMARKED_DERIVATIVES = null;
 
 	/* begin stats declaration*/
 	public static String CURATOR_ROLE ="";
@@ -201,6 +204,16 @@ public class Constants {
 			WATERMARK_COMMAND = props.getProperty("watermark.command");
 			//Watermark image file
 			WATERMARK_IMAGE = props.getProperty("watermark.image");
+			//Derivative name/use pairs for watermarking
+			WATERMARKED_DERIVATIVES = new HashMap<>();
+			String derivativeList = props.getProperty("watermark.derivative.list");
+			if (derivativeList != null) {
+				String[] ders = derivativeList.split(",");
+				for (String der : ders) {
+					String[] pair = der.split("\\:");
+					WATERMARKED_DERIVATIVES.put(pair[0].trim(), pair[1].trim());
+				}
+			}
 
 			// Namespace prefix
 			NS_PREFIX = props.getProperty("ns.prefix");

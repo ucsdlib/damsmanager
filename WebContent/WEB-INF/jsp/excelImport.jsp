@@ -156,6 +156,25 @@
 			else
 				$(this).attr('disabled', false);
 		});
+
+		var watermarkingOpt = $('input[name="watermarking"]');
+		if ($(obj).prop('checked')) {
+			watermarkingOpt.attr('disabled', false);
+			watermarkingOpt.attr('checked', false);
+		} else {
+			watermarkingOpt.attr('disabled', true);
+		}
+	}
+
+	function onWatermarkingSelectionChange(obj) {
+		var watermarkingOpt = $('input[name="watermarking"]');
+		if (watermarkingOpt.prop('checked')) {
+			var watermarkingConfirm = confirm('Are you sure you want to generate watermarked document and image service files?');
+
+			if(!watermarkingConfirm) {
+				watermarkingOpt.attr('checked', false);
+			}
+		}
 	}
 
 	function selectCollection(selectObj){
@@ -445,6 +464,14 @@
 				</div>
 			    <div class="submenuText" style="margin-top:3px;padding-left:25px;"  title="Enter a filter path for the location to speek up the search. From the popup, click on the folder to select/deselect a location. Multiple loations allowed.">Master Files location: 
 					<input type="text" id="filesPath" name="filesPath" size="48" value="">&nbsp;<input type="button" onclick="showFilePicker('filesPath', event)" value="&nbsp;...&nbsp;">
+				</div>
+			</td>
+		</tr>
+		<tr align="left">
+			<td colspan="2">
+				<div title="Generate watermarked document and image service files" class="menuText">
+					<input class="pcheckbox" type="checkbox" name="watermarking" id="watermarking" onchange="onWatermarkingSelectionChange(this);" disabled>
+					<span class="submenuText" style="vertical-align:2px;"><b>Generate watermarked document and image service files</b></span>
 				</div>
 			</td>
 		</tr>

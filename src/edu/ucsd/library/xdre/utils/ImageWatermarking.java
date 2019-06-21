@@ -9,6 +9,8 @@ import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * Interface to create watermarked image with convert command through ImageMagick.
  * @author lsitu@ucsd.edu
@@ -38,9 +40,24 @@ public class ImageWatermarking extends Watermarking
      */
     public boolean createWatermarkedDerivative( String src, String dst ) throws Exception
     {
-        // retrieve the default image watermark from source code
-        String watermark = defaultImageWatermark();
-        return createWatermarkedDerivative(src, dst, watermark);
+        return createWatermarkedDerivative(src, dst, null);
+    }
+
+    /**
+     * Create watermarked derivative
+     * @param oid
+     * @param cid
+     * @param sfid source file id
+     * @param dfid destination file id of the watermarking derivative
+     * @return the watermarked file created
+     * @throws Exception
+     */
+    public File createWatermarkedDerivative( String oid, String cid, String sfid, String dfid ) throws Exception
+    {
+        File srcFile = localArkFile(oid, cid, sfid);
+        File dstFile = watermarkFile(oid, cid, dfid);
+        createWatermarkedDerivative( srcFile.getAbsolutePath(), dstFile.getAbsolutePath(), Constants.WATERMARK_IMAGE );
+        return dstFile;
     }
 
     /**
@@ -55,6 +72,11 @@ public class ImageWatermarking extends Watermarking
     public boolean createWatermarkedDerivative( String src, String dst, String watermark )
             throws Exception
     {
+        // retrieve the default image watermark from source code when no image watermark provided
+        if (StringUtils.isBlank(watermark)) {
+            watermark = defaultImageWatermark();
+        }
+
         // build the command
         ArrayList<String> cmd = new ArrayList<String>();
         cmd.add( command );

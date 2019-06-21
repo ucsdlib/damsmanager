@@ -19,6 +19,7 @@ import org.dom4j.Element;
 import org.dom4j.Namespace;
 import org.dom4j.QName;
 
+import edu.ucsd.library.xdre.collection.CollectionHandler;
 
 /**
  * A bundle of tabular data, consisting of a key-value map for the record, and 0 or more
@@ -59,6 +60,9 @@ public class TabularRecord implements Record
     private int counter = 0;
     private int cmpCounter = 0;
 
+    // flag for watermarking
+    private boolean watermarking = false;
+
     /**
      * Create an empty record.
     **/
@@ -82,6 +86,21 @@ public class TabularRecord implements Record
     {
         this.data = (data != null) ? data : new HashMap<String,String>();
         this.cmp = (cmp != null) ? cmp : new ArrayList<TabularRecord>();
+    }
+
+    /**
+     * Get the watermarking flag
+     */
+    public boolean isWatermarking() {
+        return watermarking;
+    }
+
+    /**
+     * Set the watermarking flag
+     * @param watermarking
+     */
+    public void setWatermarking(boolean watermarking) {
+        this.watermarking = watermarking;
     }
 
     /**
@@ -428,7 +447,14 @@ public class TabularRecord implements Record
         String use = data.get("file use");
         if ( pop(fn) )
         {
-        	addFile (e, fileID, fn, use);
+            String file1Id = fileID;
+            if (watermarking && CollectionHandler.isDocument(fn, use)
+                    && use.toLowerCase().contains("source")) {
+                // PDF source file that need watermarking will be stored as the second file
+                file1Id = getSecondFileID (fileID);
+            }
+
+            addFile (e, file1Id, fn, use);
         }
         
         fn = data.get("file name 2");

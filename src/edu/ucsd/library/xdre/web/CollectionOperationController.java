@@ -597,7 +597,8 @@ public class CollectionOperationController implements Controller {
 				  boolean collectionImport = getParameter(paramsMap, "collectionImport") != null;
 				  boolean preprocessing = importOption == null;
 				  boolean filesCheck = preingestOption != null && preingestOption.startsWith("file-");
-				  
+				  boolean watermarking = getParameter(paramsMap, "watermarking") != null;
+
 				  List<String> ingestFiles = new ArrayList<String>();
 				  if (preprocessing)
 					  filesPaths = filesCheckPaths;  
@@ -699,6 +700,7 @@ public class CollectionOperationController implements Controller {
 
 								  // Handling Excel Input Stream records
 								  recordSource = new ExcelSource((File)srcRecord, ignoredFields);
+								  ((ExcelSource)recordSource).setWatermarking(watermarking);
 
 								  // Report for Excel column name validation
 								  List<String> invalidColumns = ((ExcelSource)recordSource).getInvalidColumns();
@@ -1081,6 +1083,7 @@ public class CollectionOperationController implements Controller {
 								  handler = new RDFDAMS4ImportTsHandler(damsClient, dataFiles.toArray(new File[dataFiles.size()]), importOption);
 								  ((RDFDAMS4ImportTsHandler)handler).setFilesPaths(ingestFiles.toArray(new String[ingestFiles.size()]));
 								  ((RDFDAMS4ImportTsHandler)handler).setReplace(true);
+								  ((RDFDAMS4ImportTsHandler)handler).setWatermarking(watermarking);
 								  handler.setCollectionId(collectionId);
 								  if (StringUtils.isNotBlank(warnings))
 									  handler.addWarning(warnings);
