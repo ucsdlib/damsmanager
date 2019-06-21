@@ -44,8 +44,10 @@ import edu.ucsd.library.xdre.utils.DAMSRepository;
 import edu.ucsd.library.xdre.utils.DFile;
 import edu.ucsd.library.xdre.utils.DamsURI;
 import edu.ucsd.library.xdre.utils.EmbeddedMetadata;
+import edu.ucsd.library.xdre.utils.ImageWatermarking;
 import edu.ucsd.library.xdre.utils.RDFStore;
 import edu.ucsd.library.xdre.utils.VideoMetadata;
+import edu.ucsd.library.xdre.utils.Watermarking;
 import edu.ucsd.library.xdre.utils.ZoomifyTilesConverter;
 
 /**
@@ -96,6 +98,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 	private StringBuilder objectArkReport = null;
 
 	private boolean replace = false;
+	private boolean watermarking = false;
 
 	private int processIndex = 0;
 	private boolean[] status = null;
@@ -135,6 +138,20 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		this.replace = replace;
 	}
 
+	/**
+	 * Get the watermarking flag
+	 */
+	public boolean isWatermarking() {
+		return watermarking;
+	}
+
+	/**
+	 * Set the watermarking flag
+	 * @param watermarking
+	 */
+	public void setWatermarking(boolean watermarking) {
+			this.watermarking = watermarking;
+	}
 	
 	public String getPreprocessedTimestamp() {
 		return preprocessedTimestamp;
@@ -817,6 +834,41 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 												successful = false;
 												ingestLog.append("\n    Derivative creation (embed metadata) for " + damsClient.getRequestURL() + " - failed - " + damsDateFormat.format(new Date()));
 											}
+										} else if (watermarking) {
+											// Create watermarked derivatives fpr documents and images
+											try {
+												if (isImage(fid, use) && use.toLowerCase().contains("source")) {
+													for (String key : Constants.WATERMARKED_DERIVATIVES.keySet()) {
+														//Watermarking large image derivative types
+														Watermarking watermarking = new ImageWatermarking(Constants.IMAGEMAGICK_COMMAND);
+														File dstFile = watermarking.createWatermarkedDerivative(oid, cid, key, key);
+
+														Map<String, String > fParams = toIngestParams(oid, cid, key, Constants.WATERMARKED_DERIVATIVES.get(key), dstFile.getAbsolutePath());
+														damsClient.uploadFile(fParams, true);
+
+														logMessage( "Watermarked image for " + fileUrl + " (" + damsClient.getRequestURL() + ").");
+													}
+												} else if (isDocument(fid, use) && use.toLowerCase().contains("source") && !fid.startsWith("1.")) {
+													//Watermarked PDF from the source PDF (2.pdf) that were uploaded.
+													Watermarking watermarking = new Watermarking(Constants.WATERMARK_COMMAND);
+
+													String dfid = "1" + fid.substring(fid.lastIndexOf("."));
+													File dstFile = watermarking.createWatermarkedDerivative(oid, cid, fid, dfid);
+
+													Map<String, String > fParams = toIngestParams(oid, cid, dfid, "document-service", dstFile.getAbsolutePath());
+													damsClient.uploadFile(fParams, true);
+
+													logMessage( "Watermarked PDF for " + fileUrl + " (" + damsClient.getRequestURL() + ").");
+												}
+											} catch (Exception e) {
+												e.printStackTrace();
+												ingestFailedCount++;
+												ingestFailed.append(srcFileName + " (" + fileUrl + ")\t\n");
+												log.error("Failed to create watermarked derivative for " + fileUrl + " (" + srcFileName + ", " + (l+1) + " of " + iLen + ") in " + srcName + ": " + e.getMessage());
+												ingested = false;
+												successful = false;
+												ingestLog.append("\n    Watermark derivative - failed - " + e.getMessage());
+											}
 										}
 									} else {
 										derivFailedCount++;
@@ -842,7 +894,13 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 							// create zoomify tiles for master image files
 							if ( isImage(fid, use) && fid.startsWith("1.") ) {
 								try {
-									boolean zoomifyTilesCreated = createZoomifyTiles( oid, cid, fid );
+									boolean zoomifyTilesCreated = false;
+									if (watermarking) {
+										// Create zoomify tiles with the image-huge 1600x1600 watermarked derivative
+										zoomifyTilesCreated = createZoomifyTiles( oid, cid, "7.jpg" );
+									} else {
+										zoomifyTilesCreated = createZoomifyTiles( oid, cid, fid );
+									}
 
 									if( zoomifyTilesCreated ){
 										logMessage( "Created zoomify tiles " + fileUrl + " (" + damsClient.getRequestURL() + ").");
@@ -1282,6 +1340,26 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 			}
 		}
 		return title;
+	}
+
+	/*
+	 * Create the parameters map for file upload
+	 * @param oid
+	 * @param cid
+	 * @param fid
+	 * @param use
+	 * @param localFile
+	 * @return
+	 */
+	private Map<String, String> toIngestParams(String oid, String cid, String fid, String use, String localFile) {
+		Map<String, String > params = new HashMap<String, String>();
+		params.put("oid", oid);
+		params.put("cid", cid);
+		params.put("fid", fid);
+		params.put("use", "document-service");
+		params.put("local", localFile);
+
+		return params;
 	}
 
 	private void toArkReport (StringBuilder reportBuilder, String ark, String title, String fileName, String outcome, String eventDate) {

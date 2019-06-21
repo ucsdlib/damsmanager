@@ -63,6 +63,9 @@ public class ExcelSource implements RecordSource
     private boolean validateControlFieldsOnly = false;      // flag to control either validate the control fields or ignore them.
     Map<String,String> cache;
 
+    // flag for watermarking
+    protected boolean watermarking = false;
+
     /**
      * Create an ExcelSource object from an Excel file on disk.
     **/
@@ -155,6 +158,21 @@ public class ExcelSource implements RecordSource
         }
     }
 
+    /**
+     * Get the watermarking flag
+     */
+    public boolean isWatermarking() {
+        return watermarking;
+    }
+
+    /**
+     * Set the watermarking flag
+     * @param watermarking
+     */
+    public void setWatermarking(boolean watermarking) {
+        this.watermarking = watermarking;
+    }
+
     @Override
     public Record nextRecord() throws Exception
     {
@@ -169,6 +187,8 @@ public class ExcelSource implements RecordSource
             if (cache.size() > 0) {
                 TabularRecord rec = new TabularRecord();
                 rec.setData( cache );
+                rec.setWatermarking(watermarking);
+
                 String objID = cache.get(OBJECT_ID);
                 String cmpID = null;
 
@@ -184,6 +204,8 @@ public class ExcelSource implements RecordSource
                     {
                         TabularRecord component = new TabularRecord();
                         component.setData(cmpData);
+                        component.setWatermarking(watermarking);
+
                         if (objectComponentType.equalsIgnoreCase(COMPONENT)) {
                             // component record, add to list
                             rec.addComponent( component );
@@ -212,6 +234,8 @@ public class ExcelSource implements RecordSource
         else if ( cache != null && cache.size() > 0)
         {
             TabularRecord rec = new TabularRecord(cache);
+            rec.setWatermarking(watermarking);
+
             cache = null;
             return rec;
         }
