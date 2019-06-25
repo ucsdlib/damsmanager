@@ -706,7 +706,13 @@ public class CollectionOperationController implements Controller {
 								  List<String> ignoredFields = null;
 								  if (collectionImport) {
 									  ignoredFields = Arrays.asList(ExcelSource.IGNORED_FIELDS_FOR_COLLECTIONS);
-									  ignoredFields.addAll(Arrays.asList(ExcelSource.RIGHTS_AND_COLLECTION_FIELDS));
+									  // Fields not required for collection import tool
+									  ignoredFields.addAll(Arrays.asList(ExcelSource.RIGHTS_VALIDATION_FIELDS));
+
+									  if (StringUtils.isNotBlank(Constants.BATCH_ADDITIONAL_FIELDS)) {
+										  String[] additionalFields = Constants.BATCH_ADDITIONAL_FIELDS.trim().split(",");
+										  ignoredFields.addAll(Arrays.asList(additionalFields));
+									  }
 								  } else
 									  ignoredFields = Arrays.asList(ExcelSource.IGNORED_FIELDS_FOR_OBJECTS);
 

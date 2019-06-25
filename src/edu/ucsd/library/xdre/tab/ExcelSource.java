@@ -29,6 +29,8 @@ import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
+import edu.ucsd.library.xdre.utils.Constants;
+
 /**
  * RecordSource implementation that uses Apache POI to read Excel (OLE or XML)
  * files.
@@ -40,9 +42,9 @@ public class ExcelSource implements RecordSource
 {
     public static final String[] IGNORED_FIELDS_FOR_OBJECTS = {"CLR image file name", "Brief description", "subject type"};
     public static final String[] IGNORED_FIELDS_FOR_COLLECTIONS = {"Level","Title","Subtitle","Part name","Part number","Translation","Variant","File name","File use","File name 2","File use 2", "subject type"};
-    public static final String[] RIGHTS_AND_COLLECTION_FIELDS = {"Note:local attribution", "copyrightJurisdiction", "copyrightStatus", "copyrightPurposeNote", "copyrightNote", "rightsHolderCorporate",
+    public static final String[] RIGHTS_VALIDATION_FIELDS = {"copyrightJurisdiction", "copyrightStatus", "copyrightPurposeNote", "copyrightNote", "rightsHolderCorporate",
         "rightsHolderPersonal", "rightsHolderName", "otherRights:otherRightsBasis", "otherRights:permission/type", "otherRights:restriction/type", "otherRights:otherRightsNote",
-        "license:permission/type", "license:restriction/type", "license:beginDate", "license:endDate", "license:licenseNote", "license:licenseURI", "Collection(s)"};
+        "license:permission/type", "license:restriction/type", "license:beginDate", "license:endDate", "license:licenseNote", "license:licenseURI"};
 
     private static final String[] DATETIME_FORMATS = {"yyyy", "yyyy-MM", "yyyy-MM-dd"};
     public static final String BEGIN_DATE = "Begin date";
@@ -556,10 +558,15 @@ public class ExcelSource implements RecordSource
 
         // add rights and collection columns for validation
         if (edit) {
-            for (int i = 0; i < RIGHTS_AND_COLLECTION_FIELDS.length; i++) {
-                String header = RIGHTS_AND_COLLECTION_FIELDS[i].toLowerCase();
-                if (!CONTROL_VALUES.containsKey(header))
-                    CONTROL_VALUES.put(header, new ArrayList<String>());
+            for (int i = 0; i < RIGHTS_VALIDATION_FIELDS.length; i++) {
+                addValidationField(RIGHTS_VALIDATION_FIELDS[i].toLowerCase());
+            }
+
+            if (StringUtils.isNotBlank(Constants.BATCH_ADDITIONAL_FIELDS)) {
+                String[] additionalFields = Constants.BATCH_ADDITIONAL_FIELDS.split(",");
+                for (int i = 0; i < additionalFields.length; i++) {
+                    addValidationField(additionalFields[i].trim().toLowerCase());
+                }
             }
         }
 
@@ -708,5 +715,15 @@ public class ExcelSource implements RecordSource
         if (langElems.length == 2)
             value = langElems[0].trim() + delimiter + langElems[1].trim();
         return value;
+    }
+
+    /*
+     * Add field dor validation
+     * @param fieldName
+     */
+    private static void addValidationField(String fieldName) {
+        if (!CONTROL_VALUES.containsKey(fieldName)) {
+            CONTROL_VALUES.put(fieldName, new ArrayList<String>());
+        }
     }
 }
