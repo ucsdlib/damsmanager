@@ -291,7 +291,12 @@ public class TabularRecord extends TabularRecordBasic
             String type = key.substring( key.indexOf(":") + 1 );
             for ( String value : split(data.get( key )) )
             {
-                addNote(e, type, null, value);
+                // Local attribution note
+                if (key.endsWith("local attribution")) {
+                    addNote(e, type, "digital object made available by", value);
+                } else {
+                    addNote(e, type, null, value);
+                }
             }
         }
 
