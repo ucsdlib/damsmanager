@@ -71,6 +71,8 @@ public class Constants {
 	//derivative name/use pairs for watermarking
 	public static Map<String, String> WATERMARKED_DERIVATIVES = null;
 
+	public static String BATCH_ADDITIONAL_FIELDS = "";
+
 	/* begin stats declaration*/
 	public static String CURATOR_ROLE ="";
 	public static DataSource DAMS_DATA_SOURCE = null;
@@ -214,6 +216,9 @@ public class Constants {
 					WATERMARKED_DERIVATIVES.put(pair[0].trim(), pair[1].trim());
 				}
 			}
+
+			//Additional fields for batch overlay validation
+			BATCH_ADDITIONAL_FIELDS = props.getProperty("batch.additional.fields");
 
 			// Namespace prefix
 			NS_PREFIX = props.getProperty("ns.prefix");
