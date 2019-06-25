@@ -201,19 +201,21 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 					Node nUri = nodes.get(j);
 					String iUri = nUri.getStringValue();
 					Node parentNode = nUri.getParent();
-					String nName = parentNode.getName();				
+					String nName = parentNode.getName();
+
+					// initiate ARK report header
+					if (!reportTitleAdded && (nName.endsWith("Object") || nName.endsWith("Collection") 
+							&& (((Element)parentNode).isRootElement() || parentNode.getParent().getName().equals("RDF")))) {
+						reportTitleAdded = true;
+						logMessage ( (nName.indexOf("Collection") >= 0 ? "Collection" : "Object") + " Import status:\n[Title]   -   [URI]   -   [Status]   -   [Timestamp]");
+						toArkReport (arkReport, "ARK", "Title", "File name", "Outcome", "Event date");
+					}
+
 					if (iUri.endsWith("/COL") || !(iUri.startsWith("http") && iUri.indexOf("/ark:/") > 0)){
 						// Assign ARK
 						Element grNode = parentNode.getParent();
 						if(nName.endsWith("Object") || nName.endsWith("Component") || nName.endsWith("File")
 								|| (nName.indexOf("Collection") >= 0 && (((Element)parentNode).isRootElement() || grNode.getName().equals("RDF")))){
-
-							// add report titles for object/collection import
-							if ( !reportTitleAdded ) {
-								reportTitleAdded = true;
-								logMessage ( (nName.indexOf("Collection") >= 0 ? "Collection" : "Object") + " Import status:\n[Title]   -   [URI]   -   [Status]   -   [Timestamp]");
-								toArkReport (arkReport, "ARK", "Title", "File name", "Outcome", "Event date");
-							}
 
 							String objId = iUri;
 							
@@ -320,15 +322,6 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 										xPath = "rdfs:label";
 										tNode = parentNode.selectSingleNode("*[name()='" + xPath + "']");
 									}
-								} else if(nName.endsWith(LANGUAGE)){
-									field = "mads:code";
-									xPath = "mads:code";
-									tNode = parentNode.selectSingleNode(xPath);
-									if(tNode == null){
-										field = "mads:authoritativeLabel";
-										xPath = "mads:authoritativeLabel";
-										tNode = parentNode.selectSingleNode(xPath);
-									}
 								} else {
 									// Subject, Authority records use mads:authoritativeLabel
 									field = "mads:authoritativeLabel";
@@ -418,6 +411,11 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 					objectArkReport = new StringBuilder();
 					
 					String eventDate = damsDateFormat.format(new Date());
+
+					// Logging for Object RDF/XML validation, which is successful.
+					status[0] = true;
+					messages[processIndex].append(eventDate);
+
 					Model objModel = null;
 					graph = new RDFStore();
 					recordsCount++;
@@ -448,13 +446,10 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 							succeeded = damsClient.updateObject(subjectId, rdfXml, importMode);
 						}
 
-						
-						// Logging for Object RDF/XML validation
-						status[processIndex] = succeeded;
-						messages[processIndex].append(damsDateFormat.format(new Date()));
-
 						eventDate =  damsDateFormat.format(new Date());
 						if(!succeeded){
+							exeResult = false;
+
 							if(metadataFailed.indexOf(currFile) < 0)
 								failedCount++;
 							metadataFailed.append(subjectId + " (" + currFile + "), \n");
@@ -526,15 +521,20 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 							ExtendedIterator<Triple> filesIt = objModel.getGraph().find(ResourceFactory.createResource(subjectId).asNode(), 
 									ResourceFactory.createProperty(damsNsPrefixUri + "hasFile").asNode(), com.hp.hpl.jena.graph.Node.ANY);
 							// csv format ark report for object records with no files
-							if (!filesIt.hasNext()) {
+							if (!filesIt.hasNext() || importOption != null && importOption.equalsIgnoreCase("metadataOnly")) {
+								String sourceFile = "No associated file";
+								if (filesIt.hasNext()) {
+									sourceFile = getSourceFiles(doc, subjectId);
+								}
+
 								toArkReport (
-										arkReport, 
+										objectArkReport,
 										subjectId.substring(subjectId.lastIndexOf("/") + 1), 
 										(StringUtils.isNotBlank(title) ? title : "[Unknown Title]"), 
-										"No associated file", 
+										sourceFile,
 										status[processIndex] ? "successful" : "failed", 
 										eventDate
-										);							
+										);
 							}
 							arkReport.append(objectArkReport.toString());
 
@@ -1509,5 +1509,23 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		logMessage(exeInfo);
 
 		return exeInfo;
+	}
+
+	/*
+	 * Extract source filename of an object
+	 * @param doc
+	 * @param subjectUrl
+	 * @return
+	 */
+	private String getSourceFiles(Document doc, String subjectUrl) {
+		String fileName = "";
+		String fileXPath = "//dams:Object[@rdf:about='" + subjectUrl
+			+ "']//dams:File[contains(@rdf:about, '/1.') OR contains(dams:use, 'alternate')]";
+
+		List<Node> files = doc.selectNodes(fileXPath);
+		for (Node file : files) {
+			fileName += (fileName.length() > 0 ? " | " : "") + file.valueOf("dams:sourceFileName");
+		}
+		return fileName;
 	}
 }

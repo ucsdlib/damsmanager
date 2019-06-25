@@ -63,8 +63,10 @@ import edu.ucsd.library.xdre.collection.MetadataImportHandler;
 import edu.ucsd.library.xdre.collection.SOLRIndexHandler;
 import edu.ucsd.library.xdre.imports.RDFDAMS4ImportTsHandler;
 import edu.ucsd.library.xdre.model.DAMSCollection;
+import edu.ucsd.library.xdre.tab.BatchEditExcelSource;
 import edu.ucsd.library.xdre.tab.ExcelSource;
 import edu.ucsd.library.xdre.tab.FilesChecker;
+import edu.ucsd.library.xdre.tab.InputStreamEditRecord;
 import edu.ucsd.library.xdre.tab.InputStreamRecord;
 import edu.ucsd.library.xdre.tab.RDFExcelConvertor;
 import edu.ucsd.library.xdre.tab.Record;
@@ -165,6 +167,7 @@ public class CollectionOperationController implements Controller {
 		boolean isExcelImport = getParameter(paramsMap, "excelImport") != null;
 		boolean isSubjectImport = getParameter(paramsMap, "subjectImport") != null;
 		boolean isCollectionImport = getParameter(paramsMap, "collectionImport") != null;
+		boolean isBatchEdit = getParameter(paramsMap, "batchEdit") != null;
 		boolean isCollectionRelease = getParameter(paramsMap, "collectionRelease") != null;
 		boolean isFileUpload = getParameter(paramsMap, "fileUpload") != null;
 		boolean isFileReport = getParameter(paramsMap, "fileReport") != null;
@@ -197,6 +200,8 @@ public class CollectionOperationController implements Controller {
 			forwardTo = "/excelImport.do?";
 		else if(isCollectionImport)
 			forwardTo = "/collectionImport.do?";
+		else if(isBatchEdit)
+		    forwardTo = "/batchEdit.do?";
 		else if(isSubjectImport)
 			forwardTo = "/subjectImport.do?";
 		else if(isCollectionRelease)
@@ -208,8 +213,8 @@ public class CollectionOperationController implements Controller {
 		else if (isBatchExport)
 			forwardTo = "/batchExport.do?";
 
-		if(( !(isBatchExport || getParameter(paramsMap, "solrRecordsDump") != null || isBSJhoveReport || isDevUpload || isFileUpload || isFileReport || isSubjectImport)
-				&& getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "externalImport") == null 
+		if(( !(isBatchExport || isBatchEdit || isSolrDump || isBSJhoveReport || isDevUpload || isFileUpload || isFileReport || isSubjectImport)
+				&& getParameter(paramsMap, "rdfImport") == null && getParameter(paramsMap, "externalImport") == null
 				&& getParameter(paramsMap, "dataConvert") == null ) && getParameter(paramsMap, "marcModsImport") == null
 				&& getParameter(paramsMap, "excelImport") == null && getParameter(paramsMap, "collectionImport") == null 
 				&& (collectionId == null || (collectionId=collectionId.trim()).length() == 0)){
@@ -314,7 +319,8 @@ public class CollectionOperationController implements Controller {
 		operations[5] = getParameter(paramsMap, "externalImport") != null;
 		operations[6] = getParameter(paramsMap, "marcModsImport") != null
 				|| getParameter(paramsMap, "excelImport") != null
-				|| getParameter(paramsMap, "collectionImport") != null;
+				|| getParameter(paramsMap, "collectionImport") != null
+				|| getParameter(paramsMap, "batchEdit") != null;
 		operations[7] = getParameter(paramsMap, "luceneIndex") != null
 				|| getParameter(paramsMap, "solrDump") != null
 				|| getParameter(paramsMap, "solrRecordsDump") != null;
@@ -589,11 +595,15 @@ public class CollectionOperationController implements Controller {
 				  String beginDate = getParameter(paramsMap, "licenseBeginDate");
 				  String endDate = getParameter(paramsMap, "licenseEndDate");
 				  String[] dataPaths = getParameter(paramsMap, "dataPath").split(";");
-				  String[] filesPaths = getParameter(paramsMap, "filesPath").split(";");
+				  String filePath = getParameter(paramsMap, "filesPath");
+				  String[] filesPaths = filePath == null ? new String[0] : filePath.split(";");
 				  String importOption = getParameter(paramsMap, "importOption");
 				  String preingestOption = getParameter(paramsMap, "preingestOption");
-				  String[] filesCheckPaths = getParameter(paramsMap, "filesCheckPath").split(";");
+				  String filesCheckPath = getParameter(paramsMap, "filesCheckPath");
+				  String[] filesCheckPaths = filesCheckPath == null ? new String[0] : filesCheckPath.split(";");
 
+				  boolean excelImport = getParameter(paramsMap, "excelImport") != null;
+				  boolean batchEdit = getParameter(paramsMap, "batchEdit") != null;
 				  boolean collectionImport = getParameter(paramsMap, "collectionImport") != null;
 				  boolean preprocessing = importOption == null;
 				  boolean filesCheck = preingestOption != null && preingestOption.startsWith("file-");
@@ -628,7 +638,7 @@ public class CollectionOperationController implements Controller {
 					  }
 				  } else {
 					  List<String> filters = new ArrayList<>();
-					  if (getParameter(paramsMap, "excelImport") != null || collectionImport) {
+					  if (batchEdit || excelImport || collectionImport) {
 						  // Excel Input Stream
 						  source = "excel";
 						  filters.add("xls");
@@ -660,7 +670,8 @@ public class CollectionOperationController implements Controller {
 				  StringBuilder proMessage = new StringBuilder();
 				  List<String> srcFileNames = new ArrayList<String>();
 
-				  if (source != null && (source.equalsIgnoreCase("bib") || source.equalsIgnoreCase("mods") || source.equalsIgnoreCase("excel"))) {
+				  if (source != null && (source.equalsIgnoreCase("bib") || source.equalsIgnoreCase("mods")
+						  || source.equalsIgnoreCase("excel")) || batchEdit) {
 					  // Initiate the logging handler 
 					  handler = new MetadataImportHandler(damsClient, null);
 					  handler.setSubmissionId(submissionId);
@@ -688,19 +699,23 @@ public class CollectionOperationController implements Controller {
 						  InputStreamRecord record = null;
 						  
 						  try {
-							  if (source.equalsIgnoreCase("excel")) {
+							  if (batchEdit || source.equalsIgnoreCase("excel")) {
 								  clientTool = "Excel";
 
 								  // initiate ignored fields for objects and collections
 								  List<String> ignoredFields = null;
-								  if (collectionImport)
+								  if (collectionImport) {
 									  ignoredFields = Arrays.asList(ExcelSource.IGNORED_FIELDS_FOR_COLLECTIONS);
-								  else
+									  ignoredFields.addAll(Arrays.asList(ExcelSource.RIGHTS_AND_COLLECTION_FIELDS));
+								  } else
 									  ignoredFields = Arrays.asList(ExcelSource.IGNORED_FIELDS_FOR_OBJECTS);
 
-								  // Handling Excel Input Stream records
-								  recordSource = new ExcelSource((File)srcRecord, ignoredFields);
-								  ((ExcelSource)recordSource).setWatermarking(watermarking);
+								  if (batchEdit) {
+									  recordSource = new BatchEditExcelSource((File)srcRecord, ignoredFields);
+								  } else {
+    								  // Handling Excel Input Stream records
+    								  recordSource = new ExcelSource((File)srcRecord, ignoredFields);
+								  }
 
 								  // Report for Excel column name validation
 								  List<String> invalidColumns = ((ExcelSource)recordSource).getInvalidColumns();
@@ -805,6 +820,8 @@ public class CollectionOperationController implements Controller {
 											  proMessage.append("\n* Found more than one record in the Excel file. Only one records allowed for collection Input Stream!");
 											  break;
 										  }
+								  } else if (batchEdit) {
+									  record = new InputStreamEditRecord(rec, damsClient);
 								  } else
 									  
 										  record = new InputStreamRecord (rec, collections, unit, copyrightStatus, copyrightJurisdiction, 
@@ -1023,7 +1040,7 @@ public class CollectionOperationController implements Controller {
 								  // Write the converted RDF/xml for preview
 								  File destFile = new File(Constants.TMP_FILE_DIR, "preview-" + submissionId + "-rdf.xml");
 								  writeXml(destFile, rdfPreview.getDocument().asXML());
-								  if (preingestOption.equalsIgnoreCase("pre-processing-csv")) {
+								  if (preingestOption != null && preingestOption.equalsIgnoreCase("pre-processing-csv")) {
 									  // convert to Excel/csv format
 									  try(InputStream xsl2jsonInput = CILHarvestingTaskController.getDams42JsonXsl();) {
 										  RDFExcelConvertor convertor = new RDFExcelConvertor(destFile.getAbsolutePath(), xsl2jsonInput);
@@ -1045,7 +1062,7 @@ public class CollectionOperationController implements Controller {
 							  }
 						  } else {
 							  // files existing check
-							  if (srcFileNames.size() > 0) {
+							  if (srcFileNames.size() > 0 && !batchEdit) {
 								  FilesChecker filesChecker = new FilesChecker(srcFileNames, ingestFiles.toArray(new String[ingestFiles.size()]));
 								  filesChecker.filesMatch();
 								  List<String> missingFiles = filesChecker.getMissingFiles();
@@ -1078,7 +1095,7 @@ public class CollectionOperationController implements Controller {
 								  handler = null;
 	
 								  // ingest objects with the converted RDF/XML
-								  importOption = "metadataAndFiles";
+								  importOption = batchEdit ? "metadataOnly" : "metadataAndFiles";
 	
 								  handler = new RDFDAMS4ImportTsHandler(damsClient, dataFiles.toArray(new File[dataFiles.size()]), importOption);
 								  ((RDFDAMS4ImportTsHandler)handler).setFilesPaths(ingestFiles.toArray(new String[ingestFiles.size()]));

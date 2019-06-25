@@ -40,6 +40,7 @@
 	<bean name="/subjectImport.do" class="edu.ucsd.library.xdre.web.SubjectImportController"></bean>
 	<bean name="/cilHarvest.do" class="edu.ucsd.library.xdre.web.CILHarvestingTaskController"></bean>
 	<bean name="/batchExport.do" class="edu.ucsd.library.xdre.web.BatchExportController" />
+	<bean name="/batchEdit.do" class="edu.ucsd.library.xdre.web.BatchEditController"></bean>
 	
 	<!--<bean name="/cancelConvert.do" class="edu.ucsd.library.xdre.web.CancelDataConvertController"></bean>-->
 	<!--<bean name="/dataConverter.do" class="edu.ucsd.library.xdre.web.DataConverterController"></bean>-->

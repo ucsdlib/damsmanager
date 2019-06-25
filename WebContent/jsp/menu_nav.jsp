@@ -12,6 +12,7 @@
 		 	<li><a href='/damsmanager/subjectImport.do'>Subject Import</a></li>
 		 	<li><a href='/damsmanager/rdfImport.do'>RDF Import</a></li>
 		 	<li><a href='/damsmanager/batchExport.do'>Batch Export</a></li>
+		 	<li><a href='/damsmanager/batchEdit.do'>Batch Edit</a></li>
 		 	<li><a href='/damsmanager/fileReplace.do'>File Replace</a></li>
 			<li><a href='/damsmanager/ingest.do'>Staging Ingest</a></li>
 		 	<li><a href='/damsmanager/controlPanel.do'>Process Manager</a></li>
