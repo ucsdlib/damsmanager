@@ -4,7 +4,6 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +34,7 @@ public class TabularRecord extends TabularRecordBasic
 
     protected boolean titleProcessed = false;
     protected boolean cartographicsProcessed = false;
+    protected boolean fileProcessed = false;
 
     // flag for watermarking
     private boolean watermarking = false;
@@ -170,6 +170,10 @@ public class TabularRecord extends TabularRecordBasic
     **/
     private void addFields( Element e, Map<String,String> data, int cmp, String ark ) throws Exception
     {
+        titleProcessed = false;
+        cartographicsProcessed = false;
+        fileProcessed = false;
+
         String objectID = data.get("object unique id");
         if ( ark == null ) { ark = "ARK"; }
         String id = (cmp > 0) ? ark + "/" + cmp : ark;
@@ -180,6 +184,10 @@ public class TabularRecord extends TabularRecordBasic
             // Handle common descriptive metadata
             addCommonDescriptiveData(e, objectID, key);
 
+            // Headings fields that may be linking to other resources
+            addHeadingsField(e, objectID, key);
+
+            // Subjects: mads, dams /////////////////////////////////////////////////////////
             if (key.startsWith("subject:")) {
                 // predicate for the subject
                 String predicateName = getPredicateName(key.substring(key.lastIndexOf(":") + 1));
@@ -187,20 +195,6 @@ public class TabularRecord extends TabularRecordBasic
                 for (String value : split(data.get(key))) {
                     handleSubject(e, predicateName, elemName, value);
                 }
-            }
-
-            // CLR Brief Description (ScopeAndContentNote) /////////////////////////////////////
-            String briefDescription = data.get("brief description");
-            if ( pop(briefDescription) )
-            {
-                addScopeContentNote(e,briefDescription);
-            }
-    
-            // Collection image related resource //////////////////////////////////////////////////////////////////////////
-            String clrImage = data.get("clr image file name");
-            if ( pop(clrImage) )
-            {
-                addRelatedResource(e, "thumbnail", "@ " + clrImage);
             }
 
             // files ////////////////////////////////////////////////////////////////////////
@@ -228,6 +222,13 @@ public class TabularRecord extends TabularRecordBasic
         }
     }
 
+    /**
+     * Fields that are not linking to other resources.
+     * @param e
+     * @param objectID
+     * @param key
+     * @throws ParseException
+     */
     protected void addCommonDescriptiveData(Element e, String objectID, String key)
             throws ParseException {
         // typeOfResource ///////////////////////////////////////////////////////////////
@@ -294,6 +295,42 @@ public class TabularRecord extends TabularRecordBasic
             }
         }
 
+        // cartographics ////////////////////////////////////////////////////////////////
+        if (key.startsWith("geographic:") && !cartographicsProcessed) {
+            cartographicsProcessed = true;
+
+            addCartographics(e);
+        }
+
+        // collection related ///////////////////////////////////////////////////////////
+        // CLR Brief Description (ScopeAndContentNote) //////////////////////////////////
+        if (key.equals("brief description")) {
+            String briefDescription = data.get(key);
+            if ( pop(briefDescription) )
+            {
+                addScopeContentNote(e,briefDescription);
+            }
+        }
+
+        // Collection image related resource ////////////////////////////////////////////
+        if (key.equals("clr image file name")) {
+            String clrImage = data.get(key);
+            if ( pop(clrImage) )
+            {
+                addRelatedResource(e, "thumbnail", "@ " + clrImage);
+            }
+        }
+    }
+
+    /**
+     * Fields that may be linking to other resources.
+     * @param e
+     * @param objectID
+     * @param key
+     * @throws ParseException
+     */
+    protected void addHeadingsField(Element e, String objectID, String key)
+            throws ParseException {
         // relationships ////////////////////////////////////////////////////////////////
         // data, elem, header, class/ns, pred/ns, name element
         // personal name
@@ -319,16 +356,9 @@ public class TabularRecord extends TabularRecordBasic
 
         // language /////////////////////////////////////////////////////////////////////
         if (key.startsWith("language")) {
-            for(String value : split(data.get("language"))) {
+            for(String value : split(data.get(key))) {
                 addLanguage(e, value);
             }
-        }
-
-        // cartographics ////////////////////////////////////////////////////////////////
-        if (key.startsWith("geographic:") && !cartographicsProcessed) {
-            cartographicsProcessed = true;
-
-            addCartographics(e);
         }
 
         // related resource /////////////////////////////////////////////////////////////
@@ -549,36 +579,9 @@ public class TabularRecord extends TabularRecordBasic
      * @param collectionName
      */
     protected void addCollectionElement(Element e, String predicate, String collectionType, String collectionName) {
-        Element elem = addElement(e, predicate, damsNS, collectionType,damsNS);
+        Element elem = addVocabElement(e, predicate, damsNS, collectionType, damsNS);
         Element el = addElement(elem, "title", damsNS, "Title", madsNS);
         addElement(el,"authoritativeLabel", madsNS).setText(collectionName);
-    }
-
-    /*
-     * Add Relationships
-     * @param data
-     * @param e
-     * @param header
-     * @param type
-     * @param pred
-     * @param element
-     */
-    protected void addRelationship( Map<String,String> data, Element e, String header,
-        String type, String pred, String element )
-    {
-        for ( Iterator<String> it = data.keySet().iterator(); it.hasNext(); )
-        {
-            String key = it.next();
-            if ( key.startsWith(header + ":") )
-            {
-                for ( String value : split(data.get(key)) )
-                {
-                    // role
-                    String role = key.substring( key.indexOf(":") + 1 );
-                    addRelationship(e, type, role, pred, element, value);
-                }
-            }
-        }
     }
 
     /*

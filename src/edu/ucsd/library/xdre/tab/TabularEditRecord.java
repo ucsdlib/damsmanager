@@ -117,6 +117,9 @@ public class TabularEditRecord extends TabularRecord
         String objectID = data.get("object unique id");
         Element e = (Element)document.selectSingleNode("//*[@rdf:about='" + getArkUrl(objectID) + "']");
 
+        titleProcessed = false;
+        cartographicsProcessed = false;
+        fileProcessed = false;
         boolean copyrightProcessed = false;
         boolean otherRightsProcessed = false;
         boolean licenseProcessed = false;
@@ -126,8 +129,11 @@ public class TabularEditRecord extends TabularRecord
 
         // Second Step: add/rebuild descriptive metadata
         for (String key : data.keySet()) {
-            // Handle common descriptive metadata
+            // descriptive metadata
             addCommonDescriptiveData(e, objectID, key);
+
+            // heading fields that may be linking to other resources
+            addHeadingsField(e, objectID, key);
 
             // subjects, including FAST subjects ////////////////////////////////////////////
             // data, elem, header, class/ns, predicate/ns, element
@@ -190,23 +196,6 @@ public class TabularEditRecord extends TabularRecord
                     // add collection linkings
                     // Todo: correct predicate and collection name basing on collection type.
                     addCollectionElement(e, "collection", "Collection", value);
-                }
-            }
-
-            // Handle collection specific headers ///////////////////////////////////////////
-            // CLR Brief Description (ScopeAndContentNote) //////////////////////////////////
-            if ( key.equalsIgnoreCase("brief description") ) {
-                if ( pop(key) ) {
-                    addScopeContentNote(e, data.get(key));
-                }
-            }
-
-            // Collection image related resource ////////////////////////////////////////////
-            if ( key.equalsIgnoreCase("clr image file name") ) {
-                // add: dams:RelatedResource[dams:type='thumbnail']
-                String clrImage = data.get("clr image file name");
-                if ( pop(clrImage) ) {
-                    addRelatedResource(e, "thumbnail", "@ " + clrImage);
                 }
             }
         }
