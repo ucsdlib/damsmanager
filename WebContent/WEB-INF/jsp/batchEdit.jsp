@@ -123,7 +123,7 @@
                         </div>
                         <div title="Batch Overlay metadata" class="submenuText">
                             <input type="checkbox" name="importOption" id="importOption" onchange="onIngestSelectionChange(this);" disabled >
-                            <span class="submenuText" style="margin:10px;">Batch edit descriptive metadata</span>
+                            <span class="submenuText" style="margin:10px;">Batch metadata overlay.</span>
                         </div>
                     </fieldset>
                 </div>
