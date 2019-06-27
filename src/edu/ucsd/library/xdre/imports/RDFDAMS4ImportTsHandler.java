@@ -473,7 +473,8 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 					
 					} catch (Exception e) {
 						e.printStackTrace();
-						
+						exeResult = false;
+
 						if(metadataFailed.indexOf(currFile) < 0)
 							failedCount++;
 						metadataFailed.append(subjectId + " (" + currFile + "), \n");
