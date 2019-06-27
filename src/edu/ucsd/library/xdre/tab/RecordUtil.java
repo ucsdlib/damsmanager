@@ -406,6 +406,43 @@ public class RecordUtil
         }
     }
 
+    /**
+     * Map copyrightStatus to rights holder predicate
+     * @param copyrightStatus
+     * @return
+     */
+    public static String getRightsHolderPredicate(String copyrightStatus) {
+        if ( copyrightStatus.equals(copyrightPerson) )
+        {
+            return "rightsHolderPersonal";
+        }
+        else if ( copyrightStatus.equals(copyrightCorporate)
+                || copyrightStatus.equals(copyrightRegents) )
+        {
+            return "rightsHolderCorporate";
+        }
+
+        return "rightsHolderName";
+    }
+
+    /**
+     * Map copyrightStatus to rights holder name class
+     * @param copyrightStatus
+     * @return
+     */
+    public static String getRightsHolderClass(String copyrightStatus) {
+        if ( copyrightStatus.equals(copyrightPerson) )
+        {
+            return "mads:PersonalName";
+        }
+        else if ( copyrightStatus.equals(copyrightCorporate)
+                || copyrightStatus.equals(copyrightRegents) )
+        {
+            return "mads:CorporateName";
+        }
+        return "mads:Name";
+    }
+
     /*
      * add rights holder
      * @param o
@@ -413,24 +450,8 @@ public class RecordUtil
      * @param rightsHolder
      */
     public static void addRightsHolder( Element o, String copyrightStatus, String rightsHolder) {
-        String predicate = null;
-        String nameClass = null;
-        if ( copyrightStatus.equals(copyrightPerson) )
-        {
-            predicate = "dams:rightsHolderPersonal";
-            nameClass = "mads:PersonalName";
-        }
-        else if ( copyrightStatus.equals(copyrightCorporate)
-                || copyrightStatus.equals(copyrightRegents) )
-        {
-            predicate = "dams:rightsHolderCorporate";
-            nameClass = "mads:CorporateName";
-        }
-        if ( copyrightStatus.equals(copyrightOther) )
-        {
-            predicate = "dams:rightsHolderName";
-            nameClass = "mads:Name";
-        }
+        String predicate = "dams:" + getRightsHolderPredicate(copyrightStatus);
+        String nameClass = getRightsHolderClass(copyrightStatus);
 
         Element name = o.addElement(predicate,damsURI).addElement(nameClass,madsURI);
 

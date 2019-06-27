@@ -101,4 +101,36 @@ public class BatchEditExcelSource extends ExcelSource {
     protected String headerToValidate(String header) {
         return header.toLowerCase().replace(" fast", "");
     }
+
+    /*
+     * Override to strip the ark for CV validation if presented
+     * @param value
+     * @param delimiter
+     * @return
+     */
+    @Override
+    protected String stripArkValue(String value) {
+        int idx = value.lastIndexOf("@");
+        if (idx >= 0 && value.length() > idx + 1) {
+            String arkValue = value.substring(value.lastIndexOf("@") + 1).trim();
+            if (arkValue.length() == 10) {
+                return value.substring(0, idx).trim();
+            }
+        }
+        return value;
+    }
+
+    /*
+     * Override to check whether an ark is provided for batch overlay
+     * @param value
+     * @return
+     */
+    @Override
+    protected boolean arkPresented(String value) {
+        if (value.startsWith("@") && value.length() > 10) {
+            return value.substring(value.indexOf("@") + 1).trim().length() == 10;
+        }
+        return false;
+    }
+
 }

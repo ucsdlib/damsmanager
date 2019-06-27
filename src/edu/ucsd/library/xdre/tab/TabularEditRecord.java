@@ -2,12 +2,14 @@ package edu.ucsd.library.xdre.tab;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Element;
@@ -78,6 +80,46 @@ public class TabularEditRecord extends TabularRecord
         return document;
     }
 
+    /*
+     * Add rdf:recource attribute for resource reference.
+     * @param e
+     * @param propertyName
+     * @param value
+     * @return
+     */
+    private boolean addResourceReference(Element e, String propertyName, String value) {
+        String arkUrl = getLinkedArkUrl(value);
+        if (StringUtils.isNotBlank(arkUrl)) {
+            Element el = addElement( e, propertyName, damsNS);
+            addAttribute( el, "resource", rdfNS, arkUrl );
+            return true;
+        }
+        return false;
+    }
+
+    /*
+     * Add rdf:resource reference for relationship
+     * @param e
+     * @param propertyName
+     * @param value
+     * @param role
+     * @return
+     */
+    protected boolean addRelationshipReference(Element e, String propertyName, String value, String role) {
+        String arkUrl = getLinkedArkUrl(value);
+        if (StringUtils.isNotBlank(arkUrl)) {
+            Element rel = addElement( e, "relationship", damsNS, "Relationship", damsNS );
+
+            // add role
+            addRole(rel, role);
+            // add resource reference
+            Element el = addElement( rel, propertyName, damsNS);
+            addAttribute( el, "resource", rdfNS, arkUrl );
+            return true;
+        }
+        return false;
+    }
+
     /**
      * Convert ark value to ARK URL. 
      * @param value
@@ -92,6 +134,27 @@ public class TabularEditRecord extends TabularRecord
             // Convert ARK to dams4 ARK url
             return toArkUrl(arkValue);
         }
+    }
+
+    /**
+     * Convert ark value to ARK URL. 
+     * @param value
+     * @return
+     */
+    public static String getLinkedArkUrl(String value) {
+        String arkValue = value;
+
+        if (arkValue.startsWith(Constants.DAMS_ARK_URL_BASE)) {
+            return value;
+        } else if (arkValue.indexOf("@") >= 0) {
+            // Convert ARK to dams4 ARK url
+            String[] pairs = arkValue.split("\\@");
+            String ark = (pairs.length == 1 ? pairs[0] : pairs[pairs.length - 1]);
+            if (ark.trim().length() == 10) {
+                return toArkUrl(ark.trim());
+            }
+        }
+        return null;
     }
 
     /*
@@ -143,7 +206,9 @@ public class TabularEditRecord extends TabularRecord
                 String predicateName = getPredicateName(key.substring(key.lastIndexOf(":") + 1)).replace(" fast", "");
                 String elemName = predicateName.substring(0, 1).toUpperCase() + predicateName.substring(1);
                 for (String value : split(data.get(key))) {
-                    handleSubject(e, predicateName, elemName, value);
+                    if (!addResourceReference(e, predicateName, value)) {
+                        handleSubject(e, predicateName, elemName, value);
+                    }
                 }
             }
 
@@ -160,7 +225,10 @@ public class TabularEditRecord extends TabularRecord
                     String copyrightStatus = key.endsWith("personal") ? RecordUtil.copyrightPerson
                             : key.endsWith("corporate") ? RecordUtil.copyrightCorporate : RecordUtil.copyrightOther;
 
-                    RecordUtil.addRightsHolder( e, copyrightStatus, value);
+                    String predicateName = RecordUtil.getRightsHolderPredicate(copyrightStatus);
+                    if (!addResourceReference(e, predicateName, value)) {
+                        RecordUtil.addRightsHolder( e, copyrightStatus, value);
+                    }
                 }
             }
 
@@ -195,7 +263,82 @@ public class TabularEditRecord extends TabularRecord
                 for ( String value : split(data.get(key)) ) {
                     // add collection linkings
                     // Todo: correct predicate and collection name basing on collection type.
-                    addCollectionElement(e, "collection", "Collection", value);
+                    String predicateName = "collection";
+                    if (!addResourceReference(e, predicateName, value)) {
+                        addCollectionElement(e, predicateName, "Collection", value);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Fields that may be linking to other resources.
+     * @param e
+     * @param objectID
+     * @param key
+     * @throws ParseException
+     */
+    protected void addHeadingsField(Element e, String objectID, String key)
+            throws ParseException {
+        // relationships ////////////////////////////////////////////////////////////////
+        // data, elem, header, class/ns, pred/ns, name element
+        // personal name
+        if (key.startsWith("person:")) {
+            String role = key.substring(key.lastIndexOf(":") + 1);
+
+            // add: Relationship by name and role
+            for ( String value : split(data.get(key)) ) {
+                String predicateName = "personalName";
+                if (!addRelationshipReference(e, predicateName, value, role)) {
+                    addRelationship(e, "PersonalName", role, predicateName, "FullName", value);
+                }
+            }
+        }
+
+        // corporate name
+        if (key.startsWith("corporate:")) {
+            String role = key.substring(key.lastIndexOf(":") + 1);
+
+            for ( String value : split(data.get(key)) ) {
+                String predicateName = "corporateName";
+                if (!addRelationshipReference(e, predicateName, value, role)) {
+                    addRelationship(e, "CorporateName", role, predicateName, "Name", value);
+                }
+            }
+        }
+
+        // language /////////////////////////////////////////////////////////////////////
+        if (key.startsWith("language")) {
+            for(String value : split(data.get(key))) {
+                if (!addResourceReference(e, "language", value)) {
+                    addLanguage(e, value);
+                }
+            }
+        }
+
+        // related resource /////////////////////////////////////////////////////////////
+        if (key.startsWith("related resource:")) {
+            String type = key.substring(key.lastIndexOf(":") + 1);
+            for (String value : split(data.get( key ))) {
+                if (!addResourceReference(e, "relatedResource", value)) {
+                    addRelatedResource(e, type, value);
+                }
+            }
+        }
+
+        // notes /////////////////////////////////////////////////////////////////////////
+        if ( key.startsWith("note:") ) {
+            String type = key.substring( key.indexOf(":") + 1 );
+            for ( String value : split(data.get( key )) )
+            {
+                // note could be linked resource reference
+                if (!addResourceReference(e, "note", value)) {
+                    if (key.endsWith("local attribution")) {
+                        addNote(e, type, "digital object made available by", value);
+                    } else {
+                        addNote(e, type, null, value);
+                    }
                 }
             }
         }

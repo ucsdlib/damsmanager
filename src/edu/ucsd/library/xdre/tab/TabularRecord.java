@@ -283,20 +283,6 @@ public class TabularRecord extends TabularRecordBasic
             }
         }
 
-        // note /////////////////////////////////////////////////////////////////////////
-        if ( key.startsWith("note:") ) {
-            String type = key.substring( key.indexOf(":") + 1 );
-            for ( String value : split(data.get( key )) )
-            {
-                // Local attribution note
-                if (key.endsWith("local attribution")) {
-                    addNote(e, type, "digital object made available by", value);
-                } else {
-                    addNote(e, type, null, value);
-                }
-            }
-        }
-
         // cartographics ////////////////////////////////////////////////////////////////
         if (key.startsWith("geographic:") && !cartographicsProcessed) {
             cartographicsProcessed = true;
@@ -368,6 +354,19 @@ public class TabularRecord extends TabularRecordBasic
             String type = key.substring(key.lastIndexOf(":") + 1);
             for (String value : split(data.get( key ))) {
                 addRelatedResource(e, type, value);
+            }
+        }
+
+        // notes /////////////////////////////////////////////////////////////////////////
+        if ( key.startsWith("note:") ) {
+            String type = key.substring( key.indexOf(":") + 1 );
+            for ( String value : split(data.get( key )) )
+            {
+                if (key.endsWith("local attribution")) {
+                    addNote(e, type, "digital object made available by", value);
+                } else {
+                    addNote(e, type, null, value);
+                }
             }
         }
     }
