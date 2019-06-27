@@ -519,4 +519,252 @@ public class TabularEditRecordTest extends TabularRecordTestBasic {
         List<Node> nodes = doc.selectNodes("//dams:collection");
         assertEquals("The size of collection doesn't match!", 1, nodes.size());
     }
+
+    @Test
+    public void testOverlayLanguageWithArk() throws Exception {
+        String title = "Test object";
+        Map<String, String> data = createDataWithTitle("zzxxxxxxxx", title);
+        Map<String, String> overlayData = createDataWithTitle("zzxxxxxxxx", title);
+
+        // Initiate tabular data for creator with ark reference
+        String languageArk = "@bdxxxxxxxx";
+        data.put("language", languageArk);
+        overlayData.put("language", languageArk);
+
+        // Create record with data overlay
+        TabularEditRecord testObject = createdRecordWithOverlay(data, overlayData);
+        Document doc = testObject.toRDFXML();
+
+        List<Node> nodes = doc.selectNodes("//dams:language");
+        assertEquals("The size of Language doesn't match!", 1, nodes.size());
+
+        String actualResult = nodes.get(0).selectSingleNode("@rdf:resource").getStringValue();
+        assertEquals("Language resource url doesn't match!", TabularEditRecord.getArkUrl("bdxxxxxxxx"), actualResult);
+    }
+
+    @Test
+    public void testOverlayLanguageWithValueArk() throws Exception {
+        String title = "Test object";
+        Map<String, String> data = createDataWithTitle("zzxxxxxxxx", title);
+        Map<String, String> overlayData = createDataWithTitle("zzxxxxxxxx", title);
+
+        // Initiate tabular data for creator with ark reference
+        String languageArk = "@bdxxxxxxxx";
+        data.put("language", languageArk);
+        overlayData.put("language", "zxx - xxx xx" + languageArk);
+
+        // Create record with data overlay
+        TabularEditRecord testObject = createdRecordWithOverlay(data, overlayData);
+        Document doc = testObject.toRDFXML();
+
+        List<Node> nodes = doc.selectNodes("//dams:language");
+        assertEquals("The size of Language doesn't match!", 1, nodes.size());
+
+        String actualResult = nodes.get(0).selectSingleNode("@rdf:resource").getStringValue();
+        assertEquals("Language resource url doesn't match!", TabularEditRecord.getArkUrl("bdxxxxxxxx"), actualResult);
+    }
+
+    @Test
+    public void testOverlayRelationshipWithArk() throws Exception {
+        String title = "Test object";
+        Map<String, String> data = createDataWithTitle("zzxxxxxxxx", title);
+        Map<String, String> overlayData = createDataWithTitle("zzxxxxxxxx", title);
+
+        // Initiate tabular data for creator ark
+        String nameArk = "@bdxxxxxxxx";
+        data.put("person:creator", nameArk);
+        overlayData.put("person:creator", nameArk);
+
+        // Create record with data overlay
+        TabularEditRecord testObject = createdRecordWithOverlay(data, overlayData);
+        Document doc = testObject.toRDFXML();
+
+        Node node = doc.selectSingleNode("//dams:relationship/dams:Relationship");
+
+        String actualNameResult = node.selectSingleNode("//dams:personalName/@rdf:resource").getStringValue();
+        assertEquals("Name resource url doesn't match!", TabularEditRecord.getLinkedArkUrl(nameArk), actualNameResult);
+        String actualRoleResult = node.selectSingleNode("dams:role/mads:Authority/mads:authoritativeLabel").getText();
+        assertEquals("Role value doesn't match!", "creator", actualRoleResult);
+    }
+
+    @Test
+    public void testOverlayRelationshipWithValueArk() throws Exception {
+        String title = "Test object";
+        Map<String, String> data = createDataWithTitle("zzxxxxxxxx", title);
+        Map<String, String> overlayData = createDataWithTitle("zzxxxxxxxx", title);
+
+        // Initiate tabular data for creator with ark reference
+        String name = "Person:Creator";
+        data.put("person:creator", name);
+        String overlayName = "Person:Creator@bdxxxxxxxx";
+        overlayData.put("person:creator", overlayName);
+
+        // Create record with data overlay
+        TabularEditRecord testObject = createdRecordWithOverlay(data, overlayData);
+        Document doc = testObject.toRDFXML();
+
+        Node node = doc.selectSingleNode("//dams:relationship/dams:Relationship");
+
+        String actualNameResult = node.selectSingleNode("//dams:personalName/@rdf:resource").getStringValue();
+        assertEquals("Name resource url doesn't match!", TabularEditRecord.getArkUrl("bdxxxxxxxx"), actualNameResult);
+        String actualRoleResult = node.selectSingleNode("dams:role/mads:Authority/mads:authoritativeLabel").getText();
+        assertEquals("Role value doesn't match!", "creator", actualRoleResult);
+    }
+
+    @Test
+    public void testOverlaySubjectWithArk() throws Exception {
+        String title = "Test object";
+        Map<String, String> data = createDataWithTitle("zzxxxxxxxx", title);
+        Map<String, String> overlayData = createDataWithTitle("zzxxxxxxxx", title);
+
+        // Initiate tabular data for creator with ark reference
+        String topicArk = "@bdxxxxxxxx";
+        data.put("subject:topic", topicArk);
+        overlayData.put("subject:topic", topicArk);
+
+        // Create record with data overlay
+        TabularEditRecord testObject = createdRecordWithOverlay(data, overlayData);
+        Document doc = testObject.toRDFXML();
+
+        List<Node> nodes = doc.selectNodes("//dams:topic");
+        assertEquals("The size of Topic doesn't match!", 1, nodes.size());
+
+        String actualResult = nodes.get(0).selectSingleNode("@rdf:resource").getStringValue();
+        assertEquals("Topic resource url doesn't match!", TabularEditRecord.getArkUrl("bdxxxxxxxx"), actualResult);
+    }
+
+    @Test
+    public void testOverlaySubjectWithValueArk() throws Exception {
+        String title = "Test object";
+        Map<String, String> data = createDataWithTitle("zzxxxxxxxx", title);
+        Map<String, String> overlayData = createDataWithTitle("zzxxxxxxxx", title);
+
+        // Initiate tabular data for creator with ark reference
+        String topicArk = "@bdxxxxxxxx";
+        data.put("subject:topic", topicArk);
+        String overlayTopic = "Test Topic" + topicArk;
+        overlayData.put("subject:topic", overlayTopic);
+
+        // Create record with data overlay
+        TabularEditRecord testObject = createdRecordWithOverlay(data, overlayData);
+        Document doc = testObject.toRDFXML();
+
+        List<Node> nodes = doc.selectNodes("//dams:topic");
+        assertEquals("The size of Topic doesn't match!", 1, nodes.size());
+
+        String actualResult = nodes.get(0).selectSingleNode("@rdf:resource").getStringValue();
+        assertEquals("Topic resource url doesn't match!", TabularEditRecord.getArkUrl("bdxxxxxxxx"), actualResult);
+    }
+
+    @Test
+    public void testOverlayNoteWithArk() throws Exception {
+        String title = "Test object";
+        Map<String, String> data = createDataWithTitle("zzxxxxxxxx", title);
+        Map<String, String> overlayData = createDataWithTitle("zzxxxxxxxx", title);
+
+        // Initiate tabular data for creator with ark reference
+        String noteArk = "@bdxxxxxxxx";
+        data.put("note:local attribution", noteArk);
+        overlayData.put("note:local attribution", noteArk);
+
+        // Create record with data overlay
+        TabularEditRecord testObject = createdRecordWithOverlay(data, overlayData);
+        Document doc = testObject.toRDFXML();
+
+        List<Node> nodes = doc.selectNodes("//dams:note");
+        assertEquals("The size of Local attribution note doesn't match!", 1, nodes.size());
+
+        String actualResult = nodes.get(0).selectSingleNode("@rdf:resource").getStringValue();
+        assertEquals("Note resource url doesn't match!", TabularEditRecord.getArkUrl("bdxxxxxxxx"), actualResult);
+    }
+
+    @Test
+    public void testOverlayNoteWithSpaceArk() throws Exception {
+        String title = "Test object";
+        Map<String, String> data = createDataWithTitle("zzxxxxxxxx", title);
+        Map<String, String> overlayData = createDataWithTitle("zzxxxxxxxx", title);
+
+        // Initiate tabular data for creator with ark reference
+        String noteArk = " @ bdxxxxxxxx";
+        data.put("note:local attribution", noteArk);
+        overlayData.put("note:local attribution", noteArk);
+
+        // Create record with data overlay
+        TabularEditRecord testObject = createdRecordWithOverlay(data, overlayData);
+        Document doc = testObject.toRDFXML();
+
+        List<Node> nodes = doc.selectNodes("//dams:note");
+        assertEquals("The size of Local attribution note doesn't match!", 1, nodes.size());
+
+        String actualResult = nodes.get(0).selectSingleNode("@rdf:resource").getStringValue();
+        assertEquals("Note resource url doesn't match!", TabularEditRecord.getArkUrl("bdxxxxxxxx"), actualResult);
+    }
+
+    @Test
+    public void testOverlayNoteWithValueArk() throws Exception {
+        String title = "Test object";
+        Map<String, String> data = createDataWithTitle("zzxxxxxxxx", title);
+        Map<String, String> overlayData = createDataWithTitle("zzxxxxxxxx", title);
+
+        // Initiate tabular data for creator with ark reference
+        String noteArk = "@bdxxxxxxxx";
+        data.put("note:local attribution", noteArk);
+        String overlayNote = "Local attribution note" + noteArk;
+        overlayData.put("note:local attribution", overlayNote);
+
+        // Create record with data overlay
+        TabularEditRecord testObject = createdRecordWithOverlay(data, overlayData);
+        Document doc = testObject.toRDFXML();
+
+        List<Node> nodes = doc.selectNodes("//dams:note");
+        assertEquals("The size of Local attribution note doesn't match!", 1, nodes.size());
+
+        String actualResult = nodes.get(0).selectSingleNode("@rdf:resource").getStringValue();
+        assertEquals("Note resource url doesn't match!", TabularEditRecord.getArkUrl("bdxxxxxxxx"), actualResult);
+    }
+
+    @Test
+    public void testOverlayRelatedResourceWithArk() throws Exception {
+        String title = "Test object";
+        Map<String, String> data = createDataWithTitle("zzxxxxxxxx", title);
+        Map<String, String> overlayData = createDataWithTitle("zzxxxxxxxx", title);
+
+        // Initiate tabular data for creator with ark reference
+        String relatedResourceArk = "@bdxxxxxxxx";
+        data.put("related resource:related", relatedResourceArk);
+        overlayData.put("related resource:related", relatedResourceArk);
+
+        // Create record with data overlay
+        TabularEditRecord testObject = createdRecordWithOverlay(data, overlayData);
+        Document doc = testObject.toRDFXML();
+
+        List<Node> nodes = doc.selectNodes("//dams:relatedResource");
+        assertEquals("The size of related resource doesn't match!", 1, nodes.size());
+
+        String actualResult = nodes.get(0).selectSingleNode("@rdf:resource").getStringValue();
+        assertEquals("Related resource url doesn't match!", TabularEditRecord.getArkUrl("bdxxxxxxxx"), actualResult);
+    }
+
+    @Test
+    public void testOverlayRelatedResourceWithValueArk() throws Exception {
+        String title = "Test object";
+        Map<String, String> data = createDataWithTitle("zzxxxxxxxx", title);
+        Map<String, String> overlayData = createDataWithTitle("zzxxxxxxxx", title);
+
+        // Initiate tabular data for creator with ark reference
+        String relatedResourceArk = "@bdxxxxxxxx";
+        data.put("related resource:related", relatedResourceArk);
+        String overlayNote = "Related resource" + relatedResourceArk;
+        overlayData.put("related resource:related", overlayNote);
+
+        // Create record with data overlay
+        TabularEditRecord testObject = createdRecordWithOverlay(data, overlayData);
+        Document doc = testObject.toRDFXML();
+
+        List<Node> nodes = doc.selectNodes("//dams:relatedResource");
+        assertEquals("The size of related resource doesn't match!", 1, nodes.size());
+
+        String actualResult = nodes.get(0).selectSingleNode("@rdf:resource").getStringValue();
+        assertEquals("Related resource url doesn't match!", TabularEditRecord.getArkUrl("bdxxxxxxxx"), actualResult);
+    }
 }

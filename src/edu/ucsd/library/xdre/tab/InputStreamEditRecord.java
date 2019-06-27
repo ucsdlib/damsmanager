@@ -7,6 +7,7 @@ import java.util.List;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.Node;
+import org.dom4j.QName;
 
 import edu.ucsd.library.xdre.utils.DAMSClient;
 
@@ -36,7 +37,7 @@ public class InputStreamEditRecord extends InputStreamRecord {
      * Post processing: Lookup linked collection to replace the collection predicate
      */
     private void applyCollectionPredicates() throws Exception {
-        List<Node> resNodes = rdf.selectNodes("/rdf:RDF/dams:collection/@rdf:resource");
+        List<Node> resNodes = rdf.selectNodes("/rdf:RDF//dams:collection/@rdf:resource");
         for (Node resNode : resNodes) {
             String uri = resNode.getStringValue();
             Document colDoc = damsClient.getRecord(uri);
@@ -53,7 +54,7 @@ public class InputStreamEditRecord extends InputStreamRecord {
                 preName = colType.substring(0, 1).toLowerCase() + colType.substring(1);
             }
 
-            resNode.getParent().setName(preName);
+            resNode.getParent().setQName(new QName(preName, resNode.getParent().getNamespaceForPrefix("dams")));
         }
     }
 }

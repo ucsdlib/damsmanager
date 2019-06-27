@@ -327,9 +327,16 @@ public class ExcelSource implements RecordSource
                                 for (String val : vals2Valid) 
                                 {
                                     String normVal = val.trim();
-                                    if (headerToValidate(header).equalsIgnoreCase("Language"))
+                                    if (headerToValidate(header).equalsIgnoreCase("Language")) {
+                                        // skip validation when ark provided with batch overlay
+                                        if (arkPresented(normVal))
+                                            continue;
+
+                                        // strip ark value for validation with batch overlay
+                                        normVal = stripArkValue(normVal);
+
                                         normVal = normalizeFieldValue(normVal, DELIMITER_LANG_ELEMENT);
-                                    else if (headerToValidate(header).equalsIgnoreCase(SubjectTabularRecord.SUBJECT_TYPE))
+                                    } else if (headerToValidate(header).equalsIgnoreCase(SubjectTabularRecord.SUBJECT_TYPE))
                                         // Subject Import: case insensitive subject header value
                                         normVal = val.toLowerCase();
 
@@ -725,5 +732,24 @@ public class ExcelSource implements RecordSource
         if (!CONTROL_VALUES.containsKey(fieldName)) {
             CONTROL_VALUES.put(fieldName, new ArrayList<String>());
         }
+    }
+
+    /*
+     * Strip the ark value for validation, which will be presented for batch overlay.
+     * @param value
+     * @return
+     */
+    protected String stripArkValue(String value) {
+        return value;
+    }
+
+    /*
+     * Determine whether ark is allowed and presented for batch overlay
+     * that don't need value validation
+     * @param value
+     * @return
+     */
+    protected boolean arkPresented(String value) {
+        return false;
     }
 }
