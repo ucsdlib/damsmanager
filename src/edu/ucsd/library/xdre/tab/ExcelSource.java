@@ -718,7 +718,7 @@ public class ExcelSource implements RecordSource
     }
 
     /*
-     * Add field dor validation
+     * Add field for validation
      * @param fieldName
      */
     private static void addValidationField(String fieldName) {

@@ -103,7 +103,7 @@ public class TabularEditRecord extends TabularRecord
         if (!(ark.startsWith("http://") || ark.startsWith("https://"))) {
             String arkUrlBase = Constants.DAMS_ARK_URL_BASE;
             arkUrlBase += arkUrlBase.endsWith("/") ? "" : "/";
-            return arkUrlBase + "20775/" + ark;
+            return arkUrlBase + Constants.ARK_ORG + "/" + ark;
         }
         return ark;
     }

@@ -65,7 +65,6 @@ public class TabularRecord extends TabularRecordBasic
     }
 
     /**
-<<<<<<< HEAD
      * Get the watermarking flag
      */
     public boolean isWatermarking() {
@@ -97,8 +96,6 @@ public class TabularRecord extends TabularRecordBasic
     }
 
     /**
-=======
->>>>>>> Fixes #321 - Extend Excel InputStream to support Batch Overlay.
      * Add component-level data.
     **/
     public void addComponent( TabularRecord component )
