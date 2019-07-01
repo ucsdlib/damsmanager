@@ -61,10 +61,6 @@
         }
     }
 
-    function reloadPage(){
-        //document.location.href="/damsmanager/batchEdit.do;
-    }
-
     $( document ).ready(function() {
       document.getElementById("import").onclick = function() {
         //disable
