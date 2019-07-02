@@ -53,10 +53,6 @@ public class TabularEditRecord extends TabularRecord
             throws UnsupportedEncodingException, IOException, DocumentException
     {
         super( data, cmp );
-        editDocument(document);
-    }
-
-    public void editDocument(Document document) throws UnsupportedEncodingException, IOException, DocumentException {
         this.document = document;
     }
 
@@ -70,12 +66,20 @@ public class TabularEditRecord extends TabularRecord
     }
 
     /**
-     * Edit the document with the excel data provided 
+     * Edit the document with the excel data provided for object and component/sub-component metadata
      * @return
      * @throws Exception 
      */
-    protected Document editDocument() throws Exception {
-        overlayElements(data);
+    public Document editDocument() throws Exception {
+        overlayElements();
+
+        if (cmp.size() > 0) {
+            for (TabularRecord c : cmp) {
+                TabularEditRecord comonent = (TabularEditRecord)c;
+                comonent.setDocument(document);
+                comonent.editDocument();
+            }
+        }
 
         return document;
     }
@@ -118,6 +122,22 @@ public class TabularEditRecord extends TabularRecord
             return true;
         }
         return false;
+    }
+
+    /**
+     * Get object RDF/XML
+     * @return
+     */
+    public Document getDocument() {
+        return document;
+    }
+
+    /**
+     * Set object RDF/XML
+     * @param document
+     */
+    public void setDocument(Document document) {
+        this.document = document;
     }
 
     /**
@@ -175,11 +195,10 @@ public class TabularEditRecord extends TabularRecord
      * Edit: Overlay fields/elements
      * @param data
      */
-    private void overlayElements(Map<String,String> data) throws Exception {
+    public void overlayElements() throws Exception {
         // Object, CLR node to edit
-        String objectID = data.get("object unique id");
-        Element e = (Element)document.selectSingleNode("//*[@rdf:about='" + getArkUrl(objectID) + "']");
-
+        String oid = data.get("object unique id");
+        Element e = (Element)document.selectSingleNode("//*[@rdf:about='" + getArkUrl(oid) + "']");
         titleProcessed = false;
         cartographicsProcessed = false;
         fileProcessed = false;
@@ -193,10 +212,10 @@ public class TabularEditRecord extends TabularRecord
         // Second Step: add/rebuild descriptive metadata
         for (String key : data.keySet()) {
             // descriptive metadata
-            addCommonDescriptiveData(e, objectID, key);
+            addCommonDescriptiveData(e, oid, key);
 
             // heading fields that may be linking to other resources
-            addHeadingsField(e, objectID, key);
+            addHeadingsField(e, oid, key);
 
             // subjects, including FAST subjects ////////////////////////////////////////////
             // data, elem, header, class/ns, predicate/ns, element
