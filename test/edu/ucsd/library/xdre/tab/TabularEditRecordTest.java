@@ -1,11 +1,11 @@
 package edu.ucsd.library.xdre.tab;
 
+import static edu.ucsd.library.xdre.tab.TabularRecordBasic.addElement;
+import static edu.ucsd.library.xdre.tab.TabularRecordBasic.addTextElement;
+import static edu.ucsd.library.xdre.tab.TabularRecordBasic.damsNS;
+import static edu.ucsd.library.xdre.tab.TabularRecordBasic.rdfNS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static edu.ucsd.library.xdre.tab.TabularRecord.addElement;
-import static edu.ucsd.library.xdre.tab.TabularRecord.addTextElement;
-import static edu.ucsd.library.xdre.tab.TabularRecord.damsNS;
-import static edu.ucsd.library.xdre.tab.TabularRecord.rdfNS;
 
 import java.io.IOException;
 import java.util.List;
@@ -33,6 +33,7 @@ public class TabularEditRecordTest extends TabularRecordTestBasic {
         Constants.DAMS_STORAGE_URL = "http://localhost:8080/dams/api";
         Constants.DAMS_ARK_URL_BASE = "http://library.ucsd.edu/ark:";
         Constants.ARK_ORG = "20775";
+        Constants.BATCH_ADDITIONAL_FIELDS = "Note:local attribution,collection(s)";
     }
 
     @Test
@@ -766,5 +767,64 @@ public class TabularEditRecordTest extends TabularRecordTestBasic {
 
         String actualResult = nodes.get(0).selectSingleNode("@rdf:resource").getStringValue();
         assertEquals("Related resource url doesn't match!", TabularEditRecord.getArkUrl("bdxxxxxxxx"), actualResult);
+    }
+
+    @Test
+    public void testOverlayComponent() throws Exception {
+        String title = "Test object";
+        String objArk = "zzxxxxxxxx";
+        String objUrl = TabularEditRecord.getArkUrl(objArk);
+        Element obj = createDocumentRoot(objUrl);
+        String componentUrl = TabularEditRecord.getArkUrl("zzxxxxxxxx/1");
+        Element e = addElement( obj, "hasComponent", damsNS, "Component", damsNS);;
+        addAttribute(e, "about", rdfNS, componentUrl);
+
+        Map<String, String> objectData = createDataWithTitle(objArk, title, "object");
+        String compTitle = getOverlayValue(title + " Component1");
+        Map<String, String> compData = createDataWithTitle(objArk + "/1", compTitle, "component");
+
+        // Create record with data overlay
+        TabularEditRecord testObject = createdRecordWithOverlay(obj.getDocument(), objectData, compData);
+        Document doc = testObject.toRDFXML();
+        List<Node> nodes = doc.selectNodes("//dams:hasComponent/dams:Component");
+        assertEquals("The size of component doesn't match!", 1, nodes.size());
+        String actualCompTitle = nodes.get(0).selectSingleNode("dams:title//mads:authoritativeLabel").getText();
+        assertEquals("Component title doesn't match!", compTitle, actualCompTitle);
+    }
+
+    @Test
+    public void testOverlaySubcomponent() throws Exception {
+        String title = "Test object";
+        String objArk = "zzxxxxxxxx";
+        String objUrl = TabularEditRecord.getArkUrl(objArk);
+        Element obj = createDocumentRoot(objUrl);
+        String componentUrl = TabularEditRecord.getArkUrl("zzxxxxxxxx/1");
+        Element e = addElement( obj, "hasComponent", damsNS, "Component", damsNS);
+        addAttribute(e, "about", rdfNS, componentUrl);
+        Element el = addElement( e, "hasComponent", damsNS, "Component", damsNS);
+        String subcomponentUrl = TabularEditRecord.getArkUrl("zzxxxxxxxx/2");
+        addAttribute(el, "about", rdfNS, subcomponentUrl);
+
+        Map<String, String> objectData = createDataWithTitle(objArk, title, "object");
+        String compTitle = getOverlayValue(title + " Component1");
+        Map<String, String> compData = createDataWithTitle(objArk + "/1", compTitle, "component");
+        String subcompTitle = getOverlayValue(title + " Subomponent1");
+        Map<String, String> subcompData = createDataWithTitle(objArk + "/2", subcompTitle, "sub-component");
+
+        // Create record with data overlay
+        TabularEditRecord testObject = createdRecordWithOverlay(obj.getDocument(), objectData, compData, subcompData);
+        Document doc = testObject.toRDFXML();
+
+        // verify component title
+        List<Node> nodes = doc.selectNodes("//dams:Object/dams:hasComponent/dams:Component");
+        assertEquals("The size of component doesn't match!", 1, nodes.size());
+        String actualCompTitle = nodes.get(0).selectSingleNode("dams:title//mads:authoritativeLabel").getText();
+        assertEquals("Component title doesn't match!", compTitle, actualCompTitle);
+
+        // verify sub-component title
+        nodes = doc.selectNodes("//dams:Object/dams:hasComponent/dams:Component/dams:hasComponent/dams:Component");
+        assertEquals("The size of sub-component doesn't match!", 1, nodes.size());
+        String actualSubcompTitle = nodes.get(0).selectSingleNode("dams:title//mads:authoritativeLabel").getText();
+        assertEquals("Sub-component title doesn't match!", subcompTitle, actualSubcompTitle);
     }
 }

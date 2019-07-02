@@ -46,13 +46,52 @@ public class TabularRecordTestBasic {
 
     protected TabularEditRecord createdRecordWithOverlay(Document doc, Map<String, String> overlayData)
             throws Exception {
-        return new TabularEditRecord(overlayData, null, doc);
+        return createdRecordWithOverlay(doc, overlayData, null);
+    }
+
+    protected TabularEditRecord createdRecordWithOverlay(Document doc, Map<String, String> objectData,
+            Map<String, String> compData) throws Exception {
+        TabularEditRecord editRecord = new TabularEditRecord(objectData, null, doc);
+
+        if (compData != null && compData.size() > 0) {
+            TabularEditRecord comp = new TabularEditRecord();
+            comp.setData(compData);
+            editRecord.addComponent(comp);
+        }
+
+        return editRecord;
+    }
+
+    protected TabularEditRecord createdRecordWithOverlay(Document doc, Map<String, String> objectData,
+            Map<String, String> compData, Map<String, String> subcompData) throws Exception {
+        TabularEditRecord editRecord = new TabularEditRecord(objectData, null, doc);
+
+        TabularEditRecord comp = null;
+        if (compData != null && compData.size() > 0) {
+            // component
+            comp = new TabularEditRecord();
+            comp.setData(compData);
+            editRecord.addComponent(comp);
+
+            // sub-component
+            if (subcompData != null && subcompData.size() > 0) {
+                TabularEditRecord subcomp = new TabularEditRecord();
+                subcomp.setData(subcompData);
+                comp.addComponent(subcomp);
+            }
+        }
+
+        return editRecord;
     }
 
     protected Map<String, String> createDataWithTitle(String oid, String title) {
+        return createDataWithTitle(oid, title, "object");
+    }
+
+    protected Map<String, String> createDataWithTitle(String oid, String title, String level) {
         Map<String, String> data = new HashMap<>();
         data.put(TabularRecord.OBJECT_ID, oid);
-        data.put(TabularRecord.OBJECT_COMPONENT_TYPE, "object");
+        data.put(TabularRecord.OBJECT_COMPONENT_TYPE, level);
         data.put("title", title);
 
         return data;

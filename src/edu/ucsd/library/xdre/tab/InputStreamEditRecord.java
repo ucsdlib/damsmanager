@@ -26,7 +26,8 @@ public class InputStreamEditRecord extends InputStreamRecord {
 
     private void initEditing(TabularEditRecord record) throws UnsupportedEncodingException,
             IOException, DocumentException, Exception {
-        record.editDocument(damsClient.getRecord(id));
+        record.setDocument(damsClient.getRecord(id));
+        record.editDocument();
         this.rdf = record.toRDFXML();
 
         // Collections post-processing for predicate linking
