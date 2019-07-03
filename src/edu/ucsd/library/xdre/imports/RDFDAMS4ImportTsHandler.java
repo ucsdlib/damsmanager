@@ -1357,7 +1357,7 @@ public class RDFDAMS4ImportTsHandler extends MetadataImportHandler{
 		params.put("oid", oid);
 		params.put("cid", cid);
 		params.put("fid", fid);
-		params.put("use", "document-service");
+		params.put("use", use);
 		params.put("local", localFile);
 
 		return params;
