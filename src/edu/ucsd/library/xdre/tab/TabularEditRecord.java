@@ -288,6 +288,25 @@ public class TabularEditRecord extends TabularRecord
                     }
                 }
             }
+
+            // File: file use  //////////////////////////////////////////////////////////////
+            if (key.equalsIgnoreCase("file use") || key.equalsIgnoreCase("file use 2")) {
+                if (pop(key)) {
+                    // Mapped file use to dams:use for master dams:File the alternate dams:File
+                    String fileNamePattern = key.endsWith("2") ? "/2." : "/1.";
+                    Node fileNode = e.selectSingleNode("dams:hasFile/dams:File[contains(@rdf:about, '" + fileNamePattern + "')]");
+                    if (fileNode != null) {
+                        // replace the file use value
+                        Node elNode = fileNode.selectSingleNode("dams:use");
+                        if (elNode != null)
+                            elNode.setText(data.get(key));
+                        else {
+                            // add the file use element if missing
+                            addElement((Element)fileNode, "use", damsNS).setText(data.get(key));
+                        }
+                    }
+                }
+            }
         }
     }
 

@@ -827,4 +827,48 @@ public class TabularEditRecordTest extends TabularRecordTestBasic {
         String actualSubcompTitle = nodes.get(0).selectSingleNode("dams:title//mads:authoritativeLabel").getText();
         assertEquals("Sub-component title doesn't match!", subcompTitle, actualSubcompTitle);
     }
+
+    @Test
+    public void testOverlayFileUse() throws Exception {
+        String title = "Test object";
+        Map<String, String> data = createDataWithTitle("zzxxxxxxxx", title);
+        Map<String, String> overlayData = createDataWithTitle("zzxxxxxxxx", title);
+
+        // Initiate tabular data for creator with ark reference
+        data.put("file name", "test_1.pdf");
+        data.put("file use", "document-source");
+        String overlayFileUse = "document-service";
+        overlayData.put("file name", "test_1.pdf");
+        overlayData.put("file use", overlayFileUse);
+
+        // Create record with data overlay
+        TabularEditRecord testObject = createdRecordWithOverlay(data, overlayData);
+        Document doc = testObject.toRDFXML();
+        List<Node> nodes = doc.selectNodes("//dams:File[@rdf:about='" + TabularEditRecord.getArkUrl("zzxxxxxxxx") + "/1.pdf']/dams:use");
+        assertEquals("The size of file use doesn't match!", 1, nodes.size());
+
+        assertEquals("File use value doesn't match!", overlayFileUse, nodes.get(0).getText());
+    }
+
+    @Test
+    public void testOverlayFileUse2() throws Exception {
+        String title = "Test object";
+        Map<String, String> data = createDataWithTitle("zzxxxxxxxx", title);
+        Map<String, String> overlayData = createDataWithTitle("zzxxxxxxxx", title);
+
+        // Initiate tabular data for creator with ark reference
+        data.put("file name 2", "test_2.pdf");
+        data.put("file use 2", "document-source");
+        String overlayFileUse = "document-alternate";
+        overlayData.put("file name 2", "test_2.pdf");
+        overlayData.put("file use 2", overlayFileUse);
+
+        // Create record with data overlay
+        TabularEditRecord testObject = createdRecordWithOverlay(data, overlayData);
+        Document doc = testObject.toRDFXML();
+        List<Node> nodes = doc.selectNodes("//dams:File[@rdf:about='" + TabularEditRecord.getArkUrl("zzxxxxxxxx") + "/2.pdf']/dams:use");
+        assertEquals("The size of file use 2 doesn't match!", 1, nodes.size());
+
+        assertEquals("File use 2 value doesn't match!", overlayFileUse, nodes.get(0).getText());
+    }
 }

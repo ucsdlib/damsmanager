@@ -195,10 +195,10 @@ public class TabularRecord extends TabularRecordBasic
             }
 
             // files ////////////////////////////////////////////////////////////////////////
-            String fn = data.get("file name");
-            String use = data.get("file use");
-            if ( pop(fn) )
+            if ( key.equalsIgnoreCase("file name") && pop(key) )
             {
+                String fn = data.get("file name");
+                String use = data.get("file use");
                 String file1Id = fileID;
                 if (watermarking && CollectionHandler.isDocument(fn, use)
                         && use.toLowerCase().contains("source")) {
@@ -208,13 +208,14 @@ public class TabularRecord extends TabularRecordBasic
 
                 addFile (e, file1Id, fn, use);
             }
-            
-            fn = data.get("file name 2");
-            use = data.get("file use 2");
-            if ( pop(fn) )
+
+            if ( key.equalsIgnoreCase("file name 2") && pop(key) )
             {
-            	String fileID2 = getSecondFileID (fileID);
-            	addFile (e, fileID2, fn, use);
+                String fn = data.get("file name 2");
+                String use = data.get("file use 2");
+                String fileID2 = getSecondFileID (fileID);
+
+                addFile (e, fileID2, fn, use);
             }
         }
     }
