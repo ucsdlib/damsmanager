@@ -721,6 +721,7 @@ public class CollectionOperationController implements Controller {
 								  } else {
     								  // Handling Excel Input Stream records
     								  recordSource = new ExcelSource((File)srcRecord, ignoredFields);
+    								  ((ExcelSource)recordSource).setWatermarking(watermarking);
 								  }
 
 								  // Report for Excel column name validation
