@@ -48,8 +48,7 @@ public class InputStreamEditRecord extends InputStreamRecord {
             String preName = "";
             if (editNode.getName().contains("Collection")) {
                 // collection hierarchy linking
-                preName = "has" + (preName.contains("Part") ? "Part"
-                        : preName.substring(0, 1).toUpperCase() + preName.substring(1));
+                preName = "has" + (colType.contains("Part") ? "Part" : colType);
             } else {
                 // object collection linking
                 preName = colType.substring(0, 1).toLowerCase() + colType.substring(1);

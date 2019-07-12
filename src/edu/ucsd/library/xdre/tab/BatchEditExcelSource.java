@@ -1,16 +1,21 @@
 package edu.ucsd.library.xdre.tab;
 
-import static edu.ucsd.library.xdre.tab.TabularRecord.COMPONENT;
-import static edu.ucsd.library.xdre.tab.TabularRecord.OBJECT_COMPONENT_TYPE;
-import static edu.ucsd.library.xdre.tab.TabularRecord.OBJECT_ID;
-import static edu.ucsd.library.xdre.tab.TabularRecord.SUBCOMPONENT;
+import static edu.ucsd.library.xdre.tab.TabularRecordBasic.COMPONENT;
+import static edu.ucsd.library.xdre.tab.TabularRecordBasic.OBJECT_COMPONENT_TYPE;
+import static edu.ucsd.library.xdre.tab.TabularRecordBasic.OBJECT_ID;
+import static edu.ucsd.library.xdre.tab.TabularRecordBasic.SUBCOMPONENT;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+
+import edu.ucsd.library.xdre.utils.Constants;
 
 /**
  * RecordSource implementation for batch editing that uses Apache POI to read Excel (OLE or XML)
@@ -19,9 +24,11 @@ import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
  */
 public class BatchEditExcelSource extends ExcelSource {
 
+    protected static Map<String, List<String>> EDIT_CONTROL_VALUES = new HashMap<>();
+
     public BatchEditExcelSource(File f, List<String> controlFields) throws IOException,
             InvalidFormatException {
-        super(f, controlFields, false);
+        super(f, controlFields, false, EDIT_CONTROL_VALUES);
     }
 
     /**
@@ -133,4 +140,45 @@ public class BatchEditExcelSource extends ExcelSource {
         return false;
     }
 
+    /**
+     * Initiate the control values with the standard input template for column names (sheet name: Item description), 
+     * select header names (sheet name: Select-a-header values) and field values (sheet name: CV values)
+     * And add fields required for batch overlay validation.
+     * @param template
+     * @throws Exception 
+     */
+    public synchronized static void initControlValues(File template) throws Exception 
+    {
+        if (EDIT_CONTROL_VALUES.size() == 0) {
+            ExcelSource.initControlValues(template);
+
+            EDIT_CONTROL_VALUES.putAll(CONTROL_VALUES);
+
+            // Add rights validation fields
+            for (int i = 0; i < RIGHTS_VALIDATION_FIELDS.length; i++) {
+                addValidationField(RIGHTS_VALIDATION_FIELDS[i].toLowerCase());
+            }
+
+            // Add additional validation fields that are not in Excel InputStream
+            if (StringUtils.isNotBlank(Constants.BATCH_ADDITIONAL_FIELDS)) {
+                String[] additionalFields = Constants.BATCH_ADDITIONAL_FIELDS.split(",");
+                for (int i = 0; i < additionalFields.length; i++) {
+                    addValidationField(additionalFields[i].trim().toLowerCase());
+                }
+            }
+
+            // add supported ISO date formats for validation
+            addDateValidationFromats(EDIT_CONTROL_VALUES);
+        }
+    }
+
+    /*
+     * Add field for validation
+     * @param fieldName
+     */
+    protected static void addValidationField(String fieldName) {
+        if (!EDIT_CONTROL_VALUES.containsKey(fieldName)) {
+            EDIT_CONTROL_VALUES.put(fieldName, new ArrayList<String>());
+        }
+    }
 }

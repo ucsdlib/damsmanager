@@ -38,7 +38,7 @@ public class SubjectImportController implements Controller {
 		// initiate column name and control values for validation
 		String validateTemplate = request.getServletContext().getRealPath("files/xls_standard_input_template.xlsx");
 		try {
-			ExcelSource.initControlValues(new File( validateTemplate), false);
+			ExcelSource.initControlValues(new File( validateTemplate));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
