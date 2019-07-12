@@ -409,6 +409,9 @@ public class TabularRecord extends TabularRecordBasic
             case "scientific name":
                 localName = "scientificName";
                 break;
+            case "culturalcontext":
+                localName = "culturalContext";
+                break;
             default:
                 String elemName = toCamelCase(label);
                 localName = elemName.substring(0, 1).toLowerCase() + elemName.substring(1);
