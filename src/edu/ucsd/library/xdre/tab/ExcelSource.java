@@ -52,9 +52,9 @@ public class ExcelSource implements RecordSource
     public static final String LICENSE_BEGIN_DATE = "license:beginDate";
     public static final String LICENSE_END_DATE = "license:endDate";
 
-    private static final String[] DATE_FIELDS = {BEGIN_DATE, END_DATE, LICENSE_BEGIN_DATE, LICENSE_END_DATE};
-    private static Map<String, List<String>> CONTROL_VALUES = new HashMap<>();
-    
+    protected static final String[] DATE_FIELDS = {BEGIN_DATE, END_DATE, LICENSE_BEGIN_DATE, LICENSE_END_DATE};
+    protected static Map<String, List<String>> CONTROL_VALUES = new HashMap<>();
+
     protected int lastRow;
     protected int currRow;
 
@@ -68,6 +68,8 @@ public class ExcelSource implements RecordSource
     private List<String> controlFields = new ArrayList<>(); // control fields that need to validate or ignore during validation
     private boolean validateControlFieldsOnly = false;      // flag to control either validate the control fields or ignore them.
     Map<String,String> cache;
+
+    private Map<String, List<String>> controlValues = new HashMap<>();
 
     // flag for watermarking
     protected boolean watermarking = false;
@@ -98,6 +100,15 @@ public class ExcelSource implements RecordSource
     }
 
     /**
+     * Create an ExcelSource object from an Excel file on disk with ignored fields and control values.
+    **/
+    public ExcelSource( File f, List<String> controlFields, boolean validateControlFieldsOnly,
+            Map<String, List<String>> controlValues ) throws IOException, InvalidFormatException
+    {
+        this( new FileInputStream(f), controlFields, validateControlFieldsOnly, controlValues );
+    }
+
+    /**
      * Create an ExcelSource object from an InputStream
     **/
     public ExcelSource( InputStream in )
@@ -120,6 +131,17 @@ public class ExcelSource implements RecordSource
     public ExcelSource( InputStream in, List<String> controlFields, boolean validateControlFieldsOnly )
         throws IOException, InvalidFormatException
     {
+        this(in, controlFields, validateControlFieldsOnly, CONTROL_VALUES);
+    }
+
+    /**
+     * Create an ExcelSource object from an InputStream with ignored fields and allowedFields
+    **/
+    public ExcelSource( InputStream in, List<String> controlFields, boolean validateControlFieldsOnly,
+            Map<String, List<String>> controlValues )
+        throws IOException, InvalidFormatException
+    {
+        this.controlValues = controlValues;
         this.validateControlFieldsOnly = validateControlFieldsOnly;
         if ( controlFields != null )
             this.controlFields.addAll(controlFields);
@@ -153,8 +175,8 @@ public class ExcelSource implements RecordSource
                     // report invalid subject import headers
                     if ( StringUtils.isNotBlank(header) && !controlFields.contains(headerToValidate(header)) )
                         invalidHeaders.add(header); 
-                } else if ( CONTROL_VALUES != null && CONTROL_VALUES.size() > 0 
-                        && StringUtils.isNotBlank(header) && !CONTROL_VALUES.containsKey(headerToValidate(lcHeader)) )
+                } else if ( controlValues != null && controlValues.size() > 0 
+                        && StringUtils.isNotBlank(header) && !controlValues.containsKey(headerToValidate(lcHeader)) )
                 {
                     invalidHeaders.add(header);
                 }
@@ -284,7 +306,7 @@ public class ExcelSource implements RecordSource
 
                         // check for invalid control values
                         String originalHeader = originalHeaders.get(header);
-                        List<String> validValue = CONTROL_VALUES.get(headerToValidate(header));
+                        List<String> validValue = controlValues.get(headerToValidate(header));
                         if (validValue != null && validValue.size() > 0) 
                         {
                             if (originalHeader.equalsIgnoreCase(headerToValidate(BEGIN_DATE))
@@ -487,7 +509,7 @@ public class ExcelSource implements RecordSource
      * @param template
      * @throws Exception 
      */
-    public synchronized static void initControlValues(File template, boolean edit) throws Exception 
+    public synchronized static void initControlValues(File template) throws Exception 
     {
         if ( CONTROL_VALUES == null || CONTROL_VALUES.size() == 0 )
         {
@@ -503,7 +525,7 @@ public class ExcelSource implements RecordSource
             Sheet selectHeaderSheet = book.getSheet("Select-a-header values");
 
             // initiate the control values for column names
-            initControlValues(columnsSheet, selectHeaderSheet, cvsSheet, edit);
+            initControlValues(columnsSheet, selectHeaderSheet, cvsSheet);
         }
     }
 
@@ -513,7 +535,7 @@ public class ExcelSource implements RecordSource
      * @param cvs
      * @throws Exception 
      */
-    private static void initControlValues(Sheet columns, Sheet selectHeaderSheet, Sheet cvs, boolean edit) throws Exception 
+    private static void initControlValues(Sheet columns, Sheet selectHeaderSheet, Sheet cvs) throws Exception 
     {
         CONTROL_VALUES = new HashMap<>();
         List<String> cvHeaders = new ArrayList<>();
@@ -562,20 +584,6 @@ public class ExcelSource implements RecordSource
         // ARK column
         if (!CONTROL_VALUES.containsKey("ark"))
             CONTROL_VALUES.put("ark", new ArrayList<String>());
-
-        // add rights and collection columns for validation
-        if (edit) {
-            for (int i = 0; i < RIGHTS_VALIDATION_FIELDS.length; i++) {
-                addValidationField(RIGHTS_VALIDATION_FIELDS[i].toLowerCase());
-            }
-
-            if (StringUtils.isNotBlank(Constants.BATCH_ADDITIONAL_FIELDS)) {
-                String[] additionalFields = Constants.BATCH_ADDITIONAL_FIELDS.split(",");
-                for (int i = 0; i < additionalFields.length; i++) {
-                    addValidationField(additionalFields[i].trim().toLowerCase());
-                }
-            }
-        }
 
         // select-a-header columns names
         for ( Iterator<Row> it = selectHeaderSheet.rowIterator(); it.hasNext(); )
@@ -662,8 +670,16 @@ public class ExcelSource implements RecordSource
         }
 
         // add supported ISO date formats for validation
+        addDateValidationFromats(CONTROL_VALUES);
+    }
+
+    /*
+     * Add supported ISO date formats for validation
+     */
+    protected static void addDateValidationFromats(Map<String, List<String>> controlValues) {
+        // add supported ISO date formats for validation
         for (String dateField : DATE_FIELDS) {
-            List<String> validDateFormats = CONTROL_VALUES.get(dateField.toLowerCase());
+            List<String> validDateFormats = controlValues.get(dateField.toLowerCase());
             if (validDateFormats != null && validDateFormats.isEmpty()) {
                 for (String dateFormat : DATETIME_FORMATS) {
                     validDateFormats.add(dateFormat);
@@ -722,16 +738,6 @@ public class ExcelSource implements RecordSource
         if (langElems.length == 2)
             value = langElems[0].trim() + delimiter + langElems[1].trim();
         return value;
-    }
-
-    /*
-     * Add field for validation
-     * @param fieldName
-     */
-    private static void addValidationField(String fieldName) {
-        if (!CONTROL_VALUES.containsKey(fieldName)) {
-            CONTROL_VALUES.put(fieldName, new ArrayList<String>());
-        }
     }
 
     /*

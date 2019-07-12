@@ -34,7 +34,7 @@ public class BatchEditExcelSourceTest extends TabularRecordTestBasic {
 
         xlsInputTemplate = getResourceFile("xls_standard_input_template.xlsx");
         xlsInputTestFile = getResourceFile("xls_batch_edit_input_test.xlsx");
-        BatchEditExcelSource.initControlValues(xlsInputTemplate, true);
+        BatchEditExcelSource.initControlValues(xlsInputTemplate);
 
         excelSource = new BatchEditExcelSource(xlsInputTestFile, Arrays.asList(ExcelSource.IGNORED_FIELDS_FOR_OBJECTS));
     }
