@@ -139,7 +139,7 @@ public class TabularRecord extends TabularRecordBasic
         }
 
         // object metadata
-        addFields( root, data, 0, ark );
+        addFields( root, 0, ark );
 
         // component metadata
         serializeComponents (root, cmp, ark);
@@ -153,7 +153,7 @@ public class TabularRecord extends TabularRecordBasic
         	TabularRecord component = cmps.get(i);
             Element e = addElement(parent, "hasComponent", damsNS, "Component", damsNS);
             addTextElement( e, "order", damsNS, "" + (i + 1));
-            addFields(e, component.getData(), ++cmpCounter, ark); // 1-based component ids
+            component.addFields(e, ++cmpCounter, ark); // 1-based component ids
             List<TabularRecord> subCmps = component.getComponents();
             // sub-component metadata
             serializeComponents (e, subCmps, ark);
@@ -165,7 +165,7 @@ public class TabularRecord extends TabularRecordBasic
      * fields with the key mapping between field names and dams4 structure
      * @throws Exception 
     **/
-    private void addFields( Element e, Map<String,String> data, int cmp, String ark ) throws Exception
+    private void addFields( Element e, int cmp, String ark ) throws Exception
     {
         titleProcessed = false;
         cartographicsProcessed = false;

@@ -1,6 +1,9 @@
 package edu.ucsd.library.xdre.tab;
 
 import static edu.ucsd.library.xdre.tab.TabularRecord.DELIMITER;
+import static edu.ucsd.library.xdre.tab.TabularRecordBasic.addElement;
+import static edu.ucsd.library.xdre.tab.TabularRecordBasic.damsNS;
+import static edu.ucsd.library.xdre.tab.TabularRecordBasic.rdfNS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -10,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.dom4j.Document;
+import org.dom4j.Element;
 import org.dom4j.Node;
 import org.junit.Test;
 
@@ -18,7 +22,7 @@ import org.junit.Test;
  * @author lsitu
  *
  */
-public class TabularRecordTest {
+public class TabularRecordTest extends TabularRecordTestBasic {
 
     @Test
     public void testSplitValueWithControlCharacters() {
@@ -115,5 +119,27 @@ public class TabularRecordTest {
         assertEquals("Value 1 doesn't match!", "Test value 1 "+ lf + " <a href=\"http:\\example.com\"></a>", result.get(0));
         assertEquals("Value 2 doesn't match!", "Test value 2 \\"+ lf + " <a href=\"http:\\example.com\"></a>", result.get(1));
         assertEquals("Value 3 doesn't match!", "Test value 3 "+ lf + " <a href=\"http:\\example.com\"></a>", result.get(2));
+    }
+
+    @Test
+    public void testComponentTitle() throws Exception {
+        String objTitle = "Test object";
+        String objArk = "zzxxxxxxxx";
+
+        Map<String, String> objectData = createDataWithTitle(objArk, objTitle, "object");
+        String compTitle = getOverlayValue(objTitle + " Component1");
+        Map<String, String> compData = createDataWithTitle(objArk, compTitle, "component");
+
+        // Create record with data overlay
+        TabularRecord testObject = new TabularRecord(objectData);
+        TabularRecord testComponent = new TabularRecord(compData);
+        testObject.addComponent(testComponent);
+        Document doc = testObject.toRDFXML();
+        String actualObjTitle = doc.selectSingleNode("//dams:Object/dams:title//mads:authoritativeLabel").getText();
+        assertEquals("Object title doesn't match!", objTitle, actualObjTitle);
+        List<Node> nodes = doc.selectNodes("//dams:hasComponent/dams:Component");
+        assertEquals("The size of component doesn't match!", 1, nodes.size());
+        String actualCompTitle = nodes.get(0).selectSingleNode("dams:title//mads:authoritativeLabel").getText();
+        assertEquals("Component title doesn't match!", compTitle, actualCompTitle);
     }
 }
