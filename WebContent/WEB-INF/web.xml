@@ -86,7 +86,6 @@
             <url-pattern>/statsWeblogAnalyzer.do</url-pattern>
             <url-pattern>/statsQuantityAnalyzer.do</url-pattern>
             <url-pattern>/collectionsReport.do</url-pattern>
-            <url-pattern>/collectionStatusReport.do</url-pattern>
             <url-pattern>/cilHarvest.do</url-pattern>
         </web-resource-collection>
         <auth-constraint>
@@ -119,6 +118,7 @@
             <url-pattern>/fileReplace.do</url-pattern>
             <url-pattern>/batchExport.do</url-pattern>
             <url-pattern>/batchEdit.do</url-pattern>
+            <url-pattern>/collectionStatusReport.do</url-pattern>
         </web-resource-collection>
         <auth-constraint>
             <role-name>32</role-name>
