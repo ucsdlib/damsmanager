@@ -703,9 +703,9 @@ public class CollectionOperationController implements Controller {
 								  clientTool = "Excel";
 
 								  // initiate ignored fields for objects and collections
-								  List<String> ignoredFields = null;
+								  List<String> ignoredFields = new ArrayList<>();
 								  if (collectionImport) {
-									  ignoredFields = Arrays.asList(ExcelSource.IGNORED_FIELDS_FOR_COLLECTIONS);
+								      ignoredFields.addAll(Arrays.asList(ExcelSource.IGNORED_FIELDS_FOR_COLLECTIONS));
 									  // Fields not required for collection import tool
 									  ignoredFields.addAll(Arrays.asList(ExcelSource.RIGHTS_VALIDATION_FIELDS));
 
