@@ -2,6 +2,7 @@ package edu.ucsd.library.xdre.collection;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -13,6 +14,7 @@ import org.dom4j.QName;
 
 import edu.ucsd.library.xdre.utils.Constants;
 import edu.ucsd.library.xdre.utils.DAMSClient;
+import edu.ucsd.library.xdre.web.CollectionStatusReportController;
 
 /**
  * 
@@ -94,7 +96,7 @@ public class CollectionReleaseHandler extends CollectionHandler{
 	 * Procedure to release objects in a collection
 	 */
 	public boolean execute() throws Exception {
-		
+
 		if (releaseOption.equalsIgnoreCase(RELEASE_MERGE) && StringUtils.isBlank(collectionToMerge)){
 			// Reject release for merging with no collection to merge to.
 			exeResult = false;
@@ -102,12 +104,14 @@ public class CollectionReleaseHandler extends CollectionHandler{
 		}else{
 			
 			if (releaseOption.equalsIgnoreCase(RELEASE_COLLECTION)) {
-				
+
 				// Update the collection's visibility property
+				String currVisibility = null;
 				Document doc = damsClient.getRecord(collectionId);
 				Node visibilityNode = doc.selectSingleNode(
 						"//*[contains(@rdf:about, '" + collectionId + "')]/*[local-name() = '" + PREDICATE_VISIBILITY + "']");
 				if (visibilityNode != null) {
+					currVisibility = visibilityNode.getText();
 					((Element)visibilityNode).setText(releaseState);
 				} else {
 					// Add the visibility property when there no no such property found
@@ -127,7 +131,19 @@ public class CollectionReleaseHandler extends CollectionHandler{
 				}
 				
 				// Update SOLR for the collection record: this will trigger the collection release event
-				if(!updateSOLR(collectionId, DAMSClient.RECORD_RELEASED)) {
+				// Exclude reverse release and public visibility collections from tagging for releasing.
+				String action = DAMSClient.RECORD_RELEASED;
+				if (releaseState.equals(CURATOR_ACCESS)
+						|| StringUtils.isNotBlank(currVisibility) && currVisibility.equalsIgnoreCase(PUBLIC_ACCESS)) {
+					action = null;
+				} else {
+					// lookup all release events to exclude it from counting on releasing again
+					if (collectionReleased(doc)) {
+						action = null;
+					}
+				}
+
+				if (!updateSOLR(collectionId, action)) {
 					exeResult = false;
 					failedCount++;
 					solrUpdateFailed.append(collectionId);
@@ -263,6 +279,39 @@ public class CollectionReleaseHandler extends CollectionHandler{
 			}
 		}
 		return results;
+	}
+
+	/*
+	 * Determine whether a collection was tagged as released in the past or not.
+	 * @param doc
+	 * @return
+	 */
+	private boolean collectionReleased(Document doc) throws Exception {
+		boolean hasBeenReleased = false;
+
+		DAMSClient damsClientEvent = null; // query events
+		try {
+			damsClientEvent = new DAMSClient(Constants.DAMS_STORAGE_URL);
+			damsClientEvent.setTripleStore("events"); // set event triplestore
+
+			// lookup all release events to exclude it from counting on releasing again
+			String sparql = CollectionStatusReportController.buildEventSparql(DAMSClient.RECORD_RELEASED, null, null);
+			List<Map<String, String>> releasedEvents = damsClientEvent.sparqlLookup(sparql);
+
+			for (Map<String, String> releaseEvent : releasedEvents) {
+
+				if (doc.selectSingleNode("//dams:event[@rdf:resource='" + releaseEvent.get("e") + "']") != null) {
+				    hasBeenReleased = true;
+					break;
+				}
+			}
+		} finally {
+			if (damsClientEvent != null) {
+				damsClientEvent.close();
+			}
+		}
+
+		return hasBeenReleased;
 	}
 
 	/**

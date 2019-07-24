@@ -137,7 +137,7 @@ public class CollectionStatusReportController implements Controller {
      * @param beginDate
      * @return
      */
-    private static String buildEventSparql(String eventType, String beginDate, String endDate) throws ParseException {
+    public static String buildEventSparql(String eventType, String beginDate, String endDate) throws ParseException {
         String searchEndDate = endDate;
         if (StringUtils.isNotBlank(endDate)) {
             // set date range to include the whole end date
@@ -148,11 +148,18 @@ public class CollectionStatusReportController implements Controller {
         }
 
         String sparql = "SELECT ?e WHERE {?e <" + DAMSClient.PREDICATE_EVENT_TYPE + "> '\""
-                + eventType  + "\"' . ?e <" + DAMSClient.PREDICATE_EVENT_DATE + "> ?date . FILTER (?date > '\"" + beginDate + "\"'";
-        if (StringUtils.isNotBlank(endDate)) {
-            sparql += " && ?date < '\"" + searchEndDate + "\"'";
+                + eventType  + "\"' . ?e <" + DAMSClient.PREDICATE_EVENT_DATE + "> ?date";
+
+        if (StringUtils.isNotBlank(beginDate) || StringUtils.isNotBlank(endDate)) {
+            sparql += " . FILTER (" 
+                            + (StringUtils.isNotBlank(beginDate) ? "?date > '\"" + beginDate + "\"'"
+                                : StringUtils.isNotBlank(beginDate) && StringUtils.isNotBlank(searchEndDate) ? " && "
+                                : StringUtils.isNotBlank(searchEndDate) ?  "?date < '\"" + searchEndDate + "\"'"
+                                : "")
+                            + ")";
+
         }
-        sparql += ")}";
+        sparql += "}";
 
         return sparql;
     }
