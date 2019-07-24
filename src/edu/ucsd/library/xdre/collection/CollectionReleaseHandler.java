@@ -131,16 +131,12 @@ public class CollectionReleaseHandler extends CollectionHandler{
 				}
 				
 				// Update SOLR for the collection record: this will trigger the collection release event
-				// Exclude reverse release and public visibility collections from tagging for releasing.
+				// Exclude reverse release, public collections, and released collections from tagging for releasing again.
 				String action = DAMSClient.RECORD_RELEASED;
 				if (releaseState.equals(CURATOR_ACCESS)
-						|| StringUtils.isNotBlank(currVisibility) && currVisibility.equalsIgnoreCase(PUBLIC_ACCESS)) {
+						|| StringUtils.isNotBlank(currVisibility) && currVisibility.equalsIgnoreCase(PUBLIC_ACCESS)
+						|| collectionReleased(doc)) {
 					action = null;
-				} else {
-					// lookup all release events to exclude it from counting on releasing again
-					if (collectionReleased(doc)) {
-						action = null;
-					}
 				}
 
 				if (!updateSOLR(collectionId, action)) {
