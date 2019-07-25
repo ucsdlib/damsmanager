@@ -676,7 +676,7 @@
             <xsl:for-each select="dams:hasComponent/dams:Component">
                 <xsl:sort select="dams:order" data-type="number" order="ascending" />
                 <xsl:call-template name="damsComponent">
-                   <xsl:with-param name="objectId"><xsl:value-of select="$objectId" /></xsl:with-param>
+                   <xsl:with-param name="objectId"><xsl:value-of select="substring-after(@rdf:about, '/20775/')" /></xsl:with-param>
                    <xsl:with-param name="depth"><xsl:value-of select="$depth + 1"/></xsl:with-param>
                </xsl:call-template>
             </xsl:for-each>
