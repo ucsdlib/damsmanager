@@ -42,6 +42,7 @@ public abstract class CilHavestingTestBase {
     protected static final String SOURCE_IMAGEDESCRIPTION_FREE_TEXT = FieldMappings.SOURCE_CORD_PREFFIX + "IMAGEDESCRIPTION.free_text";
     protected static final String SOURCE_CITATION_DOI = "CIL_CCDB.Citation.DOI";
     protected static final String SOURCE_ITEMTYPE_ONTO_NAME = FieldMappings.SOURCE_CORD_PREFFIX + "ITEMTYPE.onto_name";
+    protected static final String SOURCE_TERMSANDCONDITIONS_FREE_TEXT = FieldMappings.SOURCE_CORD_PREFFIX + "TERMSANDCONDITIONS.free_text";
 
     protected File createJsonTestFile(String fileName) throws IOException {
         String json = "{\"CIL_CCDB\": {" +
@@ -235,6 +236,9 @@ public abstract class CilHavestingTestBase {
 
         String[] identifierFields = {OBJECT_UNIQUE_ID, FieldMappings.IDENTIFIER_SAMPLENUMBER};
         fieldMappings.put(SOURCE_IDENTIFIER.toLowerCase(), Arrays.asList(identifierFields));
+
+        String[] copyrightNoteFields = {TabularRecord.COPYRIGHT_NOTE};
+        fieldMappings.put(SOURCE_TERMSANDCONDITIONS_FREE_TEXT.toLowerCase(), Arrays.asList(copyrightNoteFields));
 
         String[] fileNameFields = {FieldMappings.FILE_NAME};
         fieldMappings.put(FieldMappings.SOURCE_IMAGE_FILE_PATH.toLowerCase(), Arrays.asList(fileNameFields));

@@ -46,14 +46,23 @@ public class CilHavestingTest extends CilHavestingTestBase {
         CilHarvesting cilHarvesting = new CilHarvesting(fieldMappings, constantFields, Arrays.asList(files));
         TabularRecord rec = (TabularRecord) cilHarvesting.nextRecord();
         assertTrue("Subject:anatomy does't match.", rec.getData().get("subject:anatomy").contains("membrane"));
+
         Map<String, String> subjectHeadings = cilHarvesting.getSubjectHeadings();
-        for (String key : subjectHeadings.keySet()) {
-            System.out.println(key + "=>" + subjectHeadings.get(key));
-        }
         assertTrue("Subject:anatomy CloseMatch does't match.", subjectHeadings.containsKey("subject:anatomy|GO:0016020"));
         assertEquals("Subject:anatomy doesn't match.", "membrane", subjectHeadings.get("subject:anatomy|GO:0016020"));
         assertTrue("CSV output for subject:anatomy CloseMatch does't match.",
                 cilHarvesting.getSubjectHeadingsCsv().contains("Subject:anatomy,,GO:0016020,membrane\n"));
+    }
+
+    @Test
+    public void testExtractCopyrightNode() throws Exception {
+        String[] files = {createJsonDataFile("test123.json").getAbsolutePath()};
+        CilHarvesting cilHarvesting = new CilHarvesting(fieldMappings, constantFields, Arrays.asList(files));
+        TabularRecord rec = (TabularRecord) cilHarvesting.nextRecord();
+        assertEquals("CopyrightNote does't match.", "attribution_nc_sa", rec.getData().get(TabularRecord.COPYRIGHT_NOTE.toLowerCase()));
+
+        Document doc = rec.toRDFXML();
+        assertEquals("attribution_nc_sa", doc.valueOf("//dams:Object/dams:copyright//dams:copyrightNote"));
     }
 
     @Test
