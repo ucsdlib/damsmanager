@@ -35,6 +35,7 @@ public class TabularRecord extends TabularRecordBasic
     protected boolean titleProcessed = false;
     protected boolean cartographicsProcessed = false;
     protected boolean fileProcessed = false;
+    protected boolean copyrightProcessed = false;
 
     // flag for watermarking
     private boolean watermarking = false;
@@ -170,6 +171,7 @@ public class TabularRecord extends TabularRecordBasic
         titleProcessed = false;
         cartographicsProcessed = false;
         fileProcessed = false;
+        copyrightProcessed = false;
 
         String objectID = data.get("object unique id");
         if ( ark == null ) { ark = "ARK"; }
@@ -289,6 +291,13 @@ public class TabularRecord extends TabularRecordBasic
             cartographicsProcessed = true;
 
             addCartographics(e);
+        }
+
+        // Copyright: Added for CIL mapping of copyright note ////////////////////////////////////////////////////////////////////
+        if (key.startsWith("copyright") && !copyrightProcessed) {
+            copyrightProcessed = true;
+
+            addCopyright(e);
         }
 
         // collection related ///////////////////////////////////////////////////////////

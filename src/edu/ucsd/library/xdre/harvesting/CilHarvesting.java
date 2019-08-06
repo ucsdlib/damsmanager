@@ -46,6 +46,7 @@ public class CilHarvesting implements RecordSource {
 
     private static SimpleDateFormat YEAR_FORMATTER = new SimpleDateFormat("yyyy");
     private static final String CIL_TEXT = "CIL";
+    private static final String COPYRIGHT_TEXT = "copyright";
 
     private static final String SOURCE_ONTO_NAME_SUBFFIX = ".onto_name";
     private static final String SOURCE_FREE_TEXT_SUBFFIX = ".free_text";
@@ -120,6 +121,19 @@ public class CilHarvesting implements RecordSource {
         } finally {
             // collect subject headings for export
             collectSubjectHeadings(data);
+        }
+
+        if (record != null) {
+            // Ignore copyrighted records (copyright note: copyright)
+            String copyrightNote = record.getData().remove(FieldMappings.COPYRIGHT_NOTE);
+            if (StringUtils.isNotBlank(copyrightNote)) {
+                if (copyrightNote.equalsIgnoreCase(COPYRIGHT_TEXT)) {
+                    return nextRecord();
+                }
+
+                // Use copyrightNote header that is used in batch export/overlay
+                record.getData().put(TabularRecord.COPYRIGHT_NOTE, copyrightNote);
+            }
         }
 
         return record;
