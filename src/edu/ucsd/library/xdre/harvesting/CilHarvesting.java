@@ -15,9 +15,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -47,6 +49,7 @@ public class CilHarvesting implements RecordSource {
 
     private static final String SOURCE_ONTO_NAME_SUBFFIX = ".onto_name";
     private static final String SOURCE_FREE_TEXT_SUBFFIX = ".free_text";
+    private static final String SOURCE_ONTO_ID_SUBFFIX = ".onto_id";
 
     private Map<String, List<String>> fieldMappings = null;
     private Map<String, String> constantFields = null;
@@ -127,7 +130,9 @@ public class CilHarvesting implements RecordSource {
      * @param data
      */
     private void collectSubjectHeadings(Map<String, String> data) {
-        for (String key : data.keySet()) {
+        Set<String> keys = new HashSet<>(data.keySet());
+
+        for (String key : keys) {
             if (key.toLowerCase().startsWith("subject")) {
                 if (subjectHeadings.containsKey(key)) {
                     String newValues = data.get(key);
@@ -135,15 +140,35 @@ public class CilHarvesting implements RecordSource {
                     List<String> existingSubjects = Arrays.asList(existingValues.split("\\" + TabularRecord.DELIMITER));
                     for (String subject : newValues.split("\\" + TabularRecord.DELIMITER)) {
                         if (!existingSubjects.contains(subject)) {
-                            existingValues += "|" + subject;
+                            existingValues += TabularRecord.DELIMITER + subject;
                         }
                     }
                     subjectHeadings.put(key, existingValues);
                 } else {
                     subjectHeadings.put(key, data.get(key));
                 }
+
+                // Merge subject headings w/o closeMatch, which is exported in subject headings.
+                String ingestField = key;
+                if (key.contains("" + TabularRecord.DELIMITER)) {
+                    String values = data.remove(key);
+                    ingestField = key.substring(0, key.lastIndexOf(TabularRecord.DELIMITER));
+                    if (data.containsKey(ingestField)) {
+                        values = data.get(ingestField) + TabularRecord.DELIMITER + values;
+                    }
+
+                    data.put(ingestField, values);
+                }
             }
         }
+    }
+
+    /**
+     * Get subject headings data map
+     * @return
+     */
+    public Map<String, String> getSubjectHeadings() {
+        return subjectHeadings;
     }
 
     /**
@@ -155,10 +180,25 @@ public class CilHarvesting implements RecordSource {
         csvBuilder.append("subject type,exactMatch,closeMatch,subject term\n");
         for (String key : subjectHeadings.keySet()) {
             String[] values = subjectHeadings.get(key).split("\\" + TabularRecord.DELIMITER);
+
+            // handle subject headings with closeMatch
+            String origKey = key;
+            String closeMatch = "";
+            if (key.contains("" + TabularRecord.DELIMITER)) {
+                key = origKey.substring(0, origKey.lastIndexOf(TabularRecord.DELIMITER));
+                closeMatch = origKey.substring(origKey.lastIndexOf(TabularRecord.DELIMITER) + 1);
+            }
+
             String header = capitalized(key);
             for (String value : values) {
                 csvBuilder.append(RDFExcelConvertor.escapeCsv(header));
-                csvBuilder.append(",,,");
+                csvBuilder.append(",,");
+
+                if (StringUtils.isNotBlank(closeMatch)) {
+                    csvBuilder.append(closeMatch);
+                }
+
+                csvBuilder.append(",");
                 csvBuilder.append(RDFExcelConvertor.escapeCsv(value));
                 csvBuilder.append("\n");
             }
@@ -227,8 +267,18 @@ public class CilHarvesting implements RecordSource {
                     }
 
                     if (mValue.length() > 0) {
+                        // extract closeMatch for subject headings
+                        String closeMatch = null;
+                        if (ingestField.toLowerCase().startsWith("subject:") && currPath.endsWith(SOURCE_ONTO_NAME_SUBFFIX)) {
+                            String closeMatchPath = currPath.replace(SOURCE_ONTO_NAME_SUBFFIX, SOURCE_ONTO_ID_SUBFFIX);
+                            List<String> closeMatchs = getFieldValues(parentData, jsonData, closeMatchPath,
+                                    SOURCE_ONTO_ID_SUBFFIX.substring(1), ingestField);
+                            if (closeMatchs != null && closeMatchs.size() > 0)
+                                closeMatch = closeMatchs.get(0);
+                        }
+
                         // multiple values mapping field
-                        addDataField(data, currPath, ingestField, mValue);
+                        addDataField(data, currPath, ingestField, mValue, closeMatch);
                     }
                 }
             } else if (currPath.equalsIgnoreCase(FieldMappings.SOURCE_ATTRIBUTION_URLS)) {
@@ -319,15 +369,34 @@ public class CilHarvesting implements RecordSource {
      * @param value
      */
     private void addDataField(Map<String, String> data, String srcPath, String ingestField, String value) {
+        addDataField(data, srcPath, ingestField, value, null);
+    }
+
+    /*
+     * Add converted dams4 fields/metadata with Excel InpuStream heading with closeMatch
+     * @param data
+     * @param srcPath
+     * @param ingestField
+     * @param value
+     * @param closeMatch
+     */
+    private void addDataField(Map<String, String> data, String srcPath, String ingestField,
+            String value, String closeMatch) {
         String valConverted = convertValue(srcPath, ingestField, value);
-        String existing = data.get(ingestField.toLowerCase());
+
+        String headerKey = ingestField.toLowerCase();
+        if (StringUtils.isNotBlank(closeMatch)) {
+            headerKey += TabularRecord.DELIMITER + closeMatch;
+        }
+
+        String existing = data.get(headerKey);
         if (StringUtils.isNotBlank(existing)) {
             existing += TabularRecord.DELIMITER + valConverted;
         } else {
             existing = valConverted;
         }
 
-        data.put(ingestField.toLowerCase(), existing);
+        data.put(headerKey, existing);
     }
 
     /*

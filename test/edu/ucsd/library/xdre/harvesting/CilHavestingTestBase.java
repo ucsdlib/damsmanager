@@ -27,11 +27,15 @@ public abstract class CilHavestingTestBase {
     protected static final String RELATED_RESOURCE_RELATED = "Related resource:related";
     protected static final String PERSON_RESEARCHER = "person:researcher";
     protected static final String SUBJECT_TOPIC = "subject:topic";
+    protected static final String SUBJECT_ANATOMY = "subject:anatomy";
     protected static final String NOTE_METHODS = "Note:methods";
     protected static final String NOTE_DESCRIPTION = "Note:description";
     protected static final String SOURCE_IDENTIFIER = "identifier / json file name for object";
     protected static final String SOURCEOFCONTRAST_ONTO_NAME = FieldMappings.SOURCE_CORD_PREFFIX + "SOURCEOFCONTRAST.onto_name";
     protected static final String SOURCE_ATTRIBUTION_CONTRIBUTORS = FieldMappings.SOURCE_CORD_PREFFIX + "ATTRIBUTION.Contributors";
+    protected static final String SOURCE_CELLULARCOMPONENT_ONTO_NAME = FieldMappings.SOURCE_CORD_PREFFIX + "CELLULARCOMPONENT.onto_name";
+    protected static final String SOURCE_CELLULARCOMPONENT_ONTO_ID = FieldMappings.SOURCE_CORD_PREFFIX + "CELLULARCOMPONENT.onto_id";
+    protected static final String SOURCE_CELLULARCOMPONENT_FREE_TEXT = FieldMappings.SOURCE_CORD_PREFFIX + "CELLULARCOMPONENT.free_text";
     protected static final String SOURCE_BIOLOGICALPROCESS_ONTO_NAME = FieldMappings.SOURCE_CORD_PREFFIX + "BIOLOGICALPROCESS.onto_name";
     protected static final String SOURCE_BIOLOGICALPROCESS_FREE_TEXT = FieldMappings.SOURCE_CORD_PREFFIX + "BIOLOGICALPROCESS.free_text";
     protected static final String SOURCE_TECHNICALDETAILS_FREE_TEXT = FieldMappings.SOURCE_CORD_PREFFIX + "TECHNICALDETAILS.free_text";
@@ -218,6 +222,10 @@ public abstract class CilHavestingTestBase {
         String[] topicFields = {SUBJECT_TOPIC};
         fieldMappings.put(SOURCE_BIOLOGICALPROCESS_ONTO_NAME.toLowerCase(), Arrays.asList(topicFields));
         fieldMappings.put(SOURCE_BIOLOGICALPROCESS_FREE_TEXT.toLowerCase(), Arrays.asList(topicFields));
+
+        String[] anatomyFields = {SUBJECT_ANATOMY};
+        fieldMappings.put(SOURCE_CELLULARCOMPONENT_ONTO_NAME.toLowerCase(), Arrays.asList(anatomyFields));
+        fieldMappings.put(SOURCE_CELLULARCOMPONENT_FREE_TEXT.toLowerCase(), Arrays.asList(anatomyFields));
 
         String[] descriptionFields = {NOTE_DESCRIPTION};
         fieldMappings.put(SOURCE_IMAGEDESCRIPTION_FREE_TEXT.toLowerCase(), Arrays.asList(descriptionFields));

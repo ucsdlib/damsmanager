@@ -41,6 +41,22 @@ public class CilHavestingTest extends CilHavestingTestBase {
     }
 
     @Test
+    public void testExtractSubjectCloseMatch() throws Exception {
+        String[] files = {createJsonDataFile("test123.json").getAbsolutePath()};
+        CilHarvesting cilHarvesting = new CilHarvesting(fieldMappings, constantFields, Arrays.asList(files));
+        TabularRecord rec = (TabularRecord) cilHarvesting.nextRecord();
+        assertTrue("Subject:anatomy does't match.", rec.getData().get("subject:anatomy").contains("membrane"));
+        Map<String, String> subjectHeadings = cilHarvesting.getSubjectHeadings();
+        for (String key : subjectHeadings.keySet()) {
+            System.out.println(key + "=>" + subjectHeadings.get(key));
+        }
+        assertTrue("Subject:anatomy CloseMatch does't match.", subjectHeadings.containsKey("subject:anatomy|GO:0016020"));
+        assertEquals("Subject:anatomy doesn't match.", "membrane", subjectHeadings.get("subject:anatomy|GO:0016020"));
+        assertTrue("CSV output for subject:anatomy CloseMatch does't match.",
+                cilHarvesting.getSubjectHeadingsCsv().contains("Subject:anatomy,,GO:0016020,membrane\n"));
+    }
+
+    @Test
     public void testExtractData() throws Exception {
         String[] files = {createJsonDataFile("test123.json").getAbsolutePath()};
         CilHarvesting cilHarvesting = new CilHarvesting(fieldMappings, constantFields, Arrays.asList(files));
@@ -73,7 +89,7 @@ public class CilHavestingTest extends CilHavestingTestBase {
         // person:researcher
         assertEquals("W. Stoeckenius", rec.getData().get(PERSON_RESEARCHER.toLowerCase()));
         // subject:topic
-        assertEquals("response to chemical stimulus|free text for response to chemical stimulus", rec.getData().get(SUBJECT_TOPIC.toLowerCase()));
+        assertTrue(rec.getData().get(SUBJECT_TOPIC.toLowerCase()).contains("response to chemical stimulus"));
         // note:methods
         assertEquals("Gustafsdottir et al. (doi:10.1371/journal.pone.0080999)", rec.getData().get(NOTE_METHODS.toLowerCase()));
 
@@ -252,7 +268,7 @@ public class CilHavestingTest extends CilHavestingTestBase {
         // person:researcher
         assertEquals("W. Stoeckenius", rec.getData().get(PERSON_RESEARCHER.toLowerCase()));
         // subject:topic
-        assertEquals("response to chemical stimulus|free text for response to chemical stimulus", rec.getData().get(SUBJECT_TOPIC.toLowerCase()));
+        assertTrue(rec.getData().get(SUBJECT_TOPIC.toLowerCase()).contains("response to chemical stimulus"));
         // note:methods
         assertEquals("Gustafsdottir et al. (doi:10.1371/journal.pone.0080999)", rec.getData().get(NOTE_METHODS.toLowerCase()));
 
