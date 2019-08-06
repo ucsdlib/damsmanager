@@ -26,6 +26,7 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 public class FieldMappings
 {
 
+    public static final String COPYRIGHT_NOTE = "copyright note";
     public static final String TITLE = "title";
     public static final String DATE_CREATION = "date:creation";
     public static final String BEGIN_DATE = "Begin date";
