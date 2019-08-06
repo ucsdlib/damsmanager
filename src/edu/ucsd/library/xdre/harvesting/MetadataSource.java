@@ -78,28 +78,31 @@ public class MetadataSource extends ContentFile {
 
             // download contents: https://cildata.crbs.ucsd.edu/media/#{videos | images}/#{filePath}
             JSONArray imageFiles = (JSONArray)cil.get(IMAGE_FILES_KEY);
-            for (int i = 0; i < imageFiles.size(); i++) {
-                String fileUrl = null;
-                String fileLocation = null;
 
-                try {
-                    String filePath = (String)((JSONObject)imageFiles.get(i)).get(FILE_PATH_KEY);
-    
-                    fileUrl = Constants.CIL_CONTENT_URL_BASE + 
-                            ((boolean)videoFormat ? VIDEO_PATH : IMAGE_PATH) + sourceId + "/" + filePath;
-                    ContentFile contentFile = new ContentFile(fileUrl, cilApiClient);
-                    fileLocation = contentFile.save(harvestDirectory, filePath);
+            if (imageFiles != null) {
+                for (int i = 0; i < imageFiles.size(); i++) {
+                    String fileUrl = null;
+                    String fileLocation = null;
 
-                    String message = "Downloaded content " + fileUrl + ": " + fileLocation;
-                    logMessage(harvestDirectory, message);
-                } catch (FileNotFoundException ex) {
-                    String error = "Content file doesn't exist: " + fileUrl;
-                    log.error(error);
-                    logMessage(harvestDirectory, error + ": " + ex.getMessage());
-                } catch (Exception ex) {
-                    String error = "Error downloading content file " + fileUrl;
-                    log.error(error + ".", ex);
-                    logMessage(harvestDirectory, error + ": " + ex.getMessage());
+                    try {
+                        String filePath = (String)((JSONObject)imageFiles.get(i)).get(FILE_PATH_KEY);
+
+                        fileUrl = Constants.CIL_CONTENT_URL_BASE + 
+                                ((boolean)videoFormat ? VIDEO_PATH : IMAGE_PATH) + sourceId + "/" + filePath;
+                        ContentFile contentFile = new ContentFile(fileUrl, cilApiClient);
+                        fileLocation = contentFile.save(harvestDirectory, filePath);
+
+                        String message = "Downloaded content " + fileUrl + ": " + fileLocation;
+                        logMessage(harvestDirectory, message);
+                    } catch (FileNotFoundException ex) {
+                        String error = "Content file doesn't exist: " + fileUrl;
+                        log.error(error);
+                        logMessage(harvestDirectory, error + ": " + ex.getMessage());
+                    } catch (Exception ex) {
+                        String error = "Error downloading content file " + fileUrl;
+                        log.error(error + ".", ex);
+                        logMessage(harvestDirectory, error + ": " + ex.getMessage());
+                    }
                 }
             }
 
