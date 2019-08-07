@@ -197,6 +197,26 @@ public abstract class CilHavestingTestBase {
         return file;
     }
 
+    protected File createJsonNoTitleFile(String fileName) throws IOException {
+        String json = "{\"CIL_CCDB\": {" +
+            "\"CIL\": {" +
+            "}," +
+            "\"Citation\": {" +
+                "\"DOI\": \"doi:10.7295/W9CIL37147\"," +
+                "\"ARK\": \"ark:/b7295/w9cil37147\"," +
+            "}" +
+        "}}";
+
+        File file = new File(fileName);
+        file.deleteOnExit();
+
+        try (FileWriter fw = new FileWriter(fileName)) {
+            fw.write(json);
+        }
+ 
+        return file;
+    }
+
     protected Map<String, List<String>> initiateFiledMappings() {
         Map<String, List<String>> fieldMappings = new HashMap<>();
 

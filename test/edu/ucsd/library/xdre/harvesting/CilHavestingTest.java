@@ -111,6 +111,16 @@ public class CilHavestingTest extends CilHavestingTestBase {
     }
 
     @Test
+    public void testJSONNoTitle() throws Exception {
+        String[] files = {createJsonNoTitleFile("test123.json").getAbsolutePath()};
+        CilHarvesting cilHarvesting = new CilHarvesting(fieldMappings, constantFields, Arrays.asList(files));
+        TabularRecord rec = (TabularRecord) cilHarvesting.nextRecord();
+
+        assertEquals("test123", rec.getData().get(FieldMappings.TITLE));
+        assertEquals("test123", rec.getData().get(FieldMappings.NOTE_PREFERRED_CITATION.toLowerCase()));
+    }
+
+    @Test
     public void testComponentData() throws Exception {
         String[] files = {createJsonComponentFile("test123.json").getAbsolutePath()};
         CilHarvesting cilHarvesting = new CilHarvesting(fieldMappings, constantFields, Arrays.asList(files));

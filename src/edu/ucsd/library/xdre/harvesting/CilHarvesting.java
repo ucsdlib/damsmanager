@@ -119,6 +119,13 @@ public class CilHarvesting implements RecordSource {
             objectsFailed.add(srcFile);
             errors.append(srcFile + ": " + ex.getMessage());
         } finally {
+            // If field CIL_CCDB.Citation.Title is missing, use Object Unique ID
+            if (StringUtils.isBlank(data.get(FieldMappings.TITLE))) {
+                
+                data.put(FieldMappings.TITLE, objId);
+                data.put(FieldMappings.NOTE_PREFERRED_CITATION.toLowerCase(), objId);
+            }
+
             // collect subject headings for export
             collectSubjectHeadings(data);
         }
