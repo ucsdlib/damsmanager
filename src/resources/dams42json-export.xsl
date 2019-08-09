@@ -9,6 +9,9 @@
       exclude-result-prefixes="dams mads owl rdf rdfs">
   <xsl:output method="text" encoding="utf-8" version="4.0"/>
 
+    <xsl:variable name="lower">abcdefgijklmnopqrstuvwxyz</xsl:variable>
+    <xsl:variable name="upper">ABCDEFGIJKLMNOPQRSTUVWXYZ</xsl:variable>
+
     <xsl:template match="rdf:RDF">
         <xsl:call-template name="startJsonObject"/>
 
@@ -399,13 +402,27 @@
         <xsl:variable name="nameArk" select="*[contains(local-name(), 'Name')]//@rdf:about | *[contains(local-name(), 'Name')]/@rdf:resource" />
         <xsl:variable name="ark"><xsl:value-of select="substring-after($nameArk, '/20775/')" /></xsl:variable>
         <xsl:variable name="role">
-          <xsl:value-of select="//mads:Authority[@rdf:about=$roleArk]/mads:authoritativeLabel | //mads:Authority[@rdf:about=$roleArk]/rdf:value"/>
+          <xsl:choose>
+              <xsl:when test="//mads:Authority[@rdf:about=$roleArk]/mads:authoritativeLabel | //mads:Authority[@rdf:about=$roleArk]/rdf:value">
+                  <xsl:value-of select="//mads:Authority[@rdf:about=$roleArk]/mads:authoritativeLabel | //mads:Authority[@rdf:about=$roleArk]/rdf:value"/>
+              </xsl:when>
+              <xsl:when test="//*[@rdf:about=$roleArk]/mads:authoritativeLabel | //*[@rdf:about=$roleArk]/rdf:value">
+                  <xsl:value-of select="concat(//*[@rdf:about=$roleArk]/mads:authoritativeLabel | //*[@rdf:about=$roleArk]/rdf:value, 'Corrupted')"/>
+              </xsl:when>
+              <xsl:otherwise>
+                  <xsl:value-of select="substring-after($roleArk, '/20775/')"/>
+              </xsl:otherwise>
+          </xsl:choose>
         </xsl:variable>
         <xsl:variable name="name">
             <xsl:choose>
-                <xsl:when test="*[contains(local-name(), 'personal')]">Person</xsl:when>
-                <xsl:when test="*[contains(local-name(), 'corporate')]">Corporate</xsl:when>
-                <xsl:otherwise>Name</xsl:otherwise>
+                <xsl:when test="*[contains(local-name(), 'personal')] and //mads:PersonalName[@rdf:about=$nameArk]">Person</xsl:when>
+                <xsl:when test="*[contains(local-name(), 'corporate')] and //mads:CorporateName[@rdf:about=$nameArk]">Corporate</xsl:when>
+                <xsl:when test="*[local-name()='name'] and //mads:Name[@rdf:about=$nameArk]">Name</xsl:when>
+                <xsl:when test="*[contains(local-name(), 'personal')]">PersonCorrupted</xsl:when>
+                <xsl:when test="*[contains(local-name(), 'corporate')]">CorporateCorrupted</xsl:when>
+                <xsl:when test="*[local-name()='name']">NameCorrupted</xsl:when>
+                <xsl:otherwise>NameUnknown</xsl:otherwise>
             </xsl:choose>
         </xsl:variable>
         <xsl:call-template name="appendJsonObject">
@@ -617,6 +634,29 @@
 
     <xsl:template name="damsResource">
         <xsl:value-of select="local-name()"/>
+    </xsl:template>
+
+    <xsl:template name="rdfDescription" match="rdf:Description">
+        <xsl:variable name="ark"><xsl:value-of select="substring-after(@rdf:about, '/20775/')" /></xsl:variable>
+        <xsl:variable name="elemmentName">
+            <xsl:choose>
+                <xsl:when test="..">
+                    <xsl:call-template name="capitalized">
+                        <xsl:with-param name="text"><xsl:value-of select="concat(local-name(..), 'Corrupted')" /></xsl:with-param>
+                    </xsl:call-template>
+                </xsl:when>
+                <xsl:otherwise>Corrupted</xsl:otherwise>
+            </xsl:choose>
+        </xsl:variable>
+        <xsl:call-template name="appendJsonObject">
+           <xsl:with-param name="key"><xsl:value-of select="$elemmentName"/></xsl:with-param>
+           <xsl:with-param name="val"><xsl:value-of select="concat(mads:authoritativeLabel, ' @ ', $ark)"/></xsl:with-param>
+        </xsl:call-template>
+    </xsl:template>
+
+    <xsl:template name="capitalized">
+        <xsl:param name="text"/>
+        <xsl:value-of select="translate(substring($text,1,1), $lower, $upper)" /><xsl:value-of select="substring($text, 2, string-length($text)-1)" />
     </xsl:template>
 
     <xsl:template name="damsFile" match="dams:File">
