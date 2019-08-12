@@ -121,7 +121,6 @@ public class CilHarvesting implements RecordSource {
         } finally {
             // If field CIL_CCDB.Citation.Title is missing, use Object Unique ID
             if (StringUtils.isBlank(data.get(FieldMappings.TITLE))) {
-                
                 data.put(FieldMappings.TITLE, objId);
                 data.put(FieldMappings.NOTE_PREFERRED_CITATION.toLowerCase(), objId);
             }
@@ -253,54 +252,66 @@ public class CilHarvesting implements RecordSource {
         Iterator<Object> keys = jsonData.keySet().iterator();
         while (keys.hasNext()) {
             String key = (String)keys.next();
-            String currPath = (path.length() > 0 ? path + "." : "") + key.toLowerCase();
-            if (fieldsMap.containsKey(currPath)) {
-                String ingestField = fieldsMap.get(currPath).get(0);
-                List<String> vals = getFieldValues(parentData, jsonData, currPath, key, ingestField);
-                if (vals == null || vals.size() == 0)
+            String currPath = (path.length() > 0 ? path + "." : "") + key;
+
+            if (fieldsMap.containsKey(currPath.toLowerCase())) {
+
+                List<String> ingestFields = fieldsMap.get(currPath.toLowerCase());
+                List<String> vals = getFieldValues(parentData, jsonData, currPath, key, ingestFields.get(0));
+
+                // skip when there are no values presented
+                if ((vals == null || vals.size() == 0) && ingestFields.size() == 1)
                     continue;
 
                 if (currPath.equalsIgnoreCase(FieldMappings.SOURCE_ATTRIBUTION_DTAE)) {
                     // dams:dateCreated, Begin date, End date
-                    List<String> dateParts = fieldsMap.get(currPath);
-
-                    for (String datePart : dateParts) {
+                    for (String datePart : ingestFields) {
                         // add date:creation, Begin date and End date
                         addDataField(data, currPath, datePart, vals.get(0));
                     }
                 } else if (currPath.equalsIgnoreCase(FieldMappings.SOURCE_IMAGE_FILE_TYPE)) {
                     // image file type: map to File use and component Title
-                    List<String> ingestFields = fieldsMap.get(currPath);
                     for (String field : ingestFields) {
                         addDataField(data, currPath, field, vals.get(0));
                     }
                 } else if (currPath.equalsIgnoreCase(FieldMappings.SOURCE_ALTERNATIVE_IMAGE_FILE_PATH)) {
                     // Alternative image file path: map to File name and component Title
-                    List<String> ingestFields = fieldsMap.get(currPath);
                     for (String field : ingestFields) {
                         addDataField(data, currPath, field, vals.get(0));
                     }
                 } else {
-                    String mValue = "";
-                    for (String val : vals) {
-                        // handle multiple values
-                        mValue = (mValue.length() > 0 ? TabularRecord.DELIMITER : "") + val;
-                    }
+                    int idx = 0;
 
-                    if (mValue.length() > 0) {
-                        // extract closeMatch for subject headings
-                        String closeMatch = null;
-                        if (ingestField.toLowerCase().startsWith("subject:") && currPath.endsWith(SOURCE_ONTO_NAME_SUBFFIX)) {
-                            String closeMatchPath = currPath.replace(SOURCE_ONTO_NAME_SUBFFIX, SOURCE_ONTO_ID_SUBFFIX);
-                            List<String> closeMatchs = getFieldValues(parentData, jsonData, closeMatchPath,
-                                    SOURCE_ONTO_ID_SUBFFIX.substring(1), ingestField);
-                            if (closeMatchs != null && closeMatchs.size() > 0)
-                                closeMatch = closeMatchs.get(0);
+                    // map to the first ingest field, then other fields if a source field is mapping to more than one field
+                    do {
+                        String mValue = "";
+                        String ingestField = ingestFields.get(idx);
+
+                        for (String val : vals) {
+                            // handle multiple values
+                            mValue += (mValue.length() > 0 ? TabularRecord.DELIMITER : "") + val;
                         }
 
-                        // multiple values mapping field
-                        addDataField(data, currPath, ingestField, mValue, closeMatch);
-                    }
+                        if (mValue.length() > 0) {
+                            // extract closeMatch for subject headings
+                            String closeMatch = null;
+                            if (ingestField.toLowerCase().startsWith("subject:") && currPath.endsWith(SOURCE_ONTO_NAME_SUBFFIX)) {
+                                String closeMatchPath = currPath.replace(SOURCE_ONTO_NAME_SUBFFIX, SOURCE_ONTO_ID_SUBFFIX);
+                                List<String> closeMatchs = getFieldValues(parentData, jsonData, closeMatchPath,
+                                        SOURCE_ONTO_ID_SUBFFIX.substring(1), ingestField);
+                                if (closeMatchs != null && closeMatchs.size() > 0)
+                                    closeMatch = closeMatchs.get(0);
+                            }
+
+                            // multiple values mapping field
+                            addDataField(data, currPath, ingestField, mValue, closeMatch);
+                        }
+
+                        // handle the mapping of a source field to multiple ingest fields
+                        if (++idx < ingestFields.size()) {
+                            vals = getFieldValues(parentData, jsonData, currPath, key, ingestFields.get(idx));
+                        }
+                    } while(idx < ingestFields.size());
                 }
             } else if (currPath.equalsIgnoreCase(FieldMappings.SOURCE_ATTRIBUTION_URLS)) {
                 // Mapping for Related resource:related
@@ -446,7 +457,8 @@ public class CilHarvesting implements RecordSource {
         } else if (srcPath.equalsIgnoreCase(FieldMappings.SOURCE_CITATION_DOI)) {
             // "Source Record in the Cell Image Library @ https://doi.org/"Citation.DOI
             val = "Source Record in the Cell Image Library @ https://doi.org/" + val;
-        } else if (srcPath.equalsIgnoreCase(FieldMappings.SOURCE_CITATION_TITLE)) {
+        } else if (srcPath.equalsIgnoreCase(FieldMappings.SOURCE_CITATION_TITLE)
+                && ingestField.equalsIgnoreCase(FieldMappings.NOTE_PREFERRED_CITATION)) {
             // Format Note:preferred citation from source citation title
             val = formatCitationTitle(val);
         } else if (ingestField.equalsIgnoreCase(FieldMappings.FILE_USE)) {
@@ -602,7 +614,7 @@ public class CilHarvesting implements RecordSource {
                     if (labels.size() > 0 && i < labels.size()) {
                         results.add(labels.get(i) + " @ " + href.get(i));
                     } else {
-                        results.add("@ " + href.get(i));
+                        results.add("Related resource @ " + href.get(i));
                     }
                 }
             }
