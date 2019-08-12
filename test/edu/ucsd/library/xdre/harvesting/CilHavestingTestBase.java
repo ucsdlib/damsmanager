@@ -220,7 +220,7 @@ public abstract class CilHavestingTestBase {
     protected Map<String, List<String>> initiateFiledMappings() {
         Map<String, List<String>> fieldMappings = new HashMap<>();
 
-        String[] titleFields = {FieldMappings.TITLE};
+        String[] titleFields = {FieldMappings.TITLE, FieldMappings.NOTE_PREFERRED_CITATION};
         fieldMappings.put(FieldMappings.SOURCE_CITATION_TITLE.toLowerCase(), Arrays.asList(titleFields));
 
         String[] dateFields = {FieldMappings.DATE_CREATION, FieldMappings.BEGIN_DATE, FieldMappings.END_DATE};

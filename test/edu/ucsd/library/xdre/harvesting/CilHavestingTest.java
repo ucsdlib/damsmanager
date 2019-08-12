@@ -108,6 +108,10 @@ public class CilHavestingTest extends CilHavestingTestBase {
         // Identifier:Identifier:samplenumber
         assertEquals("test123", rec.getData().get(OBJECT_UNIQUE_ID.toLowerCase()));
         assertEquals("test123", rec.getData().get(FieldMappings.IDENTIFIER_SAMPLENUMBER.toLowerCase()));
+
+        // Note:preferred citation
+        assertEquals("W. Stoeckenius (2019) CIL:37147. In Cell Image Library. UC San Diego Library Digital Collections. Dataset. DOI_placeholder",
+                rec.getData().get(FieldMappings.NOTE_PREFERRED_CITATION.toLowerCase()));
     }
 
     @Test
