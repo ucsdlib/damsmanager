@@ -119,10 +119,15 @@ public abstract class CilHavestingTestBase {
                 "\"TERMSANDCONDITIONS\": {" +
                     "\"free_text\": \"attribution_nc_sa\"" +
                 "}," +
-                "\"ITEMTYPE\": {" +
+                "\"ITEMTYPE\": [{" +
                     "\"onto_name\": \"recorded image\"," +
                     "\"onto_id\": \"FBbi:00000265\"" +
-                "}" +
+                "},{" +
+                    "\"onto_name\": \"still image\"," +
+                    "\"onto_id\": \"FBbi:00000265\"" +
+                "},{" +
+                    "\"free_text\": \"free text image\"" +
+                "}]" +
             "}," +
         "}," +
         "\"Citation\": {" +
