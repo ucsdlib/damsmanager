@@ -44,6 +44,7 @@ import edu.ucsd.library.xdre.utils.Constants;
 public class CilHarvesting implements RecordSource {
     private static Logger log = Logger.getLogger(CilHarvesting.class);
 
+    private static final String VALUE_DELIMITER = "; ";
     private static SimpleDateFormat YEAR_FORMATTER = new SimpleDateFormat("yyyy");
     private static final String CIL_TEXT = "CIL";
     private static final String COPYRIGHT_TEXT = "copyright";
@@ -51,6 +52,18 @@ public class CilHarvesting implements RecordSource {
     private static final String SOURCE_ONTO_NAME_SUBFFIX = ".onto_name";
     private static final String SOURCE_FREE_TEXT_SUBFFIX = ".free_text";
     private static final String SOURCE_ONTO_ID_SUBFFIX = ".onto_id";
+
+    private static final String[] TECHNICAL_DETAILS_NOTE_KEYS = {
+        "CIL_CCDB.CIL.CORE.PREPARATION",
+        "CIL_CCDB.CIL.CORE.RELATIONTOINTACTCELL",
+        "CIL_CCDB.CIL.CORE.ITEMTYPE",
+        "CIL_CCDB.CIL.CORE.IMAGINGMODE",
+        "CIL_CCDB.CIL.CORE.PARAMETERIMAGED",
+        "CIL_CCDB.CIL.CORE.SOURCEOFCONTRAST",
+        "CIL_CCDB.CIL.CORE.VISUALIZATIONMETHODS",
+        "CIL_CCDB.CIL.CORE.PROCESSINGHISTORY",
+        "CIL_CCDB.CIL.CORE.DATAQUALIFICATION"
+    };
 
     private Map<String, List<String>> fieldMappings = null;
     private Map<String, String> constantFields = null;
@@ -78,6 +91,7 @@ public class CilHarvesting implements RecordSource {
 
     public Record nextRecord() throws Exception {
         Map<String, String> data = new HashMap<>();
+        String[] technicalDetailsNotes = new String[TECHNICAL_DETAILS_NOTE_KEYS.length];
 
         // add constant ingest fields: ensure lower case keys for Excel InputStream
         if (constantFields != null) {
@@ -110,7 +124,10 @@ public class CilHarvesting implements RecordSource {
 
             String currJsonPath = "";
 
-            convertJsonData(record, fieldMappings, currJsonPath, null, json, data);
+            convertJsonData(record, fieldMappings, currJsonPath, null, json, data, technicalDetailsNotes);
+
+            // generate technical details note
+            buildTechnicalDetailsNote(data, technicalDetailsNotes);
 
             addSourceJsonComponent(record, fileName);
 
@@ -143,6 +160,24 @@ public class CilHarvesting implements RecordSource {
         }
 
         return record;
+    }
+
+    /**
+     * Build technical details note
+     * @param data
+     * @param notes
+     */
+    private void buildTechnicalDetailsNote(Map<String, String> data, String[] notes) {
+        String noteValue = "";
+        for (String note : notes) {
+            if (StringUtils.isNotBlank(note)) {
+                noteValue += (noteValue.length() > 0 ? "\r\n"  : "") + note;
+            }
+        }
+
+        if (noteValue.length() > 0) {
+            data.put(FieldMappings.NOTE_TECHNICAL_DETAILS.toLowerCase(), noteValue);
+        }
     }
 
     /**
@@ -246,9 +281,10 @@ public class CilHarvesting implements RecordSource {
      * @param path
      * @param jsonData
      * @param data
+     * @param technicalDetailsNotes
      */
     private void convertJsonData(TabularRecord record, Map<String, List<String>> fieldsMap,
-            String path, JSONObject parentData, JSONObject jsonData, Map<String, String> data) {
+            String path, JSONObject parentData, JSONObject jsonData, Map<String, String> data, String[] technicalDetailsNotes) {
         Iterator<Object> keys = jsonData.keySet().iterator();
         while (keys.hasNext()) {
             String key = (String)keys.next();
@@ -257,7 +293,8 @@ public class CilHarvesting implements RecordSource {
             if (fieldsMap.containsKey(currPath.toLowerCase())) {
 
                 List<String> ingestFields = fieldsMap.get(currPath.toLowerCase());
-                List<String> vals = getFieldValues(parentData, jsonData, currPath, key, ingestFields.get(0));
+                List<String> vals = getFieldValues(parentData, jsonData, currPath, key,
+                        ingestFields.get(0), technicalDetailsNotes);
 
                 // skip when there are no values presented
                 if ((vals == null || vals.size() == 0) && ingestFields.size() == 1)
@@ -298,7 +335,7 @@ public class CilHarvesting implements RecordSource {
                             if (ingestField.toLowerCase().startsWith("subject:") && currPath.endsWith(SOURCE_ONTO_NAME_SUBFFIX)) {
                                 String closeMatchPath = currPath.replace(SOURCE_ONTO_NAME_SUBFFIX, SOURCE_ONTO_ID_SUBFFIX);
                                 List<String> closeMatchs = getFieldValues(parentData, jsonData, closeMatchPath,
-                                        SOURCE_ONTO_ID_SUBFFIX.substring(1), ingestField);
+                                        SOURCE_ONTO_ID_SUBFFIX.substring(1), ingestField, technicalDetailsNotes);
                                 if (closeMatchs != null && closeMatchs.size() > 0)
                                     closeMatch = closeMatchs.get(0);
                             }
@@ -309,7 +346,7 @@ public class CilHarvesting implements RecordSource {
 
                         // handle the mapping of a source field to multiple ingest fields
                         if (++idx < ingestFields.size()) {
-                            vals = getFieldValues(parentData, jsonData, currPath, key, ingestFields.get(idx));
+                            vals = getFieldValues(parentData, jsonData, currPath, key, ingestFields.get(idx), technicalDetailsNotes);
                         }
                     } while(idx < ingestFields.size());
                 }
@@ -318,7 +355,7 @@ public class CilHarvesting implements RecordSource {
                 List<JSONObject> relatedList = getJsonSource(jsonData.get(key));
 
                 for (JSONObject related : relatedList) {
-                    convertJsonData(record, fieldMappings, currPath, jsonData, related, data);
+                    convertJsonData(record, fieldMappings, currPath, jsonData, related, data, technicalDetailsNotes);
                 }
             } else if (currPath.equalsIgnoreCase(FieldMappings.SOURCE_IMAGE_FILES)
                         || currPath.equalsIgnoreCase(FieldMappings.SOURCE_ALTERNATIVE_IMAGE_FILES)) {
@@ -329,7 +366,7 @@ public class CilHarvesting implements RecordSource {
                     TabularRecord component = new TabularRecord();
                     component.setData(compData);
                     record.addComponent(component);
-                    convertJsonData(component, fieldMappings, currPath, jsonData, compJson, compData);
+                    convertJsonData(component, fieldMappings, currPath, jsonData, compJson, compData, new String[TECHNICAL_DETAILS_NOTE_KEYS.length]);
 
                     compData.put(TabularRecord.OBJECT_ID, record.getData().get(TabularRecord.OBJECT_ID));
                     compData.put(TabularRecord.OBJECT_COMPONENT_TYPE, "Component");
@@ -338,14 +375,14 @@ public class CilHarvesting implements RecordSource {
             } else {
                 Object val = jsonData.get(key);
                 if (val instanceof JSONObject) {
-                    convertJsonData(record, fieldMappings, currPath, jsonData, (JSONObject)val, data);
+                    convertJsonData(record, fieldMappings, currPath, jsonData, (JSONObject)val, data, technicalDetailsNotes);
                 } else if (val instanceof JSONArray) {
                     // JSONObject in JSONArray
                     Iterator<JSONArray> it = ((JSONArray)val).iterator();
                     while (it.hasNext()) {
                         Object obj = it.next();
                         if (obj instanceof JSONObject) {
-                            convertJsonData(record, fieldMappings, currPath, jsonData, (JSONObject)obj, data);
+                            convertJsonData(record, fieldMappings, currPath, jsonData, (JSONObject)obj, data, technicalDetailsNotes);
                         } else {
                             log.warn("No mapping for key " + key + " in source record " + record.getData().get(TabularRecord.OBJECT_ID) + ".");
                         }
@@ -568,42 +605,32 @@ public class CilHarvesting implements RecordSource {
      * @param srcField
      * @return
      */
-    private List<String> getFieldValues(JSONObject parentData, JSONObject data, String srcPath, String fieldName, String ingestField) {
+    private List<String> getFieldValues(JSONObject parentData, JSONObject data, String srcPath, String fieldName,
+            String ingestField, String[] technicalDetailsNotes) {
         List<String> results = new ArrayList<>();
         if (ingestField.equalsIgnoreCase(FieldMappings.NOTE_TECHNICAL_DETAILS)
                 && (srcPath.endsWith(SOURCE_ONTO_NAME_SUBFFIX) || srcPath.endsWith(SOURCE_FREE_TEXT_SUBFFIX))) {
             // extract note Technical details
             String value = "";
-            if (srcPath.endsWith(SOURCE_ONTO_NAME_SUBFFIX)) {
-                String[] tokens = srcPath.split("\\.");
-                String prefix = tokens[tokens.length - 2];
-                String notePrefix = convertKeyToPrefix(prefix);
-                value = notePrefix + ": " + formatTechnicalDetailsNote(data, srcPath, fieldName);
+            String[] tokens = srcPath.split("\\.");
+            String prefix = tokens[tokens.length - 2];
+            String technicalDetailskey = srcPath.substring(0, srcPath.lastIndexOf("."));
 
-                // "concat ""Preparation: "" PREPARATION.onto_name([0-m], delimiter: ';')|PREPARATION.free_text \r\n 
-                // ""Relation to intact cell: "" RELATIONTOINTACTCELL.onto_name|RELATIONTOINTACTCELL.free_text
-                if (prefix.equalsIgnoreCase(FieldMappings.SOURCE_KEY_PREPARATION)) {
-                    JSONObject relationdData = (JSONObject)parentData.get(FieldMappings.SOURCE_KEY_RELATIONTOINTACTCELL);
-                    String relationValue = formatTechnicalDetailsNote(relationdData, FieldMappings.SOURCE_RELATIONTOINTACTCELL_ONTO_NAME.toLowerCase(), fieldName);
-                    if (StringUtils.isNotBlank(relationValue)) {
-                        value += "\r\n" + convertKeyToPrefix(FieldMappings.SOURCE_KEY_RELATIONTOINTACTCELL) + ": " + relationValue;
-                    }
-                } else if (prefix.equalsIgnoreCase(FieldMappings.SOURCE_KEY_RELATIONTOINTACTCELL)) {
-                    if (!parentData.containsKey(FieldMappings.SOURCE_KEY_PREPARATION)) {
-                        String relationValue = formatTechnicalDetailsNote(data, FieldMappings.SOURCE_RELATIONTOINTACTCELL_ONTO_NAME.toLowerCase(), fieldName);
-                        if (StringUtils.isNotBlank(relationValue)) {
-                            value = convertKeyToPrefix(FieldMappings.SOURCE_KEY_RELATIONTOINTACTCELL) + ": " + relationValue;
-                        }
-                    } else {
-                        // ignore when it's processed by PREPARATION key already
-                        value = "";
-                    }
-                }
-            } 
-
-            if (value.length() > 0) {
-                results.add(value);
+            int idx = Arrays.asList(TECHNICAL_DETAILS_NOTE_KEYS).indexOf(technicalDetailskey);
+            if (StringUtils.isNotBlank(technicalDetailsNotes[idx])) {
+                // skip when the technical details note with the same prefix is processed for
+                // onto_name and free_text
+                return results;
             }
+
+            Object noteData = parentData.get(prefix);
+            JSONArray noteDataArr = ensureJsonArray(noteData);
+
+            String notePrefix = convertKeyToPrefix(prefix);
+            value = notePrefix + ": " + formatTechnicalDetailsNote(noteDataArr, srcPath, fieldName);
+
+            // store value for technical details notes for now
+            technicalDetailsNotes[idx] = value;
         } else if (srcPath.equalsIgnoreCase(FieldMappings.SOURCE_ATTRIBUTION_URLS_LABEL)
                 || srcPath.equalsIgnoreCase(FieldMappings.SOURCE_ATTRIBUTION_URLS_HREF)) {
             // extract Related resource related type
@@ -626,24 +653,58 @@ public class CilHarvesting implements RecordSource {
     }
 
     /*
-     * Format technical details note
+     * Wrap JSONObject to JSONArray
+     * @param jsonData
+     * @return
+     */
+    private JSONArray ensureJsonArray(Object jsonData) {
+        JSONArray jsonDataArr = new JSONArray();
+        if (jsonData instanceof JSONArray) {
+            jsonDataArr.addAll((JSONArray)jsonData);
+        } else {
+            jsonDataArr.add(jsonData);
+        }
+
+        return jsonDataArr;
+    }
+
+    /*
+     * Format technical details note: onto_name; free_text
      * @param data
      * @param srcField
      * @param values
      * @return
      */
-    private String formatTechnicalDetailsNote(JSONObject data, String srcPath, String fieldName) {
-        List<String> ontoNameArr = getDataByFieldName(data, srcPath, fieldName);
-        String value = concatValue(ontoNameArr, ";");
+    private String formatTechnicalDetailsNote(JSONArray data, String srcPath, String fieldName) {
+        String value1 = "";
+        String value2 = "";
+        String srcField2 = "";
+        Iterator<Object> it = data.iterator();
+        while (it.hasNext()) {
+            JSONObject jsonObj = (JSONObject)it.next();
 
-        String srcFreeTextField = srcPath.replace(SOURCE_ONTO_NAME_SUBFFIX, SOURCE_FREE_TEXT_SUBFFIX);
-        String freeTextVal = concatValue(getDataByFieldName(data, srcFreeTextField, SOURCE_FREE_TEXT_SUBFFIX.replace(".", "")), ";");
+            String valueStr = concatValue(getDataByFieldName(jsonObj, srcPath, fieldName), VALUE_DELIMITER);
+            if (StringUtils.isNotBlank(valueStr)) {
+                value1 += (value1.length() > 0 ? VALUE_DELIMITER : "") + valueStr;
+            }
 
-        if (StringUtils.isNotBlank(freeTextVal)) {
-            value += (value.length() > 0 ? "|" : "") + freeTextVal;
+            if (srcPath.endsWith(SOURCE_ONTO_NAME_SUBFFIX)) {
+                srcField2 = srcPath.replace(SOURCE_ONTO_NAME_SUBFFIX, SOURCE_FREE_TEXT_SUBFFIX);
+            } else {
+                srcField2 = srcPath.replace(SOURCE_FREE_TEXT_SUBFFIX, SOURCE_ONTO_NAME_SUBFFIX);
+            }
+
+            valueStr = concatValue(getDataByFieldName(jsonObj, srcField2, srcField2.substring(srcField2.lastIndexOf(".") + 1)), VALUE_DELIMITER);
+            if (StringUtils.isNotBlank(valueStr)) {
+                value2 += (value2.length() > 0 ? VALUE_DELIMITER : "") + valueStr;
+            }
         }
 
-        return value;
+        if (srcPath.endsWith(SOURCE_ONTO_NAME_SUBFFIX)) {
+            return value1 + (value1.length() > 0 && value2.length() > 0 ? VALUE_DELIMITER : "") + value2;
+        } else {
+            return value2 + (value1.length() > 0 && value2.length() > 0 ? VALUE_DELIMITER : "") + value1;
+        }
     }
 
     /*
