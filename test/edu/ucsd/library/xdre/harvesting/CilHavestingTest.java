@@ -94,7 +94,7 @@ public class CilHavestingTest extends CilHavestingTestBase {
         expectedResult = "George E. Palade EM Slide Collection @ http://cushing.med.yale.edu/gsdl/cgi-bin/library?c=palade&a=d&d=DpaladeFxB";
         assertTrue(rec.getData().get(RELATED_RESOURCE_RELATED.toLowerCase()).contains(expectedResult));
         // person:researcher
-        assertEquals("W. Stoeckenius", rec.getData().get(PERSON_RESEARCHER.toLowerCase()));
+        assertEquals("W. Stoeckenius|Wolfgang Bettighofer|Buchanan, JoAnn|Richard Allen", rec.getData().get(PERSON_RESEARCHER.toLowerCase()));
         // subject:topic
         assertTrue(rec.getData().get(SUBJECT_TOPIC.toLowerCase()).contains("response to chemical stimulus"));
         // note:methods
@@ -285,7 +285,7 @@ System.out.println(rec.getData().get(FieldMappings.NOTE_TECHNICAL_DETAILS.toLowe
         expectedResult = "George E. Palade EM Slide Collection @ http://cushing.med.yale.edu/gsdl/cgi-bin/library?c=palade&a=d&d=DpaladeFxB";
         assertTrue(rec.getData().get(RELATED_RESOURCE_RELATED.toLowerCase()).contains(expectedResult));
         // person:researcher
-        assertEquals("W. Stoeckenius", rec.getData().get(PERSON_RESEARCHER.toLowerCase()));
+        assertEquals("W. Stoeckenius|Wolfgang Bettighofer|Buchanan, JoAnn|Richard Allen", rec.getData().get(PERSON_RESEARCHER.toLowerCase()));
         // subject:topic
         assertTrue(rec.getData().get(SUBJECT_TOPIC.toLowerCase()).contains("response to chemical stimulus"));
         // note:methods
