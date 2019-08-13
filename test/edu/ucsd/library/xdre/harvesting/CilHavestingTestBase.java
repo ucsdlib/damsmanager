@@ -92,7 +92,7 @@ public abstract class CilHavestingTestBase {
                         "}" +
                     "]," +
                     "\"Contributors\": [" +
-                        "\"W. Stoeckenius\"" +
+                        "\"W. Stoeckenius\", \"Wolfgang Bettighofer\", \"2011 Olympus Competition®\", \"Buchanan, JoAnn (Stanford) (specimen prep); Richard Allen (University of Hawaii)\"" +
                     "]" +
                 "}," +
                 "\"SOURCEOFCONTRAST\": {" +
