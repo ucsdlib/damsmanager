@@ -81,17 +81,15 @@ public class CilHavestingTest extends CilHavestingTestBase {
         assertEquals("1958-02-02", rec.getData().get(FieldMappings.BEGIN_DATE.toLowerCase()));
 
         // technical details
-        String expectedResult = "PREPARATION a free test\r\nRelation to intact cell: sectioned tissue";
-        String[] results = rec.getData().get(FieldMappings.NOTE_TECHNICAL_DETAILS.toLowerCase()).split("\\|");
-        assertEquals(5, results.length);
-        assertTrue(Arrays.asList(results).contains(expectedResult));
-        assertTrue(Arrays.asList(results).contains("Preparation: PREPARATION for sectioned tissue"));
-        assertTrue(Arrays.asList(results).contains("a free test"));
-        assertTrue(Arrays.asList(results).contains("Source of contrast: differences in adsorption or binding of stain"));
-        assertTrue(Arrays.asList(results).contains("Item type: recorded image"));
+        String[] results = rec.getData().get(FieldMappings.NOTE_TECHNICAL_DETAILS.toLowerCase()).split("\r\n");
+        assertEquals(4, results.length);
+        assertEquals("Preparation: PREPARATION for sectioned tissue; PREPARATION a free test", results[0]);
+        assertEquals("Relation to intact cell: sectioned tissue; a free test", results[1]);
+        assertEquals("Item type: recorded image; still image; free text image", results[2]);
+        assertEquals("Source of contrast: differences in adsorption or binding of stain", results[3]);
 
         // related resource
-        expectedResult = "Source Record in the Cell Image Library @ https://doi.org/doi:10.7295/W9CIL37147";
+        String expectedResult = "Source Record in the Cell Image Library @ https://doi.org/doi:10.7295/W9CIL37147";
         assertTrue(rec.getData().get(RELATED_RESOURCE_RELATED.toLowerCase()).contains(expectedResult));
         expectedResult = "George E. Palade EM Slide Collection @ http://cushing.med.yale.edu/gsdl/cgi-bin/library?c=palade&a=d&d=DpaladeFxB";
         assertTrue(rec.getData().get(RELATED_RESOURCE_RELATED.toLowerCase()).contains(expectedResult));
@@ -272,19 +270,17 @@ public class CilHavestingTest extends CilHavestingTestBase {
         // date created
         assertEquals("1958-02-02", rec.getData().get(FieldMappings.DATE_CREATION.toLowerCase()));
         assertEquals("1958-02-02", rec.getData().get(FieldMappings.BEGIN_DATE.toLowerCase()));
-
+System.out.println(rec.getData().get(FieldMappings.NOTE_TECHNICAL_DETAILS.toLowerCase()));
         // technical details
-        String expectedResult = "PREPARATION a free test\r\nRelation to intact cell: sectioned tissue";
-        String[] results = rec.getData().get(FieldMappings.NOTE_TECHNICAL_DETAILS.toLowerCase()).split("\\|");
-        assertEquals(5, results.length);
-        assertTrue(Arrays.asList(results).contains(expectedResult));
-        assertTrue(Arrays.asList(results).contains("Preparation: PREPARATION for sectioned tissue"));
-        assertTrue(Arrays.asList(results).contains("a free test"));
-        assertTrue(Arrays.asList(results).contains("Source of contrast: differences in adsorption or binding of stain"));
-        assertTrue(Arrays.asList(results).contains("Item type: recorded image"));
+        String[] results = rec.getData().get(FieldMappings.NOTE_TECHNICAL_DETAILS.toLowerCase()).split("\r\n");
+        assertEquals(4, results.length);
+        assertEquals("Preparation: PREPARATION for sectioned tissue; PREPARATION a free test", results[0]);
+        assertEquals("Relation to intact cell: sectioned tissue; a free test", results[1]);
+        assertEquals("Item type: recorded image; still image; free text image", results[2]);
+        assertEquals("Source of contrast: differences in adsorption or binding of stain", results[3]);
 
         // related resource
-        expectedResult = "Source Record in the Cell Image Library @ https://doi.org/doi:10.7295/W9CIL37147";
+        String expectedResult = "Source Record in the Cell Image Library @ https://doi.org/doi:10.7295/W9CIL37147";
         assertTrue(rec.getData().get(RELATED_RESOURCE_RELATED.toLowerCase()).contains(expectedResult));
         expectedResult = "George E. Palade EM Slide Collection @ http://cushing.med.yale.edu/gsdl/cgi-bin/library?c=palade&a=d&d=DpaladeFxB";
         assertTrue(rec.getData().get(RELATED_RESOURCE_RELATED.toLowerCase()).contains(expectedResult));
