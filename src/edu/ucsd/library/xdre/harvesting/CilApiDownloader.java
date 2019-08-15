@@ -2,6 +2,8 @@ package edu.ucsd.library.xdre.harvesting;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -120,8 +122,8 @@ public class CilApiDownloader {
      * @throws Exception
      */
     private long getTotalHits(Date lastModified) throws Exception {
-        String url = Constants.CIL_HARVEST_API + PUBLIC_IDS_PATH + "from=0&size=0" +
-                (lastModified == null ? "" : "&lastModified=" + lastModified.getTime()/1000);
+        String queryString = buildQueryString(0, 0, lastModified);
+        String url = Constants.CIL_HARVEST_API + PUBLIC_IDS_PATH + queryString;
 
         JSONObject result = (JSONObject)JSONValue.parse(cilApiClient.getContentBodyAsString(url));
         return (long)((JSONObject)result.get("hits")).get("total");
@@ -138,8 +140,9 @@ public class CilApiDownloader {
      */
     private List<String> getIdBatch(int start, int size, Date lastModified) throws Exception {
         List<String> ids = new ArrayList<>();
-        String url = Constants.CIL_HARVEST_API + PUBLIC_IDS_PATH + "from=" + start + "&size=" + size + 
-                (lastModified == null ? "" : "&lastModified=" + lastModified.getTime()/1000);
+
+        String queryString = buildQueryString(start, size, lastModified);
+        String url = Constants.CIL_HARVEST_API + PUBLIC_IDS_PATH + queryString;
         JSONObject result = (JSONObject)JSONValue.parse(cilApiClient.getContentBodyAsString(url));
         JSONArray itemsArr = (JSONArray)((JSONObject)result.get("hits")).get("hits");
         for (int i=0; i< itemsArr.size(); i++) {
@@ -147,6 +150,33 @@ public class CilApiDownloader {
         }
 
         return ids;
+    }
+
+    /**
+     * Build the query string for CIL API
+     * @param start
+     * @param size
+     * @param lastModified
+     * @return
+     * @throws UnsupportedEncodingException 
+     */
+    private String buildQueryString(int start, int size, Date lastModified) throws UnsupportedEncodingException {
+        StringBuilder urlBuilder = new StringBuilder();
+        urlBuilder.append(URLEncoder.encode("from", "UTF-8"));
+        urlBuilder.append("=");
+        urlBuilder.append(URLEncoder.encode("" + start, "UTF-8"));
+        urlBuilder.append("&");
+        urlBuilder.append(URLEncoder.encode("size", "UTF-8"));
+        urlBuilder.append("=");
+        urlBuilder.append(URLEncoder.encode("" + size, "UTF-8"));
+        if (lastModified != null) {
+            urlBuilder.append("&");
+            urlBuilder.append(URLEncoder.encode("lastModified", "UTF-8"));
+            urlBuilder.append("=");
+            urlBuilder.append(URLEncoder.encode("" + lastModified.getTime()/1000, "UTF-8"));
+        }
+
+        return urlBuilder.toString();
     }
 
     /**
