@@ -324,6 +324,11 @@ public class CilHarvesting implements RecordSource {
                         String mValue = "";
                         String ingestField = ingestFields.get(idx);
 
+                        if (ingestField.equalsIgnoreCase(FieldMappings.PERSON_RESEARCHER)) {
+                            // Special process name researchers
+                            vals = handleNameResearcher(vals);
+                        }
+
                         for (String val : vals) {
                             // handle multiple values
                             mValue += (mValue.length() > 0 ? TabularRecord.DELIMITER : "") + val;
@@ -562,6 +567,67 @@ public class CilHarvesting implements RecordSource {
             }
         }
         return val.replace("CIL. Dataset", "In Cell Image Library. UC San Diego Library Digital Collections. Dataset. DOI_placeholder");
+    }
+
+    /*
+     * Process Person:researcher with special rules:
+     * remove expression text
+     * remove parentheses and contents
+     * split combined names by semicolon
+     * @param val
+     * @return
+     */
+    private List<String> handleNameResearcher(List<String> names) {
+        List<String> results = new ArrayList<>();
+
+        int i = 0;
+        for (String name : names) {
+            boolean ignore = false;
+
+            if ( i > 1) {
+                // remove name followed by regular text pattern
+                if (name.endsWith("®")) {
+                    ignore = true;
+                } else {
+                    String[] words = name.split(" ");
+                    try {
+                        Integer.parseInt(words[0]);
+                        ignore = true;
+                    } catch (NumberFormatException e) { }
+                }
+            }
+
+            if (!ignore) {
+                // remove parentheses and contents
+                name = removeParentheses(name);
+
+                // split combined names delimited by semicolon
+                String[] combinedNames = name.split("\\;");
+                for (String n : combinedNames) {
+                    results.add(n.trim());
+                }
+            }
+
+            i++;
+        }
+
+        return results;
+    }
+
+    /*
+     * Remove parentheses and contents inside parentheses
+     * @param value
+     * @return
+     */
+    private String removeParentheses(String value) {
+        int idxOrgStart = value.indexOf("(");
+        int idxOrgEnd = value.indexOf(")", idxOrgStart);
+        while (idxOrgStart >= 0 && idxOrgEnd > idxOrgStart) {
+            value = value.substring(0, idxOrgStart).trim() + " " + value.substring(idxOrgEnd + 1).trim();
+            idxOrgStart = value.indexOf("(");
+            idxOrgEnd = value.indexOf(")", idxOrgStart);
+        }
+        return value;
     }
 
     /*

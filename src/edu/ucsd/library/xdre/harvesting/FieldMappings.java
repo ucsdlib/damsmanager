@@ -37,6 +37,7 @@ public class FieldMappings
     public static final String NOTE_TECHNICAL_DETAILS = "Note:technical details";
     public static final String NOTE_PREFERRED_CITATION = "Note:preferred citation";
     public static final String IDENTIFIER_SAMPLENUMBER = "Identifier:samplenumber";
+    public static final String PERSON_RESEARCHER = "Person:researcher";
     public static final String FILE_NAME = "File name";
     public static final String FILE_USE = "File use";
 
