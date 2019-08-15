@@ -270,7 +270,6 @@ public class CilHavestingTest extends CilHavestingTestBase {
         // date created
         assertEquals("1958-02-02", rec.getData().get(FieldMappings.DATE_CREATION.toLowerCase()));
         assertEquals("1958-02-02", rec.getData().get(FieldMappings.BEGIN_DATE.toLowerCase()));
-System.out.println(rec.getData().get(FieldMappings.NOTE_TECHNICAL_DETAILS.toLowerCase()));
         // technical details
         String[] results = rec.getData().get(FieldMappings.NOTE_TECHNICAL_DETAILS.toLowerCase()).split("\r\n");
         assertEquals(4, results.length);
