@@ -321,9 +321,9 @@
     </xsl:template>
 
     <xsl:template name="damsCopyright" match="dams:Copyright">
-        <xsl:for-each select="dams:copyrightNote">
+        <xsl:for-each select="dams:copyrightStatus">
             <xsl:call-template name="appendJsonObject">
-               <xsl:with-param name="key">copyright note</xsl:with-param>
+               <xsl:with-param name="key">Copyright status</xsl:with-param>
                <xsl:with-param name="val"><xsl:value-of select="."/></xsl:with-param>
             </xsl:call-template>
         </xsl:for-each>

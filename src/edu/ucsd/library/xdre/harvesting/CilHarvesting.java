@@ -147,15 +147,12 @@ public class CilHarvesting implements RecordSource {
         }
 
         if (record != null) {
-            // Ignore copyrighted records (copyright note: copyright)
-            String copyrightNote = record.getData().remove(FieldMappings.COPYRIGHT_NOTE);
-            if (StringUtils.isNotBlank(copyrightNote)) {
-                if (copyrightNote.equalsIgnoreCase(COPYRIGHT_TEXT)) {
+            // Ignore copyrighted records (copyrightStatus: copyright)
+            String copyrightStatus = record.getData().get(FieldMappings.COPYRIGHT_STATUS.toLowerCase());
+            if (StringUtils.isNotBlank(copyrightStatus)) {
+                if (copyrightStatus.equalsIgnoreCase(COPYRIGHT_TEXT)) {
                     return nextRecord();
                 }
-
-                // Use copyrightNote header that is used in batch export/overlay
-                record.getData().put(TabularRecord.COPYRIGHT_NOTE, copyrightNote);
             }
         }
 

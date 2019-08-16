@@ -12,7 +12,7 @@
     <xsl:template match="rdf:RDF">
         <xsl:call-template name="startJsonObject"/>
 
-        <xsl:for-each select="*">
+        <xsl:for-each select="*[local-name() != 'DAMSEvent']">
             <xsl:variable name="id"><xsl:value-of select="@rdf:about"/></xsl:variable>
             <xsl:variable name="count"><xsl:number level="any" count="dams:Object"/></xsl:variable>
             <xsl:variable name="objectId">
@@ -132,6 +132,10 @@
         </xsl:for-each>
 
         <xsl:for-each select="*[local-name()='cartographics']">
+            <xsl:apply-templates />
+        </xsl:for-each>
+
+        <xsl:for-each select="*[local-name()='copyright']">
             <xsl:apply-templates />
         </xsl:for-each>
     </xsl:template>
@@ -297,7 +301,7 @@
     <xsl:template name="damsRelatedResource" match="dams:RelatedResource">
         <xsl:call-template name="appendJsonObject">
            <xsl:with-param name="key">Related resource:<xsl:value-of select="dams:type"/></xsl:with-param>
-           <xsl:with-param name="val"><xsl:value-of select="dams:uri/@rdf:resource"/> @ <xsl:value-of select="dams:description"/></xsl:with-param>
+           <xsl:with-param name="val"><xsl:value-of select="dams:description"/> @ <xsl:value-of select="dams:uri/@rdf:resource"/></xsl:with-param>
         </xsl:call-template>
     </xsl:template>
 
@@ -311,6 +315,15 @@
             </xsl:variable>
             <xsl:call-template name="appendJsonObject">
                <xsl:with-param name="key">Geographic:<xsl:value-of select="$columnName"/></xsl:with-param>
+               <xsl:with-param name="val"><xsl:value-of select="."/></xsl:with-param>
+            </xsl:call-template>
+        </xsl:for-each>
+    </xsl:template>
+
+    <xsl:template name="damsCopyright" match="dams:Copyright">
+        <xsl:for-each select="dams:copyrightStatus">
+            <xsl:call-template name="appendJsonObject">
+               <xsl:with-param name="key">Copyright status</xsl:with-param>
                <xsl:with-param name="val"><xsl:value-of select="."/></xsl:with-param>
             </xsl:call-template>
         </xsl:for-each>
@@ -366,8 +379,8 @@
                 <xsl:with-param name="key">Level</xsl:with-param>
                 <xsl:with-param name="val">
                     <xsl:choose>
-                        <xsl:when test="$depth = '1'">  \Component</xsl:when>
-                        <xsl:otherwise>    \Sub-component</xsl:otherwise>
+                        <xsl:when test="$depth = '1'">Component</xsl:when>
+                        <xsl:otherwise>Sub-component</xsl:otherwise>
                     </xsl:choose>
                 </xsl:with-param>
             </xsl:call-template>
@@ -377,6 +390,7 @@
             <xsl:for-each select="dams:hasComponent/dams:Component">
                 <xsl:sort select="dams:order" data-type="number" order="ascending" />
                 <xsl:call-template name="damsComponent">
+                   <xsl:with-param name="objectId"><xsl:value-of select="$objectId" /></xsl:with-param>
                    <xsl:with-param name="depth"><xsl:value-of select="$depth + 1"/></xsl:with-param>
                </xsl:call-template>
             </xsl:for-each>
