@@ -59,10 +59,10 @@ public class CilHavestingTest extends CilHavestingTestBase {
         String[] files = {createJsonDataFile("test123.json").getAbsolutePath()};
         CilHarvesting cilHarvesting = new CilHarvesting(fieldMappings, constantFields, Arrays.asList(files));
         TabularRecord rec = (TabularRecord) cilHarvesting.nextRecord();
-        assertEquals("CopyrightNote does't match.", "attribution_nc_sa", rec.getData().get(TabularRecord.COPYRIGHT_NOTE.toLowerCase()));
+        assertEquals("CopyrightStatus does't match.", "attribution_nc_sa", rec.getData().get(TabularRecord.COPYRIGHT_STATUS.toLowerCase()));
 
         Document doc = rec.toRDFXML();
-        assertEquals("attribution_nc_sa", doc.valueOf("//dams:Object/dams:copyright//dams:copyrightNote"));
+        assertEquals("attribution_nc_sa", doc.valueOf("//dams:Object/dams:copyright//dams:copyrightStatus"));
     }
 
     @Test
