@@ -17,6 +17,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.ss.util.CellRangeAddress;
 
 /**
  * FieldMappings implementation that uses Apache POI to read Excel (OLE or XML)
@@ -66,7 +67,7 @@ public class FieldMappings
 
     private static final String SOURCE_FIELD_HEADER = "Source / CCDB field";
     private static final String INGEST_FIELD_HEADER = "Ingest File Header";
-    private static final String CONSTANT_VALUE_HEADER = "Processing and fixed values";
+    private static final String CONSTANT_VALUE_HEADER = "Processing and Fixed Values Instructions";
 
     protected int lastRow;
     protected int currRow;
@@ -123,7 +124,13 @@ public class FieldMappings
         if ( lastRow > 0 )
         {
             headers = new ArrayList<>();
-            Row firstRow = sheet.getRow(0);
+            Row firstRow = sheet.getRow(currRow);
+
+            if (firstRow.getLastCellNum() == 1) {
+                // skip the Terminology row to the next headings row
+                firstRow = sheet.getRow(++currRow);
+            }
+
             for ( int i = 0; i < firstRow.getLastCellNum(); i++ )
             {
                 String header = firstRow.getCell(i).getStringCellValue();
@@ -158,8 +165,10 @@ public class FieldMappings
                 if (ingestField.equalsIgnoreCase(DATE_ISSUED)) {
                     constantFieldValue = "" + Calendar.getInstance().get(Calendar.YEAR);
                     constantFields.put(ingestField, constantFieldValue);
-                } else if (ingestField.equalsIgnoreCase(TYPE_OF_RESOURCE)
-                        || ingestField.equalsIgnoreCase(LANGUAGE)) {
+                } else if (ingestField.equalsIgnoreCase(LANGUAGE)) {
+                    constantFields.put(ingestField, constantFieldValue);
+                } else if (ingestField.equalsIgnoreCase(TYPE_OF_RESOURCE)) {
+                    constantFieldValue = "data|still image";
                     constantFields.put(ingestField, constantFieldValue);
                 }
             }
@@ -186,8 +195,7 @@ public class FieldMappings
                     Cell cell = row.getCell(i);
                     if ( cell != null )
                     {
-                        cell.setCellType(Cell.CELL_TYPE_STRING);
-                        value = cell.toString();
+                        value = getCellValue(cell, n, i);
                     }
                 }
                 if ( value != null && !value.trim().equals("") )
@@ -210,6 +218,33 @@ public class FieldMappings
      */
     public Map<String, List<String>> getOriginalFieldMappings() {
         return fieldMappings;
+    }
+
+    /*
+     * Retrieve cell value from merged cells if exists
+     * @param cell
+     * @param rowNum
+     * @param colNum
+     * @return
+     */
+    private String getCellValue(Cell cell, int rowNum, int colNum) {
+
+        // handle merged cell
+        for (int i = 0; i < sheet.getNumMergedRegions(); i++) {
+            CellRangeAddress region = sheet.getMergedRegion(i);
+
+            int frIndex = region.getFirstRow();
+            int fcIndex = region.getFirstColumn();
+
+            if ( rowNum >= frIndex && rowNum <= region.getLastRow() && colNum >= fcIndex && colNum <= region.getLastColumn()) {
+                // retrieve merged cell value
+                cell = sheet.getRow(frIndex).getCell(fcIndex);
+                break;
+            }
+        }
+
+        cell.setCellType(Cell.CELL_TYPE_STRING);
+        return cell.toString();
     }
 
     /**
