@@ -89,7 +89,7 @@ public class CilHavestingTest extends CilHavestingTestBase {
         assertEquals("Source of contrast: differences in adsorption or binding of stain", results[3]);
 
         // related resource
-        String expectedResult = "Source Record in the Cell Image Library @ https://doi.org/doi:10.7295/W9CIL37147";
+        String expectedResult = "Source Record in the Cell Image Library @ https://doi.org/10.7295/W9CIL37147";
         assertTrue(rec.getData().get(RELATED_RESOURCE_RELATED.toLowerCase()).contains(expectedResult));
         expectedResult = "George E. Palade EM Slide Collection @ http://cushing.med.yale.edu/gsdl/cgi-bin/library?c=palade&a=d&d=DpaladeFxB";
         assertTrue(rec.getData().get(RELATED_RESOURCE_RELATED.toLowerCase()).contains(expectedResult));
@@ -111,7 +111,7 @@ public class CilHavestingTest extends CilHavestingTestBase {
         assertEquals("test123", rec.getData().get(FieldMappings.IDENTIFIER_SAMPLENUMBER.toLowerCase()));
 
         // Note:preferred citation
-        assertEquals("W. Stoeckenius (2019) CIL:37147. In Cell Image Library. UC San Diego Library Digital Collections. Dataset. DOI_placeholder",
+        assertEquals("W. Stoeckenius (2019) CIL:37147. In Cell Image Library. UC San Diego Library Digital Collections. Dataset.",
                 rec.getData().get(FieldMappings.NOTE_PREFERRED_CITATION.toLowerCase()));
     }
 
@@ -282,7 +282,7 @@ public class CilHavestingTest extends CilHavestingTestBase {
         assertEquals("Source of contrast: differences in adsorption or binding of stain", results[3]);
 
         // related resource
-        String expectedResult = "Source Record in the Cell Image Library @ https://doi.org/doi:10.7295/W9CIL37147";
+        String expectedResult = "Source Record in the Cell Image Library @ https://doi.org/10.7295/W9CIL37147";
         assertTrue(rec.getData().get(RELATED_RESOURCE_RELATED.toLowerCase()).contains(expectedResult));
         expectedResult = "George E. Palade EM Slide Collection @ http://cushing.med.yale.edu/gsdl/cgi-bin/library?c=palade&a=d&d=DpaladeFxB";
         assertTrue(rec.getData().get(RELATED_RESOURCE_RELATED.toLowerCase()).contains(expectedResult));
@@ -302,5 +302,9 @@ public class CilHavestingTest extends CilHavestingTestBase {
         // Identifier:Identifier:samplenumber
         assertEquals("test123", rec.getData().get(OBJECT_UNIQUE_ID.toLowerCase()));
         //assertEquals("test123", rec.getData().get(IDENTIFIER_SAMPLENUMBER.toLowerCase()));
+
+        // Note:preferred citation
+        assertEquals("W. Stoeckenius (2019) CIL:37147. In Cell Image Library. UC San Diego Library Digital Collections. Dataset.",
+                rec.getData().get(FieldMappings.NOTE_PREFERRED_CITATION.toLowerCase()));
     }
 }
