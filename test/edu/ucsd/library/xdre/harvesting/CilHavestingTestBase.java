@@ -30,9 +30,11 @@ public abstract class CilHavestingTestBase {
     protected static final String SUBJECT_ANATOMY = "subject:anatomy";
     protected static final String NOTE_METHODS = "Note:methods";
     protected static final String NOTE_DESCRIPTION = "Note:description";
+    protected static final String NOTE_RELATED_PUBLICATIONS = "Note:related publications";
     protected static final String SOURCE_IDENTIFIER = "identifier / json file name for object";
     protected static final String SOURCEOFCONTRAST_ONTO_NAME = FieldMappings.SOURCE_CORD_PREFFIX + "SOURCEOFCONTRAST.onto_name";
     protected static final String SOURCE_ATTRIBUTION_CONTRIBUTORS = FieldMappings.SOURCE_CORD_PREFFIX + "ATTRIBUTION.Contributors";
+    protected static final String SOURCE_ATTRIBUTION_PUBMED = FieldMappings.SOURCE_CORD_PREFFIX + "ATTRIBUTION.PUBMED";
     protected static final String SOURCE_CELLULARCOMPONENT_ONTO_NAME = FieldMappings.SOURCE_CORD_PREFFIX + "CELLULARCOMPONENT.onto_name";
     protected static final String SOURCE_CELLULARCOMPONENT_ONTO_ID = FieldMappings.SOURCE_CORD_PREFFIX + "CELLULARCOMPONENT.onto_id";
     protected static final String SOURCE_CELLULARCOMPONENT_FREE_TEXT = FieldMappings.SOURCE_CORD_PREFFIX + "CELLULARCOMPONENT.free_text";
@@ -93,7 +95,8 @@ public abstract class CilHavestingTestBase {
                     "]," +
                     "\"Contributors\": [" +
                         "\"W. Stoeckenius\", \"Wolfgang Bettighofer\", \"2011 Olympus Competition®\", \"Buchanan, JoAnn (Stanford) (specimen prep); Richard Allen (University of Hawaii)\"" +
-                    "]" +
+                    "]," +
+                    "\"PUBMED\": [\"PMID: 1629255\"]" +
                 "}," +
                 "\"SOURCEOFCONTRAST\": {" +
                     "\"onto_name\": \"differences in adsorption or binding of stain\"," +
@@ -244,6 +247,9 @@ public abstract class CilHavestingTestBase {
 
         String[] researcherFields = {PERSON_RESEARCHER};
         fieldMappings.put(SOURCE_ATTRIBUTION_CONTRIBUTORS.toLowerCase(), Arrays.asList(researcherFields));
+
+        String[] noteRelatedPublicationsFields = {NOTE_RELATED_PUBLICATIONS};
+        fieldMappings.put(SOURCE_ATTRIBUTION_PUBMED.toLowerCase(), Arrays.asList(noteRelatedPublicationsFields));
 
         String[] topicFields = {SUBJECT_TOPIC};
         fieldMappings.put(SOURCE_BIOLOGICALPROCESS_ONTO_NAME.toLowerCase(), Arrays.asList(topicFields));

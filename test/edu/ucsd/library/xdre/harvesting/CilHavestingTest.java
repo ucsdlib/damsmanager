@@ -103,6 +103,9 @@ public class CilHavestingTest extends CilHavestingTestBase {
         // note:descriptions
         assertEquals("This group of micrographs illustrate", rec.getData().get(NOTE_DESCRIPTION.toLowerCase()));
 
+        // Note:related publications
+        assertEquals("PubMed ID: https://www.ncbi.nlm.nih.gov/pubmed/?term=1629255", rec.getData().get(NOTE_RELATED_PUBLICATIONS.toLowerCase()));
+
         // Identifier:Identifier:samplenumber
         assertEquals("test123", rec.getData().get(OBJECT_UNIQUE_ID.toLowerCase()));
         assertEquals("test123", rec.getData().get(FieldMappings.IDENTIFIER_SAMPLENUMBER.toLowerCase()));
@@ -292,6 +295,9 @@ public class CilHavestingTest extends CilHavestingTestBase {
 
         // note:descriptions
         assertEquals("This group of micrographs illustrate", rec.getData().get(NOTE_DESCRIPTION.toLowerCase()));
+
+        // note:related publications
+        assertEquals("PubMed ID: https://www.ncbi.nlm.nih.gov/pubmed/?term=1629255", rec.getData().get(NOTE_RELATED_PUBLICATIONS.toLowerCase()));
 
         // Identifier:Identifier:samplenumber
         assertEquals("test123", rec.getData().get(OBJECT_UNIQUE_ID.toLowerCase()));
