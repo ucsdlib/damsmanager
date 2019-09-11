@@ -256,6 +256,15 @@ public class CilHavestingTest extends CilHavestingTestBase {
         assertTrue(csvValue.contains("test123c,Component,test123c.json,data-service"));
     }
 
+    @Test
+    public void testParseMergedCellValue() throws Exception {
+        FieldMappings fieldMapping = new FieldMappings(getResourceFile("CIL Processing and Mapping Instructions.xlsx"));
+        Map<String, List<String>> mappings = fieldMapping.getOriginalFieldMappings();
+        // merged cells in Note:technical details
+        assertEquals("Note:technical details", mappings.get("CIL_CCDB.CIL.CORE.PREPARATION.onto_name").get(0));
+        assertEquals("Note:technical details", mappings.get("CIL_CCDB.CIL.CORE.IMAGINGMODE.onto_name").get(0));
+        assertEquals("Note:technical details", mappings.get("CIL_CCDB.CIL.CORE.DATAQUALIFICATION.free_text").get(0));
+    }
 
     @Test
     public void testExtractDataIntegration() throws Exception {
