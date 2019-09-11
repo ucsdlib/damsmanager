@@ -649,7 +649,8 @@ public class CilHarvesting implements RecordSource {
      * Extract File use from source file type
      * if value = Jpeg|OME_tif THEN image-source
      * if value = Gzip|Zip|Mrc THEN data-service
-     * if value = mp4 THEN video-source
+     * if value = Flv|mp4 THEN video-source - The old Flv format is removed from the mapping instruction in the new version
+     * but it's not bad to keep and check it around.
      * @param fileType
      * @return
      */
