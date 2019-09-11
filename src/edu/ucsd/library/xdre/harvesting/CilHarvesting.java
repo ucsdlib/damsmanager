@@ -629,15 +629,18 @@ public class CilHarvesting implements RecordSource {
 
     /*
      * Format note Related Publications
-     * "IF value has "PMID: " before numerals, remove "PMID: ", THEN
+     * "IF value has "PMID: " before numerals, remove "PMID:", THEN
      * "PubMed ID: https://www.ncbi.nlm.nih.gov/pubmed/?term="ATTRIBUTION.PUBMED"
      * @param val
      * @return
      */
     private String formatRelatedPublications(String val) {
-        int idx = val.indexOf("PMID: ");
-        if (idx >= 0 && Character.isDigit(val.charAt(idx + 7))) {
-            val = val.substring(idx + 7);
+        int idx = val.indexOf("PMID:");
+        if (idx >= 0) {
+            String pmid = val.substring(idx + 6).trim();
+            if (Character.isDigit(pmid.charAt(0))) {
+            val = pmid;
+            }
         }
         return "PubMed ID: https://www.ncbi.nlm.nih.gov/pubmed/?term=" + val;
     }
