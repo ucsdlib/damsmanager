@@ -81,4 +81,13 @@ public class ContentFile {
             out.write(LOG_DATE_FORMAT.format(Calendar.getInstance().getTime()) + " " + message + "\n");
         }
     }
+
+    /**
+     * Ensure url base ended with forward slash
+     * @param urlBase
+     * @return
+     */
+    public static String ensureUrlBaseFormat(String urlBase) {
+        return urlBase + (urlBase.endsWith("/") ? "" : "/");
+    }
 }

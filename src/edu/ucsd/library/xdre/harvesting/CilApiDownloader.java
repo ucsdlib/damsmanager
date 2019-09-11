@@ -123,7 +123,7 @@ public class CilApiDownloader {
      */
     private long getTotalHits(Date lastModified) throws Exception {
         String queryString = buildQueryString(0, 0, lastModified);
-        String url = Constants.CIL_HARVEST_API + PUBLIC_IDS_PATH + queryString;
+        String url = ContentFile.ensureUrlBaseFormat(Constants.CIL_HARVEST_API) + PUBLIC_IDS_PATH + queryString;
 
         JSONObject result = (JSONObject)JSONValue.parse(cilApiClient.getContentBodyAsString(url));
         return (long)((JSONObject)result.get("hits")).get("total");

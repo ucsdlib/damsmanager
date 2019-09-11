@@ -42,7 +42,7 @@ public class MetadataSource extends ContentFile {
 
     private String cilId = null;
     public MetadataSource(String cilId, CilApiClient cilApiClient) {
-        super(Constants.CIL_HARVEST_API + API_DOCUMENT_PATH + cilId, cilApiClient);
+        super(ensureUrlBaseFormat(Constants.CIL_HARVEST_API) + API_DOCUMENT_PATH + cilId, cilApiClient);
         this.cilId = cilId;
     }
 
@@ -87,7 +87,7 @@ public class MetadataSource extends ContentFile {
                     try {
                         String filePath = (String)((JSONObject)imageFiles.get(i)).get(FILE_PATH_KEY);
 
-                        fileUrl = Constants.CIL_CONTENT_URL_BASE + 
+                        fileUrl = ensureUrlBaseFormat(Constants.CIL_CONTENT_URL_BASE) +
                                 ((boolean)videoFormat ? VIDEO_PATH : IMAGE_PATH) + sourceId + "/" + filePath;
                         ContentFile contentFile = new ContentFile(fileUrl, cilApiClient);
                         fileLocation = contentFile.save(harvestDirectory, filePath);
@@ -114,7 +114,7 @@ public class MetadataSource extends ContentFile {
                     String fileLocation = null;
                     try {
                         String urlPostfix = (String)((JSONObject)alternativeFiles.get(i)).get(ALTERNATIVE_URL_POSTFIX_KEY);
-                        contentUrl = Constants.CIL_CONTENT_URL_BASE + urlPostfix;
+                        contentUrl = ensureUrlBaseFormat(Constants.CIL_CONTENT_URL_BASE) + urlPostfix;
     
                         String[] filePaths = urlPostfix.split("/");
                         String fileName = filePaths[filePaths.length - 1];
