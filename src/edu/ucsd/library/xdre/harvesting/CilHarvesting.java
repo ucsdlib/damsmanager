@@ -649,7 +649,7 @@ public class CilHarvesting implements RecordSource {
      * Extract File use from source file type
      * if value = Jpeg|OME_tif THEN image-source
      * if value = Gzip|Zip|Mrc THEN data-service
-     * if value = Flv THEN video-source
+     * if value = mp4 THEN video-source
      * @param fileType
      * @return
      */
@@ -659,7 +659,7 @@ public class CilHarvesting implements RecordSource {
             fileUse = "image-source";
         } else if (fileType.equalsIgnoreCase("Gzip") || fileType.equalsIgnoreCase("Zip") || fileType.equalsIgnoreCase("Mrc")) {
             fileUse = "data-service";
-        } else if (fileType.equalsIgnoreCase("Flv")) {
+        } else if (fileType.equalsIgnoreCase("Flv") || fileType.equalsIgnoreCase("mp4")) {
             fileUse = "video-source";
         }
         return fileUse;
