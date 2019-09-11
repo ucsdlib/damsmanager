@@ -495,7 +495,7 @@ public class CilHarvesting implements RecordSource {
             val = formatRelatedPublications(val);
         } else if (srcPath.equalsIgnoreCase(FieldMappings.SOURCE_CITATION_DOI)) {
             // "Source Record in the Cell Image Library @ https://doi.org/"Citation.DOI
-            val = "Source Record in the Cell Image Library @ https://doi.org/" + val;
+            val = "Source Record in the Cell Image Library @ https://doi.org/" + val.replace("doi:", "").trim();
         } else if (srcPath.equalsIgnoreCase(FieldMappings.SOURCE_CITATION_TITLE)
                 && ingestField.equalsIgnoreCase(FieldMappings.NOTE_PREFERRED_CITATION)) {
             // Format Note:preferred citation from source citation title
@@ -545,9 +545,9 @@ public class CilHarvesting implements RecordSource {
     /*
      * Format Note:preferred citation from source citation title
      * "CIL_CCDB.CIL.Citation.Title Replace YYYY value in "(YYYY)" with current year.
-     * Replace text "CIL. Dataset" with "In Cell Image Library. UC San Diego Library Digital Collections. Dataset. DOI_placeholder"
+     * Replace text "CIL. Dataset" with "In Cell Image Library. UC San Diego Library Digital Collections. Dataset."
      * E.g. Sanford Palay (20112018) CIL:10790, Rattus, brush border epithelial cell. CIL. Dataset In Cell Image Library.
-     *  UC San Diego Library Digital Collections. Dataset. DOI_placeholder"
+     *  UC San Diego Library Digital Collections. Dataset."
      * @param val
      * @return
      */
@@ -563,7 +563,7 @@ public class CilHarvesting implements RecordSource {
             } catch (ParseException e) {
             }
         }
-        return val.replace("CIL. Dataset", "In Cell Image Library. UC San Diego Library Digital Collections. Dataset. DOI_placeholder");
+        return val.replace("CIL. Dataset", "In Cell Image Library. UC San Diego Library Digital Collections. Dataset.");
     }
 
     /*
