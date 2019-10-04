@@ -11,6 +11,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 
 import org.apache.commons.lang3.StringUtils;
@@ -18,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.dom4j.Document;
 import org.dom4j.Node;
 import org.dom4j.io.SAXReader;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
@@ -203,7 +205,7 @@ public abstract class Statistics {
 	}
 
 	public static Document getRecordForStats(String id) throws Exception {
-		URL url = new URL(Constants.SOLR_URL_BASE + "/select?q=id:" + id + "&fl=" + URLEncoder.encode("*title* OR *collection* OR *unit*", "UTF-8"));
+		URL url = new URL(Constants.SOLR_URL_BASE + "/select?q=id:" + id + "&fl=" + URLEncoder.encode("*title* OR *collection* OR *unit* OR component_map_tesim", "UTF-8"));
 		SAXReader reader = new SAXReader();
 		return reader.read(url);
 	}
@@ -216,6 +218,65 @@ public abstract class Statistics {
 				return node.getText();
 		}
 		return val;
+	}
+
+	/**
+	 * Title for components: [parent title]: [component title]
+	 * @param doc
+	 * @param cid
+	 * @return
+	 */
+	public static String getCompoundTitle(Document doc, String cid) {
+		JSONObject compMap = null;
+		String compMapJsonValue = Statistics.getTextValue(doc, "//doc/arr[@name='component_map_tesim']/str");
+		if (StringUtils.isNotBlank(compMapJsonValue)) {
+			compMap = (JSONObject)JSONValue.parse(compMapJsonValue);
+		}
+
+		String compTitle = getComponentTitle(doc, cid);
+		String parentTitle = "";
+		if (compMap != null) {
+			// component with parent
+			String parentCid = findParentId(compMap, cid);
+			parentTitle = getComponentTitle(doc, parentCid);
+		}
+		return (parentTitle.length() > 0 ? parentTitle + ": " : "") + compTitle;
+	}
+
+	/*
+	 * Retrieve the component title from SOLR document
+	 * @param doc
+	 * @param cid
+	 * @return
+	 */
+	private static String getComponentTitle(Document doc, String cid) {
+		if (StringUtils.isNotBlank(cid)) {
+			String titleName = "component_" + cid + "_title_json_tesim";
+			return Statistics.getTitleFromJson(Statistics.getTextValue (doc, "//doc/arr[@name='" + titleName + "']/str"));
+		}
+		return "";
+	}
+
+	/**
+	 * Find the parent component ID
+	 * @param compMap
+	 * @param cid
+	 * @return
+	 */
+	private static String findParentId(JSONObject compMap, String cid) {
+		String pid = "";
+		Iterator<String> kIt = compMap.keySet().iterator();
+		while(kIt.hasNext()) {
+			String key = kIt.next();
+			JSONArray cids = (JSONArray)compMap.get(key);
+			for(int i = 0; i < cids.size(); i++) {
+				if (cids.get(i).toString().equals(cid)) {
+					pid = key;
+					break;
+				}
+			}
+		}
+		return pid;
 	}
 
 	public static String getTitleFromJson (String jsonVal) {

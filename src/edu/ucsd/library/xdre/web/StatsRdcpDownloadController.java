@@ -237,8 +237,7 @@ public class StatsRdcpDownloadController implements Controller {
 				colTitle = Statistics.getTextValue (doc, "//doc/arr[@name='collection_name_tesim']/str");
 				objTitle = Statistics.getTitleFromJson(Statistics.getTextValue (doc, "//doc/arr[@name='title_json_tesim']/str"));
 				if (StringUtils.isNotBlank(paths[1])) {
-					String titleName = "component_" + paths[1] + "_title_json_tesim";
-					compTitle = Statistics.getTitleFromJson(Statistics.getTextValue (doc, "//doc/arr[@name='" + titleName + "']/str"));
+					compTitle = Statistics.getCompoundTitle(doc, paths[1]);
 				}
 				RdcpStatsDownloadSummary statsItemSum = new RdcpStatsDownloadSummary (colTitle, objTitle, compTitle, 
 						paths[0], paths[1], paths[2], periods, Arrays.asList(stats));
