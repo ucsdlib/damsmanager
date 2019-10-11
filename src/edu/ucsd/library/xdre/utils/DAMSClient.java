@@ -126,6 +126,11 @@ public class DAMSClient extends HttpClientBase {
 	public static final String PREDICATE_EVENT_TYPE  = "http://library.ucsd.edu/ark:/20775/bd3106617w";
 	public static final String PREDICATE_EVENT_DATE  = "http://library.ucsd.edu/ark:/20775/bd5120287c";
 
+	public static final String COLLECTION_ID_START_DELIMETER = " (";
+	public static final String COLLECTION_ID_END_DELIMETER = ")";
+	public static final String COLLECTION_TYPE_START_DELIMETER = " [";
+	public static final String COLLECTION_TYPE_END_DELIMETER = "]";
+
 	private static SimpleDateFormat damsDateFormat = new SimpleDateFormat(DAMS_DATE_FORMAT);
 	private static SimpleDateFormat damsDateFormatAlt = new SimpleDateFormat(DAMS_DATE_FORMAT_ALT);
 
@@ -325,14 +330,19 @@ public class DAMSClient extends HttpClientBase {
 			String title = (String)col.get("title");
 			String colId = (String)col.get("collection");
 			String type = (String)col.get("type");
-			if(map.get(title) != null)
-				title += " (" + stripID(colId) + ")";
-			title += " [" + type + "]";
+
+			title += COLLECTION_TYPE_START_DELIMETER + type + COLLECTION_TYPE_END_DELIMETER;
+
+			if(map.get(title) != null) {
+				// Duplicate collections: append collection ARK with delimiter
+				title += COLLECTION_ID_START_DELIMETER + stripID(colId) + COLLECTION_ID_END_DELIMETER;
+			}
+
 			map.put(title, colId);
 		}
 
 		return map;
-	}	
+	}
 
 	/**
 	 * Retrieve the collection type/model

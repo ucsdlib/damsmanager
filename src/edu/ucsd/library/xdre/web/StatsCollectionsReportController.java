@@ -147,10 +147,12 @@ public class StatsCollectionsReportController implements Controller {
 				}
 				
 				colId = colId.substring(colId.lastIndexOf("/")+1);
-				int idx = colTitle.lastIndexOf("[");
+				int idx = colTitle.lastIndexOf(DAMSClient.COLLECTION_TYPE_START_DELIMETER);
 				if( idx > 0){
-					colType = colTitle.substring(idx+1, colTitle.lastIndexOf("]"));
-					colTitle = colTitle.substring(0, idx).trim();
+					colType = colTitle.substring(idx + DAMSClient.COLLECTION_TYPE_START_DELIMETER.length(),
+							colTitle.lastIndexOf(DAMSClient.COLLECTION_TYPE_END_DELIMETER));
+					// Keep the original title for solr lookup without trimming.
+					colTitle = colTitle.substring(0, idx);
 				}
 				
 				doc = damsClient.solrLookup("q=" + URLEncoder.encode("id:" + colId, "UTF-8"));
