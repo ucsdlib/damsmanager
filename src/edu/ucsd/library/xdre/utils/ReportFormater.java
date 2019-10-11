@@ -1,10 +1,12 @@
 package edu.ucsd.library.xdre.utils;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.text.SimpleDateFormat;
@@ -49,18 +51,16 @@ public class ReportFormater {
 			workbook = new HSSFWorkbook();
 			sheet = workbook.createSheet();
 		}
-		StringReader reader = null;
-		BufferedReader bf = null;
-		try{
-			reader = new StringReader(csv);
-			bf = new BufferedReader(reader);
+
+		try (InputStream in = new ByteArrayInputStream(csv.getBytes());
+				InputStreamReader reader = new InputStreamReader(in, "UTF-8");
+				BufferedReader bf = new BufferedReader(reader);) {
 			String line = null;
 			String[] tokens = null;
 			String delimiter = "\t";
 			HSSFRow row = null;
-			int rowCount = 0;//sheet.getLastRowNum() + 1;
-			//if(sheet.getRow(rowCount) != null)
-			//	rowCount += 1;
+			int rowCount = 0;
+
 			while((line=bf.readLine()) != null){
 				if(line.length() > 0){
 					tokens = line.split(delimiter);
@@ -71,11 +71,6 @@ public class ReportFormater {
 					rowCount++;
 				}
 			}
-		}finally{
-			if(bf != null)
-				try{bf.close();}catch (Exception e){}
-			if(reader != null)
-				try{reader.close();}catch (Exception e){}
 		}
 		return workbook;
 	}
@@ -88,8 +83,7 @@ public class ReportFormater {
 			cell = row.getCell(i);
 			if(cell == null)
 				cell = row.createCell(i);
-			//if( i>0 )
-			//	cell.getCellStyle().setAlignment(HSSFCellStyle.ALIGN_CENTER);
+
 			if(tokens[i] == null)
 				tokens[i] = "";
 			
@@ -102,7 +96,7 @@ public class ReportFormater {
 		        link.setAddress(url);
 		        cell.setHyperlink(link);
 			}
-			HSSFRichTextString text = new HSSFRichTextString(tokens[i]);
+			HSSFRichTextString text = workbook.getCreationHelper().createRichTextString(tokens[i]);
 			cell.setCellValue(text);
 		}	
 	}
