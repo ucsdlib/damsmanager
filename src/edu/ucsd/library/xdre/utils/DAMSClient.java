@@ -327,7 +327,7 @@ public class DAMSClient extends HttpClientBase {
 		for(Iterator<JSONObject> it= colArr.iterator(); it.hasNext();){
 			col = it.next();
 			// Collection title, collection URL
-			String title = (String)col.get("title");
+			String title = stripLanguageScript((String)col.get("title"));
 			String colId = (String)col.get("collection");
 			String type = (String)col.get("type");
 
@@ -342,6 +342,22 @@ public class DAMSClient extends HttpClientBase {
 		}
 
 		return map;
+	}
+
+	/*
+	 * Strip language script.
+	 * Example: "Khirbat en-Nahas Project (Jordan)"@ar-Latn 
+	 * =>  Khirbat en-Nahas Project (Jordan)
+	 * @param s
+	 * @return
+	 */
+	private String stripLanguageScript(String s) {
+		if ( s != null && !s.endsWith("\"") && s.indexOf("\"@") > 0 )
+		{
+			int idx = s.lastIndexOf("\"@");
+			return s.substring(1,idx);
+		}
+		return s;
 	}
 
 	/**
