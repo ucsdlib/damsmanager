@@ -49,6 +49,8 @@ public class CilHarvesting implements RecordSource {
     private static final String CIL_TEXT = "CIL";
     private static final String COPYRIGHT_TEXT = "copyright";
 
+    private static String[] SUBJECT_HEADINGS = {"subject", "person", "corporate"};
+
     private static final String SOURCE_ONTO_NAME_SUBFFIX = ".onto_name";
     private static final String SOURCE_FREE_TEXT_SUBFFIX = ".free_text";
     private static final String SOURCE_ONTO_ID_SUBFFIX = ".onto_id";
@@ -185,7 +187,7 @@ public class CilHarvesting implements RecordSource {
         Set<String> keys = new HashSet<>(data.keySet());
 
         for (String key : keys) {
-            if (key.toLowerCase().startsWith("subject")) {
+            if (subjectHeading(key)) {
                 if (subjectHeadings.containsKey(key)) {
                     String newValues = data.get(key);
                     String existingValues = subjectHeadings.get(key);
@@ -213,6 +215,20 @@ public class CilHarvesting implements RecordSource {
                 }
             }
         }
+    }
+
+    /**
+     * Detect a subject heading for authority records
+     * @param header
+     * @return
+     */
+    private boolean subjectHeading(String header) {
+        for (String subject : SUBJECT_HEADINGS) {
+            if (header.toLowerCase().startsWith(subject)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
