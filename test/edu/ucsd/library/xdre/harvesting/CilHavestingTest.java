@@ -55,6 +55,21 @@ public class CilHavestingTest extends CilHavestingTestBase {
     }
 
     @Test
+    public void testExtractPersonResearcher() throws Exception {
+        String[] files = {createJsonDataFile("test123.json").getAbsolutePath()};
+        CilHarvesting cilHarvesting = new CilHarvesting(fieldMappings, constantFields, Arrays.asList(files));
+        TabularRecord rec = (TabularRecord) cilHarvesting.nextRecord();
+
+        assertTrue("Person:researcher does't match.", rec.getData().get("person:researcher").contains("W. Stoeckenius"));
+
+        Map<String, String> subjectHeadings = cilHarvesting.getSubjectHeadings();
+
+        assertTrue("Person:researcher subject headings does't match.", subjectHeadings.get("person:researcher").contains("W. Stoeckenius"));
+        assertTrue("CSV output for Person:researcher does't match.",
+                cilHarvesting.getSubjectHeadingsCsv().contains("Person:researcher,,,W. Stoeckenius\n"));
+    }
+
+    @Test
     public void testExtractCopyrightNode() throws Exception {
         String[] files = {createJsonDataFile("test123.json").getAbsolutePath()};
         CilHarvesting cilHarvesting = new CilHarvesting(fieldMappings, constantFields, Arrays.asList(files));
