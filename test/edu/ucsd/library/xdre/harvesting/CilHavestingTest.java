@@ -330,5 +330,9 @@ public class CilHavestingTest extends CilHavestingTestBase {
         // Note:preferred citation
         assertEquals("W. Stoeckenius (2019) CIL:37147. In Cell Image Library. UC San Diego Library Digital Collections. Dataset.",
                 rec.getData().get(FieldMappings.NOTE_PREFERRED_CITATION.toLowerCase()));
+
+        // copyright status
+        assertEquals("attribution_nc_sa", rec.getData().get(TabularRecord.COPYRIGHT_STATUS.toLowerCase()));
+
     }
 }

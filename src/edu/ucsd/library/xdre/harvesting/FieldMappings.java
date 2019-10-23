@@ -27,7 +27,7 @@ import org.apache.poi.ss.util.CellRangeAddress;
 public class FieldMappings
 {
 
-    public static final String COPYRIGHT_STATUS = "copyrightStatus";
+    public static final String COPYRIGHT_STATUS_FIELD = "copyright status";
     public static final String TITLE = "title";
     public static final String DATE_CREATION = "date:creation";
     public static final String BEGIN_DATE = "Begin date";

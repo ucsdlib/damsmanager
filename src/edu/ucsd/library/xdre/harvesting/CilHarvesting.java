@@ -150,8 +150,10 @@ public class CilHarvesting implements RecordSource {
 
         if (record != null) {
             // Ignore copyrighted records (copyrightStatus: copyright)
-            String copyrightStatus = record.getData().get(FieldMappings.COPYRIGHT_STATUS.toLowerCase());
+            // Convert field "copyright status" to copyrightStatus column heading
+            String copyrightStatus = record.getData().remove(FieldMappings.COPYRIGHT_STATUS_FIELD.toLowerCase());
             if (StringUtils.isNotBlank(copyrightStatus)) {
+                record.getData().put(TabularRecord.COPYRIGHT_STATUS.toLowerCase(), copyrightStatus);
                 if (copyrightStatus.equalsIgnoreCase(COPYRIGHT_TEXT)) {
                     return nextRecord();
                 }
