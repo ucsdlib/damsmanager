@@ -268,7 +268,7 @@ public abstract class CilHavestingTestBase {
         String[] identifierFields = {OBJECT_UNIQUE_ID, FieldMappings.IDENTIFIER_SAMPLENUMBER};
         fieldMappings.put(SOURCE_IDENTIFIER.toLowerCase(), Arrays.asList(identifierFields));
 
-        String[] copyrightStatusFields = {TabularRecord.COPYRIGHT_STATUS};
+        String[] copyrightStatusFields = {FieldMappings.COPYRIGHT_STATUS_FIELD};
         fieldMappings.put(SOURCE_TERMSANDCONDITIONS_FREE_TEXT.toLowerCase(), Arrays.asList(copyrightStatusFields));
 
         String[] fileNameFields = {FieldMappings.FILE_NAME};
