@@ -58,13 +58,25 @@ public class RDFExcelConvertor {
 
 	/**
 	 * Convert RDF to CSV
-	 * @param xsl
 	 * @return
 	 * @throws FileNotFoundException
 	 * @throws TransformerException
 	 * @throws UnsupportedEncodingException
 	 */
 	public String convert2CSV () throws FileNotFoundException, TransformerException, UnsupportedEncodingException {
+		return convert2CSV (false);
+	}
+
+	/**
+	 * Convert RDF to CSV
+	 * @param mutiValueField: if true values delimited by character pipe (|).
+	 * @return
+	 * @throws FileNotFoundException
+	 * @throws TransformerException
+	 * @throws UnsupportedEncodingException
+	 */
+	public String convert2CSV (boolean mutiValuesField)
+			throws FileNotFoundException, TransformerException, UnsupportedEncodingException {
 		Map<String, Integer> fieldCounts = new TreeMap<>();
 		Map<String, List<Map<String,String>>> objectRecords = new HashMap<>();
 
@@ -76,14 +88,14 @@ public class RDFExcelConvertor {
 		// header output
 		StringBuilder line = new StringBuilder();;
 		for (String fieldName : requiredFields) {
-			Integer count = fieldCounts.get(fieldName);
-			appendFlatColumnNames(line, (count==null?1:count), fieldName);
+			Integer count = getFieldCounts(fieldName, fieldCounts, mutiValuesField, 1);
+			appendFlatColumnNames(line, count, fieldName);
 		}
 
 		// group headers
 		for (String fieldName : groupFields) {
-			Integer count = fieldCounts.get(fieldName);
-			appendFlatColumnNames(line, (count==null?0:count), fieldName);
+			Integer count = getFieldCounts(fieldName, fieldCounts, mutiValuesField, 0);
+			appendFlatColumnNames(line, count, fieldName);
 		}
 
 		List<String> requiredFieldsList = Arrays.asList(requiredFields);
@@ -91,8 +103,8 @@ public class RDFExcelConvertor {
 		// other headers
 		for (String fieldName : fieldCounts.keySet()) {
 			if (requiredFieldsList.indexOf(fieldName) < 0 && groupFieldsList.indexOf(fieldName) < 0) {
-				Integer count = fieldCounts.get(fieldName);
-				appendFlatColumnNames(line, (count==null?1:count), fieldName);
+				Integer count = getFieldCounts(fieldName, fieldCounts, mutiValuesField, 1);
+				appendFlatColumnNames(line, count, fieldName);
 			}
 		}
 		csvBuilder.append(line.toString() + "\n");
@@ -102,26 +114,26 @@ public class RDFExcelConvertor {
 			for(Map<String, String> row : rows ) {
 				line = new StringBuilder();
 				for (String fieldName : requiredFields) {
-					Integer fieldCount = fieldCounts.get(fieldName);
+					Integer fieldCount = getFieldCounts(fieldName, fieldCounts, mutiValuesField, 1);
 					String fieldValues = row.get(fieldName);
 
-					appendValues(line, (fieldCount==null?1:fieldCount), fieldValues);
+					appendValues(line, fieldCount, fieldValues, mutiValuesField);
 				}
 
 				for (String fieldName : groupFields) {
-					Integer fieldCount = fieldCounts.get(fieldName);
+					Integer fieldCount = getFieldCounts(fieldName, fieldCounts, mutiValuesField, 0);
 					String fieldValues = row.get(fieldName);
 
-					appendValues(line, (fieldCount==null?0:fieldCount), fieldValues);
+					appendValues(line, fieldCount, fieldValues, mutiValuesField);
 				}
 
 				// append all other fields
 				for (String fieldName : fieldCounts.keySet()) {
 					if (requiredFieldsList.indexOf(fieldName) < 0 && groupFieldsList.indexOf(fieldName) < 0) {
-						Integer fieldCount = fieldCounts.get(fieldName);
+						Integer fieldCount = getFieldCounts(fieldName, fieldCounts, mutiValuesField, 1);
 						String fieldValues = row.get(fieldName);
 
-						appendValues(line, fieldCount, fieldValues);
+						appendValues(line, fieldCount, fieldValues, mutiValuesField);
 					}
 				}
 
@@ -129,6 +141,21 @@ public class RDFExcelConvertor {
 			}
 		}
 		return csvBuilder.toString();
+	}
+
+	/*
+	 * Calculate the field counts of a field:
+	 * @param fieldName
+	 * @param fieldCounts
+	 * @param mutiValuesField
+	 * @return Integer:
+	 *  when fieldCount == null || fieldCount == 0: defaultCount
+	 *  when mutiValuesField: 1
+	 */
+	private int getFieldCounts(String fieldName, Map<String, Integer> fieldCounts,
+			boolean mutiValuesField, int defaultCount) {
+		Integer fieldCount = fieldCounts.get(fieldName);
+		return fieldCount == null || fieldCount == 0 ? defaultCount : mutiValuesField ? 1 : fieldCount;
 	}
 
 	/**
@@ -324,9 +351,9 @@ public class RDFExcelConvertor {
 		}
 	}
 
-	private void appendValues(StringBuilder line, int fieldCount, String fieldValues) {
+	private void appendValues(StringBuilder line, int fieldCount, String fieldValues, boolean mutiValuesField) {
 		if (StringUtils.isNotBlank(fieldValues)) {
-			String[] values = fieldValues.split("\\|");
+			String[] values = mutiValuesField ? new String[] { fieldValues } : fieldValues.split("\\|");
 
 			Arrays.sort(values);
 			for (String value : values) {
@@ -337,7 +364,7 @@ public class RDFExcelConvertor {
 			}
 
 			// append commas for extra fields
-			if (fieldCount > values.length) {
+			if (!mutiValuesField && fieldCount > values.length) {
 				for (int i= values.length; i< fieldCount; i++) {
 					line.append(",");
 				}
