@@ -49,7 +49,7 @@ public class CilHarvesting implements RecordSource {
     private static final String CIL_TEXT = "CIL";
     private static final String COPYRIGHT_TEXT = "copyright";
 
-    private static String[] SUBJECT_HEADINGS = {"subject", "person", "corporate"};
+    private static String[] SUBJECT_HEADINGS = {"subject", "person"};
 
     private static final String SOURCE_ONTO_NAME_SUBFFIX = ".onto_name";
     private static final String SOURCE_FREE_TEXT_SUBFFIX = ".free_text";
