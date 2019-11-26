@@ -273,9 +273,9 @@ public class CilHavestingTest extends CilHavestingTestBase {
 
     @Test
     public void testCsvExportWithMultiValues() throws Exception {
-        String personResearsher = "\"W. Stoeckenius|Wolfgang Bettighofer|Buchanan, JoAnn|Richard Allen\"";
-        String subjectAnatomy = "artificial phospholipid membrane|membrane";
-        String subjectTopic = "free text for response to chemical stimulus|response to chemical stimulus";
+        String personResearsher = "\"W. Stoeckenius | Wolfgang Bettighofer | Buchanan, JoAnn | Richard Allen\"";
+        String subjectAnatomy = "artificial phospholipid membrane | membrane";
+        String subjectTopic = "free text for response to chemical stimulus | response to chemical stimulus";
 
         String[] files = {createJsonDataFile("test123.json").getAbsolutePath()};
         CilHarvesting cilHarvesting = new CilHarvesting(fieldMappings, constantFields, Arrays.asList(files));
