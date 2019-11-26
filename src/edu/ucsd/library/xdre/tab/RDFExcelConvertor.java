@@ -351,9 +351,13 @@ public class RDFExcelConvertor {
 		}
 	}
 
-	private void appendValues(StringBuilder line, int fieldCount, String fieldValues, boolean mutiValuesField) {
+	private void appendValues(StringBuilder line, int fieldCount, String fieldValues, boolean multiValuesField) {
 		if (StringUtils.isNotBlank(fieldValues)) {
-			String[] values = mutiValuesField ? new String[] { fieldValues } : fieldValues.split("\\|");
+			String[] values = fieldValues.split("\\" + TabularRecord.DELIMITER);
+			if (multiValuesField) {
+				String strVal = concatValues(values, " " + TabularRecord.DELIMITER + " ");
+				values = new String[]{ strVal };
+			}
 
 			Arrays.sort(values);
 			for (String value : values) {
@@ -364,7 +368,7 @@ public class RDFExcelConvertor {
 			}
 
 			// append commas for extra fields
-			if (!mutiValuesField && fieldCount > values.length) {
+			if (!multiValuesField && fieldCount > values.length) {
 				for (int i= values.length; i< fieldCount; i++) {
 					line.append(",");
 				}
@@ -373,6 +377,22 @@ public class RDFExcelConvertor {
 			for(int i=0; i<fieldCount; i++)
 				line.append(",");
 		}
+	}
+
+	/*
+	 * Join array elements into string with delimiter.
+	 * @param values
+	 * @param delimiter
+	 * @return
+	 */
+	private static String concatValues(String[] values, String delimiter) {
+	    StringBuilder builder = new StringBuilder();
+	    for (String v : values) {
+	        if (builder.length() > 0)
+	            builder.append(delimiter);
+	        builder.append(v);
+	    }
+	    return builder.toString();
 	}
 
 	private void appendFlatColumnNames(StringBuilder line, int fieldCount, String columnName) {
