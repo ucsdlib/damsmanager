@@ -284,9 +284,10 @@ public class ExcelSource implements RecordSource
             for ( int i = 0; i < headers.size(); i++ )
             {
                 String header = headers.get(i);
+                String headerToValidate = headerToValidate(header);
 
                 // skip parsing the values in the ignored fields 
-                if (!validateControlFieldsOnly && controlFields != null && controlFields.indexOf(headerToValidate(header)) >= 0)
+                if (!validateControlFieldsOnly && controlFields != null && controlFields.indexOf(headerToValidate) >= 0)
                     continue;
 
                 String value = null;
@@ -306,7 +307,7 @@ public class ExcelSource implements RecordSource
 
                         // check for invalid control values
                         String originalHeader = originalHeaders.get(header);
-                        List<String> validValue = controlValues.get(headerToValidate(header));
+                        List<String> validValue = controlValues.get(headerToValidate);
                         if (validValue != null && validValue.size() > 0) 
                         {
                             if (originalHeader.equalsIgnoreCase(headerToValidate(BEGIN_DATE))
@@ -349,7 +350,7 @@ public class ExcelSource implements RecordSource
                                 for (String val : vals2Valid) 
                                 {
                                     String normVal = val.trim();
-                                    if (headerToValidate(header).equalsIgnoreCase("Language")) {
+                                    if (headerToValidate.equalsIgnoreCase("Language")) {
                                         // skip validation when ark provided with batch overlay
                                         if (arkPresented(normVal))
                                             continue;
@@ -358,7 +359,7 @@ public class ExcelSource implements RecordSource
                                         normVal = stripArkValue(normVal);
 
                                         normVal = normalizeFieldValue(normVal, DELIMITER_LANG_ELEMENT);
-                                    } else if (headerToValidate(header).equalsIgnoreCase(SubjectTabularRecord.SUBJECT_TYPE))
+                                    } else if (headerToValidate.equalsIgnoreCase(SubjectTabularRecord.SUBJECT_TYPE))
                                         // Subject Import: case insensitive subject header value
                                         normVal = val.toLowerCase();
 
@@ -382,14 +383,15 @@ public class ExcelSource implements RecordSource
                     } catch (UnsupportedEncodingException e) {
                         e.printStackTrace();
                     }
-                    String existing = values.get(header);
+
+                    String existing = values.get(headerToValidate);
                     if ( existing == null )
                     {
-                        values.put(header, value);
+                        values.put(headerToValidate, value);
                     }
                     else
                     {
-                        values.put(header, existing + DELIMITER + value);
+                        values.put(headerToValidate, existing + DELIMITER + value);
                     }
                 }
             }
