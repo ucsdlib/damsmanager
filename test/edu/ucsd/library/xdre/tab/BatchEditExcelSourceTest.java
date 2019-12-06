@@ -95,8 +95,11 @@ public class BatchEditExcelSourceTest extends TabularRecordTestBasic {
         // End date
         assertEquals("End date doesn't match!", "2019", data.get("end date"));
 
-        // Subject:topic
-        assertEquals("Subject:topic doesn't match!", "Subject:topic", data.get("subject:topic"));
+        // Subject:topic, Subject:topic FAST
+        assertEquals("Subject:topic | Subject:topic FAST doesn't match!", "Subject:topic|Subject:topic FAST", data.get("subject:topic"));
+
+        // Subject:genre FAST
+        assertEquals("Subject:genre FAST doesn't match!", "Subject:genre FAST", data.get("subject:genre"));
 
         // Subject:anatomy
         assertEquals("Subject:anatomy doesn't match!", "Subject:anatomy", data.get("subject:anatomy"));
