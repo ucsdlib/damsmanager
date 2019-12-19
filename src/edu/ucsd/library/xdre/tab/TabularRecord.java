@@ -599,6 +599,18 @@ public class TabularRecord extends TabularRecordBasic
     }
 
     /*
+     * Add unit linking element
+     * @param e
+     * @param predicate
+     * @param unitType
+     * @param unitName
+     */
+    protected void addUnitElement(Element e, String predicate, String unitType, String unitName) {
+        Element elem = addVocabElement(e, predicate, damsNS, unitType, damsNS);
+        addElement(elem, "unitName", damsNS).setText(unitName);
+    }
+
+    /*
      * Add dams:Relationship element
      * @param e
      * @param type

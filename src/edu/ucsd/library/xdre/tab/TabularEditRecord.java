@@ -289,6 +289,16 @@ public class TabularEditRecord extends TabularRecord
                 }
             }
 
+            // unit /////////////////////////////////////////////////////////////////////////
+            if (key.startsWith("unit")) {
+                for ( String value : split(data.get(key)) ) {
+                    String predicateName = "unit";
+                    if (!addResourceReference(e, predicateName, value)) {
+                        addUnitElement(e, predicateName, "Unit", value);
+                    }
+                }
+            }
+
             // File: file use  //////////////////////////////////////////////////////////////
             if (key.equalsIgnoreCase("file use") || key.equalsIgnoreCase("file use 2")) {
                 if (pop(key)) {
