@@ -177,6 +177,19 @@
             </xsl:call-template>
         </xsl:if>
 
+        <!-- Unit -->
+        <xsl:for-each select="*[local-name()='unit']">
+            <xsl:variable name='resArk'><xsl:value-of select="*/@rdf:about | @rdf:resource"/></xsl:variable>
+            <xsl:variable name="ark"><xsl:value-of select="substring-after($resArk, '/20775/')" /></xsl:variable>
+            <xsl:variable name="unit">
+                <xsl:value-of select="concat(//*[@rdf:about=$resArk]/dams:unitName, ' @ ', $ark)"/>
+            </xsl:variable>
+            <xsl:call-template name="appendJsonObject">
+               <xsl:with-param name="key">unit</xsl:with-param>
+               <xsl:with-param name="val"><xsl:value-of select="$unit"/></xsl:with-param>
+            </xsl:call-template>
+        </xsl:for-each>
+
         <!-- dams:ScopeContentNote -->
         <xsl:for-each select="*[local-name()='scopeContentNote']/*">
             <xsl:call-template name="damsScopeContentNote"/>
