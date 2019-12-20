@@ -30,7 +30,7 @@ public class BatchEditExcelSourceTest extends TabularRecordTestBasic {
         Constants.DAMS_STORAGE_URL = "http://localhost:8080/dams/api";
         Constants.DAMS_ARK_URL_BASE = "http://library.ucsd.edu/ark:";
         Constants.ARK_ORG = "20775";
-        Constants.BATCH_ADDITIONAL_FIELDS = "Note:local attribution,collection(s)";
+        Constants.BATCH_ADDITIONAL_FIELDS = "Note:local attribution,collection(s),unit";
 
         xlsInputTemplate = getResourceFile("xls_standard_input_template.xlsx");
         xlsInputTestFile = getResourceFile("xls_batch_edit_input_test.xlsx");
@@ -161,6 +161,9 @@ public class BatchEditExcelSourceTest extends TabularRecordTestBasic {
 
         // collection(s)
         assertEquals("collection(s) doesn't match!", "Collection(s)", data.get("collection(s)"));
+
+        // unit
+        assertEquals("Unit doesn't match!", "Unit", data.get("unit"));
 
         // Component
         List<TabularRecord> comps = editRecord.getComponents();

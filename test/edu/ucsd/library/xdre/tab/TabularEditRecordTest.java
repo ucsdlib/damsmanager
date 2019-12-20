@@ -33,7 +33,7 @@ public class TabularEditRecordTest extends TabularRecordTestBasic {
         Constants.DAMS_STORAGE_URL = "http://localhost:8080/dams/api";
         Constants.DAMS_ARK_URL_BASE = "http://library.ucsd.edu/ark:";
         Constants.ARK_ORG = "20775";
-        Constants.BATCH_ADDITIONAL_FIELDS = "Note:local attribution,collection(s)";
+        Constants.BATCH_ADDITIONAL_FIELDS = "Note:local attribution,collection(s),unit";
     }
 
     @Test
@@ -519,6 +519,50 @@ public class TabularEditRecordTest extends TabularRecordTestBasic {
 
         List<Node> nodes = doc.selectNodes("//dams:collection");
         assertEquals("The size of collection doesn't match!", 1, nodes.size());
+    }
+
+    @Test
+    public void testOverlayUnit() throws Exception {
+        String title = "Test object";
+        String objArk = "zzxxxxxxxx";
+        String objUrl = TabularEditRecord.getArkUrl(objArk);
+        Element obj = createDocumentRoot(objUrl);
+        String unitUrl = TabularEditRecord.getArkUrl("xx000000xx");;
+        Element e = addElement(obj, "unit", damsNS);
+        addAttribute(e, "resource", rdfNS, unitUrl);
+
+        String unitOverlay = getOverlayValue(unitUrl);
+        Map<String, String> overlayData = createDataWithTitle(objArk, title);
+        overlayData.put("unit", unitOverlay);
+
+        // Create record with data overlay
+        TabularEditRecord testObject = createdRecordWithOverlay(obj.getDocument(), overlayData);
+        Document doc = testObject.toRDFXML();
+
+        List<Node> nodes = doc.selectNodes("//dams:unit");
+        assertEquals("The size of unit doesn't match!", 1, nodes.size());
+    }
+
+    @Test
+    public void testOverlayUnitWithArk() throws Exception {
+        String title = "Test object";
+        Map<String, String> data = createDataWithTitle("zzxxxxxxxx", title);
+        Map<String, String> overlayData = createDataWithTitle("zzxxxxxxxx", title);
+
+        // Initiate tabular data for creator with ark reference
+        String unitArk = "@bdxxxxxxxx";
+        data.put("unit", unitArk);
+        overlayData.put("unit", unitArk);
+
+        // Create record with data overlay
+        TabularEditRecord testObject = createdRecordWithOverlay(data, overlayData);
+        Document doc = testObject.toRDFXML();
+
+        List<Node> nodes = doc.selectNodes("//dams:unit");
+        assertEquals("The size of Unit doesn't match!", 1, nodes.size());
+
+        String actualResult = nodes.get(0).selectSingleNode("@rdf:resource").getStringValue();
+        assertEquals("Unit resource url doesn't match!", TabularEditRecord.getArkUrl("bdxxxxxxxx"), actualResult);
     }
 
     @Test
