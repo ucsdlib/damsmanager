@@ -7,6 +7,8 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 import org.json.simple.JSONArray;
@@ -29,6 +31,8 @@ public class MetadataSource extends ContentFile {
 
     private static String API_DOCUMENT_PATH ="public_documents/";
 
+    private static String FILE_NAME_PATTERN_RENAME = ".*/(microscopy_[0-9]+/reconstruction/3view-stack.*|images/[0-9]+/3view-stack.*\\.mrc)";
+
     public static final String CIL_SOURCE = "_source";
     private static final String CIL_CCDB_KEY = "CIL_CCDB";
     private static final String DATA_TYPE_KEY = "Data_type";
@@ -39,6 +43,8 @@ public class MetadataSource extends ContentFile {
 
     private static final String ALTERNATIVE_IMAGE_FILES_KEY = "Alternative_image_files";
     private static final String ALTERNATIVE_URL_POSTFIX_KEY = "URL_postfix";
+
+    private static Pattern renameFilePattern = Pattern.compile(FILE_NAME_PATTERN_RENAME);
 
     private String cilId = null;
     public MetadataSource(String cilId, CilApiClient cilApiClient) {
@@ -115,12 +121,9 @@ public class MetadataSource extends ContentFile {
                     try {
                         String urlPostfix = (String)((JSONObject)alternativeFiles.get(i)).get(ALTERNATIVE_URL_POSTFIX_KEY);
                         contentUrl = ensureUrlBaseFormat(Constants.CIL_CONTENT_URL_BASE) + urlPostfix;
-    
-                        String[] filePaths = urlPostfix.split("/");
-                        String fileName = filePaths[filePaths.length - 1];
-    
+
                         ContentFile contentFile = new ContentFile(contentUrl, cilApiClient);
-                        fileLocation = contentFile.save(harvestDirectory, fileName);
+                        fileLocation = contentFile.save(harvestDirectory, getFileName(urlPostfix));
 
                         String message = "Downloaded alternative file " + contentUrl + ": " + fileLocation;
                         logMessage(harvestDirectory, message);
@@ -170,5 +173,35 @@ public class MetadataSource extends ContentFile {
         }
 
         return destFile;
+    }
+
+    /**
+     * Determine whether a file path match a pattern for filename renaming.
+     * @param filePath
+     * @return
+     */
+    public static boolean renamePatternMatched(String filePath) {
+        Matcher m = renameFilePattern.matcher(filePath);
+        return m.find();
+    }
+
+    /**
+     * Retrieve content file name basing on file path
+     * @param filePath
+     * @return
+     */
+    public static String getFileName(String filePath) {
+        String[] filePaths = filePath.split("/");
+        String fileName = filePaths[filePaths.length -1];
+        if (renamePatternMatched(filePath.toLowerCase())) {
+            // rename the content filename when matching the file path pattern
+            if (filePaths[filePaths.length - 3].equals("images")) {
+                fileName = filePaths[filePaths.length - 2] + "-" + fileName;
+            } else if (filePaths[filePaths.length - 3].startsWith("microscopy_")) {
+                fileName = filePaths[filePaths.length - 3] + "-" + fileName;
+            } 
+        }
+
+        return fileName;
     }
 }

@@ -1,5 +1,7 @@
 package edu.ucsd.library.xdre.harvesting;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -78,5 +80,31 @@ public class MetadataSourceTest {
 
         File contentsDir = new File(metadataSourceDir.getParent(), ContentFile.CONTENT_FILE_FOLDER);
         assertTrue(contentsDir.listFiles().length > 0);
+    }
+
+    @Test
+    public void testRenamePatternMatching() {
+        String filePath = "/ccdb/telescience/home/CCDB_DATA_USER.portal/CCDB_DATA_USER/acquisition/project_20099"
+                + "/microscopy_5194144/reconstruction/3view-stack-final-bin5.mrc";
+        assertTrue("Pattern 1 with 'microscopy_' isn't matched.", MetadataSource.renamePatternMatched(filePath));
+
+        filePath = "/media/images/50581/3view-stack-final-bin10.mrc";
+        assertTrue("Pattern 2 with 'images' isn't matched.", MetadataSource.renamePatternMatched(filePath));
+
+        filePath = "/media/images/50581/50581.mrc";
+        assertFalse("Pattern 3 with 'images' and object id matched!", MetadataSource.renamePatternMatched(filePath));
+    }
+
+    @Test
+    public void testGetFileName() {
+        String filePath = "/ccdb/telescience/home/CCDB_DATA_USER.portal/CCDB_DATA_USER/acquisition/project_20099"
+                + "/microscopy_5194144/reconstruction/3view-stack-final-bin5.mrc";
+        assertEquals("microscopy_5194144-3view-stack-final-bin5.mrc", MetadataSource.getFileName(filePath));
+
+        filePath = "/media/images/50581/3view-stack-final-bin10.mrc";
+        assertEquals("50581-3view-stack-final-bin10.mrc", MetadataSource.getFileName(filePath));
+
+        filePath = "/media/images/50581/50581.mrc";
+        assertEquals("50581.mrc", MetadataSource.getFileName(filePath));
     }
 }
