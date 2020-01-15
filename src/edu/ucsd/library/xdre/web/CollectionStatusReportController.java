@@ -14,6 +14,7 @@ import java.util.TreeMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.dom4j.Document;
@@ -220,12 +221,26 @@ public class CollectionStatusReportController implements Controller {
     private List<String> lookupRecordsByEventIds(DAMSClient damsClient, List<Map<String, String>> events) throws Exception {
         List<String> records = new ArrayList<>();
         for (Map<String, String> event : events) {
-            String sparql = buildSparqlWithEventId(event.get("e"));
-            List<Map<String, String>> solutions = damsClient.sparqlLookup(sparql);
-            for (Map<String, String> solution : solutions) {
-                String record = solution.get("sub");
-                if (record.startsWith("http://") && !records.contains(record))
-                    records.add(record);
+            String eventId = event.get("e");
+            int idx = eventId.lastIndexOf("/");
+            // Escape special characters for SPARQL
+            if (idx >= 0) {
+                String eventArk = eventId.substring(eventId.lastIndexOf("/") + 1);
+                eventId = eventId.substring(0, eventId.lastIndexOf("/") + 1) + StringEscapeUtils.escapeJava(eventArk);
+            } else {
+                eventId = StringEscapeUtils.escapeJava(eventId);
+            }
+
+            try {
+                String sparql = buildSparqlWithEventId(eventId);
+                List<Map<String, String>> solutions = damsClient.sparqlLookup(sparql);
+                for (Map<String, String> solution : solutions) {
+                    String record = solution.get("sub");
+                    if (record.startsWith("http://") && !records.contains(record))
+                        records.add(record);
+                }
+            } catch(Exception ex) {
+                log.error("SPARQL error with event '" + event.get("e") + "': " + ex.getMessage(), ex);
             }
         }
         return records;
