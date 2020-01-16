@@ -219,14 +219,15 @@ public class CollectionStatusReportController implements Controller {
      * @throws Exception
      */
     private List<String> lookupRecordsByEventIds(DAMSClient damsClient, List<Map<String, String>> events) throws Exception {
+        String arkUrlPrefix = Constants.DAMS_ARK_URL_BASE + "/" + Constants.ARK_ORG + "/";
+
         List<String> records = new ArrayList<>();
         for (Map<String, String> event : events) {
             String eventId = event.get("e");
-            int idx = eventId.lastIndexOf("/");
             // Escape special characters for SPARQL
-            if (idx >= 0) {
-                String eventArk = eventId.substring(eventId.lastIndexOf("/") + 1);
-                eventId = eventId.substring(0, eventId.lastIndexOf("/") + 1) + StringEscapeUtils.escapeJava(eventArk);
+            if (eventId.startsWith(arkUrlPrefix)) {
+                String eventArk = eventId.substring(arkUrlPrefix.length());
+                eventId = arkUrlPrefix + StringEscapeUtils.escapeJava(eventArk);
             } else {
                 eventId = StringEscapeUtils.escapeJava(eventId);
             }
