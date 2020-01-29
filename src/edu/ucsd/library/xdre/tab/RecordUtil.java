@@ -70,19 +70,13 @@ public class RecordUtil
         + "and private study.";
     private static String copyrightNoteCopyrightedUS = "Constraint(s) on Use: This work is "
         + "protected by the U.S. Copyright Law (Title 17, U.S.C.). Use of this work beyond that "
-        + "allowed by \"fair use\" requires written permission of the copyright holder(s). "
+        + "allowed by \"fair use\" or any license applied to this work requires written permission of the copyright holder(s). "
         + "Responsibility for obtaining permissions and any use and distribution of this work "
         + "rests exclusively with the user and not the UC San Diego Library. Inquiries can be made "
         + "to the UC San Diego Library program having custody of the work.";
-    private static String copyrightNoteCopyrightedRegents = "Constraint(s) on Use: This work is "
-        + "protected by the U.S. Copyright Law (Title 17, U.S.C.). Use of this work beyond that "
-        + "allowed by \"fair use\" requires written permission of the UC Regents. Responsibility "
-        + "for obtaining permissions and any use and distribution of this work rests exclusively "
-        + "with the user and not the UC San Diego Library. Inquiries can be made to the UC San "
-        + "Diego Library program having custody of the work.";
     private static String copyrightNoteCopyrightedOther = "Constraint(s) on Use: This work is "
-        + "protected by the copyright law. Use of this work beyond that allowed by the applicable "
-        + "copyright statute requires written permission of the copyright holder(s). "
+        + "protected by copyright law. Use of this work beyond that allowed by the applicable copyright statute "
+        + "or any license applied to this work requires written permission of the copyright holder(s). "
         + "Responsibility for obtaining permissions and any use and distribution of this work "
         + "rests exclusively with the user and not the UC San Diego Library. Inquiries can be made "
         + "to the UC San Diego Library program having custody of the work.";
@@ -90,16 +84,16 @@ public class RecordUtil
         + "without prior permission.";
     private static String copyrightNoteUnknownUS = "Constraint(s) on Use: This work may be "
         + "protected by the U.S. Copyright Law (Title 17, U.S.C.). Use of this work beyond that "
-        + "allowed by \"fair use\" requires the written permission of the copyright holders(s). "
+        + "allowed by \"fair use\" or any license applied to this work requires written permission of the copyright holders(s). "
         + "Responsibility for obtaining permissions and any use and distribution of this work "
-        + "rests exclusively with the user and not the UC San Diego Libraries. Inquiries can be "
-        + "made to the UC San Diego Libraries department having custody of the work.";
+        + "rests exclusively with the user and not the UC San Diego Library. Inquiries can be "
+        + "made to the UC San Diego Library program having custody of the work.";
     private static String copyrightNoteUnknownOther = "Constraint(s) on Use: This work may be "
-    	+ "protected by the copyright law. Use of this work beyond that allowed by the applicable "
-        + "copyright statute requires the written permission of the copyright holders(s). "
+        + "protected by copyright law. Use of this work beyond that allowed by the applicable "
+        + "copyright statute or any license applied to this work requires written permission of the copyright holders(s). "
         + "Responsibility for obtaining permissions and any use and distribution of this work "
-        + "rests exclusively with the user and not the UC San Diego Libraries. Inquiries can be "
-        + "made to the UC San Diego Libraries department having custody of the work.";
+        + "rests exclusively with the user and not the UC San Diego Library. Inquiries can be "
+        + "made to the UC San Diego Library program having custody of the work.";
 
     /**
      * Copyright values.
@@ -216,10 +210,7 @@ public class RecordUtil
                 } else {
                     c.addElement("dams:copyrightNote").setText(copyrightNoteUnknownOther);
                 }
-            } else if ( copyrightStatus.equals(copyrightRegents) ) {
-                c.addElement("dams:copyrightNote").setText(copyrightNoteCopyrightedRegents);
-            } else if ( copyrightStatus.equals(copyrightPerson) || copyrightStatus.equals(copyrightCorporate)
-                     || copyrightStatus.equals(copyrightOther) || copyrightStatus.toLowerCase().startsWith("under copyright") ) {
+            } else {
                 if ( copyrightJurisdiction.equalsIgnoreCase("us") ) {
                     c.addElement("dams:copyrightNote").setText(copyrightNoteCopyrightedUS);
                 } else {
