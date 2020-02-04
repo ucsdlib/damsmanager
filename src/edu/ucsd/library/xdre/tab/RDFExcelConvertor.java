@@ -36,7 +36,8 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 public class RDFExcelConvertor {
 	private static final String[] requiredFields = {"Object Unique ID","Level","File name","File use","Type of Resource","Language","Title"};
@@ -59,11 +60,10 @@ public class RDFExcelConvertor {
 	/**
 	 * Convert RDF to CSV
 	 * @return
-	 * @throws FileNotFoundException
 	 * @throws TransformerException
-	 * @throws UnsupportedEncodingException
+	 * @throws IOException 
 	 */
-	public String convert2CSV () throws FileNotFoundException, TransformerException, UnsupportedEncodingException {
+	public String convert2CSV () throws TransformerException, IOException {
 		return convert2CSV (false);
 	}
 
@@ -71,12 +71,11 @@ public class RDFExcelConvertor {
 	 * Convert RDF to CSV
 	 * @param mutiValueField: if true values delimited by character pipe (|).
 	 * @return
-	 * @throws FileNotFoundException
 	 * @throws TransformerException
-	 * @throws UnsupportedEncodingException
+	 * @throws IOException 
 	 */
 	public String convert2CSV (boolean mutiValuesField)
-			throws FileNotFoundException, TransformerException, UnsupportedEncodingException {
+			throws TransformerException, IOException {
 		Map<String, Integer> fieldCounts = new TreeMap<>();
 		Map<String, List<Map<String,String>>> objectRecords = new HashMap<>();
 
@@ -162,11 +161,10 @@ public class RDFExcelConvertor {
 	 * Convert RDF to Excel format
 	 * @param xsl
 	 * @return
-	 * @throws FileNotFoundException
 	 * @throws TransformerException
-	 * @throws UnsupportedEncodingException
+	 * @throws IOException 
 	 */
-	public Workbook convert2Excel() throws FileNotFoundException, TransformerException, UnsupportedEncodingException {
+	public Workbook convert2Excel() throws TransformerException, IOException {
 		Map<String, Integer> fieldCounts = new TreeMap<>();
 		Map<String, List<Map<String,String>>> objectRecords = new HashMap<>();
 
@@ -276,18 +274,17 @@ public class RDFExcelConvertor {
 	 * Convert rdf data to Excel header format
 	 * @param objectRecords
 	 * @param fieldCounts
-	 * @throws FileNotFoundException
 	 * @throws TransformerException
-	 * @throws UnsupportedEncodingException
+	 * @throws IOException
 	 */
 	private void convertRecords(Map<String, List<Map<String,String>>> objectRecords, Map<String, Integer> fieldCounts)
-			throws FileNotFoundException, TransformerException, UnsupportedEncodingException {
-		String jsonString = xslConvert(xslInput, rdfSource);
+			throws TransformerException, IOException {
+		String jsonString = null;
 
-		ByteArrayInputStream input = null;
 		try {
-			input = new ByteArrayInputStream(jsonString.getBytes("UTF-8"));
-			JSONObject jsonObj = (JSONObject) JSONValue.parse(new BufferedReader(new InputStreamReader(input)));
+			jsonString = xslConvert(xslInput, rdfSource);
+			JSONObject jsonObj = parseJson(jsonString);
+
 			for (Iterator<String> it = jsonObj.keySet().iterator(); it.hasNext();){
 				String objID = it.next();
 				Object data = jsonObj.get(objID);
@@ -301,7 +298,23 @@ public class RDFExcelConvertor {
 			if (StringUtils.isNotBlank(xsl)) {
 				close (xslInput);
 			}
-			close (input);
+		}
+	}
+
+	/**
+	 * Parse the converted JSON stringL
+	 * @param jsonString
+	 * @return JSONObject
+	 * @throws IOException 
+	 * @throws UnsupportedEncodingException 
+	 * @throws TransformerException 
+	 */
+	public static JSONObject parseJson(String jsonString) throws IOException, UnsupportedEncodingException, TransformerException {
+		try (ByteArrayInputStream input = new ByteArrayInputStream(jsonString.getBytes("UTF-8"));) {
+			return (JSONObject) new JSONParser().parse(new InputStreamReader(input));
+		} catch (ParseException ex) {
+			String error = "Error parse json: " + (ex.getMessage() == null ? ex.toString() : ex.getMessage());
+			throw new TransformerException (error + "\nSource: " + jsonString);
 		}
 	}
 
