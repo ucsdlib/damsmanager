@@ -5,9 +5,11 @@ import static edu.ucsd.library.xdre.tab.TabularRecordBasic.addTextElement;
 import static edu.ucsd.library.xdre.tab.TabularRecordBasic.damsNS;
 import static edu.ucsd.library.xdre.tab.TabularRecordBasic.rdfNS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -915,4 +917,25 @@ public class TabularEditRecordTest extends TabularRecordTestBasic {
 
         assertEquals("File use 2 value doesn't match!", overlayFileUse, nodes.get(0).getText());
     }
+
+    @Test
+    public void testOverlayWithevent() throws Exception {
+        // Initiate tabular data for edit
+        String title = "Test object";
+        String overlayTitle = getOverlayValue(title);
+        Map<String, String> data = createDataWithTitle("zzxxxxxxxx", title);
+        Map<String, String> overlayData = createDataWithTitle("zzxxxxxxxx", overlayTitle);
+
+        // Create record with data overlay
+        String e1 = "http://library.ucsd.edu/ark:/20775/bdxxxxxxe1";
+        String e2 = "http://library.ucsd.edu/ark:/20775/bdxxxxxxe2";
+        TabularEditRecord testObject = createdRecordWithOverlay(data, overlayData, Arrays.asList(e1, e2));
+        Document docEdited = testObject.toRDFXML();
+
+        // validate events are retained
+        assertEquals("The size of events doesn't match!", 2, docEdited.selectNodes("//dams:event").size());
+        assertNotNull("Event 1 is missing", docEdited.selectNodes("//dams:event[@rdf:resource='" + e1 + "']"));
+        assertNotNull("Event 2 is missing", docEdited.selectNodes("//dams:event[@rdf:resource='" + e2 + "']"));
+    }
+
 }

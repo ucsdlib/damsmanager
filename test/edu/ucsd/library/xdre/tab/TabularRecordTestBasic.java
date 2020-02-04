@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.dom4j.Document;
@@ -36,10 +38,22 @@ public class TabularRecordTestBasic {
 
     protected TabularEditRecord createdRecordWithOverlay(Map<String, String> data, Map<String, String> overlayData)
             throws Exception {
+        return createdRecordWithOverlay(data, overlayData, new ArrayList<String>());
+    }
+
+    protected TabularEditRecord createdRecordWithOverlay(Map<String, String> data, Map<String, String> overlayData,
+            List<String> eventUrls) throws Exception {
         String objUrl = TabularEditRecord.getArkUrl(data.get(TabularRecord.OBJECT_ID));
         data.put("ark", objUrl);
         Record record = new TabularRecord( data, null);
         Document doc = record.toRDFXML();
+        if (eventUrls != null && eventUrls.size() > 0) {
+            Element el = (Element)doc.selectSingleNode("//dams:Object");
+            for (String eventUrl : eventUrls) {
+                el.addElement(new QName("event", TabularRecord.damsNS))
+                  .addAttribute(new QName("resource", TabularRecord.rdfNS), eventUrl);
+            }
+        }
 
         return createdRecordWithOverlay(doc, overlayData);
     }
