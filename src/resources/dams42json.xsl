@@ -448,8 +448,12 @@
                 <xsl:with-param name="by" select="'\&quot;'" />
             </xsl:call-template>
         </xsl:variable>
+
         <xsl:text>"</xsl:text>
           <xsl:value-of select="$escapedVal" />
+          <xsl:if test="substring($escapedVal, string-length($escapedVal), 1) = '\' and substring($escapedVal, string-length($escapedVal)-1, 1) != '\'">
+            <xsl:text>\</xsl:text>
+          </xsl:if>
         <xsl:text>"</xsl:text>
     </xsl:template>
 
