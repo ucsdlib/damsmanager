@@ -894,7 +894,7 @@ public class CollectionOperationController implements Controller {
 								  if (source.equalsIgnoreCase("bib")) {
 									  // Roger record: Test to report conversion errors
 									  try {
-										  testConversion(record.toRDFXML());
+										  testRogerRecordConversion(record.toRDFXML());
 									  } catch (Exception ex) {
 										  preSuccessful = false;
 										  errorMessage.append("\n* Error converting record (bib: " + id + "): " + ex.getMessage());
@@ -1993,7 +1993,7 @@ public class CollectionOperationController implements Controller {
 	 * @throws IOException
 	 * @throws TransformerException
 	 */
-	private static void testConversion(Document rdfDoc) throws UnsupportedEncodingException, IOException, TransformerException, DocumentException {
+	private static void testRogerRecordConversion(Document rdfDoc) throws UnsupportedEncodingException, IOException, TransformerException, DocumentException {
 		File tmpFile = File.createTempFile("bib", "-rdf.xml");
 		tmpFile.deleteOnExit();
 		Document doc = new DocumentFactory().createDocument();
