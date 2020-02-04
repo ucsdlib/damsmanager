@@ -25,7 +25,7 @@ import edu.ucsd.library.xdre.utils.Constants;
 **/
 public class TabularEditRecord extends TabularRecord
 {
-    public static String[] NONE_DESCRIPTIVE_NODES = {"hasFile", "hasComponent"};
+    public static String[] NONE_DESCRIPTIVE_NODES = {"hasFile", "hasComponent", "event"};
 
     private Document document = null;
 
