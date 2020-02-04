@@ -28,6 +28,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.xml.transform.TransformerException;
 
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemFactory;
@@ -38,10 +39,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.log4j.Logger;
 import org.dom4j.Document;
+import org.dom4j.DocumentException;
 import org.dom4j.DocumentFactory;
 import org.dom4j.Element;
 import org.dom4j.Node;
 import org.dom4j.io.OutputFormat;
+import org.dom4j.io.SAXReader;
 import org.dom4j.io.XMLWriter;
 import org.json.simple.JSONArray;
 import org.springframework.web.servlet.ModelAndView;
@@ -887,6 +890,17 @@ public class CollectionOperationController implements Controller {
 								  }
 							  
 								  objTitle = StringUtils.isEmpty(objTitle) ? "[Object]" : objTitle;
+
+								  if (source.equalsIgnoreCase("bib")) {
+									  // Roger record: Test to report conversion errors
+									  try {
+										  testConversion(record.toRDFXML());
+									  } catch (Exception ex) {
+										  preSuccessful = false;
+										  errorMessage.append("\n* Error converting record (bib: " + id + "): " + ex.getMessage());
+									  }
+								  }
+
 								  if (errorMessage.length() == 0) {
 									  String status = warningMessage.length() > 0 ? "warning" : "successful";
 
@@ -1968,6 +1982,31 @@ public class CollectionOperationController implements Controller {
 			// Handle CSV encoding records and records delimited by comma, whitespace etc.
 			if (line != null && (line = line.trim().replace("\"", "")).length() > 0) {
 				appendArks(items, line);
+			}
+		}
+	}
+
+	/*
+	 * Test conversion errors
+	 * @param rdfXML
+	 * @throws UnsupportedEncodingException
+	 * @throws IOException
+	 * @throws TransformerException
+	 */
+	private static void testConversion(Document rdfDoc) throws UnsupportedEncodingException, IOException, TransformerException, DocumentException {
+		File tmpFile = File.createTempFile("bib", "-rdf.xml");
+		tmpFile.deleteOnExit();
+		Document doc = new DocumentFactory().createDocument();
+		Element rdf = TabularRecord.createRdfRoot (doc);
+		try(InputStream in = new ByteArrayInputStream(rdfDoc.asXML().getBytes("UTF-8"))) {
+			Document cloneDoc = new SAXReader().read(in);
+			rdf.add(cloneDoc.selectSingleNode("//dams:Object").detach());
+			// Write to temp file for test transform
+			write2File (tmpFile, doc.asXML());
+
+			try(InputStream xsl2jsonInput = CILHarvestingTaskController.getDams42JsonXsl();) {
+				String jsonString = RDFExcelConvertor.xslConvert(xsl2jsonInput, tmpFile.getAbsolutePath());
+				RDFExcelConvertor.parseJson(jsonString);
 			}
 		}
 	}
