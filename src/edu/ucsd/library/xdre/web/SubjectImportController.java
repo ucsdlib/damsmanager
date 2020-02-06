@@ -33,6 +33,7 @@ public class SubjectImportController implements Controller {
 		String message = request.getParameter("message");
 
 		HttpSession session = request.getSession();	
+		session.setAttribute("user", request.getRemoteUser());
 		Map dataMap = new HashMap();
 
 		// initiate column name and control values for validation

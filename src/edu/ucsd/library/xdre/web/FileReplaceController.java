@@ -37,6 +37,7 @@ public class FileReplaceController implements Controller{
 		try{
 			if (StringUtils.isNotBlank(arkFile)) {
 				damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
+				damsClient.setUser(request.getRemoteUser());
 
 				boolean fileExists = false;
 				String fileUri = null;

@@ -52,7 +52,8 @@ public class FileUploadController implements Controller {
 		try {
 			
 			damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
-			
+			request.getSession().setAttribute("user", request.getRemoteUser());
+
 			List<String> ingestFiles = new ArrayList<String>();
 			filesPath = filesPath.trim();
 			

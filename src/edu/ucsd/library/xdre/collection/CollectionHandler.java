@@ -74,7 +74,6 @@ public abstract class CollectionHandler implements ProcessHandler {
 
 	protected int itemsDone = 0;
 	protected int maxTry = 2;
-	protected int userId = -1;
 
 	protected boolean excludeEmbargoed = false;
 	protected boolean exeResult = true;
@@ -126,11 +125,9 @@ public abstract class CollectionHandler implements ProcessHandler {
 	 * @param userId
 	 * @throws Exception
 	 */
-	public CollectionHandler(DAMSClient damsClient, String collectionId, HttpSession session,
-			int userId) throws Exception {
+	public CollectionHandler(DAMSClient damsClient, String collectionId, HttpSession session) throws Exception {
 		this(damsClient, collectionId);
 		this.session = session;
-		this.userId = userId;
 	}
 
 	/**
@@ -228,14 +225,6 @@ public abstract class CollectionHandler implements ProcessHandler {
 		return "<a href='" + "/xdre/ddom/getSubject.jsp?subject=" + subject
 				+ "&ds=" + ddomDSName + "' target='_blank'> subject " + subject
 				+ "</a>";
-	}
-
-	public int getUserId() {
-		return userId;
-	}
-
-	public void setUserId(int userId) {
-		this.userId = userId;
 	}
 
 	public void setSession(HttpSession session) {

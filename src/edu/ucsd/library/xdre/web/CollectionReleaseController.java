@@ -35,6 +35,8 @@ public class CollectionReleaseController implements Controller {
 
 
 		HttpSession session = request.getSession();	
+		session.setAttribute("user", request.getRemoteUser());
+
 		DAMSClient damsClient = null;
 		Map dataMap = new HashMap();
 		try{
