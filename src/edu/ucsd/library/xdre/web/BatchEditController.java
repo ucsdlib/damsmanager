@@ -33,7 +33,8 @@ public class BatchEditController implements Controller {
             e.printStackTrace();
         }
 
-        HttpSession session = request.getSession();	
+        HttpSession session = request.getSession();
+        session.setAttribute("user", request.getRemoteUser());
         Map dataMap = new HashMap();
 
         message = !StringUtils.isBlank(message) ? message : (String)session.getAttribute("message");

@@ -54,9 +54,11 @@ public class CollectionImportController implements Controller {
 				e.printStackTrace();
 			}
 
+			String userId = request.getRemoteUser();
 			damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
 			damsClient.setTripleStore(Constants.DEFAULT_TRIPLESTORE);
-			damsClient.setUser(request.getRemoteUser());
+			damsClient.setUser(userId);
+			session.setAttribute("user", userId);
 
 			if (StringUtils.isNotBlank(collectionId)) {
 				collection = DAMSCollection.getRecord(damsClient, collectionId);

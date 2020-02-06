@@ -39,7 +39,7 @@ public class CollectionManagementController implements Controller {
 
 		if (request.getRemoteUser() != null) {
 			logOutDisplay = "inline";
-			session.setAttribute("employeeId", request.getRemoteUser());
+			session.setAttribute("user", request.getRemoteUser());
 		}
 
 		String message = request.getParameter("message");

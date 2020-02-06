@@ -56,6 +56,7 @@ public class ExcelImportController implements Controller {
 			
 			damsClient = new DAMSClient(Constants.DAMS_STORAGE_URL);
 			damsClient.setTripleStore(ds);
+			request.getSession().setAttribute("user", request.getRemoteUser());
 
 
 			Map<String, String> collectionMap = damsClient.listCollections();

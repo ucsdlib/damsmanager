@@ -382,16 +382,7 @@ public class CollectionOperationController implements Controller {
 		String clientTool = "Custom";
 
 		if(message.length() == 0){
-		 int userId = -1;
-		 String userIdAttr = (String) session.getAttribute("employeeId");
-		 if(userIdAttr != null && userIdAttr.length() > 0){
-			 try{
-			     userId = Integer.parseInt(userIdAttr);
-			 }catch(NumberFormatException e){
-				 userId = -1;
-			 }
-		 }
-		 
+
 		 CollectionHandler handler = null;
 		 OutputStream fileOut = null;
 		 	 
@@ -493,7 +484,6 @@ public class CollectionOperationController implements Controller {
 					  handler = new MetadataImportHandler(damsClient, null);
 					  handler.setSubmissionId(submissionId);
 		 			  handler.setSession(session);
-		 			  handler.setUserId(userId);
 
 					  // Directory to hold the converted rdf/xml
 					  File tmpDir = new File (Constants.TMP_FILE_DIR + File.separatorChar + "converted");
@@ -679,8 +669,7 @@ public class CollectionOperationController implements Controller {
 					  handler = new MetadataImportHandler(damsClient, null);
 					  handler.setSubmissionId(submissionId);
 		 			  handler.setSession(session);
-		 			  handler.setUserId(userId);
-		 			  
+
 		 			  Map<String, String> collections = new HashMap<String, String>();
 		 			  if (StringUtils.isNotBlank(collectionId)) {
 		 				  String collType = damsClient.getCollectionType(collectionId);
@@ -1474,8 +1463,7 @@ public class CollectionOperationController implements Controller {
 				handler = new MetadataImportHandler(damsClient, null);
 				handler.setSubmissionId(submissionId);
 	 			handler.setSession(session);
-	 			handler.setUserId(userId);
-	 			
+
 	 			Map<String, String> collections = new HashMap<String, String>();
 	 			if (StringUtils.isNotBlank(collectionId)) {
 	 				String collType = damsClient.getCollectionType(collectionId);
@@ -1660,7 +1648,6 @@ public class CollectionOperationController implements Controller {
 	 				handler.setSubmissionId(submissionId);
 	 				handler.setDamsClient(damsClient);
 	 				handler.setSession(session);
-	 				handler.setUserId(userId);
 	 				if(handler.getCollectionId() == null && (collectionId != null && collectionId.length()>0))
 	 					handler.setCollectionId(collectionId);
 
