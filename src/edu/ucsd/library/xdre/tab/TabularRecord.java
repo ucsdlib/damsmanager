@@ -36,6 +36,7 @@ public class TabularRecord extends TabularRecordBasic
     protected boolean cartographicsProcessed = false;
     protected boolean fileProcessed = false;
     protected boolean copyrightProcessed = false;
+    protected boolean dateProcessed = false;
 
     // flag for watermarking
     private boolean watermarking = false;
@@ -172,6 +173,7 @@ public class TabularRecord extends TabularRecordBasic
         cartographicsProcessed = false;
         fileProcessed = false;
         copyrightProcessed = false;
+        dateProcessed = false;
 
         String objectID = data.get("object unique id");
         if ( ark == null ) { ark = "ARK"; }
@@ -259,22 +261,15 @@ public class TabularRecord extends TabularRecordBasic
         }
 
         // date /////////////////////////////////////////////////////////////////////////
-        if (key.startsWith("date:")) {
-            String type = key.substring(key.indexOf(":") + 1);
-            String date = data.get(key);
+        if (key.startsWith("date:") && !dateProcessed) {
+            dateProcessed = true;
 
-            if (key.equalsIgnoreCase("date:creation")) {
-                // date:creation with begin/end date if provided
-                String begin = data.get("begin date");
-                String end   = data.get("end date");
-                testDateValue ( objectID, begin, "begin date" );
-                testDateValue ( objectID, end, "end date" );
+            String begin = data.get("begin date");
+            String end   = data.get("end date");
+            testDateValue ( objectID, begin, "begin date" );
+            testDateValue ( objectID, end, "end date" );
 
-                addDate(e, type, "w3cdtf", date, begin, end);
-            } else if (!key.equalsIgnoreCase("date:creation")) {
-                // add: other qualified date types
-                addDate(e, type, null, date, null, null);
-            }
+            handleDates(e, begin, end);
         }
 
         // identifier ///////////////////////////////////////////////////////////////////
@@ -430,6 +425,41 @@ public class TabularRecord extends TabularRecordBasic
         return localName;
     }
 
+    /**
+     * Handle dams:Date elements with begin and end date.
+     * @param e
+     * @param begin
+     * @param end
+     */
+    public void handleDates(Element e, String begin, String end) {
+        List<String> dateKeys = new ArrayList<>();
+        for (String key : data.keySet()) {
+            if (key.startsWith("date:")) {
+                dateKeys.add(key);
+            }
+        }
+
+        String encoding = (StringUtils.isNotBlank(begin) || StringUtils.isNotBlank(end)) ? "w3cdtf" : "";
+        if (dateKeys.size() == 1) {
+            String dateKey = dateKeys.get(0);
+            String type = dateKey.substring(dateKey.indexOf(":") + 1);
+
+            addDate(e, type, encoding, data.get(dateKey), begin, end);
+        } else {
+            // Handle Begin date and End date as a separate Date element
+            if (StringUtils.isNotBlank(begin) || StringUtils.isNotBlank(end)) {
+                addDate(e, null, encoding, null, begin, end);
+            }
+
+            for (int i = 0; i < dateKeys.size(); i++) {
+                String dateKey = dateKeys.get(i);
+                String type = dateKey.substring(dateKey.indexOf(":") + 1);
+
+                addDate(e, type, null, data.get(dateKey), null, null);
+            }
+        }
+    }
+
     /*
      * Add dams:Date element
      * @param e
@@ -442,12 +472,15 @@ public class TabularRecord extends TabularRecordBasic
     protected void addDate(Element e, String type, String encoding, String value,
             String begin, String end) {
         Element d = addElement( e, "date", damsNS, "Date", damsNS );
-        addTextElement( d, "type", damsNS, type );
+
+        if (StringUtils.isNotBlank(type))
+            addTextElement( d, "type", damsNS, type );
 
         if (StringUtils.isNotBlank(encoding))
             addTextElement( d, "encoding", damsNS, encoding );
 
-        addTextElement( d, "value", rdfNS, value );
+        if (StringUtils.isNotBlank(value))
+            addTextElement( d, "value", rdfNS, value );
 
         if (StringUtils.isNotBlank(begin))
             addTextElement( d, "beginDate", damsNS, begin );

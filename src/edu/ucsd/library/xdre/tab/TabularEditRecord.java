@@ -202,6 +202,7 @@ public class TabularEditRecord extends TabularRecord
         titleProcessed = false;
         cartographicsProcessed = false;
         fileProcessed = false;
+        dateProcessed = false;
 
         boolean otherRightsProcessed = false;
         boolean licenseProcessed = false;
