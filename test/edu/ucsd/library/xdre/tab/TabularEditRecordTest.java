@@ -938,4 +938,87 @@ public class TabularEditRecordTest extends TabularRecordTestBasic {
         assertNotNull("Event 2 is missing", docEdited.selectNodes("//dams:event[@rdf:resource='" + e2 + "']"));
     }
 
+    @Test
+    public void testOverlayDate() throws Exception {
+        String title = "Test object";
+        String objArk = "zzxxxxxxxx";
+        String objUrl = TabularEditRecord.getArkUrl(objArk);
+        Element obj = createDocumentRoot(objUrl);
+        String dateValue = "2020";
+        String beginDate = "2000-01-01";
+        String endDate = "2001-12-31";
+        Element e = addElement(obj, "date", damsNS, "Date", damsNS);
+        addTextElement(e, "value", rdfNS, dateValue);
+        addTextElement(e, "type", damsNS, "creation");
+        addTextElement(e, "encoding", damsNS, "w3cdtf");
+        addTextElement(e, "beginDate", damsNS, beginDate);
+        addTextElement(e, "endDate", damsNS, endDate);
+
+        String dateKeyOverlay = "date:collected";
+        String dateValueOverlay = "2019";
+
+        Map<String, String> overlayData = createDataWithTitle(objArk, title);
+
+        overlayData.put(dateKeyOverlay, dateValueOverlay);
+        overlayData.put("begin date", beginDate);
+        overlayData.put("end date", endDate);
+
+        // Create record with data overlay
+        TabularEditRecord testObject = createdRecordWithOverlay(obj.getDocument(), overlayData);
+        Document doc = testObject.toRDFXML();
+
+        List<Node> nodes = doc.selectNodes("//dams:Date");
+        assertEquals("The size of License doesn't match!", 1, nodes.size());
+
+        Node dateNode = doc.selectSingleNode("//dams:Date[dams:type='collected']");
+        assertEquals("Collected date doesn't match!", "2019", dateNode.valueOf("rdf:value"));
+        assertEquals("Begin date doesn't match!", "2000-01-01",dateNode.valueOf("dams:beginDate"));
+        assertEquals("End date doesn't match!", "2001-12-31", dateNode.valueOf("dams:endDate"));
+    }
+
+    @Test
+    public void testOverlayDateMultiple() throws Exception {
+        String title = "Test object";
+        String objArk = "zzxxxxxxxx";
+        String objUrl = TabularEditRecord.getArkUrl(objArk);
+        Element obj = createDocumentRoot(objUrl);
+        String dateValue = "2020";
+        String beginDate = "2000-01-01";
+        String endDate = "2001-12-31";
+        Element e = addElement(obj, "date", damsNS, "Date", damsNS);
+        addTextElement(e, "value", rdfNS, dateValue);
+        addTextElement(e, "type", damsNS, "creation");
+        addTextElement(e, "encoding", damsNS, "w3cdtf");
+        addTextElement(e, "beginDate", damsNS, beginDate);
+        addTextElement(e, "endDate", damsNS, endDate);
+
+        String dateKey1 = "date:creation";
+        String dateValue1 = "2010";
+        String dateKey2 = "date:collected";
+        String dateValue2 = "2019";
+
+        Map<String, String> overlayData = createDataWithTitle(objArk, title);
+
+        overlayData.put(dateKey1, dateValue1);
+        overlayData.put(dateKey2, dateValue2);
+        overlayData.put("begin date", beginDate);
+        overlayData.put("end date", endDate);
+
+        // Create record with data overlay
+        TabularEditRecord testObject = createdRecordWithOverlay(obj.getDocument(), overlayData);
+        Document doc = testObject.toRDFXML();
+
+        List<Node> nodes = doc.selectNodes("//dams:Date");
+        assertEquals("The size of License doesn't match!", 3, nodes.size());
+
+        Node beginEndDateNode = doc.selectSingleNode("//dams:Date[dams:encoding='w3cdtf']");
+        assertEquals("Begin date doesn't match!", "2000-01-01", beginEndDateNode.valueOf("dams:beginDate"));
+        assertEquals("End date doesn't match!", "2001-12-31", beginEndDateNode.valueOf("dams:endDate"));
+
+        Node creationDateNode = doc.selectSingleNode("//dams:Date[dams:type='creation']");
+        assertEquals("Creation date doesn't match!", "2010", creationDateNode.valueOf("rdf:value"));
+
+        Node collectedDateNode = doc.selectSingleNode("//dams:Date[dams:type='collected']");
+        assertEquals("Collected date doesn't match!", "2019", collectedDateNode.valueOf("rdf:value"));
+    }
 }
