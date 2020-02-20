@@ -41,6 +41,9 @@ public class TabularRecord extends TabularRecordBasic
     // flag for watermarking
     private boolean watermarking = false;
 
+    // flag for ignoring copyright
+    private boolean ignoreCopyright = false;
+
     /**
      * Create an empty record.
     **/
@@ -79,6 +82,22 @@ public class TabularRecord extends TabularRecordBasic
      */
     public void setWatermarking(boolean watermarking) {
         this.watermarking = watermarking;
+    }
+
+    /**
+     * Get flag ignoreCopyright
+     * @return
+     */
+    public boolean ignoreCopyright() {
+        return ignoreCopyright;
+    }
+
+    /**
+     * Set flag ignoreCopyright
+     * @param ingnoreCopyright
+     */
+    public void setIgnoreCopyright(boolean ignoreCopyright) {
+        this.ignoreCopyright = ignoreCopyright;
     }
 
     /**
@@ -288,8 +307,8 @@ public class TabularRecord extends TabularRecordBasic
             addCartographics(e);
         }
 
-        // Copyright: Added for CIL mapping of copyright note ////////////////////////////////////////////////////////////////////
-        if (key.startsWith("copyright") && !copyrightProcessed) {
+        // Copyright: Added for CIL mapping of copyright note ///////////////////////////
+        if (key.startsWith("copyright") && !ignoreCopyright && !copyrightProcessed) {
             copyrightProcessed = true;
 
             addCopyright(e);
