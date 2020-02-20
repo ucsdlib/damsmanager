@@ -74,6 +74,9 @@ public class ExcelSource implements RecordSource
     // flag for watermarking
     protected boolean watermarking = false;
 
+    // flag for ignoring copyright
+    protected boolean ignoreCopyright = true;
+
     /**
      * Create an ExcelSource object from an Excel file on disk.
     **/
@@ -216,6 +219,7 @@ public class ExcelSource implements RecordSource
                 TabularRecord rec = new TabularRecord();
                 rec.setData( cache );
                 rec.setWatermarking(watermarking);
+                rec.setIgnoreCopyright(ignoreCopyright);
 
                 String objID = cache.get(OBJECT_ID);
                 String cmpID = null;
@@ -233,6 +237,7 @@ public class ExcelSource implements RecordSource
                         TabularRecord component = new TabularRecord();
                         component.setData(cmpData);
                         component.setWatermarking(watermarking);
+                        component.setIgnoreCopyright(ignoreCopyright);
 
                         if (objectComponentType.equalsIgnoreCase(COMPONENT)) {
                             // component record, add to list
@@ -263,6 +268,7 @@ public class ExcelSource implements RecordSource
         {
             TabularRecord rec = new TabularRecord(cache);
             rec.setWatermarking(watermarking);
+            rec.setIgnoreCopyright(ignoreCopyright);
 
             cache = null;
             return rec;

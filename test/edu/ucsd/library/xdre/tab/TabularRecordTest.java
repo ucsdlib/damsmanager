@@ -142,4 +142,22 @@ public class TabularRecordTest extends TabularRecordTestBasic {
         String actualCompTitle = nodes.get(0).selectSingleNode("dams:title//mads:authoritativeLabel").getText();
         assertEquals("Component title doesn't match!", compTitle, actualCompTitle);
     }
+
+    @Test
+    public void testIgnoreCopyright() throws Exception {
+        String objTitle = "Test object";
+        String objArk = "zzxxxxxxxx";
+
+        Map<String, String> objectData = createDataWithTitle(objArk, objTitle, "object");
+        objectData.put("copyright status", "under copyright");
+
+        // Create record with data overlay
+        TabularRecord testObject = new TabularRecord(objectData);
+        testObject.setIgnoreCopyright(true);
+        Document doc = testObject.toRDFXML();
+        String actualObjTitle = doc.selectSingleNode("//dams:Object/dams:title//mads:authoritativeLabel").getText();
+        assertEquals("Object title doesn't match!", objTitle, actualObjTitle);
+        List<Node> nodes = doc.selectNodes("//dams:copyright");
+        assertEquals("Found copyright node!", 0, nodes.size());
+    }
 }
